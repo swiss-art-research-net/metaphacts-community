@@ -1,0 +1,51 @@
+*.class
+*.log
+
+# sbt specific
+.history
+target/
+project/plugins/project/
+
+# Eclipse
+.classpath
+.project
+.settings
+.checkstyle
+bin/
+
+# IntelliJ IDEA
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# build specific
+node_modules/
+/project/webpack/node_modules
+/project/webpack/assets
+/project/webpack/dll
+/project/webpack/.happypack
+/project/webpack/.mp-components
+/project/webpack/.mp-extensions
+/project/webpack/.cache-loader
+/project/webpack/tests_out/
+/project/webpack/*.log.*
+
+# local development build config
+/default-root-build.json
+
+# emacs
+.#*
+\#*
+workbench.xmi
+
+# idea
+.idea/
+*.iml
+*.iws
+
+# runtime
+/runtime
+
+# Mac
+.DS_Store

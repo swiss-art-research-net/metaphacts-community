@@ -1,0 +1,103 @@
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title="Help" iri='[[resolvePrefix "Help:Start"]]'>Help</semantic-link>
+  </li>
+  <li class="active">Documentation Overview</li>
+</ol>
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Documentation Overview</h1>
+    <h2>Installation and Configuration</h2>
+    <ul>
+      <li>
+        <semantic-link title="Installation and Deployment" iri='[[resolvePrefix "Help:Installation"]]'>
+          Installation and Deployment
+        </semantic-link>
+      </li>
+      <li>
+        <semantic-link title="Basic System Configuration" iri='[[resolvePrefix "Help:BasicSystemConfiguration"]]'>
+          Basic System Configuration
+        </semantic-link>
+      </li>
+      <li>
+        <semantic-link title="Security Configuration" iri='[[resolvePrefix "Help:Security"]]'>
+          Security Configuration
+        </semantic-link>
+      </li>
+    </ul>
+
+    <h2>Getting Started</h2>
+    <ul>
+      <li>
+        <semantic-link title="Working with Data" iri='[[resolvePrefix "Help:WorkingWithData"]]'>
+          Working with Data
+        </semantic-link>
+      </li>
+      <li>
+        <semantic-link title="Working with Data" iri='[[resolvePrefix "Help:Tutorial"]]'>
+          Tutorial
+        </semantic-link>
+      </li>
+    </ul>
+
+   	<h2>Services</h2>
+    <ul>
+      <li>
+        <semantic-link title="Tableau" iri='[[resolvePrefix "Help:Tableau"]]'>
+         Tableau
+        </semantic-link>
+      </li>
+      <li>
+        <semantic-link title="Publishing" iri='[[resolvePrefix "Help:Publishing"]]'>
+         RDF Publishing
+        </semantic-link>
+      </li>
+      <li>
+         Label Service, Namespace Service, Thumbnail Service, LDP Container Service, Query as a Service (Dynamic Rest APIs)...
+      </li>
+    </ul>
+
+    <h2>Backend Templating</h2>
+    <p>
+      Simple applications can be built using just native HTML markup and custom HTML5 Web Components such as the platform's semantic components for search,
+      data visualization, and data curation (see below). Nevertheless, in some situations it might be desired to modify or control the template or application pages dynamically
+      <b>before</b> they leave the backend and are rendered in the client's browser. Use cases include:
+    </p>
+    <ul>
+      <li>dynamic parameterization of the HTML components with backend knowledge</li>
+      <li>excluding fragments according to the availability of data or security restrictions (especially when defined on generic templates) </li>
+      <li>to outsource certain fragments into separate, reusable units in favor of maintainability</li>
+    </ul>
+    <p>
+      Therefore, template and application pages can be enriched with a "<b>mostly logic-less</b>" backend templating logic such as, for example, using if expressions or include helper functions.
+    </p>
+    <ul>
+      <li>
+        <semantic-link title="Template vs Application Pages" iri='[[resolvePrefix "Help:TemplateAndApplicationPages"]]'>
+          Template vs. Application Pages: Understanding the Difference
+        </semantic-link>
+      </li>
+      <li>
+        <semantic-link title="Backend Templating" iri='[[resolvePrefix "Help:BackendTemplating"]]'>
+          Backend Templating Syntax and Helper Functions
+        </semantic-link>
+      </li>
+      <li>
+        <semantic-link title="New Template Mechanism" iri='[[resolvePrefix "Help:NewTemplateMechanism"]]'>
+          Example Page: Templating Syntax and Helper Functions
+        </semantic-link>
+      </li>
+    </ul>
+
+    <h2>Client-side Templating</h2>
+    <p>
+      Most of the platform's built-in HTML5 Web Components provide some means of templating through the
+      <semantic-link iri='[[resolvePrefix "Help:FrontendTemplating"]]'>Client-side Templating</semantic-link> mechanism.
+    </p>
+    [[>Help:Components]]
+  </div>
+</div>

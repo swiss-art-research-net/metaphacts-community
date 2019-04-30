@@ -1,0 +1,22 @@
+#
+# Example configuration template for a wrapper repository 
+# for a custom service
+#
+@prefix rep: <http://www.openrdf.org/config/repository#> .
+@prefix sail: <http://www.openrdf.org/config/sail#> .
+@prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+@prefix sparqlr: <http://www.openrdf.org/config/repository/sparql#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
+@prefix mps: <http://www.metaphacts.com/ontologies/platform/service#> .
+
+[] a rep:Repository ;
+   rep:repositoryID "wikidata-text" ;
+   rdfs:label "Wikidata search service repository" ;
+   rep:repositoryImpl [
+      rep:repositoryType "openrdf:SailRepository" ;
+      sr:sailImpl [
+         	sail:sailType "metaphacts:WikidataTextSearch" ; # Type of the Sail which implements the service functionalities.
+	 		mps:implementsService mps:WikidataTextSearch # Service descriptor reference (needed for Ephedra only) 
+      ] .
+   ] .

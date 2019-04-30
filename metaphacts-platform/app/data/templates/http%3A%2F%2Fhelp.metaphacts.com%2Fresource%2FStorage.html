@@ -1,0 +1,138 @@
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
+  </li>
+  <li>
+    <semantic-link title="Documentation" uri="http://help.metaphacts.com/resource/DocumentationOverview">Documentation</semantic-link>
+  </li>
+  <li class="active">Storage</li>
+</ol>
+
+<div class="page">
+  <div class='page__body'>
+   <h1>Storage</h1>
+    <p>
+      <i>
+        The concept of "storages" provides an abstraction from the low-level file system. 
+        While previously the platform did heavily rely on file system pointers for persisting configuration changes, 
+        the new storage layer provides an abstraction over the low-level file system. 
+        The storage layer can connect to different storage implementations (local file-based, remote S3 object-based etc.) 
+        in parallel, whereas every storage is identified by a storage ID.
+      </i>
+    </p> 
+    <p>
+      <i>
+     		Lookups are be performed against individual storages or as delegation calls, 
+        i.e. storages build a chain of responsibility and will be scanned sequentially. This greatly simplifies the development and lifecycle of platform apps (domain/customer specific customizations of the platform) as well as provides integration with (external) storage locations for accessing and storing binary or non-binary file collections like images, 3D models or documents. 
+      </i>
+    </p>
+   <h2 id="configuration">Storage Types</h2>
+    For the time being, the metaphactory supports three types of storages:
+    <ul>
+      <li>nonVersionedFile - A local (volume) file system or any mounted remote, standard file system.</li>
+      <li>s3 - Any S3 compatible remote object storage.</li>
+      <li>classpath - Objects are read as immutable artefacts from the classpath.</li>
+    </ul>
+   <h2 id="configuration">Configuration of Storages</h2>
+   
+   For the time being, it is only possible to configure / connect to a storage during deployment time by passing in certain environment parameters: <br>
+    <p>
+      <code>-Dconfig.storage.my-storage.type=nonVersionedFile -Dconfig.storage.my-storage.mutable=false -Dconfig.storage.my-storage.root=/runtime-data </code>
+    </p>
+     Also, if you connect to storages like S3, you have to pass in the respective connection parameters during deployment time:   
+		<p>
+      <code>-Dconfig.storage.my-storage.type=s3 -Dconfig.storage.my-storage.mutable=false -Dconfig.storage.my-storage.endpoint=https://s3.amazonaws.com/ -Dconfig.storage.my-storage.signingRegion=us-east-1 -Dconfig.storage.my-storage.bucket=my-storage-bucket -Dconfig.storage.my-storage.accessKey=XXXAWSaccessKeyXXX -Dconfig.storage.my-storage.secretKey=XXXAWSsecretKeyXXX</code>
+    </p>
+
+    
+   <h2 id="storage-and-apps">Storage and Apps</h2>
+   <p>
+     A storage is not equal to an app. A storage provides delegated access to non-binary app artefacts, but not every storage is an app. <br>
+     The following non-binary artefacts are currently managed through the storage layer:
+   </p>
+    <ul>
+      <li>HTML pages / templates (<code>data/templates/*.html</code>)</li>
+     	<li>Repository configurations (<code>config/repositories/*.ttl</code>)</li>
+      <li>Ephedra service configurations (<code>config/services/*.ttl</code>)</li>
+      <li>Query as a service configurations (<code>config/qaas/*.prop</code>)</li>
+      <li>SHACL rules and rule generators (<code>config/rdfunit/*.ttl</code>)</li>
+      <li>System configuration files(<code>config/{ui,global,dataQuality,namespaces,environment,proxy}.prop</code>)</li>
+      <li>Local user credentials and/or role definitions (<code>config/shiro.ini</code>).<br>
+        <b>Please note </b> that this requires to instruct the security module to read the shiro file explicitly from the storage and not from the default file system. This can be done by setting the property <code>-Dconfig.environment.securityConfigStorageId=</code>.
+      </li>
+    </ul>
+    <p>
+    	Furthermore, the following rules apply:
+    </p>
+   <ul>
+     <li>A storage can exist independently from an app.</li>
+     <li>Every app has exactly one associated storage.</li>
+     <li>A storage is associated to an app by its ID, i.e. the <code>plugin.id</code> must be equal to the storage ID.</li>
+     <li>If no storage is defined for an app, a default <code>nonVersionedFile</code> storage is defined. The root of the storage folder will be set to the root of the app folder.</li>
+     <li><b>Apps can not be deployed through a storage</b>, i.e. apps are file-based and may add binary/compiled library or service extensions.<br>
+       However, non-binary app artefacts including <i>templates</i>, <i>configuration properties</i>, <i>header/footer files</i> or <i>ldp knowledge assets</i> 
+       can be served through a storage. As explained in the previous item, the default storage is file-based, but it can also be configured a remote, object-based storage like, for example, <i>AWS S3</i>.
+     </li>
+   </ul>  
+   <h3 id="immutability">Immutability of App Storages</h3>
+    Except for the <code>runtime</code> app storage, <b>all apps and respective storages are immutable (read-only)</b>.
+    You can configure mutable storages, but these are not designed for apps.
+    
+    <p>
+      By design all changes (additions or modifications of existing default settings) during runtime go to the <code>runtime</code> app and respective <code>runtime</code> storage.
+    </p>
+    
+   <h3 id="delegation-order">Delegation/Access Order of App Storages</h3>
+    The order in which delegated access is provided to the app artefacts is determined by the app dependency order (c.f. <semantic-link iri="[[resolvePrefix "Help:Apps"]]">Apps Help</semantic-link>).
+    By default, the <code>runtime</code> app storage precedes / shadows the default <code>core</code> app storage, i.e. if the same template is provided in <code>runtime</code> as in  <code>core</code>, the storage will always serve the template from the <code>runtime</code> storage first, if it exists.
+   
+    <h3 id="change-runtime-storage">Changing the Runtime Storage for (local) App Development</h3>
+    <p>
+      In particular for (local) development, it might be convenient to set the <b>runtime storage</b> (default location <code>/runtime-data</code>) to a different directory or even a different storage type. 
+    </p>
+    <h4 id="runtime-git-example">Example: Local GIT folder as Runtime Storage</h4>
+    <p>
+      With the new storage mechanism it is convenient to set the root of the <b>runtime storage</b> to, for example, a local git folder and all changes (modifications/additions) will be available in isolation to be managed by your git folder:
+    </p>
+    <p>
+      <code>-Dconfig.storage.runtime.type=nonVersionedFile -Dconfig.storage.runtime.mutable=true -Dconfig.storage.runtime.root=/my-mounted-git-app-folder</code>
+    </p>
+    <p>
+      For the docker distribution it is recommended to <i>docker mount</i> your local git app folder, for example, <code>/user/home/my-local-app-git-folder</code> into the container <code>-v /user/home/my-local-app-git-folder:/my-mounted-git-app-folder:rw</code>.
+    </p>
+    <p>
+      Depending on your OS and docker distribution you may also need to change the folder permissions from within the container (for example, <code>docker exec my-container sh -c "chown -R jetty:1001 /my-mounted-git-app-folder && chmod -R g+wx /my-mounted-git-app-folder"</code>).
+    </p>
+    <b>Please note: </b> If you decide to mount your local (git) folder directly into the <code>/runtime-data</code> folder of the docker container, you may need to provide your own <code>/runtime-data/config/shiro.ini</code> file or set <code>-Dconfig.environment.shiroConfig=/runtime-data/config/shiro.ini</code> to a different location, for example, mount your own, standard shiro.ini into a dedicated location.
+    
+    <h4 id="runtime-s3-example">Example: S3 as Runtime Storage</h4>
+    Pass the following paramteres to the platform, i.e. by the setting <code>PLATFORM_OPTS</code> in docker:
+    <pre><code>
+    -Dconfig.storage.runtime.type=s3 -Dconfig.storage.runtime.mutable=true -Dconfig.storage.runtime.endpoint=https://s3.amazonaws.com/ -Dconfig.storage.runtime -Dconfig.storage.runtime.signingRegion=us-east-1 -Dconfig.storage.runtime.bucket=my-metaphactory-app-bucket -Dconfig.storage.runtime.accessKey=XXXAWSaccessKeyXXX -Dconfig.storage.runtime.secretKey=XXXAWSsecretKeyXXX -Dconfig.environment.shiroConfig=/runtime-data/config/shiro.ini
+    </code></pre>
+    
+    <p>
+      Instead of specifying an AWS access key and secret key, you can also specify a role name to be assumed:<br>
+      <code>-Dconfig.storage.runtime.assumedRole=arn:aws:iam::{aws-account-id}:role/{assume-role-name} -Dconfig.storage.runtime.roleSessionName={metaphactory-name-for-session-log}</code> (replace <code>{}</code> respectively). This obviously requires that your instance is deployed on a AWS resource (EC2, ECS...) and that the role of the resources matches the <b>assumed role</b>.
+    </p>
+   
+    <h3 id="implicit-apps">Implicit Apps</h3>
+   <bs-alert bs-style="info" style="width: 800px;margin-left:2%;"> 
+			<strong>Info!</strong><br/>
+      	<p>
+          Please note that mechanism of <i>"Implicit Apps"</i> is experimental and may change or even be removed from future versions.
+        </p>
+   </bs-alert>   
+   <ul>
+     <li>For every app there must exist exactly one <code>plugin.properties</code> file, i.e. through this file the app is properly instantiated and dependencies are being resolved.</li>
+     <li>Still, you can configure a storage to serve non-binary app artefacts <b>without</b> explicitly deploying an app, i.e. without providing an <code>plugin.properties</code> file. The storage must just serve the artefacts in the expected app directory and file structure. We call these "implicit apps" or "app by reference", since these are neither recognized by the platform as apps nor does it provide control, for example, the "delegation" order w.r.t. to other apps or storages.
+     </li>
+   </ul>
+    
+
+    
+	</div>
+</div>

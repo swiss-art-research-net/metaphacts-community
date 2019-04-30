@@ -1,0 +1,2 @@
+com.metaphacts.services.storage.file.NonVersionedFileStorageFactory
+com.metaphacts.services.storage.file.ClassPathStorageFactory
