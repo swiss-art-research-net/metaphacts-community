@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018, metaphacts GmbH
+ * Copyright (C) 2015-2019, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,13 +16,25 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-module.exports = {
-  parseArgs: function(arg) {
-    return JSON.parse(
-      Buffer.from(
-        arg,
-        'base64'
-      ).toString('utf8')
-    );
+import * as React from 'react';
+import { Component } from 'platform/api/components';
+import { Cancellation } from 'platform/api/async';
+
+export interface FormSwitchCaseProps {
+    label?: string;
+    children?: React.ReactNode;
+    for?: string;
+}
+
+export class FormSwitchCase extends Component<FormSwitchCaseProps, {}> {
+  private readonly cancellation = new Cancellation();
+  componentWillUnmount() {
+    this.cancellation.cancelAll();
   }
-};
+
+  render() {
+    return React.Children.only(this.props.children);
+  }
+}
+
+export default FormSwitchCase;

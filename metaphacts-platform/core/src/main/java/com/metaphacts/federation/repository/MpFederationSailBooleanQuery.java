@@ -22,7 +22,6 @@ import org.eclipse.rdf4j.query.BooleanQuery;
 import org.eclipse.rdf4j.query.QueryEvaluationException;
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
 import org.eclipse.rdf4j.query.parser.ParsedBooleanQuery;
-import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.sail.SailBooleanQuery;
 import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection;
 import org.eclipse.rdf4j.sail.SailException;
@@ -41,10 +40,9 @@ public class MpFederationSailBooleanQuery extends SailBooleanQuery {
     public boolean evaluate() throws QueryEvaluationException {
         TupleExpr tupleExpr = getParsedQuery().getTupleExpr();
         MpFederationConnection federationConnection = this.getConnection().getSailConnection();
-        MpFederation mpFederation = federationConnection.getFederation();
-        RepositoryConnection owner = FederationSparqlAlgebraUtils.getSingleOwner(tupleExpr,
-                mpFederation.getServiceMappings(), federationConnection.getDefaultMemberConnection());
-        if (owner != null && owner.equals(federationConnection.getDefaultMemberConnection())) {
+        if (FederationSparqlAlgebraUtils.executeOnSingleOwnerWithoutOptimization(tupleExpr,
+                federationConnection.getFederation(),
+                federationConnection.getDefaultMemberConnection())) {
             // Single owner query
             try {
                 BooleanQuery proxyQuery = federationConnection.getDefaultMemberConnection()

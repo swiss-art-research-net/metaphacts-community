@@ -77,11 +77,14 @@ export function validate(
 }
 
 export function queryValues(
-  pattern: string, subject: Rdf.Iri, options?: SparqlClient.SparqlOptions
+  pattern: string, subject?: Rdf.Iri, options?: SparqlClient.SparqlOptions
 ): Kefir.Property<SparqlBindingValue[]> {
   if (!pattern) { return Kefir.constant([]); }
   return SparqlUtil.parseQueryAsync(pattern)
-    .map(query => SparqlClient.setBindings(query, {'subject': subject}))
+    .map(query => subject
+      ? SparqlClient.setBindings(query, {'subject': subject})
+      : query
+    )
     .flatMap<SparqlClient.SparqlSelectResult>(query => SparqlClient.select(query, options))
     .map(result => result.results.bindings
       .map<SparqlBindingValue>(binding => ({

@@ -12,14 +12,13 @@
 
 
 [] a rep:Repository ;
-   rep:repositoryID "default" ; # Replace with your repository ID
-   rdfs:label "SPARQL repository (with digest authentication)" ;
+   rep:repositoryID "default" ; # Replace with your repository ID or leave default if this is the main repository
+   rdfs:label "SPARQL repository (with digest authentication)" ; # Replace with a meaningful description for this repository
    rep:repositoryImpl [
       rep:repositoryType "metaphactory:SPARQLDigestAuthRepository" ;
-      sparqlr:query-endpoint {%Query endpoint|<http://example.org/query>%} ; # URL of the SPARQL endpoint to submit queries
-      sparqlr:update-endpoint {%Update endpoint (optional - only if different from the query endpoint)|<http://example.org/update>%} ;
-      mph:quadMode {%Quad mode enabled|true%} ;
-      mph:username "{%Repository username|username%}" ;
-	  mph:password "{%Repository password|password%}" ;
-	  mph:realm "{%Security realm|realm%}"
+      sparqlr:query-endpoint <http://example.org/query> ; # Replace with the URL of the SPARQL endpoint to submit queries to
+      #sparqlr:update-endpoint <http://example.org/update> ; # (Optional) Uncomment and replace with the update endpoint (only if different from the query endpoint)
+      mph:username "username" ; # Replace with username to connect to the repository
+      mph:password "password" ; # Replace with password to connect to the repository
+      mph:realm "realm" # Replace with the realm name as defined by the SPARQL repository or authentication server
    ].

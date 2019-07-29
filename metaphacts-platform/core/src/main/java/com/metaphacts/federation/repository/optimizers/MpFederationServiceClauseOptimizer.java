@@ -55,12 +55,15 @@ public class MpFederationServiceClauseOptimizer
     private final RepositoryConnection mainMember;
 
     private Map<IRI, ? extends Repository> serviceMappings;
+    
+    private final QueryHintsSetup queryHintsSetup;
 
     public MpFederationServiceClauseOptimizer(Collection<? extends RepositoryConnection> members,
-            RepositoryConnection mainMember, Map<IRI, ? extends Repository> serviceMappings) {
+            RepositoryConnection mainMember, Map<IRI, ? extends Repository> serviceMappings, QueryHintsSetup queryHints) {
         this.members = members;
         this.mainMember = mainMember;
         this.serviceMappings = serviceMappings;
+        this.queryHintsSetup = queryHints;
     }
 
     @Override
@@ -88,6 +91,7 @@ public class MpFederationServiceClauseOptimizer
                                     descriptor);
                             serviceCallExpr.setParentNode(node.getParentNode());
                             node.replaceWith(serviceCallExpr);
+                            queryHintsSetup.replaceExprIfExists(node, serviceCallExpr);
                         }
                     }
                 }

@@ -132,7 +132,7 @@ export class Tree extends Component<TreeProps, State> {
       const nodeLabelTemplate = createElement(TemplateItem, {
             template: {
                 source: this.props.tupleTemplate,
-                options: node,
+                options: {...node, ...node.data},
             },
         });
         const hasChildren = this.nodeHasChildren(node);

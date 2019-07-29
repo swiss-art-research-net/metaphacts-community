@@ -280,6 +280,21 @@ public class LDPApiTest extends AbstractLDPTest {
         LDPResource res2 = api.createLDPResource(Optional.of(absolutSlugURI), new RDFStream(TestUtils.readPlainTextTurtleInput(FILE_DUMMY_RESOURCE_TTL), RDFFormat.TURTLE), cnt.getResourceIRI(), "http://www.metaphacts.com/testinstances/");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    @SubjectAware(
+        username = "admin",
+        password = "admin",
+        configuration = sparqlPermissionShiroFile //TODO
+    )
+    public void testCreateResourceIriWithIllegalCharactersInSlag() throws Exception {
+        String slugWithIllegalCharacters = "slug =>";
+        api.createResourceIRI(
+            Optional.of(slugWithIllegalCharacters),
+            vf.createIRI("http://www.metaphacts.com/testContainers"),
+            "http://www.metaphacts.com/testinstances/"
+        );
+    }
+
     /**
      * Create container with custom implementation {@link LDPTestContainer}
      * annotated with {@link LDPR}, which is in a different package

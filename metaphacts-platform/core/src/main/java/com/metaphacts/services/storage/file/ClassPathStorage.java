@@ -18,6 +18,7 @@
 
 package com.metaphacts.services.storage.file;
 
+import com.metaphacts.services.storage.api.*;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.Resource;
 import io.github.classgraph.ScanResult;
@@ -37,39 +38,43 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ImmutableList;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectMetadata;
-import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PathMapping;
-import com.metaphacts.services.storage.api.SizedStream;
-import com.metaphacts.services.storage.api.StorageConfig;
-import com.metaphacts.services.storage.api.StorageCreationParams;
-import com.metaphacts.services.storage.api.StorageException;
-import com.metaphacts.services.storage.api.StorageLocation;
 
 public class ClassPathStorage implements ObjectStorage {
     private static final Logger logger = LogManager.getLogger(ClassPathStorage.class);
-    
+
+    public final static String STORAGE_TYPE = "classpath";
     private static final String FIXED_REVISION = "";
 
     private final PathMapping paths;
     private final ClassLoader classLoader;
-    private final String baseClasspathFolder;
+    private final Config config;
 
     public ClassPathStorage(PathMapping paths, ClassLoader classLoader, Config config) {
         this.paths = paths;
         this.classLoader = classLoader;
-        this.baseClasspathFolder = StringUtils.strip(config.getRoot(), "/");
+        this.config = config;
     }
 
     public static class Config extends StorageConfig {
-        public Config(String storageId) {
-            super(storageId);
+        private String classpathLocation;
+
+        public Config() {}
+
+        public Config(String classpathLocation) {
+            this.classpathLocation = classpathLocation;
         }
 
-        public Config(String storageId, String storageType) {
-            super(storageId, storageType);
+        @Override
+        public String getStorageType() {
+            return STORAGE_TYPE;
+        }
+
+        public String getClasspathLocation() {
+            return classpathLocation;
+        }
+
+        public void setClasspathLocation(String classpathLocation) {
+            this.classpathLocation = classpathLocation;
         }
 
         @Override
@@ -78,7 +83,16 @@ public class ClassPathStorage implements ObjectStorage {
         }
 
         @Override
-        protected void validate() {
+        protected void validate() throws StorageConfigException {
+            super.validate();
+            if (getClasspathLocation() == null) {
+                throw new StorageConfigException("Missing required property 'classpathLocation'");
+            }
+            try {
+                StoragePath.parse(getClasspathLocation());
+            } catch (Exception e) {
+                throw new StorageConfigException("Invalid value for 'classpathLocation' property", e);
+            }
         }
     }
 
@@ -113,12 +127,12 @@ public class ClassPathStorage implements ObjectStorage {
     }
 
     @Override
-    public Optional<ObjectRecord> getObject(ObjectKind kind, String id, @Nullable String revision) throws StorageException {
+    public Optional<ObjectRecord> getObject(StoragePath path, @Nullable String revision) throws StorageException {
         if (revision != null && !revision.equals(FIXED_REVISION)) {
             return Optional.empty();
         }
 
-        Optional<String> resourcePath = getObjectResourcePath(kind, id);
+        Optional<String> resourcePath = getObjectResourcePath(path);
         if (!resourcePath.isPresent()) {
             return Optional.empty();
         }
@@ -130,44 +144,46 @@ public class ClassPathStorage implements ObjectStorage {
 
         StorageLocation key = new ClassPathStorageLocation(resource);
         return Optional.of(
-            new ObjectRecord(key, kind, id, FIXED_REVISION, ObjectMetadata.empty())
+            new ObjectRecord(key, path, FIXED_REVISION, ObjectMetadata.empty())
         );
     }
 
     @Override
-    public List<ObjectRecord> getRevisions(ObjectKind kind, String id) throws StorageException {
-        return getObject(kind, id, null).map(ImmutableList::of).orElse(ImmutableList.of());
+    public List<ObjectRecord> getRevisions(StoragePath path) throws StorageException {
+        return getObject(path, null).map(ImmutableList::of).orElse(ImmutableList.of());
     }
 
     @Override
-    public List<ObjectRecord> getAllObjects(ObjectKind kind, String idPrefix) throws StorageException {
-        String basePrefix = baseClasspathFolder + PathMapping.SEPARATOR;
-        String fullPrefix = basePrefix + paths.getPathPrefix(kind);
+    public List<ObjectRecord> getAllObjects(StoragePath prefix) throws StorageException {
+        Optional<StoragePath> mappedPrefix = paths.mapForward(prefix);
+        if (!mappedPrefix.isPresent()) {
+            return ImmutableList.of();
+        }
+
+        StoragePath basePrefix = StoragePath.parse(config.getClasspathLocation());
+        StoragePath fullPrefix = basePrefix.resolve(mappedPrefix.get());
 
         String packageToSearch = resourceFolderPathToPackageName(fullPrefix);
         ClassGraph classGraph = new ClassGraph()
             .addClassLoader(classLoader)
             .whitelistPackages(packageToSearch);
 
-        List<String> objectIds = new ArrayList<>();
+        List<StoragePath> objectIds = new ArrayList<>();
         try (ScanResult scanResult = classGraph.scan()) {
             for (Resource resource : scanResult.getAllResources()) {
                 // returns something like "com/metaphacts/etc/Foo.ext"
                 String absolutePath = resource.getPath();
-                if (absolutePath.startsWith(basePrefix)) {
-                    String relativePath = absolutePath.substring(basePrefix.length());
-                    paths.objectIdFromPath(kind, relativePath).ifPresent(id -> {
-                        if (id.startsWith(idPrefix)) {
-                            objectIds.add(id);
-                        }
+                basePrefix.relativize(StoragePath.EMPTY.resolve(absolutePath))
+                    .flatMap(paths::mapBack)
+                    .ifPresent(path -> {
+                        objectIds.add(path);
                     });
-                }
             }
         }
 
         List<ObjectRecord> objects = new ArrayList<>();
-        for (String objectId : objectIds) {
-            getObject(kind, objectId, null).ifPresent(object -> {
+        for (StoragePath path : objectIds) {
+            getObject(path, null).ifPresent(object -> {
                 objects.add(object);
             });
         }
@@ -176,27 +192,28 @@ public class ClassPathStorage implements ObjectStorage {
 
     @Override
     public ObjectRecord appendObject(
-        ObjectKind kind,
-        String id,
+        StoragePath path,
         ObjectMetadata metadata,
         InputStream content,
-        @Nullable Integer contentLength
+        long contentLength
     ) throws StorageException {
         throw new StorageException("appendObject is not supported by ClassPathStorage");
     }
 
     @Override
-    public void deleteObject(ObjectKind kind, String id) throws StorageException {
+    public void deleteObject(
+        StoragePath path,
+        ObjectMetadata metadata
+    ) throws StorageException {
         throw new StorageException("deleteObject is not supported by ClassPathStorage");
     }
 
-    private Optional<String> getObjectResourcePath(ObjectKind kind, String id) {
-        PathMapping.throwIfNonCanonical(id);
-        return paths.pathForObjectId(kind, id)
-            .map(objectPath -> baseClasspathFolder + "/" + objectPath);
+    private Optional<String> getObjectResourcePath(StoragePath path) {
+        return paths.mapForward(path)
+            .map(mappedPath -> config.getClasspathLocation() + "/" + mappedPath);
     }
 
-    private static String resourceFolderPathToPackageName(String resourcePath) {
-        return StringUtils.strip(resourcePath, "/").replace("/", ".");
+    private static String resourceFolderPathToPackageName(StoragePath resourcePath) {
+        return resourcePath.toString().replace(StoragePath.SEPARATOR, ".");
     }
 }

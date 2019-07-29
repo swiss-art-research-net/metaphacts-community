@@ -17,20 +17,21 @@
  */
 
 import {
-  Component, Props, ReactNode, Children, cloneElement, MouseEvent, createElement,
+  Props, ReactNode, Children, cloneElement, MouseEvent, createElement,
 } from 'react';
 import * as Kefir from 'kefir';
 import { uniqBy } from 'lodash';
 import * as fileSaver from 'file-saver';
 import * as moment from 'moment';
 
-import { Rdf } from 'platform/api/rdf';
+import { Cancellation } from 'platform/api/async';
+import { Component } from 'platform/api/components';
 import { navigateToResource, refresh, getCurrentResource } from 'platform/api/navigation';
+import { Rdf } from 'platform/api/rdf';
 import { addNotification } from 'platform/components/ui/notification';
 import { addToDefaultSet } from 'platform/api/services/ldp-set';
 import { BrowserPersistence, isValidChild, universalChildren } from 'platform/components/utils';
 import { ErrorNotification } from 'platform/components/ui/notification';
-import { Cancellation } from 'platform/api/async';
 
 import { FieldDefinitionProp } from './FieldDefinition';
 import { DataState, FieldValue, FieldError, CompositeValue } from './FieldValues';
@@ -38,10 +39,14 @@ import { readyToSubmit } from './FormModel';
 import { SemanticForm, SemanticFormProps } from './SemanticForm';
 import { ValuePatch, computeValuePatch, applyValuePatch } from './Serialization';
 
-import { TriplestorePersistence } from './persistence/TriplestorePersistence';
-import RawSparqlPersistence from './persistence/RawSparqlPersistence';
-import LdpPersistence from './persistence/LdpPersistence';
-import SparqlPersistence from './persistence/SparqlPersistence';
+import {
+  TriplestorePersistence, isTriplestorePersistence
+} from './persistence/TriplestorePersistence';
+import { LdpPersistence, LdpPersistenceConfig } from './persistence/LdpPersistence';
+import { SparqlPersistence, SparqlPersistenceConfig } from './persistence/SparqlPersistence';
+import {
+  RawSparqlPersistence, RawSparqlPersistenceConfig
+} from './persistence/RawSparqlPersistence';
 import { SparqlPersistence as SparqlPersistenceClass } from './persistence/SparqlPersistence';
 import { RecoverNotification } from './static/RecoverNotification';
 
@@ -68,7 +73,10 @@ export interface ResourceEditorFormProps {
    */
   newSubjectTemplate?: string;
   initializeModel?: (model: CompositeValue) => CompositeValue;
-  persistence?: TriplestorePersistence | string;
+  persistence?:
+    TriplestorePersistenceConfig['type'] |
+    TriplestorePersistenceConfig |
+    TriplestorePersistence;
   children?: ReactNode;
   /**
    * Whether intermediate user inputs to the form should
@@ -103,6 +111,11 @@ export interface ResourceEditorFormProps {
   addToDefaultSet?: boolean;
 }
 
+export type TriplestorePersistenceConfig =
+  | LdpPersistenceConfig
+  | SparqlPersistenceConfig
+  | RawSparqlPersistenceConfig;
+
 interface State {
   readonly model?: CompositeValue;
   readonly modelState?: DataState;
@@ -120,9 +133,9 @@ const BROWSER_PERSISTENCE = BrowserPersistence.adapter<ValuePatch>();
  * state by specifying <button> element as child with the following name attribute:
  *   'reset' - revert form content to intial state.
  *   'submit' - persist form content as new or edited resource.
- * 
+ *
  * This functionality can be used to backup form data,
- * to clone forms and to create multiple similar forms 
+ * to clone forms and to create multiple similar forms
  * without read access to the repository.
  *   'load-state' - load file from disk.
  *   'save-state' - save file to disk.
@@ -174,11 +187,13 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
   private form: SemanticForm;
 
   private readonly cancellation = new Cancellation();
+  private unmounted = false;
 
-  constructor(props: ResourceEditorFormProps) {
-    super(props);
+  constructor(props: ResourceEditorFormProps, context) {
+    super(props, context);
 
-    this.persistence = normalizePersistenceMode(this.props.persistence);
+    // TODO: add ability to use non-default repository to fetch and persist data
+    this.persistence = normalizePersistenceMode(this.props.persistence, 'default');
 
     this.state = {
       model: undefined,
@@ -194,6 +209,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
 
   componentWillUnmount() {
     this.cancellation.cancelAll();
+    this.unmounted = true;
   }
 
   private validateFields() {
@@ -368,19 +384,30 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
       this.setState(state => ({model: validatedModel, submitting: true}));
 
       const initialModel = this.initialState.model;
-      this.form.finalize(this.state.model).flatMap(finalModel => {
-        return this.persistence.persist(initialModel, finalModel).map(() =>
-          this.props.addToDefaultSet
-            ? addToDefaultSet(finalModel.subject, this.props.id) :
-            Kefir.constant(true)
-        ).map(() => finalModel);
-      }).observe({
+      this.form.finalize(this.state.model).flatMap(finalModel =>
+        this.persistence.persist(initialModel, finalModel)
+          .map(() =>
+            this.props.addToDefaultSet
+              ? addToDefaultSet(finalModel.subject, this.props.id)
+              : Kefir.constant(true)
+          )
+          .map(() => finalModel)
+      ).observe({
           value: finalModel => {
+            // only ignore setState() and always reset localStorage and perform post-action
+            // event if the form is laready unmounted
             this.resetStorage();
-            this.setState({model: finalModel, submitting: false});
+            if (!this.unmounted) {
+              this.setState({model: finalModel, submitting: false});
+            }
             this.performPostAction(finalModel.subject);
           },
-          error: error => addNotification({level: 'error', message: 'Failed to submit the form'}, error),
+          error: error => {
+            if (!this.unmounted) {
+              this.setState({submitting: false});
+            }
+            addNotification({level: 'error', message: 'Failed to submit the form'}, error);
+          },
       });
     } else {
       this.setState(state => ({model: validatedModel, submitting: false}));
@@ -412,7 +439,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
           }
         },
         error: (error) => {
-          this.setState({error})
+          this.setState({error});
         }
       })
     }
@@ -494,22 +521,34 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
 }
 
 function normalizePersistenceMode(
-  persistenceProp: TriplestorePersistence | string
+  persistenceProp:
+    TriplestorePersistenceConfig['type'] |
+    TriplestorePersistenceConfig |
+    TriplestorePersistence,
+  repository: string
 ): TriplestorePersistence {
-  let persistence = persistenceProp;
-  if (typeof persistence === 'string') {
-    persistence = getPersistenceMode(persistence);
+  if (isTriplestorePersistence(persistenceProp)) {
+    return persistenceProp;
   }
-  return persistence || LdpPersistence;
-}
 
-function getPersistenceMode(persistenceMode: string): TriplestorePersistence | undefined {
-  switch (persistenceMode) {
-    case 'client-side-sparql': return RawSparqlPersistence;
-    case 'ldp': return LdpPersistence;
-    case 'sparql': return SparqlPersistence;
+  const config = typeof persistenceProp === 'string'
+    ? {type: persistenceProp} as TriplestorePersistenceConfig
+    : persistenceProp;
+
+  const configWithRepository = {repository, ...config};
+  switch (configWithRepository.type) {
+    case 'sparql':
+      return new SparqlPersistence(configWithRepository);
+    case 'client-side-sparql':
+      return new RawSparqlPersistence(configWithRepository);
+    case 'ldp':
+      return new LdpPersistence(configWithRepository);
+    default: {
+      const unknownConfig = configWithRepository as TriplestorePersistenceConfig;
+      console.warn(`Unknown from persistence type '${unknownConfig.type}', using LDP as fallback`);
+      return new LdpPersistence();
+    }
   }
-  return undefined;
 }
 
 /**
@@ -552,12 +591,12 @@ function getInvalidFields(fields: ReadonlyArray<FieldDefinitionProp>) {
 function loadTextFileFromInput(file: File): Kefir.Stream<string> {
   return Kefir.stream(emitter => {
     const reader = new FileReader();
-    reader.onload = (event: Event & { target: { result: string } }) => {
-      emitter.emit(event.target.result);
+    reader.onload = (event) => {
+      emitter.emit((event.target as FileReader).result as string);
       emitter.end();
     };
     reader.onerror = event => {
-      emitter.error(event.error);
+      emitter.error(event);
       emitter.end();
     };
     reader.readAsText(file);

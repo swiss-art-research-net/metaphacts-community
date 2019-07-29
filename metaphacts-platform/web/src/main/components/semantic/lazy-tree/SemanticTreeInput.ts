@@ -311,7 +311,6 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
             dropStyles: this.props.droppable.styles,
             dropComponents: {
               ...this.props.droppable.components,
-              rootStyle: {position: 'relative'},
             },
             onDrop: (drop: Rdf.Iri) => {
               this.setValue(drop);

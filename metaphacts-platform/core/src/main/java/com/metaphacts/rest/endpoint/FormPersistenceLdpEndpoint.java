@@ -98,20 +98,29 @@ public class FormPersistenceLdpEndpoint {
     @RequiresAuthentication
     @Consumes(MediaType.APPLICATION_JSON)
     @RequiresPermissions(value = { FORMS_LDP.CREATE, FORMS_LDP.UPDATE }, logical = Logical.OR)
-    public Response storeConstructs(List<String> constructs, @QueryParam("iri") IRI iri) {
+    public Response storeConstructs(
+        List<String> constructs,
+        @QueryParam("iri") IRI iri,
+        @QueryParam("repository") String repositoryID
+    ) {
         if (iri == null) {
             return Response.status(Status.BAD_REQUEST)
                 .entity("Missing required parameter 'iri'")
                 .build();
         }
+        if (repositoryID == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("Missing required parameter 'repository'")
+                .build();
+        }
 
         logger.debug("Received SPARQL construct queries: {}", constructs);
         try {
-            IRI formContainerIri = formatContainerIri(iri);
+            IRI formContainerIri = iri;
             Model model = new LinkedHashModel();
             final StopWatch stopwatch = new StopWatch();
 
-            try (RepositoryConnection con = repositoryManager.getDefault().getConnection()) {
+            try (RepositoryConnection con = repositoryManager.getRepository(repositoryID).getConnection()) {
                 for (String constructString : constructs) {
 
                     if(logger.isTraceEnabled()){
@@ -135,12 +144,12 @@ public class FormPersistenceLdpEndpoint {
             }
             // this should rather go over LdpApi instead of calling the container
             // directly
-            final PointedGraph pg = new PointedGraph(formContainerIri, model);
+            PointedGraph pg = new PointedGraph(formContainerIri, model);
             FormContainer formContainer = (FormContainer) LDPImplManager.getLDPImplementation(
-                    FormContainer.IRI,
-                    Sets.newHashSet(LDP.Container, LDP.Resource),
-                    new MpRepositoryProvider(this.repositoryManager, RepositoryManager.DEFAULT_REPOSITORY_ID)
-                );
+                FormContainer.IRI,
+                Sets.newHashSet(LDP.Container, LDP.Resource),
+                new MpRepositoryProvider(this.repositoryManager, repositoryID)
+            );
 
             if(logger.isTraceEnabled()){
                 stopwatch.stop();
@@ -218,7 +227,7 @@ public class FormPersistenceLdpEndpoint {
     }
 
     /**
-     * Deletes enttiy container for specified subject IRI from the repository
+     * Deletes entity container for specified subject IRI from the repository
      * using the {@link LDPApi}.
      *
      * @param iri {@link IRI} of the container to be deleted
@@ -227,15 +236,23 @@ public class FormPersistenceLdpEndpoint {
     @RequiresAuthentication
     @Consumes(MediaType.APPLICATION_JSON)
     @RequiresPermissions(FORMS_LDP.DELETE)
-    public Response deleteEntity(@QueryParam("iri") IRI iri) {
+    public Response deleteEntity(
+        @QueryParam("iri") IRI iri,
+        @QueryParam("repository") String repositoryID
+    ) {
         if (iri == null) {
             return Response.status(Status.BAD_REQUEST)
                 .entity("Missing required parameter 'iri'")
                 .build();
         }
+        if (repositoryID == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("Missing required parameter 'repository'")
+                .build();
+        }
 
         try {
-            IRI formContainerIri = formatContainerIri(iri);
+            IRI formContainerIri = iri;
             StopWatch stopwatch = new StopWatch();
 
             if (!SecurityUtils.getSubject().isPermitted(FORMS_LDP.DELETE)) {
@@ -250,7 +267,7 @@ public class FormPersistenceLdpEndpoint {
                 stopwatch.start();
             }
 
-            LDPApiInternal ldpApi = ldpCache.api(RepositoryManager.DEFAULT_REPOSITORY_ID);
+            LDPApiInternal ldpApi = ldpCache.api(repositoryID);
             ldpApi.deleteLDPResource(formContainerIri);
 
             if (logger.isTraceEnabled()) {
@@ -264,9 +281,5 @@ public class FormPersistenceLdpEndpoint {
             logger.debug("Details: {} ", e);
             return Response.serverError().entity(e.getMessage()).build();
         }
-    }
-
-    private IRI formatContainerIri(IRI subjectIri) {
-        return vf.createIRI(subjectIri.stringValue() + "/container");
     }
 }

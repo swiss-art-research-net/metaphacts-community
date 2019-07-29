@@ -31,6 +31,10 @@ export interface TriplestorePersistence {
   ): Kefir.Property<void>;
 }
 
+export function isTriplestorePersistence(obj: any): obj is TriplestorePersistence {
+  return obj && typeof obj === 'object' && typeof obj.persist === 'function';
+}
+
 export interface ModelDiffEntry {
   subject: Rdf.Iri;
   definition: FieldDefinition;

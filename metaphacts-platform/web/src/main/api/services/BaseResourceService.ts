@@ -22,8 +22,8 @@ import * as Immutable from 'immutable';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
 
+import { BatchedPool, requestAsProperty } from 'platform/api/async';
 import { Rdf } from 'platform/api/rdf';
-import { BatchedPool } from 'platform/api/async';
 import { QueryContext } from 'platform/api/sparql';
 
 export class BaseResourceService {
@@ -55,15 +55,15 @@ export class BaseResourceService {
     iris: ReadonlyArray<Rdf.Iri>, context?: QueryContext
   ): Kefir.Property<Immutable.Map<Rdf.Iri, string>> {
     if (_.isEmpty(iris)) {
-      return Kefir.constant(Immutable.Map())
+      return Kefir.constant(Immutable.Map());
     }
     return Kefir.combine(
       iris.map(
-        iri => this.getResource(iri, context).map(value => [iri, value])
+        iri => this.getResource(iri, context).map(value => [iri, value] as [Rdf.Iri, string])
       )
-    ).map(
-      Immutable.Map
-    ).toProperty();
+    )
+    .map(Immutable.Map as <K, V>(pairs: ReadonlyArray<[K, V]>) => Immutable.Map<K, V>)
+    .toProperty();
   }
 
   protected createRequest(resources: string[], repository: string) {
@@ -78,10 +78,9 @@ export class BaseResourceService {
   protected fetchResources(resources: string[], repository: string) {
     type Batch = { [resourceIri: string]: string };
     const request = this.createRequest(resources, repository);
-    return Kefir.fromNodeCallback<Batch>(
-      cb => request.end((err, res) => cb(err, res.body))
-    ).map(
-      batch => Immutable.Map(batch)
-    ).toProperty();
+    return requestAsProperty(request).map(response => {
+      const batch = response.body as { [key: string]: string };
+      return Immutable.Map(batch);
+    });
   }
 }

@@ -32,6 +32,7 @@ import com.metaphacts.config.Configuration;
 import com.metaphacts.rest.endpoint.TemplateEndpoint;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.FromStorageLoader;
 
 /**
@@ -44,7 +45,8 @@ import com.metaphacts.templates.FromStorageLoader;
  */
 @Singleton
 public class ST {
-    private static final String TEMPLATE_OBJECT_PREFIX = "page-layout/";
+    private static final StoragePath TEMPLATE_OBJECT_PREFIX =
+        ObjectKind.CONFIG.resolve("page-layout");
 
     private final Configuration config;
     private final Handlebars handlebars;
@@ -54,9 +56,8 @@ public class ST {
         this.config = config;
         TemplateLoader templateLoader = new FromStorageLoader(platformStorage) {
             @Override
-            protected ResolvedObject resolveLocation(String location) {
-                return new ResolvedObject(
-                    ObjectKind.CONFIG, objectIdForTemplate(location));
+            protected StoragePath resolveLocation(String location) {
+                return objectIdForTemplate(location);
             }
         };
         this.handlebars = new Handlebars()
@@ -73,8 +74,8 @@ public class ST {
         public static final String NO_PERMISSIONS_PAGE = "no-permissions-page";
     }
 
-    public static String objectIdForTemplate(String name) {
-        return TEMPLATE_OBJECT_PREFIX + name + ".hbs";
+    public static StoragePath objectIdForTemplate(String name) {
+        return TEMPLATE_OBJECT_PREFIX.resolve(name).addExtension(".hbs");
     }
 
     public String renderPageLayoutTemplate(String path) throws IOException {

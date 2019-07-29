@@ -18,7 +18,7 @@
 
 package com.metaphacts.cache;
 
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -105,7 +105,7 @@ public class QueryTemplateCache implements PlatformCache {
     }
 
     @Override
-    public void invalidate(List<IRI> iris) {
+    public void invalidate(Set<IRI> iris) {
         queryTemplateCache.invalidateAll(iris);
     }
 

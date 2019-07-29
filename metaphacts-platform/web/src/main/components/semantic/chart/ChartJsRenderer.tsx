@@ -22,7 +22,7 @@ import * as React from 'react';
 import * as D from 'react-dom-factories';
 import {
   Chart, ChartData, ChartOptions, LegendItem, TooltipOptions, TooltipModel, TooltipItem,
-  LinearDataSet, BarDataSet, CircularDataSet, BubbleDataSet, BubbleDataObject
+  ScaleOptions, LinearDataSet, BarDataSet, CircularDataSet, BubbleDataSet, BubbleDataObject
 } from 'chart.js';
 import ChartComponent, {
   ChartComponentProps, Line, Bar, Radar, Pie, Doughnut, Bubble
@@ -399,7 +399,7 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
     });
     const options = this.props.config.type === 'line' ? {
       scales: {
-        xAxes: [{type: 'linear', position: 'bottom'}],
+        xAxes: [{type: 'linear', position: 'bottom'} as ScaleOptions],
       },
     } : {};
     return {

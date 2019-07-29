@@ -20,9 +20,12 @@ package com.metaphacts.data.rdf.container;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,33 +35,40 @@ import javax.inject.Singleton;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.query.algebra.evaluation.util.ValueComparator;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
 
-import com.metaphacts.repository.RepositoryManager;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.metaphacts.config.Configuration;
+import com.metaphacts.data.rdf.container.LDPAssetsLoader.LDPModelComparator.StatementKey;
 import com.metaphacts.repository.MpRepositoryProvider;
+import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.PathMapping;
 import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.services.storage.api.PlatformStorage.FindResult;
 import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.vocabulary.LDP;
-
-import com.google.common.collect.Maps;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.metaphacts.vocabulary.PROV;
 
 /**
  * A singleton responsible for loading LDP assets saved in storages into the corresponding repositories at startup 
@@ -70,7 +80,8 @@ import com.google.common.collect.Sets;
 public class LDPAssetsLoader {
     
     private static final Logger logger = LogManager.getLogger(LDPAssetsLoader.class);
-    
+    private static final long MAX_BNODE_COMPARING_NUMBER = 10;
+
     @Inject
     RepositoryManager repositoryManager;
     
@@ -87,15 +98,16 @@ public class LDPAssetsLoader {
 
     }
     
-    private String getRepositoryIdFromObjectId(String objectId) {
-        int pos = objectId.indexOf(PathMapping.SEPARATOR);
-        if (pos != -1) {
-            return objectId.substring(0, pos);
-        } else {
+    private String getRepositoryIdFromObjectId(StoragePath path) {
+        StoragePath repositoryPrefix = path.getParent();
+        if (!ObjectKind.LDP.equals(repositoryPrefix.getParent())) {
             throw new IllegalArgumentException(
-                    "All LDP assets must be stored under the path {repositoryId}/{objectId}. "
-                            + "This object does not follow this pattern: " + objectId);
+                "All LDP assets must be stored under the path " +
+                ObjectKind.LDP.toString() + "/{repositoryId}/{resourceIri}.trig; " +
+                "This object does not follow this pattern: " + path
+            );
         }
+        return repositoryPrefix.getLastComponent();
     }
     
     private boolean isLoadableFromStorage(String repositoryId) {
@@ -104,13 +116,13 @@ public class LDPAssetsLoader {
     }
     
     public void load() throws StorageException, IOException {
-        Map<String, FindResult> mapResults = platformStorage.findAll(ObjectKind.LDP, "");
-        Map<String, Map<String, FindResult>> mapResultsByRepositoryId = Maps.newHashMap();
+        Map<StoragePath, FindResult> mapResults = platformStorage.findAll(ObjectKind.LDP);
+        Map<String, Map<StoragePath, FindResult>> mapResultsByRepositoryId = Maps.newHashMap();
         logger.info("Loading LDP assets...");
         // Distribute the results by target repository
-        for (Entry<String, FindResult> entry : mapResults.entrySet()) {
+        for (Entry<StoragePath, FindResult> entry : mapResults.entrySet()) {
             String repositoryId = getRepositoryIdFromObjectId(entry.getKey());
-            Map<String, FindResult> currentMap = mapResultsByRepositoryId.get(repositoryId);
+            Map<StoragePath, FindResult> currentMap = mapResultsByRepositoryId.get(repositoryId);
             if (currentMap == null) {
                 currentMap = Maps.newHashMap();
                 mapResultsByRepositoryId.put(repositoryId, currentMap);
@@ -119,7 +131,7 @@ public class LDPAssetsLoader {
         }
         
         // Load each batch separately into the corresponding repository
-        for (Entry<String, Map<String, FindResult>> entry : mapResultsByRepositoryId.entrySet()) {
+        for (Entry<String, Map<StoragePath, FindResult>> entry : mapResultsByRepositoryId.entrySet()) {
             if (isLoadableFromStorage(entry.getKey())) {
                 loadAllToRepository(entry.getKey(), entry.getValue());
             } else {
@@ -131,19 +143,24 @@ public class LDPAssetsLoader {
         logger.info("All LDP assets loading finished");
         
     }
-    
-    private void loadAllToRepository(String repositoryId, Map<String, FindResult> mapResults) throws IOException {
+
+    private void loadAllToRepository(String repositoryId, Map<StoragePath, FindResult> mapResults) throws IOException {
         logger.info("Loading " + mapResults.size() + " LDP assets into the \"" + repositoryId + "\" repository");
         Repository repository = repositoryManager.getRepository(repositoryId);
         LinkedHashModel loadedAssetsModel = new LinkedHashModel();
-        for (Entry<String, FindResult> entry : mapResults.entrySet()) {
-            if (!(entry.getKey().endsWith(".trig")
-                    || (entry.getKey().endsWith(".nq") || (entry.getKey().endsWith(".trix"))))) {
+        for (Entry<StoragePath, FindResult> entry : mapResults.entrySet()) {
+            StoragePath path = entry.getKey();
+            boolean hasKnownFormat = (
+                path.hasExtension(".trig") ||
+                path.hasExtension(".nq") ||
+                path.hasExtension(".trix")
+            );
+            if (!hasKnownFormat) {
                 continue;
             }
-            Optional<RDFFormat> optFormat = Rio.getParserFormatForFileName(entry.getKey());
+            Optional<RDFFormat> optFormat = Rio.getParserFormatForFileName(path.getLastComponent());
             if (!optFormat.isPresent()) {
-                logger.error("Unknown assets format: " + entry.getKey());
+                logger.error("Unknown assets format: " + path.getLastComponent());
                 continue;
             }
             RDFFormat format = optFormat.get();
@@ -230,7 +247,8 @@ public class LDPAssetsLoader {
      * @param conn
      * @throws IllegalStateException
      */
-    private List<Resource> selectContentToLoad(String repositoryId, Model loadedAssetsModel, RepositoryConnection conn) throws IllegalStateException {
+    // static package private for testing
+    static List<Resource> selectContentToLoad(String repositoryId, Model loadedAssetsModel, RepositoryConnection conn) throws IllegalStateException {
         Set<Resource> contextsLoaded = loadedAssetsModel.contexts();
         LinkedHashModel modelExisting;
         Set<Resource> inconsistentContexts = Sets.newHashSet();
@@ -245,7 +263,7 @@ public class LDPAssetsLoader {
             }
             if (modelExisting.isEmpty()) {
                 toLoad.add(ctx);
-            } else if (!Models.isomorphic(modelExisting, modelLoaded)) {
+            } else if (!LDPAssetsLoader.compareModelsWithoutDates(modelExisting, modelLoaded)) {
                 inconsistentContexts.add(ctx);
             }
         }
@@ -260,5 +278,207 @@ public class LDPAssetsLoader {
         logger.info("Selected to load: " + toLoad.size());
         return toLoad;
     }
+
+    /**
+     * Compares two graph models on isomorphism ignoring any stmts with the
+     * {@link PROV#generatedAtTime} predicate. The issue is that database like, for example,
+     * blazegraph serialize the dateTime values by normalizing the timezone difference to integer
+     * dot notation, whereas rdf4j serializes them 1:1 i.e. using the default timezone in the
+     * literal creation (c.f. ID-1224).
+     * 
+     * @param model1
+     * @param model2
+     * @return true if the models are equal
+     */
+    static boolean compareModelsWithoutDates(Model model1, Model model2) {
+
+        // Here we create copies of the incoming models and remove statements
+        // with dateTime or double literals in the object information
+        // as well as the context information. Background is that date/double literal handling
+        // in Blazegraph is different from RDF4J serializations (e.g. timezone, floating numbers),
+        // Moreover the context matching does not work when the source of the assets is a
+        // blazegraph repository.
+
+        Model model1WithoutDate = new LinkedHashModel();
+        model1.stream().filter(st -> resourceIsNotDateTimeOrDouble(st.getObject()))
+                .map(st -> SimpleValueFactory.getInstance().createStatement(st.getSubject(), st.getPredicate(),
+                        st.getObject()))
+                .forEach(st -> model1WithoutDate.add(st));
+
+        Model model2WithoutDate = new LinkedHashModel();
+        model2.stream().filter(st -> resourceIsNotDateTimeOrDouble(st.getObject()))
+                .map(st -> SimpleValueFactory.getInstance().createStatement(st.getSubject(), st.getPredicate(),
+                        st.getObject()))
+                .forEach(st -> model2WithoutDate.add(st));
+
+        // we call here our custom isomorphism comparator due to the performance issues with the
+        // rdf4j implementation (ID-1130 and https://github.com/eclipse/rdf4j/issues/1441)
+        return  LDPModelComparator.compare(model1WithoutDate, model2WithoutDate);
+        
+    }
     
+
+    /**
+     * Returns true if the provided {@link Value} is a {@link Literal} 
+     * AND is not of datatype {@link XMLSchema#DATETIME} or {@link XMLSchema#DOUBLE}
+     * @param value
+     * @return
+     */
+    static boolean resourceIsNotDateTimeOrDouble(Value value) {
+        List<IRI> blacklist = Lists.newArrayList(XMLSchema.DATETIME, XMLSchema.DOUBLE);
+        if(value != null && value instanceof Literal) {
+            Literal lit = (Literal)value;
+            return !blacklist.contains(lit.getDatatype());
+        }
+        return true;
+    }
+
+    /**
+     * Fixes ID-1130, where the platform hangs during startup, i.e. when comparing LDP models
+     * from assets repositories and apps.
+     * 
+     * The following shell-class uses parts of the original {@link Models#isomorphic(Iterable, Iterable)}
+     * function , but provides an improved comparison function. The efficiency is achieved by improving
+     * the blank nodes comparison part of the algorithm. Here we hash blank nodes and compare the number
+     * of hash statements. If the number of hashes are equal then the blank parts are equal (this
+     * heuristic can be obviously improved in future). The other parts of the graph are still compared
+     * the same way as before used by the Model.isomorphic function.
+     * */
+    public static class LDPModelComparator {
+        // Entry point
+        public static boolean compare(Model model1, Model model2) {
+            if (model1.size() != model2.size()) { return false; }
+
+            FragmentedModel fragmentedModel1 = fragmentModel(model1);
+            FragmentedModel fragmentedModel2 = fragmentModel(model2);
+
+            if (fragmentedModel1.blankStatements.size() != fragmentedModel2.blankStatements.size()) { return false; }
+
+            boolean dangerousNumberOfBlankNodes = fragmentedModel1.blankStatements.size() > MAX_BNODE_COMPARING_NUMBER ||
+                fragmentedModel2.blankStatements.size() > MAX_BNODE_COMPARING_NUMBER;
+
+            if (dangerousNumberOfBlankNodes) {
+                return Models.isomorphic(fragmentedModel1.basicStatements, fragmentedModel2.basicStatements) &&
+                    isomorphicBlankNodes(fragmentedModel1.blankStatements, fragmentedModel2.blankStatements);
+            } else {
+                return Models.isomorphic(model1, model2);
+            }
+        }
+
+        // Break model into parts (blank nodes and ordinary nodes)
+        private static FragmentedModel fragmentModel(Model model) {
+            List<Statement> blankStatements = new ArrayList<>(model.size());
+            List<Statement> basicStatements = new ArrayList<Statement>(model.size());
+
+            for (Statement st : model) {
+                if (isBlank(st.getSubject()) || isBlank(st.getObject()) || isBlank(st.getContext())) {
+                    blankStatements.add(st);
+                } else {
+                    basicStatements.add(st);
+                }
+            }
+
+            return new FragmentedModel(basicStatements, blankStatements);
+        }
+
+        // Improved part of the algorithm
+        private static boolean isomorphicBlankNodes(List<Statement> model1, List<Statement> model2) {
+            Map<StatementKey, Long> model1Stat = prepareStatistic(model1);
+            Map<StatementKey, Long> model2Stat = prepareStatistic(model2);
+
+            for (StatementKey key : model1Stat.keySet()) {
+                if (model1Stat.get(key) != model2Stat.get(key)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Count hashed statements
+        private static Map<StatementKey, Long> prepareStatistic(List<Statement> model) {
+            Map<StatementKey, Long> statistic = new HashMap<>();
+            for (Statement st : model) {
+                StatementKey key = new StatementKey(st);
+                statistic.putIfAbsent(key, 0L);
+                statistic.computeIfPresent(key, (curKey, value) -> value + 1);
+            }
+            return statistic;
+        }
+
+        // Copy-past from original isomorphic algorithm
+        private static boolean isBlank(Value value) {
+            if (value instanceof IRI) {
+                return value.stringValue().indexOf("/.well-known/genid/") > 0;
+            } else {
+                return value instanceof BNode;
+            }
+        }
+
+        private static class FragmentedModel {
+            public List<Statement> blankStatements;
+            public List<Statement> basicStatements;
+
+            public FragmentedModel(List<Statement> basicStatements, List<Statement> blankStatements) {
+                this.basicStatements = basicStatements;
+                this.blankStatements = blankStatements;
+            }
+        }
+
+        // Hash class
+        /*package private for testing*/
+        static class StatementKey {
+            public Statement statement;
+
+            public StatementKey(Statement statement) {
+                this.statement = statement;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null) return false;
+                StatementKey that = (StatementKey) o;
+
+                Resource subject1 = this.statement.getSubject();
+                Resource subject2 = that.statement.getSubject();
+                Resource predicate1 = this.statement.getPredicate();
+                Resource predicate2 = that.statement.getPredicate();
+                Value object1 = this.statement.getObject();
+                Value object2 = that.statement.getObject();
+                Resource context1 = this.statement.getContext();
+                Resource context2 = that.statement.getContext();
+
+
+                return equalsIgnoreBlanks(subject1, subject2)
+                        && equalsIgnoreBlanks(predicate1, predicate2)
+                        && equalsIgnoreBlanks(object1, object2)
+                        && equalsIgnoreBlanks(context1, context2);
+
+            }
+            
+            private boolean equalsIgnoreBlanks(Value a, Value b){
+              return  Objects.equals(a,b) || (isBlank(a) && isBlank(b));
+            }
+
+            @Override
+            public int hashCode() {
+                Resource subject = this.statement.getSubject();
+                Resource predicate = this.statement.getPredicate();
+                Value object = this.statement.getObject();
+                Resource context = this.statement.getContext();
+
+                return Objects.hash(
+                    isBlank(subject) ? null : subject,
+                    isBlank(predicate) ? null : predicate,
+                    isBlank(object) ? null : object,
+                    context
+                );
+            }
+            
+            @Override
+            public String toString() {
+                return this.statement.toString();
+            }
+        }
+    }
 }

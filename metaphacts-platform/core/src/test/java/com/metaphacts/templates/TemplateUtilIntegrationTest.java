@@ -254,8 +254,7 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
     private void storeNewRevision(IRI templateIri, String content) throws IOException {
         byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
         platformStorageRule.getObjectStorage().appendObject(
-            ObjectKind.TEMPLATE,
-            ObjectStorage.objectIdFromIri(templateIri),
+            TemplateByIriLoader.templatePathFromIri(templateIri),
             platformStorageRule.getPlatformStorage().getDefaultMetadata(),
             new ByteArrayInputStream(bytes),
             bytes.length

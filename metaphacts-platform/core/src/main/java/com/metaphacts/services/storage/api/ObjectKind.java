@@ -18,16 +18,13 @@
 
 package com.metaphacts.services.storage.api;
 
-public enum ObjectKind {
-    ASSET("assets"),
-    TEMPLATE("templates"),
-    LDP("ldp"),
-    CONFIG("config"),
-    FILE("file");
-
-    public final String locationKey;
-
-    ObjectKind(String locationKey) {
-        this.locationKey = locationKey;
-    }
+/**
+ * Storage path prefixes for core objects types, e.g. "foo/folder"
+ */
+public final class ObjectKind {
+    public static final StoragePath ASSET = StoragePath.parse("assets");
+    public static final StoragePath TEMPLATE = StoragePath.parse("data/templates");
+    public static final StoragePath LDP = StoragePath.parse("ldp");
+    public static final StoragePath CONFIG = StoragePath.parse("config");
+    public static final StoragePath FILE = StoragePath.parse("file");
 }

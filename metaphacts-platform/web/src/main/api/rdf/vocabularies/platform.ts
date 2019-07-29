@@ -28,10 +28,13 @@ module platform {
   export const SetContainer = RDF.iri(_NAMESPACE + 'setContainer');
   export const VisibilityContainer = RDF.iri(_NAMESPACE + 'visibilityContainer');
   export const FieldDefinitionContainer = RDF.iri(_NAMESPACE + 'fieldDefinitionContainer');
+  export const FormContainer = RDF.iri(_NAMESPACE + 'formContainer');
   export const OntodiaDiagramContainer = RDF.iri(_NAMESPACE + 'ontodiaDiagramContainer');
   export const QueryContainer = RDF.iri(_NAMESPACE + 'queryContainer');
   export const QueryTemplateContainer = RDF.iri(_NAMESPACE + 'queryTemplateContainer');
   export const PersistedComponentContainer = RDF.iri(_NAMESPACE + 'persistedComponentContainer');
+  export const WorkflowContainer = RDF.iri(_NAMESPACE + 'workflowContainer');
+  export const WorkflowDefinitionContainer = RDF.iri(_NAMESPACE + 'workflowDefinitionContainer');
 
   export const Set = RDF.iri(_NAMESPACE + 'Set');
   export const SetItem = RDF.iri(_NAMESPACE + 'SetItem');
@@ -84,11 +87,6 @@ module platform {
   export const fileName = RDF.iri(_NAMESPACE + 'fileName');
   export const mediaType = RDF.iri(_NAMESPACE + 'mediaType');
   export const fileContext = RDF.iri(_NAMESPACE + 'fileContext');
-  /**
-   * Specifies whether some file is already saved in the final storage
-   * or is in the temporary one.
-   */
-  export const temporaryFilePrefix = _NAMESPACE + 'temporaryFile/';
 }
 
 export default platform;

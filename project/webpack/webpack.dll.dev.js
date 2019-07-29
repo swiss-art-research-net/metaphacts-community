@@ -16,19 +16,18 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-var path = require('path'),
-    glob = require('glob'),
-    webpack = require('webpack'),
-    defaults = require('./defaults'),
-    utils = require('./utils');
+const path = require('path');
+const defaults = require('./defaults');
 
-module.exports = function(env) {
+/**
+ * @param {{ [key: string]: string }} env
+ */
+module.exports = function (env) {
   var config = require('./webpack.dll.js')(defaults());
   config.mode = 'development';
 
   config.output.publicPath = 'http://localhost:3000/assets/no_auth/';
   config.resolve.modules.push(path.resolve(__dirname, 'node_modules'));
-
 
   config.devtool = 'cheap-module-eval-source-map';
 

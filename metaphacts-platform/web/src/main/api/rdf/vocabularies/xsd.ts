@@ -38,6 +38,7 @@ module xsd {
   export const dateTime = iri('dateTime');
   export const decimal = iri('decimal');
   export const anyURI = iri('anyURI');
+  export const nonNegativeInteger = iri('nonNegativeInteger');
 
   export const LIST_TYPES = [
     { value: anyURI.value, label: 'xsd:anyURI' },
@@ -46,6 +47,7 @@ module xsd {
     { value: dateTime.value, label: 'xsd:dateTime'},
     { value: _string.value, label: 'xsd:string'},
     { value: langString.value, label: 'xsd:langString'},
+    { value: boolean.value, label: 'xsd:boolean'},
     { value: double.value, label: 'xsd:double'},
     { value: decimal.value, label: 'xsd:decimal'},
   ];

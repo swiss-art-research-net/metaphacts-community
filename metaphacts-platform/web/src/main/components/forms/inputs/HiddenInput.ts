@@ -36,7 +36,7 @@ export interface HiddenInputProps extends MultipleValuesProps {}
  * <semantic-form-hidden-input for='...' default-values='["Emmett Brown", "Marty McFly"]'>
  * </semantic-form-hidden-input>
  */
-export class HiddenInput extends MultipleValuesInput<HiddenInputProps, void> {
+export class HiddenInput extends MultipleValuesInput<HiddenInputProps, {}> {
   static defaultProps: Partial<HiddenInputProps> = {
     renderHeader: false,
   };

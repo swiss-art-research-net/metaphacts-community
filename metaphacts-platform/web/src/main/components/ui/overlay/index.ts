@@ -17,19 +17,29 @@
  */
 
 import * as React from 'react';
-import { OverlaySystem } from './OverlaySystem';
+import { ReactElement } from 'react';
+
+import { SemanticContext } from 'platform/api/components';
+
+import { OverlaySystem as OverlaySystemComponent } from './OverlaySystem';
 
 const OVERLAY_SYSTEM_REF = 'overlaySystem';
-let _system: OverlaySystem;
+let _system: OverlaySystemComponent;
+
+export interface OverlaySystem {
+  show(key: string, dialog: ReactElement<any>, context?: SemanticContext): void;
+  hide(key: string): void;
+  hideAll(): void;
+}
 
 export function renderOverlaySystem() {
   return React.createElement(
-    OverlaySystem, {key: OVERLAY_SYSTEM_REF, ref: OVERLAY_SYSTEM_REF}
+    OverlaySystemComponent, {key: OVERLAY_SYSTEM_REF, ref: OVERLAY_SYSTEM_REF}
   );
 }
 
 export function registerOverlaySystem(_this: React.Component<any, any>) {
-  _system = _this.refs[OVERLAY_SYSTEM_REF] as OverlaySystem;
+  _system = _this.refs[OVERLAY_SYSTEM_REF] as OverlaySystemComponent;
 }
 
 export function getOverlaySystem(): OverlaySystem {
@@ -37,4 +47,3 @@ export function getOverlaySystem(): OverlaySystem {
 }
 
 export * from './OverlayDialog';
-

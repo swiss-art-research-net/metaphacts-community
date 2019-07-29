@@ -26,7 +26,7 @@ import {
 
 import { trigger } from 'platform/api/events';
 
-interface EventTriggerProps {
+interface EventTriggerConfig {
   /**
    * Identifier which will be used as event source id.
    */
@@ -47,6 +47,7 @@ interface EventTriggerProps {
    */
   data?: any;
 }
+type EventTriggerProps = EventTriggerConfig;
 
 /**
  * Triggers event.

@@ -6,9 +6,6 @@
     <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
   </li>
   <li>
-    <semantic-link title="Documentation" uri="http://help.metaphacts.com/resource/DocumentationOverview">Documentation</semantic-link>
-  </li>
-  <li>
     <semantic-link title="Components" uri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
   </li>
   <li class="active">Tree Component</li>
@@ -28,6 +25,14 @@
     <div style="clear:both;"></div>
     <h2>Configuration </h2>
     <mp-documentation type="SemanticTreeConfig"></mp-documentation>
+    
+    <br />
+    <bs-alert bs-style="info">
+      <b>Deprecation note:</b>
+      Starting from platform versions <strong>>= 3.1</strong>, the legacy <code>{{data.bindingName}}</code> context in the <code>tupleTemplate</code> is deprecated. 
+      It will still work for downward compatiblity for some version, but bindings are now direclty accessible, i.e. via <code>{{bindingName}}</code>. 
+      Please make use of the new syntax and start to migrate your existing configurations.
+  	</bs-alert>
 
     <h2>Examples </h2>
     <h3>Basic Tree</h3>
@@ -64,7 +69,7 @@
   tuple-template='{{> node}}'
 >
   <template id='node'>
-    <span><semantic-link uri="{{data.node.value}}"></semantic-link> &nbsp; <i class="fa fa-question-circle" style="margin-right: 5px"></i></span>
+    <span><semantic-link uri="{{node.value}}"></semantic-link> &nbsp; <i class="fa fa-question-circle" style="margin-right: 5px"></i></span>
   </template>
 </semantic-tree>
 ]]>
@@ -142,7 +147,7 @@
               will be rendered multiple times as a child of each one of them.</li>
             <li>If node wasn't mentioned in query bindings as separate row but refered to
               as parent by other nodes, it will be rendered without any additional bindings
-              (<code>{{data.something}}</code>).</li>
+              (<code>{{something}}</code>).</li>
           </ol>
         </p>
       </div>

@@ -169,7 +169,7 @@ export class SemanticTree extends Component<Props, State> {
     nodeBindingName: 'node',
     roots: [],
     keysOpened: [],
-    tupleTemplate: '<semantic-link iri="{{data.node.value}}"></semantic-link>',
+    tupleTemplate: '<semantic-link iri="{{node.value}}"></semantic-link>',
   };
 
   constructor(props: Props, context: any) {

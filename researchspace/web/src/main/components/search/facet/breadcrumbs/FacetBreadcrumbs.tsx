@@ -30,7 +30,7 @@ import {
 } from 'platform/components/semantic/search/data/facet/Model';
 import {
   ResourceDisjunct, DateRangeDisjunct, NumericRangeDisjunct, EntityDisjunctKinds,
-  TemporalDisjunctKinds, NumericRangeDisjunctKind,
+  TemporalDisjunctKinds, NumericRangeDisjunctKind, LiteralDisjunctKind, LiteralDisjunct,
 } from 'platform/components/semantic/search/data/search/Model';
 import { Category, Relation } from 'platform/components/semantic/search/data/profiles/Model';
 import { DateConverter, NumericConverter } from '../slider/FacetSlider';
@@ -98,6 +98,8 @@ export class FacetBreadcrumbsComponent extends Component<FacetBreadcrumbsProps, 
       value = this.dateRangeDisjunctValue(disjunct as DateRangeDisjunct);
     } else if (disjunct.kind === NumericRangeDisjunctKind) {
       value = this.numericRangeDisjunctValue(disjunct as NumericRangeDisjunct);
+    } else if (disjunct.kind === LiteralDisjunctKind) {
+      value = this.literalDisjunctValue(disjunct as LiteralDisjunct);
     }
 
     return <span className={styles.disjunct}>{value}</span>;
@@ -125,6 +127,10 @@ export class FacetBreadcrumbsComponent extends Component<FacetBreadcrumbsProps, 
     return (
       <span>{begin}<span className={styles.or}>to</span>{end}</span>
     );
+  }
+
+  private literalDisjunctValue(disjunct: LiteralDisjunct) {
+    return disjunct.value.literal.value;
   }
 }
 

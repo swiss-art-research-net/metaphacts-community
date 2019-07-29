@@ -770,7 +770,8 @@ function generateFacetValuePatternFromRelation(
     console.warn(`Found multiple matching patterns for facet relation ${relation.iri}`);
   }
 
-  let {kind = 'resource', queryPattern} = patternConfig || ({} as Partial<PatterConfig>);
+  let {kind = 'resource' as PatterConfig['kind'], queryPattern} =
+    patternConfig || ({} as Partial<PatterConfig>);
   if (queryPattern === undefined) {
     queryPattern = (
       kind === 'resource' ? SearchDefaults.DefaultFacetValuesQueries.ResourceRelationPattern :

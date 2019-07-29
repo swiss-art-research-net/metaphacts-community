@@ -670,7 +670,7 @@ class NodeCell extends Component<NodeCellProps, {}> {
       <div className='node-cell' style={{width: nodeWidth, height: nodeHeight}}>
         <TemplateItem template={{
           source: props.tupleTemplate,
-          options: {data},
+          options: {data, ...data},
         }} />
       </div>
     );

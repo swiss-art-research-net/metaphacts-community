@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectRecord;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 import org.apache.commons.configuration2.CombinedConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -95,12 +96,12 @@ public class ConfigurationUtil {
 
     public static CombinedConfiguration readConfigFromStorageOverrides(
         PlatformStorage platformStorage,
-        String objectId
+        StoragePath objectId
     ) throws IOException, ConfigurationException {
         CombinedConfiguration combined = new CombinedConfiguration(new OverrideCombiner());
 
         List<PlatformStorage.FindResult> overrides =
-            platformStorage.findOverrides(ObjectKind.CONFIG, objectId);
+            platformStorage.findOverrides(objectId);
         // use inverted order [...override2, override1, base] for OverrideCombiner
         Collections.reverse(overrides);
 

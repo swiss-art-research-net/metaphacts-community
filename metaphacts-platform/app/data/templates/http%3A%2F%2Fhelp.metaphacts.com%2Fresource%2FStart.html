@@ -2,28 +2,23 @@
   <li>
     <mp-link title="Home" url="/">Home</mp-link>
   </li>
-  <li class="active">Help</li>
+  <li class="active">Documentation</li>
 </ol>
 
 
 <div class="page">
-  <div class="page__header">
-    <div class='page__header-thumbnail'>
-      <h2><i class="fa fa-file-text-o fa-2x"></i></h2>
-    </div>
-    <div class='page__header-body'>
-      <h2>Documentation</h2>
-      <p>
-        You can find a complete <semantic-link iri="[[resolvePrefix "Help:DocumentationOverview"]]">documentation overview here</semantic-link>.
-        Below you find some  quick links.
-   		</p> 
-    </div>
-  </div>
+<div class="page__header page__header--no-image"><h2> Documentation</h2></div>
+
   <div class='page__body'> 
+    <bs-row>
+      <bs-col sm="6">
 		<h3>Installation & Configuration</h3>
     <ul>
       <li> 
         <semantic-link iri="[[resolvePrefix "Help:Installation"]]">Deployment & Installation</semantic-link>
+      </li>
+      <li> 
+        <semantic-link iri="[[resolvePrefix "Help:OperationsAndTroubleshooting"]]">Operations & Troubleshooting</semantic-link>
       </li>
       <li> 
         <semantic-link iri="[[resolvePrefix "Help:BasicSystemConfiguration"]]">Basic Configuration</semantic-link>
@@ -56,11 +51,6 @@
     <h3>Services</h3>
     <ul>
       <li>
-        <semantic-link title="Tableau" iri='[[resolvePrefix "Help:Tableau"]]'>
-         Tableau
-        </semantic-link>
-      </li>
-      <li>
         <semantic-link title="Publishing" iri='[[resolvePrefix "Help:Publishing"]]'>
          RDF Publishing
         </semantic-link>
@@ -86,10 +76,13 @@
         </semantic-link>
       </li>
       <li>
-         Label Service, Namespace Service, Thumbnail Service, LDP Container Service...
+        <semantic-link title='Data Quality' iri='[[resolvePrefix "Help:DataQuality"]]'>
+          Data Quality
+        </semantic-link>
       </li>
     </ul>
-
+        </bs-col>
+ <bs-col sm="6">
     <h3>Building Declarative Web Applications</h3>
     <ul>
       <li>
@@ -176,7 +169,10 @@
         <li> 
           <semantic-link  iri="[[resolvePrefix "Help:MPComponents"]]">Utility Components</semantic-link>
         </li>
-        <li> 
+        <li>
+        	<semantic-link iri="[[resolvePrefix "Help:EventSystem"]]">Event System</semantic-link>
+      	</li>
+        <li>
           <semantic-link iri="[[resolvePrefix "Help:CSSLayout"]]">CSS Layout</semantic-link>
         </li>
       </ul>
@@ -199,8 +195,10 @@
      
 
     </ul>
+     </bs-col>
+    </bs-row>
   </div>
-  
+
 
 
 </div>

@@ -24,10 +24,10 @@ import * as React from 'react';
 import { Component, Children, ReactNode, cloneElement, ReactElement, SyntheticEvent } from 'react';
 import { DropdownButton } from 'react-bootstrap';
 import * as _ from 'lodash';
-import { Event } from 'platform/api/events';
+import { Event, listen } from 'platform/api/events';
 import { Cancellation } from 'platform/api/async';
-import { listen } from 'platform/api/events';
-import { SelectionEvents, ToggleDescription } from 'platform/components/ui/selection';
+import { SelectionEvents } from 'platform/components/ui/selection';
+import { SelectionGroupContext, SelectionGroupContextTypes } from './SelectionGroupComponent';
 
 interface Props {
   /**
@@ -57,13 +57,16 @@ interface Props {
 }
 
 interface State {
-  values: { [tag: string]: boolean; };
+  values?: { [tag: string]: boolean; };
 
-  open: boolean;
+  open?: boolean;
 }
 
 export class SelectionActionChoiceComponent extends Component<Props, State> {
   private cancellation = new Cancellation();
+
+  static contextTypes = SelectionGroupContextTypes;
+  context: SelectionGroupContext;
 
   constructor(props, context) {
     super(props, context);
@@ -82,18 +85,21 @@ export class SelectionActionChoiceComponent extends Component<Props, State> {
     ).onValue(this.onSelectionChange);
   }
 
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (this.state.values !== prevState.values && this.context.onChange) {
+      this.context.onChange(this.state.values);
+    }
+  }
+
   componentWillUnmount() {
     this.cancellation.cancelAll();
   }
 
   onSelectionChange = (event: Event<any>) => {
     const data = event.data;
-    const newValues = _.assign(
-      {},
-      this.state.values,
-      {[data.tag]: data.value}
+    this.setState((prevState: State): State =>
+      ({values: {...prevState.values, [data.tag]: data.value}})
     );
-    this.setState({values: newValues});
   }
 
   render() {

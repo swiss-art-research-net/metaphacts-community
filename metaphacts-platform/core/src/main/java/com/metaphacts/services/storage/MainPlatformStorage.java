@@ -29,35 +29,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.configuration2.ex.ConfigurationException;
+import com.metaphacts.services.storage.api.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.plugin.PlatformPlugin;
 import com.metaphacts.plugin.PlatformPluginManager;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectMetadata;
-import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PathMapping;
-import com.metaphacts.services.storage.api.PlatformStorage;
-import com.metaphacts.services.storage.api.StorageConfig;
-import com.metaphacts.services.storage.api.StorageConfigException;
-import com.metaphacts.services.storage.api.StorageConfigLoader;
-import com.metaphacts.services.storage.api.StorageCreationParams;
-import com.metaphacts.services.storage.api.StorageException;
-import com.metaphacts.services.storage.api.StorageRegistry;
 import com.metaphacts.services.storage.file.NonVersionedFileStorage;
-import com.metaphacts.services.storage.file.NonVersionedFileStorage.Config;
 
 /**
  * Main {@link PlatformStorage} implementation for the platform.
@@ -71,33 +56,42 @@ public class MainPlatformStorage implements PlatformStorage {
     private final PathMapping appPaths = new PathMapping.Default();
 
     private static class StorageDescription {
-        public static final Set<ObjectKind> ALL_KINDS = ImmutableSet.copyOf(ObjectKind.values());
-
         public final String storageId;
         public final ObjectStorage storage;
-        public final Set<ObjectKind> storedKinds;
+        public final StoragePath storedKindPrefix;
 
         public StorageDescription(String storageId, ObjectStorage storage) {
-            this(storageId, storage, ALL_KINDS);
+            this(storageId, storage, StoragePath.EMPTY);
         }
 
-        public StorageDescription(String storageId, ObjectStorage storage, Set<ObjectKind> storedKinds) {
+        public StorageDescription(String storageId, ObjectStorage storage, StoragePath storedKindPrefix) {
             this.storageId = storageId;
             this.storage = storage;
-            this.storedKinds = storedKinds;
+            this.storedKindPrefix = storedKindPrefix;
         }
     }
 
     @Inject
-    public MainPlatformStorage(PlatformPluginManager pluginManager, StorageRegistry storageRegistry)
-            throws ConfigurationException {
+    public MainPlatformStorage(PlatformPluginManager pluginManager, StorageRegistry storageRegistry) {
+        try {
+            initialize(pluginManager, storageRegistry);
+        } catch (StorageConfigException | StorageException ex) {
+            logger.error("Failed to initialize platform storage system", ex);
+            throw new StorageConfigException("Failed to initialize platform storage system");
+        }
+    }
+
+    private void initialize(
+        PlatformPluginManager pluginManager, StorageRegistry storageRegistry
+    ) throws StorageConfigException, StorageException {
         StorageConfigLoader storageConfigLoader = new StorageConfigLoader(storageRegistry);
         LinkedHashMap<String, StorageConfig> internalConfigs = storageConfigLoader
             .readInternalStorageConfig(PlatformStorage.class.getClassLoader());
-        internalConfigs.forEach((storageId, config) -> {
-            logger.info("Adding internal storage {}:", storageId);
-            addStorageFromConfig(storageRegistry, storageId, config);
-        });
+
+        for (Map.Entry<String, StorageConfig> entry : internalConfigs.entrySet()) {
+            logger.info("Adding internal storage '{}':", entry.getKey());
+            addStorageFromConfig(storageRegistry, entry.getKey(), entry.getValue());
+        }
 
         List<PlatformPlugin> plugins = PlatformPluginManager
             .asPlatformPlugins(pluginManager.getPlugins());
@@ -105,7 +99,10 @@ public class MainPlatformStorage implements PlatformStorage {
         for (PlatformPlugin plugin : plugins) {
             String pluginId = plugin.getWrapper().getPluginId();
             Path pluginPath = plugin.getWrapper().getPluginPath();
-            createFileStorageWithFallbacks(pluginId, pluginPath, false);
+            boolean mutable = Configuration.arePluginBasedAppsMutable();
+            createFileStorageWithFallbacks(pluginId, pluginPath, mutable);
+            logger.info("Created {} storage for plugin '{}' at: {}",
+                mutable ? "mutable" : "readonly", pluginId, pluginPath);
         }
 
         LinkedHashMap<String, StorageConfig> globalConfigs = storageConfigLoader.readSystemStorageConfig();
@@ -145,15 +142,19 @@ public class MainPlatformStorage implements PlatformStorage {
             String imagesStorageId = baseStorageId + "/" + "images";
             logger.warn(
                 "Creating fallback readonly storage '{}' at: {}",
-                imagesStorageId, imagesFolder, root.resolve("assets/images")
+                imagesStorageId, imagesFolder
             );
             addStorageAsFirstInSearchOrder(new StorageDescription(
                 imagesStorageId,
                 new NonVersionedFileStorage(
-                    new PathMapping.RemovePrefixFallback(ObjectKind.ASSET, "images/"),
-                    new NonVersionedFileStorage.Config(imagesStorageId, imagesFolder)
+                    new PathMapping.MapPrefix(
+                        appPaths,
+                        ObjectKind.ASSET.resolve("images"),
+                        StoragePath.EMPTY
+                    ),
+                    new NonVersionedFileStorage.Config(imagesFolder)
                 ),
-                ImmutableSet.of(ObjectKind.ASSET)
+                ObjectKind.ASSET
             ));
         }
 
@@ -163,39 +164,51 @@ public class MainPlatformStorage implements PlatformStorage {
             String pageLayoutStorageId = baseStorageId + "/" + "page-layout";
             logger.warn(
                 "Creating fallback readonly storage '{}' at: {}",
-                pageLayoutStorageId, pageLayoutFolder, root.resolve("config/page-layout")
+                pageLayoutStorageId, pageLayoutFolder
             );
             addStorageAsFirstInSearchOrder(new StorageDescription(
                 pageLayoutStorageId,
                 new NonVersionedFileStorage(
-                    new PathMapping.RemovePrefixFallback(ObjectKind.CONFIG, "page-layout/"),
-                    new NonVersionedFileStorage.Config(pageLayoutStorageId, pageLayoutFolder)
+                    new PathMapping.MapPrefix(
+                        appPaths,
+                        ObjectKind.CONFIG.resolve("page-layout"),
+                        StoragePath.EMPTY
+                    ),
+                    new NonVersionedFileStorage.Config(pageLayoutFolder)
                 ),
-                ImmutableSet.of(ObjectKind.CONFIG)
+                ObjectKind.CONFIG
             ));
         }
-        
-        Config storageConfig = new NonVersionedFileStorage.Config(baseStorageId, root);
-        storageConfig.setMutable(mutable);
+
+        NonVersionedFileStorage.Config config = new NonVersionedFileStorage.Config(root);
+        config.setMutable(mutable);
         addStorageAsFirstInSearchOrder(new StorageDescription(
             baseStorageId,
-            new NonVersionedFileStorage(
-                appPaths,
-                storageConfig
-            )
+            new NonVersionedFileStorage(appPaths, config)
         ));
     }
 
-    private void addStorageFromConfig(StorageRegistry storageRegistry, String storageId, StorageConfig config) {
+    private void addStorageFromConfig(
+        StorageRegistry storageRegistry, String storageId, StorageConfig config
+    ) throws StorageException {
         logger.info("Creating {} storage '{}' with config type {}",
             config.isMutable() ? "mutable" : "readonly", storageId, config.getClass().getName());
+
+        PathMapping pathMapping = appPaths;
+        if (config.getSubroot() != null) {
+            pathMapping = new PathMapping.MapPrefix(
+                pathMapping, StoragePath.EMPTY, StoragePath.parse(config.getSubroot())
+            );
+        }
+
         StorageCreationParams params = new StorageCreationParams(
-            appPaths, PlatformStorage.class.getClassLoader());
+            pathMapping, PlatformStorage.class.getClassLoader());
         ObjectStorage storage = storageRegistry
                 .get(config.getStorageType())
-                .orElseThrow(
-                        () -> new StorageConfigException("No storage factory for storage type"
-                                + config.getStorageType())).getStorage(config, params);
+                .orElseThrow(() -> new StorageConfigException(
+                    "No storage factory for storage type" + config.getStorageType()
+                ))
+                .makeStorage(config, params);
         addStorageAsFirstInSearchOrder(new StorageDescription(storageId, storage));
     }
 
@@ -203,74 +216,75 @@ public class MainPlatformStorage implements PlatformStorage {
         storages.put(description.storageId, description);
         // we may have already initialized a default app storage for the given id
         // and as such must first remove it
-        if(appSearchOrder.remove(description.storageId)){
-            logger.info("Replacing initial storage with id '"+description.storageId+"' in app search order.");
+        if (appSearchOrder.remove(description.storageId)){
+            logger.info("Replacing initial storage with id '" +
+                description.storageId + "' in app search order.");
         }
         appSearchOrder.add(0, description.storageId);
     }
 
     @Override
-    public Optional<FindResult> findObject(ObjectKind kind, String objectId) throws StorageException {
-        logger.trace("Searching for single {} object at: {}", kind, objectId);
+    public Optional<FindResult> findObject(StoragePath path) throws StorageException {
+        logger.trace("Searching for single object at: {}", path);
         for (String appId : appSearchOrder) {
             StorageDescription description = storages.get(appId);
-            if (!description.storedKinds.contains(kind)) {
+            if (!description.storedKindPrefix.isPrefixOf(path)) {
                 continue;
             }
-            Optional<ObjectRecord> found = description.storage.getObject(kind, objectId, null);
+            Optional<ObjectRecord> found = description.storage.getObject(path, null);
             if (found.isPresent()) {
                 ObjectRecord record = found.get();
                 logger.trace(
-                    "Found {} object in storage '{}' with revision {}",
-                    kind, appId, record.getRevision());
+                    "Found object in storage '{}' with revision {}", appId, record.getRevision());
                 return Optional.of(new FindResult(appId, record));
             }
         }
-        logger.trace("None {} objects found at: {}", kind, objectId);
+        logger.trace("None objects found at: {}", path);
         return Optional.empty();
     }
 
     @Override
-    public Map<String, FindResult> findAll(ObjectKind kind, String idPrefix) throws StorageException {
-        logger.trace("Searching for all {} objects with prefix: {}", kind, idPrefix);
-        Map<String, FindResult> objectsById = new HashMap<>();
+    public Map<StoragePath, FindResult> findAll(StoragePath prefix) throws StorageException {
+        logger.trace("Searching for all objects with prefix: {}", prefix);
+        Map<StoragePath, FindResult> objectsById = new HashMap<>();
         for (String appId : Lists.reverse(appSearchOrder)) {
             StorageDescription description = storages.get(appId);
-            if (!description.storedKinds.contains(kind)) {
+            if (!description.storedKindPrefix.isPrefixOf(prefix)) {
                 continue;
             }
 
-            List<ObjectRecord> objects = description.storage.getAllObjects(kind, idPrefix);
+            List<ObjectRecord> objects = description.storage.getAllObjects(prefix);
             int beforeSize = objectsById.size();
 
             for (ObjectRecord record : objects) {
-                objectsById.put(record.getId(), new FindResult(appId, record));
+                objectsById.put(record.getPath(), new FindResult(appId, record));
             }
 
             if (logger.isTraceEnabled()) {
                 int added = objectsById.size() - beforeSize;
                 int overridden = objects.size() - added;
                 logger.trace(
-                    "Found {} {} objects in storage '{}': {} added, {} overridden",
-                    objects.size(), kind, appId, added, overridden);
+                    "Found {} objects in storage '{}': {} added, {} overridden",
+                    objects.size(), appId, added, overridden
+                );
             }
         }
         logger.trace(
-            "Found {} {} objects in total with prefix: {}",
-            objectsById.size(), kind, idPrefix);
+            "Found {} objects in total with prefix: {}",
+            objectsById.size(), prefix);
         return objectsById;
     }
 
     @Override
-    public List<FindResult> findOverrides(ObjectKind kind, String objectId) throws StorageException {
-        logger.trace("Searching for overrides of {} object at: {}", kind, objectId);
+    public List<FindResult> findOverrides(StoragePath path) throws StorageException {
+        logger.trace("Searching for overrides of an object at: {}", path);
         List<FindResult> results = new ArrayList<>();
         for (String appId : Lists.reverse(appSearchOrder)) {
             StorageDescription description = storages.get(appId);
-            if (!description.storedKinds.contains(kind)) {
+            if (!description.storedKindPrefix.isPrefixOf(path)) {
                 continue;
             }
-            Optional<ObjectRecord> found = description.storage.getObject(kind, objectId, null);
+            Optional<ObjectRecord> found = description.storage.getObject(path, null);
             if (found.isPresent()) {
                 ObjectRecord record = found.get();
                 logger.trace(
@@ -279,7 +293,7 @@ public class MainPlatformStorage implements PlatformStorage {
                 results.add(new FindResult(appId, record));
             }
         }
-        logger.trace("Found {} overrides for {} object at: {}", results.size(), kind, objectId);
+        logger.trace("Found {} overrides for an object at: {}", results.size(), path);
         return results;
     }
 
@@ -288,21 +302,23 @@ public class MainPlatformStorage implements PlatformStorage {
     public ObjectStorage getStorage(String appId) {
         StorageDescription description = storages.get(appId);
         if (description == null) {
-            throw new RuntimeException("Cannot get storage for unknown appId = \"" + appId + "\"");
+            throw new IllegalArgumentException(
+                "Cannot get storage for unknown appId = \"" + appId + "\"");
         }
         return description.storage;
     }
 
     @Override
-    public List<StorageStatus> getStorageStatusFor(ObjectKind kind) {
-        return Lists.reverse(appSearchOrder).stream()
-            .map(storageId -> storages.get(storageId))
-            .filter(desc -> desc.storedKinds.contains(kind))
-            .map(desc -> new StorageStatus(desc.storageId, desc.storage.isMutable()))
-            .collect(toList());
+    public List<String> getOverrideOrder() {
+        return Lists.reverse(appSearchOrder);
     }
 
-    public Map<String, StorageDescription> getStorages() {
-        return ImmutableMap.copyOf(storages);
+    @Override
+    public List<StorageStatus> getStorageStatusFor(StoragePath prefix) {
+        return Lists.reverse(appSearchOrder).stream()
+            .map(storageId -> storages.get(storageId))
+            .filter(desc -> desc.storedKindPrefix.isPrefixOf(prefix))
+            .map(desc -> new StorageStatus(desc.storageId, desc.storage.isMutable()))
+            .collect(toList());
     }
 }

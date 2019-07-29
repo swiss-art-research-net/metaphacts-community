@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.algebra.OrderElem;
 import org.eclipse.rdf4j.query.algebra.QueryModelNode;
@@ -33,14 +34,16 @@ import org.eclipse.rdf4j.query.algebra.StatementPattern;
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
 import org.eclipse.rdf4j.query.algebra.Var;
 import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor;
+import org.eclipse.rdf4j.query.algebra.helpers.StatementPatternCollector;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 
+import com.google.common.collect.Sets;
 import com.metaphacts.federation.repository.MpFederation;
 import com.metaphacts.federation.sparql.algebra.ServiceCallAggregate;
 import com.metaphacts.federation.sparql.algebra.ServiceCallTupleExpr;
-import com.google.common.collect.Sets;
+import com.metaphacts.repository.MpRepositoryVocabulary;
 
 /**
  * SPARQL algebra utils serving {@link MpFederation}.
@@ -214,11 +217,25 @@ public class FederationSparqlAlgebraUtils {
         return visitor.outputVars;
     }
 
+    /**
+     * For a tuple expression, get variable names that have to be provided as inputs
+     * (e.g., those declared as such in Ephedra services).
+     * 
+     * @param tupleExpr
+     * @return
+     */
     public static Set<String> getInputBindingNames(TupleExpr tupleExpr) {
         return getInputVars(tupleExpr).stream().filter(var -> !var.hasValue())
                 .map(var -> var.getName()).collect(Collectors.toSet());
     }
 
+    /**
+     * For a tuple expression, get variable names that will be returned as outputs
+     * (e.g., those declared as such in Ephedra services).
+     * 
+     * @param tupleExpr
+     * @return
+     */
     public static Set<String> getOutputBindingNames(TupleExpr tupleExpr) {
         OutputVarCollectorVisitor visitor = new OutputVarCollectorVisitor();
         tupleExpr.visit(visitor);
@@ -226,6 +243,19 @@ public class FederationSparqlAlgebraUtils {
                 .map(var -> var.getName()).collect(Collectors.toSet());
     }
 
+    public static boolean executeOnSingleOwnerWithoutOptimization(TupleExpr tupleExpr,
+            MpFederation mpFederation, RepositoryConnection defaultMemberConnection) {
+        RepositoryConnection owner = FederationSparqlAlgebraUtils.getSingleOwner(tupleExpr,
+                mpFederation.getServiceMappings(), defaultMemberConnection);
+        if (owner != null && owner.equals(defaultMemberConnection)) {
+            List<StatementPattern> queryHints = extractQueryHintsPatterns(tupleExpr);
+            if (queryHints.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
 
     /**
      * Among the federation members, returns a single repository connection which can evaluate 
@@ -257,6 +287,22 @@ public class FederationSparqlAlgebraUtils {
                     .filter(var -> !bs.hasBinding(var.getName())).collect(Collectors.toList());
         }
         return !unsatisfiedInputs.isEmpty();
+    }
+    
+    public static boolean isQueryHint(TupleExpr expr) {
+        if (expr instanceof StatementPattern) {
+            Var predicateVar = ((StatementPattern)expr).getPredicateVar();
+            if (predicateVar.hasValue()) {
+                Value val = predicateVar.getValue();
+                return MpRepositoryVocabulary.queryHints.contains(val); 
+            }
+        }
+        return false;
+    }
+    
+    public static List<StatementPattern> extractQueryHintsPatterns(TupleExpr expr) {
+        List<StatementPattern> allPatterns = StatementPatternCollector.process(expr);
+        return allPatterns.stream().filter(FederationSparqlAlgebraUtils::isQueryHint).collect(Collectors.toList());
     }
 
 }

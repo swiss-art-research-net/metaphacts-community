@@ -59,8 +59,9 @@ export class OverlaySystem extends Component<Props, State> {
             Maybe.fromNullable(modal.context).map(c => c.semanticContext).getOrElse({});
           const {repository, bindings} = semanticContext;
           return createElement(
-            SemanticContextProvider, { repository, bindings },
-            cloneElement(modal.element, {key})
+            SemanticContextProvider,
+            {key, repository, bindings},
+            modal.element
           );
         })
         .toArray());

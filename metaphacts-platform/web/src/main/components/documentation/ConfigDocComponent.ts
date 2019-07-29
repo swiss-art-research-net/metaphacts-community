@@ -29,8 +29,12 @@ import './ConfigDocComponent.scss';
 const box: string = require('raw-loader!./templates/box.html');
 const signature: string = require('raw-loader!./templates/signature.html');
 
+const allSchemas: { [schemaName: string]: JsonSchema } = require('platform-schemas');
+
 interface Props {
   type: string;
+  disableTransformAttributes?: boolean;
+  hideRequiredLabel?: boolean;
 }
 
 type PropertyTransformer =
@@ -51,15 +55,13 @@ export default class ConfigDocComponent extends Component<Props, {}>  {
   private container: HTMLElement;
 
   componentDidMount() {
-    this.renderDocson(
-      require('../../../../schemas/' + this.props.type + '.json')
-    );
+    this.renderDocson(allSchemas[this.props.type]);
   }
 
   private renderDocson = (jsonSchema: JsonSchema) => {
     doc(
       this.container,
-      this.handleProperties(jsonSchema),
+      this.props.disableTransformAttributes ? jsonSchema : this.handleProperties(jsonSchema),
       {box: box, signature: signature}
     );
   }
@@ -68,7 +70,8 @@ export default class ConfigDocComponent extends Component<Props, {}>  {
     return D.div(
       {},
       D.div({ref: container => this.container = container}),
-      D.span({className: 'typingsRequiredLabel'}, '* - required')
+      !this.props.hideRequiredLabel ?
+        D.span({className: 'typingsRequiredLabel'}, '* - required') : null
     );
   }
 

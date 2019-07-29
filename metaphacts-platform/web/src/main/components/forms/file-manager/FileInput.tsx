@@ -23,7 +23,7 @@ import * as ReactDropzone from 'react-dropzone';
 
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
 import * as Kefir from 'kefir';
-import { FileManagerService } from 'platform/api/services/file-manager';
+import { FileManager } from 'platform/api/services/file-manager';
 
 import * as styles from './FileManager.scss';
 import { AtomicValueInputProps, AtomicValueInput } from '../inputs';
@@ -109,24 +109,30 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
     };
   }
 
+  private getFileManager() {
+    const {repository} = this.context.semanticContext;
+    return new FileManager({repository});
+  }
+
   finalize(owner: EmptyValue | CompositeValue, value: EmptyValue | AtomicValue): Kefir.Property<FieldValue> {
     if (value.type === EmptyValue.type) {
       return Kefir.constant(value);
     }
-    const stringIri = FieldValue.asRdfNode(value).value;
-    if (!FileManagerService.isTemporaryResourceIri(stringIri)) {
+    const resourceIri = value.value as Rdf.Iri;
+    if (!FileManager.isTemporaryResource(resourceIri)) {
       return Kefir.constant(value);
     } else {
-      return FileManagerService.getFileResourceByIri(stringIri).flatMap(resource => {
-        return FileManagerService.createResourceFromTemporaryFile({
+      const fileManager = this.getFileManager();
+      return fileManager.getFileResource(resourceIri).flatMap(resource => {
+        return fileManager.createResourceFromTemporaryFile({
           fileName: resource.fileName,
           storage: this.props.storage,
           temporaryStorage: this.props.tempStorage,
           generateIriQuery: this.props.generateIriQuery,
           resourceQuery: this.props.resourceQuery,
           mediaType: resource.mediaType,
-        }).map(resource => {
-          return AtomicValue.set(value, {value:  Rdf.iri(resource.iri)});
+        }).map(createdResourceIri => {
+          return AtomicValue.set(value, {value: createdResourceIri});
         });
       }).toProperty();
     }
@@ -138,7 +144,7 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
 
     // upload file to the temporal storage
     this.cancellation.map(
-      FileManagerService.uploadFileTemporary({
+      this.getFileManager().uploadFileTemporary({
         storage: this.props.tempStorage,
         file: file,
         onProgress: percent => this.setState({
@@ -147,19 +153,19 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
         }),
       })
     ).observe({
-      value: temporaryResource => {
+      value: temporaryResourceIri => {
         this.setState({
           alertState: null,
           progress: null,
         });
-        const newValue = AtomicValue.set(this.props.value, {value: new Rdf.Iri(temporaryResource.iri)});
+        const newValue = AtomicValue.set(this.props.value, {value: temporaryResourceIri});
         this.props.updateValue(() => newValue);
       },
       error: error => {
         this.setState({
           alertState: {
             alert: AlertType.WARNING,
-            message: `File: ${file.name} uploading failed (${error} - ${error.response.text}).`,
+            message: `Failed to upload file "${file.name}": ${error} - ${error.response.text}`,
           },
           progress: null,
         });
@@ -172,16 +178,15 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
     this.setState({
       alertState: {
         alert: AlertType.WARNING,
-        message: `Incompatible file type! Expected ${this.props.acceptPattern}, got ${file.type}`,
+        message: `Incompatible file type: expected ${this.props.acceptPattern}, got ${file.type}`,
       },
       progress: null,
     });
   }
 
   render() {
-    const hasValue = !FieldValue.isEmpty(this.props.value);
-    const resourceIri = hasValue ? FieldValue.asRdfNode(this.props.value).value : null;
-    const temporaryIri = hasValue && FileManagerService.isTemporaryResourceIri(resourceIri)
+    const resourceIri = FieldValue.asRdfNode(this.props.value) as Rdf.Iri | undefined;
+    const temporaryIri = resourceIri && FileManager.isTemporaryResource(resourceIri);
 
     return <div className={styles.FileManager}>
       <div className={styles.header}>
@@ -195,9 +200,9 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
           </ReactBootstrap.ProgressBar> :
           resourceIri && !temporaryIri ?
             <a className={styles.uploadedImageIri}
-              title={resourceIri}
-              href={resourceIri}>
-              {resourceIri}
+              title={resourceIri.value}
+              href={resourceIri.value}>
+              {resourceIri.value}
             </a> :
           resourceIri ?
             <div
@@ -211,7 +216,7 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
       {resourceIri ?
         <div className={styles.fileContainer}>
           <FileVisualizer
-            iri={resourceIri}
+            iri={resourceIri.value}
             storage={temporaryIri ? this.props.tempStorage : this.props.storage}
             namePredicateIri={this.props.namePredicateIri}
             mediaTypePredicateIri={this.props.mediaTypePredicateIri}>
@@ -268,15 +273,15 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
   }
 
   removeFile = () => {
-    const iri = FieldValue.asRdfNode(this.props.value).value;
-    if (FileManagerService.isTemporaryResourceIri(iri)) {
-      FileManagerService.deleteFileResource(iri, this.props.storage).observe({
+    const iri = FieldValue.asRdfNode(this.props.value) as Rdf.Iri;
+    if (FileManager.isTemporaryResource(iri)) {
+      this.getFileManager().deleteFileResource(iri, this.props.storage).observe({
         value: () => this.props.updateValue(() => FieldValue.empty),
         error: (error) => {
           this.setState({
             alertState: {
               alert: AlertType.WARNING,
-              message: 'Deleting failed: (' + error + ').',
+              message: `Failed to delete file: ${error}`,
             },
             progress: null,
           });
@@ -290,11 +295,12 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
   componentWillUnmount() {
     this.cancellation.cancelAll();
     if (this.props && this.props.value.type !== 'empty') {
-      const iri = FieldValue.asRdfNode(this.props.value).value;
-      if (FileManagerService.isTemporaryResourceIri(iri)) {
-        FileManagerService.removeTemporaryFile(iri, this.props.storage);
+      const iri = FieldValue.asRdfNode(this.props.value) as Rdf.Iri;
+      if (FileManager.isTemporaryResource(iri)) {
+        this.getFileManager().removeTemporaryResource(iri, this.props.storage);
       }
     }
   }
 }
+
 export default FileInput;

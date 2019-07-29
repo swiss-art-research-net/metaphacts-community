@@ -52,7 +52,7 @@ export class ClearableInput extends React.Component<ClearableInputProps, State> 
   render() {
     const {
       className, style, inputClassName, inputStyle, onClear, clearTitle, children,
-      ...inputProps,
+      ...inputProps
     } = this.props;
 
     const hasNonEmptyAddon = Children.count(children) > 0;

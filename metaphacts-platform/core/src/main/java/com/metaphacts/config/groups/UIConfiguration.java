@@ -19,18 +19,31 @@
 package com.metaphacts.config.groups;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import com.google.common.collect.Lists;
-import com.metaphacts.config.PropertyPattern;
-import com.metaphacts.config.ConfigurationParameter;
-import com.metaphacts.config.InvalidConfigurationException;
-import com.metaphacts.config.NamespaceRegistry;
-import com.google.inject.Provider;
-import com.metaphacts.services.storage.api.PlatformStorage;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.TupleQuery;
+import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.repository.Repository;
+import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.sail.SailRepository;
+import org.eclipse.rdf4j.sail.memory.MemoryStore;
+
+import com.google.common.collect.Lists;
+import com.metaphacts.api.sparql.SparqlOperationBuilder;
+import com.metaphacts.config.ConfigurationParameter;
+import com.metaphacts.config.ConfigurationParameterHook;
+import com.metaphacts.config.InvalidConfigurationException;
+import com.metaphacts.config.NamespaceRegistry;
+import com.metaphacts.config.PropertyPattern;
+import com.metaphacts.services.storage.api.PlatformStorage;
 
 /**
  * Configuration group for options that affect how data is displayed in the UI.
@@ -39,6 +52,8 @@ import javax.inject.Inject;
  */
 public class UIConfiguration extends ConfigurationGroupBase {
 
+    private static final ValueFactory vf = SimpleValueFactory.getInstance();
+    private static final IRI metaphactsURI = vf.createIRI("http://www.metaphacts.com");
     private final static String ID = "ui";
 
     // TODO: outline using locale
@@ -47,9 +62,12 @@ public class UIConfiguration extends ConfigurationGroupBase {
 
     private final static String DEFAULT_LANGUAGE = "en";
 
+    private NamespaceRegistry namespaceRegistry;
+    
     @Inject
-    public UIConfiguration(PlatformStorage platformStorage) throws InvalidConfigurationException {
+    public UIConfiguration(PlatformStorage platformStorage, NamespaceRegistry namespaceRegistry) throws InvalidConfigurationException {
         super(ID, DESCRIPTION, platformStorage);
+        this.namespaceRegistry = namespaceRegistry;
     }
 
 
@@ -148,6 +166,50 @@ public class UIConfiguration extends ConfigurationGroupBase {
         // assertConsistency is called
         if (getPreferredLanguages().isEmpty()) {
             throw new IllegalArgumentException("getPreferredLanguages must not be empty.");
+        }
+    }
+    
+    
+    @ConfigurationParameterHook
+    public void onUpdatePreferredLabels(String configIdInGroup, String configValue, PropertiesConfiguration targetConfig) throws ConfigurationException {
+        try {
+            String[] preferredLabelsValues = configValue.split(",");
+            for(String singlePreferredLabel: preferredLabelsValues) {
+                PropertyPattern.parse(singlePreferredLabel, namespaceRegistry);
+            }
+        } catch (MalformedQueryException e) {
+            throw new ConfigurationException("The \"preferredLabels\" that you have entered is invalid. Please add a valid value. \n Details: " +e.getMessage());
+        }
+    }
+
+    @ConfigurationParameterHook
+    public void onUpdatePreferredThumbnails(String configIdInGroup, String configValue, PropertiesConfiguration targetConfig) throws ConfigurationException {
+        try {
+            String[] preferredThumbnailsValues = configValue.split(",");
+            for(String singlePreferredThumbnail: preferredThumbnailsValues) {
+                PropertyPattern.parse(singlePreferredThumbnail, namespaceRegistry);
+            }
+        } catch (MalformedQueryException e) {
+            throw new ConfigurationException("The \"preferredThumbnails\" that you have entered is invalid. Please add a valid value  \n Details: " +e.getMessage());
+        }
+    }
+
+    @ConfigurationParameterHook
+    public void onUpdateTemplateIncludeQuery(String configIdInGroup, String configValue, PropertiesConfiguration targetConfig) throws ConfigurationException {
+        SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder.<TupleQuery>create(configValue, TupleQuery.class);
+        Repository db = new SailRepository(new MemoryStore());
+        db.initialize();
+
+        try(RepositoryConnection con = db.getConnection()){
+
+            TupleQueryResult tqr = builder.resolveThis(metaphactsURI).build(con).evaluate();
+            if(!tqr.getBindingNames().contains("type")) { 
+                throw new ConfigurationException("Query as specified in \"templateIncludeQuery\" config for extracting the wiki include types must return a binding with name \"type\"");
+            }
+        } catch (MalformedQueryException e) {
+            throw new ConfigurationException("The query that you have entered is invalid. Please add a valid query. \n Details: " +e.getMessage());
+        } finally {
+            db.shutDown();
         }
     }
 }

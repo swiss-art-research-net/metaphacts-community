@@ -18,6 +18,7 @@
 
 package com.metaphacts.rest.endpoint;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -80,7 +81,7 @@ public class CacheEndpoint {
         try {
             logger.debug("Cache invalidation for " + resource.stringValue()
               + " has been triggered by a REST call.");
-            cacheManager.invalidateResources(Lists.newArrayList(resource));
+            cacheManager.invalidateResources(Collections.singleton(resource));
             return Response.ok("Cache has been invalidated").build();
         } catch(Exception e) {
             logger.error("Cache invalidation has been faild: {}", e);

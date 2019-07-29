@@ -25,6 +25,8 @@ import { LdpPersistence } from 'platform/components/forms';
 
 import mockRequest from '../../../xhrTestUtils';
 
+const LDP_PERSISTENCE = new LdpPersistence();
+
 describe('LdpPersistence: converting insert queries of field definitions into construct queries', () => {
   mockRequest();
 
@@ -49,7 +51,7 @@ describe('LdpPersistence: converting insert queries of field definitions into co
       <http://testsubject> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://testtype2>.
     }`).onValue(insertQuery => {
       expect(
-        LdpPersistence.default.createFieldConstructQueries(
+        LDP_PERSISTENCE.createFieldConstructQueries(
           insertQuery as SparqlJs.Update,
           [Rdf.iri('http://testvalue')],
           Rdf.iri('http://testsubject')
@@ -84,7 +86,7 @@ describe('LdpPersistence: converting insert queries of field definitions into co
       $subject a $value
     }`).onValue(insertQuery => {
       expect(
-        LdpPersistence.default.createFieldConstructQueries(
+        LDP_PERSISTENCE.createFieldConstructQueries(
           insertQuery as SparqlJs.Update,
           [Rdf.iri('http://testvalue')],
           Rdf.iri('http://testsubject')
@@ -139,7 +141,7 @@ describe('LdpPersistence: converting insert queries of field definitions into co
       }
     }`).onValue(insertQuery => {
       expect(
-        LdpPersistence.default.createFieldConstructQueries(
+        LDP_PERSISTENCE.createFieldConstructQueries(
           insertQuery as SparqlJs.Update,
           [Rdf.iri('http://testvalue')],
           Rdf.iri('http://testsubject')
@@ -176,7 +178,7 @@ describe('LdpPersistence: converting insert queries of field definitions into co
 
     SparqlUtil.parseQueryAsync('INSERT {$subject a $value} WHERE {$subject a $value}').onValue(insertQuery => {
       expect(
-        LdpPersistence.default.createFieldConstructQueries(
+        LDP_PERSISTENCE.createFieldConstructQueries(
           insertQuery as SparqlJs.Update,
           [Rdf.iri('http://testvalue'), Rdf.iri('http://testvalue2')],
           Rdf.iri('http://testsubject')

@@ -361,6 +361,9 @@ export class SearchStore {
                 kind: 'relation-selection',
                 domain: baseConjunct.range,
                 conjunctIndex: newConjunctIndex,
+                // FIXME: should be specified?!
+                range: undefined,
+                relations: undefined,
               },
             }, conjunct.range);
           }
@@ -408,6 +411,8 @@ export class SearchStore {
                 domain: baseConjunct.range,
                 range: conjunct.range,
                 conjunctIndex: newConjunctIndex,
+                // FIXME: should be specified?!
+                relations: undefined,
               },
             }, conjunct.relation);
           }

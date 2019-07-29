@@ -30,13 +30,13 @@ import {
 export interface MultipleValuesProps {
   /** Key to associate with FieldDefinition by name */
   for: string;
-  definition: FieldDefinition;
-  dataState: DataState;
+  definition?: FieldDefinition;
+  dataState?: DataState;
   defaultValue?: string;
   defaultValues?: string[];
-  values: Immutable.List<FieldValue>;
-  errors: Immutable.List<FieldError>;
-  updateValues: (reducer: (previous: ValuesWithErrors) => ValuesWithErrors) => void;
+  values?: Immutable.List<FieldValue>;
+  errors?: Immutable.List<FieldError>;
+  updateValues?: (reducer: (previous: ValuesWithErrors) => ValuesWithErrors) => void;
   /**
    * Optional argument to prevent label and description being
    * rendered above the value input(s) i.e. in most settings (default),

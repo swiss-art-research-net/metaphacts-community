@@ -229,6 +229,13 @@ export namespace FieldValue {
     unknownFieldType(value);
   }
 
+  export function replaceError(v: FieldValue, error: FieldError) {
+    const nonEmpty = FieldValue.isEmpty(v)
+      ? FieldValue.fromLabeled({value: Rdf.iri('')}) : v;
+    const errors = FieldError.noErrors.push(error);
+    return FieldValue.setErrors(nonEmpty, errors);
+  }
+
   export function unknownFieldType(value: never) {
     throw new Error(`Unknown field value type: ${(value as FieldValue).type}`);
   }

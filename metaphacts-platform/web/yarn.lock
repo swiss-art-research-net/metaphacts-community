@@ -92,9 +92,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-codemirror@^0.2.6":
-  version "0.2.6"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react-codemirror/-/react-codemirror-0.2.6.tgz#a746df52bc07e15d66f9afff186e28922ef01d7a"
+"@types/react-codemirror@1.0.2":
+  version "1.0.2"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/react-codemirror/-/react-codemirror-1.0.2.tgz#f70f6283e873e7e9c0cb551e85aa84968610c246"
+  integrity sha512-59UY5C5EVaFq/f+p1mkgLpNQELehdCNGTiLuFYacjptTzDDSyMKF4Zrs1z2WJWQSh53vIeuS8i2JrPFyfHjxBw==
   dependencies:
     "@types/codemirror" "*"
     "@types/react" "*"
@@ -1432,9 +1433,9 @@ hoek@2.x.x:
   version "2.16.3"
   resolved "https://nexus.grapphs.com/repository/npm/hoek/-/hoek-2.16.3.tgz#20bb7403d3cea398e91dc4710a8ff1b8274a25ed"
 
-html-to-react@aindlq/html-to-react-1#async:
+html-to-react@metaphacts/html-to-react#async:
   version "1.2.1"
-  resolved "https://codeload.github.com/aindlq/html-to-react-1/tar.gz/f33c348a229d0b2a46dc837d6104d91f0bbe30d2"
+  resolved "https://codeload.github.com/metaphacts/html-to-react/tar.gz/6c67c7d09eac74955afa752963b2d248336b97fc"
   dependencies:
     ent "^2.2.0"
     htmlparser2 "^3.8.3"
@@ -1671,11 +1672,11 @@ jsonify@~0.0.0:
   version "0.0.0"
   resolved "https://nexus.grapphs.com/repository/npm/jsonify/-/jsonify-0.0.0.tgz#2c74b6ee41d93ca51b7b5aaee8f503631d252a73"
 
-jsonld@1.5.1:
-  version "1.5.1"
-  resolved "https://nexus.grapphs.com/repository/npm/jsonld/-/jsonld-1.5.1.tgz#3b7a6060ba50157db92fdb550749bf600d504360"
+jsonld@metaphacts/jsonld.js#v1.6.2-fix-ie:
+  version "1.6.3-0"
+  resolved "https://codeload.github.com/metaphacts/jsonld.js/tar.gz/d8269a93403f42762b8d470804b3ffc1d5cfc29d"
   dependencies:
-    rdf-canonize "^1.0.1"
+    rdf-canonize "^1.0.2"
     request "^2.88.0"
     semver "^5.6.0"
     xmldom "0.1.19"
@@ -1970,9 +1971,10 @@ node-fetch@^1.0.1:
     encoding "^0.1.11"
     is-stream "^1.0.1"
 
-node-forge@^0.7.6:
-  version "0.7.6"
-  resolved "https://nexus.grapphs.com/repository/npm/node-forge/-/node-forge-0.7.6.tgz#fdf3b418aee1f94f0ef642cd63486c77ca9724ac"
+node-forge@^0.8.1:
+  version "0.8.5"
+  resolved "https://nexus.grapphs.com/repository/npm/node-forge/-/node-forge-0.8.5.tgz#57906f07614dc72762c84cef442f427c0e1b86ee"
+  integrity sha512-vFMQIWt+J/7FLNyKouZ9TazT74PRV3wgv9UT4cRjC8BffxFbKXkgIWR42URCPSnHm/QDz6BOlb2Q0U4+VQT67Q==
 
 node-noop@1.0.0:
   version "1.0.0"
@@ -2033,9 +2035,9 @@ once@^1.3.0:
   dependencies:
     wrappy "1"
 
-ontodia@0.9.8:
-  version "0.9.8"
-  resolved "https://nexus.grapphs.com/repository/npm/ontodia/-/ontodia-0.9.8.tgz#1c24ab5d6fe92c87d703dab9572e9e48ea18bd21"
+ontodia@0.9.10:
+  version "0.9.10"
+  resolved "https://nexus.grapphs.com/repository/npm/ontodia/-/ontodia-0.9.10.tgz#a3ea6e828c576058a1f70ff44abdcba78a8d3b8f"
   dependencies:
     d3-color "~1.0.2"
     file-saverjs "~1.3.6"
@@ -2322,11 +2324,12 @@ rc-util@^3.2.1:
     classnames "2.x"
     shallowequal "0.2.x"
 
-rdf-canonize@^1.0.1:
-  version "1.0.2"
-  resolved "https://nexus.grapphs.com/repository/npm/rdf-canonize/-/rdf-canonize-1.0.2.tgz#f328d57bb48d3e356c3c050b0496fbb3330b361c"
+rdf-canonize@^1.0.2:
+  version "1.0.3"
+  resolved "https://nexus.grapphs.com/repository/npm/rdf-canonize/-/rdf-canonize-1.0.3.tgz#71dc56bb808a39d12e3ca17674c15f881cad648a"
+  integrity sha512-piLMOB5Q6LJSVx2XzmdpHktYVb8TmVTy8coXJBFtdkcMC96DknZOuzpAYqCWx2ERZX7xEW+mMi8/wDuMJS/95w==
   dependencies:
-    node-forge "^0.7.6"
+    node-forge "^0.8.1"
     semver "^5.6.0"
 
 rdf-ext@0.3.0, rdf-ext@^0.3.0, rdf-ext@~0.3.0:

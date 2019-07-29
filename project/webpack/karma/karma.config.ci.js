@@ -16,11 +16,13 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-const assign = require('object-assign'),
-      defaultsFn = require('../defaults.js'),
-      utils = require('../utils.js');
+const assign = require('object-assign');
+const defaultsFn = require('../defaults.js');
 
-module.exports = function(config) {
+/**
+ * @param {import('karma').Config} config
+ */
+module.exports = function (config) {
   const defaults = defaultsFn();
   const karmaConfig = require('./karma.config.js')(defaults);
 

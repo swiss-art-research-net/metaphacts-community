@@ -6,9 +6,6 @@
     <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
   </li>
   <li>
-    <semantic-link title="Documentation" uri="http://help.metaphacts.com/resource/DocumentationOverview">Documentation</semantic-link>
-  </li>
-  <li>
     <semantic-link title="Components" uri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
   </li>
   <li class="active">Form-Based Search Component</li>
@@ -50,7 +47,7 @@
       <h4>Limitations</h4>
       <ul>
         <li><b>Optional Values</b>: Due to the pattern matching nature of the SPARQL query language, it can be difficult to treat certain form inputs transparently as optional or non-optional parameters, i.e. if the user does not provide certain input values in the form-based search component, the respective query variables will simply not be injected (replaced) into the main query. However, the respective BGP (basic graph pattern) in the SPARQL query  will still exist and be most likely non-optional. </li>
-        <li><b>Multi Value Parameterization</b>: Multi-value selection and parameterization for a single query variable is currently not supported. The challenge is that it is not possible in SPARQL to inline-replace a single query variable with multiple values. The alternative is to build multiple unions of the entire query (which can be quite expensive to execute) or to inject multiple values for a single variable using the VALUES clause. The latter has effectively a FILTER semantics and can either lead to very inefficient queries or even return unexpected results (in particular, in combination with service calls, subqueries, unions etc.).</li>
+        <li><b>Multi Value Parameterization</b>: Multi-value selection and parameterization for a single query variable is supported but it should be used with caution. Within SPARQL multi value injection is only possible through the VALUES clause. It has effectively a FILTER semantics and can either lead to very inefficient queries or even return unexpected results (in particular, in combination with service calls, subqueries, unions etc.). By default, multi-value selection is disabled but can be enabled by setting <code>multi=true</code>. It's possible to disable multi-value parameterization for particular variables by setting <code>"maxOccurs": "1"</code> for corresponding fields.</li>
       	<li><b>Input Dependencies</b>: It is currently not supported to make inputs dependent on other inputs during runtime, i.e. one select dropdown input can not be used to restrict the valueset of another dropdown or autosuggestion input. </li>
       </ul>
 

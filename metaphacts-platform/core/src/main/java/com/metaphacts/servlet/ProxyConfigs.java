@@ -26,6 +26,7 @@ import java.util.Set;
 
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
@@ -44,7 +45,7 @@ import com.google.common.collect.Sets;
 import static com.metaphacts.config.ConfigurationUtil.createEmptyConfig;
 
 public class ProxyConfigs {
-    private static final String PROXY_CONFIG_OBJECT_ID = "proxy.prop";
+    private static final StoragePath PROXY_CONFIG_OBJECT_ID = ObjectKind.CONFIG.resolve("proxy.prop");
 
     private static final Logger logger = LogManager.getLogger(ProxyConfigs.class);
 
@@ -136,12 +137,12 @@ public class ProxyConfigs {
             config.addConfiguration(new SystemConfiguration());
 
             Optional<PlatformStorage.FindResult> found =
-                platformStorage.findObject(ObjectKind.CONFIG, PROXY_CONFIG_OBJECT_ID);
+                platformStorage.findObject(PROXY_CONFIG_OBJECT_ID);
 
             if (found.isPresent()) {
                 PlatformStorage.FindResult findResult = found.get();
                 logger.info("Loading proxy configuration from storage '{}' at path: {}",
-                    findResult.getAppId(), findResult.getRecord().getId());
+                    findResult.getAppId(), findResult.getRecord().getPath());
 
                 PropertiesConfiguration params = createEmptyConfig();
                 FileHandler handler = new FileHandler(params);

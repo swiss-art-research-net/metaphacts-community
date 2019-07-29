@@ -17,19 +17,18 @@
  */
 
 import * as Kefir from 'kefir';
-import * as jsonld from 'jsonld';
 import * as _ from 'lodash';
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
+import * as JsonLd from 'platform/api/rdf/formats/JsonLd';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { ConfigHolder } from 'platform/api/services/config-holder';
 import { getLabel, getLabels } from 'platform/api/services/resource-label';
 
 import { OARegionAnnotation } from './LDPImageRegionService';
-import { JsonLDUtils } from './JsonLDUtils';
 
-const manifestFrame  = require('./ld-resources/manifest-frame.json');
-const iiifContext = require('./ld-resources/iiif-context.json');
+const MANIFEST_FRAME  = require('./ld-resources/manifest-frame.json');
+const IIIF_PRESENTATION_CONTEXT = require('./ld-resources/iiif-context.json');
 
 const { xsd, rdf } = vocabularies;
 
@@ -52,62 +51,44 @@ export class ManifestBuildingError extends Error {
 }
 
 export function createManifest(
-  params: Array<CreateManifestParams>, repositories: Array<string>
+  params: Array<CreateManifestParams>
 ): Kefir.Property<Manifest> {
-  return findManifesInRepositories(params, repositories)
+  return findManifestInRepository(params)
     .mapErrors(err =>  new ManifestBuildingError('Failed fetching manifest data', err))
     .flatMap(processJsonResponse).toProperty();
 }
 
-function findManifesInRepositories(
-  params: Array<CreateManifestParams>, repositories: Array<string>
-) {
+function findManifestInRepository(params: Array<CreateManifestParams>) {
   // 1. prepare sparql construct
   return constructSparql(params).flatMap(sparql => {
-    JsonLDUtils.registerLocalLoader();
     // 2. execute sparql, get json-ld
-    const requests =
-      repositories.map(
-        repository =>
-          SparqlClient.sendSparqlQuery(sparql, 'application/ld+json', {context: {repository}})
-            .map(res => JSON.parse(res))
-      );
-    return Kefir.zip(requests);
+    return SparqlClient.sendSparqlQuery(sparql, 'application/ld+json')
+      .map(res => JSON.parse(res));
   }).flatMap(
-    responses => {
-      const manifests = _.filter(responses, response => !_.isEmpty(response));
-      if (_.isEmpty(manifests)) {
+    manifest => {
+      if (_.isEmpty(manifest)) {
         return Kefir.constantError<any>(
           `No manifests for the image/region ${params.map(({imageIri}) => imageIri).join(', ')}`
         );
-      } else if (manifests.length > 1) {
-        return Kefir.constantError<any>(
-          `Multiple manifests for image/regions ${params.map(({imageIri}) => imageIri).join(', ')}`
-        );
-      } else {
-        return Kefir.constant(manifests[0]);
       }
+      return Kefir.constant(manifest);
     }
   );
 }
 
-function processJsonResponse(response: {}) {
-  return Kefir.fromNodeCallback<Manifest>(cb => {
-    // 3. frame and compact json-ld
-    jsonld.frame(response, manifestFrame, (frameError, framed) => {
-      if (frameError) {
-        cb(new ManifestBuildingError('Failed to frame JSON-LD', frameError));
-        return;
-      }
-      jsonld.compact(framed, manifestFrame, (compactError, compacted) => {
-        if (compactError) {
-          cb(new ManifestBuildingError('Failed to compact JSON-LD', compactError));
-          return;
-        }
-        cb(null, compacted);
-      });
-    });
+function processJsonResponse(response: {}): Kefir.Stream<Manifest> {
+  const documentLoader = JsonLd.makeDocumentLoader({
+    overrideContexts: {
+      'http://iiif.io/api/presentation/2/context.json': IIIF_PRESENTATION_CONTEXT,
+    }
   });
+  return JsonLd.frame(response, MANIFEST_FRAME, {documentLoader})
+    .mapErrors(frameError => new ManifestBuildingError('Failed to frame JSON-LD', frameError))
+    .flatMap(framed => {
+      return JsonLd.compact(framed, MANIFEST_FRAME, {documentLoader})
+        .mapErrors(compactError =>
+          new ManifestBuildingError('Failed to compact JSON-LD', compactError))
+    });
 }
 
 function constructSparql(params: Array<CreateManifestParams>): Kefir.Property<string> {

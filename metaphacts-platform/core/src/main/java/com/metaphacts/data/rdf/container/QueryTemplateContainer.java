@@ -33,7 +33,7 @@ import com.metaphacts.data.rdf.PointedGraph;
 import com.metaphacts.repository.MpRepositoryProvider;
 import com.metaphacts.vocabulary.LDP;
 
-import com.google.common.collect.Lists;
+import java.util.Collections;
 
 @LDPR(iri = QueryTemplateContainer.IRI_STRING)
 public class QueryTemplateContainer extends AbstractLDPContainer {
@@ -71,19 +71,19 @@ public class QueryTemplateContainer extends AbstractLDPContainer {
 
     @Override
     public org.eclipse.rdf4j.model.IRI add(PointedGraph pointedGraph) throws RepositoryException {
-        queryTemplateCache.invalidate(Lists.newArrayList(this.getResourceIRI()));
+        queryTemplateCache.invalidate(Collections.singleton(this.getResourceIRI()));
         return super.add(pointedGraph);
     }
 
     @Override
     public void update(PointedGraph pointedGraph) throws RepositoryException {
-        queryTemplateCache.invalidate(Lists.newArrayList(this.getResourceIRI()));
+        queryTemplateCache.invalidate(Collections.singleton(this.getResourceIRI()));
         super.update(pointedGraph);
     }
 
     @Override
     public void delete() throws RepositoryException {
-        queryTemplateCache.invalidate(Lists.newArrayList(this.getResourceIRI()));
+        queryTemplateCache.invalidate(Collections.singleton(this.getResourceIRI()));
         super.delete();
     }
     

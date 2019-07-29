@@ -31,11 +31,11 @@ import {
 import * as _ from 'lodash';
 
 import { Rdf } from 'platform/api/rdf';
+import * as JsonLd from 'platform/api/rdf/formats/JsonLd';
 import { rdf, rdfs, VocabPlatform } from 'platform/api/rdf/vocabularies/vocabularies';
 import { SparqlClient, SparqlUtil, QueryContext } from 'platform/api/sparql';
 import { LdpService } from 'platform/api/services/ldp';
 import { getThumbnails } from 'platform/api/services/resource-thumbnail';
-import { OntodiaContextV1, registerTtlParser } from 'platform/components/3-rd-party/ontodia/jsonld-utils';
 import { convertToSerializedDiagram } from 'ontodia';
 
 import {
@@ -47,7 +47,8 @@ import {
 } from 'rdf-ext';
 
 import {ontodiaNsv0} from './ontodia-ns';
-import * as jsonld from 'jsonld';
+
+export const OntodiaContextV1 = require('ontodia/schema/context-v1.json');
 
 export interface Node {
   type: 'uri' | 'literal';
@@ -60,8 +61,6 @@ export interface RDFGraph {
   object: Node;
 }
 
-registerTtlParser();
-
 /**
  * Returns graph to build diagram by sparql query
  * Will run on default context
@@ -72,7 +71,7 @@ export function getRDFGraphBySparqlQuery(
   return new Promise((resolve, reject) => {
     Kefir.combine(repositories.map(repository =>
       SparqlClient.construct(query, {context: {repository}})
-    )).map(_.flatten).onValue(
+    )).map(triples => _.flatten(triples)).onValue(
       g => {
         const graph: RDFGraph[] = [];
 
@@ -180,14 +179,21 @@ export function getDiagramByIri(diagramIri: string, context: QueryContext): Prom
   label: string;
   diagram: SerializedDiagram;
 }> {
-  let ldpService = new LdpService(VocabPlatform.OntodiaDiagramContainer.value, context);
+  const ldpService = new LdpService(VocabPlatform.OntodiaDiagramContainer.value, context);
+  const documentLoader = JsonLd.makeDocumentLoader({
+    overrideContexts: {
+      [DIAGRAM_CONTEXT_URL_V1]: OntodiaContextV1,
+    }
+  });
   return ldpService.getResourceRequest(diagramIri, 'text/turtle')
     .flatMap(resource =>
-      Kefir.fromNodeCallback<any>(callback =>
-        jsonld.fromRDF(resource, {format: 'text/turtle', useNativeTypes: true}, callback)
-      )
+      JsonLd.fromRdf(resource, {
+        documentLoader,
+        format: 'text/turtle',
+        useNativeTypes: true
+      })
     )
-    .flatMap(json => {
+    .flatMap((json): Kefir.Property<{ label: string; diagram: SerializedDiagram; }> => {
 
       // check for old version
       if (
@@ -200,23 +206,22 @@ export function getDiagramByIri(diagramIri: string, context: QueryContext): Prom
         // this assumes json-ld to be in expanded mode, and it should be right after toRDF
         const oldDiagram = JSON.parse(json[0][ontodiaNsv0.diagramLayoutString.value][0]['@value']);
         return Kefir.constant({
-            label: json[0][rdfs.label.value],
-            diagram: convertToSerializedDiagram({
-              layoutData: oldDiagram.layoutData,
-              linkTypeOptions: oldDiagram.linkSettings,
-            }),
-          }
-        );
+          label: json[0][rdfs.label.value] as string,
+          diagram: convertToSerializedDiagram({
+            layoutData: oldDiagram.layoutData,
+            linkTypeOptions: oldDiagram.linkSettings,
+          }),
+        });
       } else {
-        return Kefir.fromNodeCallback<SerializedDiagram>(
-          callback => jsonld.frame(json, diagramFrame, callback)
-        ).map(diagram => ({
-          label: diagram['@graph'][0][rdfs.label.value],
-          diagram: {
-            linkTypeOptions: [],
-            ...diagram['@graph'][0],
-            ...{'@context': diagram['@context']}}
-        }));
+        return JsonLd.frame(json, diagramFrame, {documentLoader})
+          .map(diagram => ({
+            label: diagram['@graph'][0][rdfs.label.value] as string,
+            diagram: {
+              linkTypeOptions: [],
+              ...diagram['@graph'][0],
+              ...{'@context': diagram['@context']},
+            } as SerializedDiagram
+          }));
       }
     })
     .toPromise();

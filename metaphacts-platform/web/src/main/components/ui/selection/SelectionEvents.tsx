@@ -16,11 +16,13 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
+import { EventType } from 'platform/api/events'
+
 /**
  * @author Philip Polkovnikov
  */
 
 export type SelectionEvents = typeof SelectionEvents;
 export namespace SelectionEvents {
-  export const Toggle = 'Components.Selection.Toggle';
+  export const Toggle: EventType<{ value: boolean; tag: string }> = 'Components.Selection.Toggle';
 }

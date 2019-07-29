@@ -43,8 +43,10 @@
             </mp-ldp-remove-from-container-action>
           </div>
 
+          <mp-selection-group>
+          <div>
           <div style='float: right; margin-right: 30px;'>
-            <mp-selection-action-choice id="field-definition-selection" title='With selected ...'>
+            <mp-selection-action-choice id="field-definition-selection" title='With selected ...' selection='field-definition-selection'>
               <mp-ldp-export-resource><bs-menu-item>Export</bs-menu-item></mp-ldp-export-resource>
             </mp-selection-action-choice>
             <semantic-context repository='assets'>
@@ -155,6 +157,8 @@
               </div>
             </semantic-search>
           </semantic-context>
+          </div>
+          </mp-selection-group>
         </div>
       </bs-col>
     </bs-row>

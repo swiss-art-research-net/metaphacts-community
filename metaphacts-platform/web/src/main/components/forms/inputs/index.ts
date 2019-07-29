@@ -23,5 +23,6 @@ export * from './CompositeInput';
 
 export * from './AutocompleteInput';
 export * from './DatePickerInput';
+export * from './HiddenInput';
 export * from './SelectInput';
 export * from './PlainTextInput';

@@ -35,11 +35,11 @@ export class SetService extends LdpService {
     name: string, slug = maybe.Nothing<string>()
   ): Kefir.Property<Rdf.Iri> {
     const generatedIri = Rdf.iri('');
-    const set = Rdf.graph(
+    const set = Rdf.graph([
       Rdf.triple(generatedIri, rdfs.label, Rdf.literal(name)),
       Rdf.triple(generatedIri, rdf.type, ldp.Container),
       Rdf.triple(generatedIri, rdf.type, VocabPlatform.Set)
-    );
+    ]);
     return this.addResource(set, slug);
   }
 
@@ -188,11 +188,11 @@ class ContainerOfUserSetContainers extends LdpService {
   createSetContainerForUser(user: UserI, setContainerIri: Rdf.Iri): Kefir.Property<void> {
     const generatedIri = Rdf.iri('');
     const containerName = `Set container of user '${user.principal}'`;
-    return this.addResource(Rdf.graph(
+    return this.addResource(Rdf.graph([
       Rdf.triple(generatedIri, rdfs.label, Rdf.literal(containerName)),
       Rdf.triple(generatedIri, rdf.type, ldp.Container),
       Rdf.triple(generatedIri, rdf.type, VocabPlatform.SetContainer)
-    ), maybe.Just(setContainerIri.value))
+    ]), maybe.Just(setContainerIri.value))
     .map(() => { /* nothing */ });
   }
 }

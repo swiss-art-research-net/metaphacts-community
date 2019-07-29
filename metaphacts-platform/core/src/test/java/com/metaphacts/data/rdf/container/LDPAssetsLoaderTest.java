@@ -20,36 +20,44 @@ package com.metaphacts.data.rdf.container;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Date;
 
 import javax.inject.Inject;
 
 import org.eclipse.rdf4j.common.iteration.Iterations;
+import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
+import org.eclipse.rdf4j.model.vocabulary.FOAF;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.RepositoryResult;
+import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
-import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.google.inject.Injector;
+import com.metaphacts.data.rdf.container.LDPAssetsLoader.LDPModelComparator.StatementKey;
 import com.metaphacts.junit.AbstractIntegrationTest;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectMetadata;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PathMapping;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
+import com.metaphacts.vocabulary.PROV;
 
 public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
     
@@ -93,7 +101,113 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
         }
     }
     
-    
+
+    @Test
+    public void testLoadIntoExisting() throws Exception {
+        
+        try (RepositoryConnection con = repositoryRule.getAssetRepository().getConnection()) {
+            con.add(LDPApiInternal.class.getResourceAsStream("testQueryContainerPermissions.trig"), "", RDFFormat.TRIG);
+            
+            Model totalModel = Rio.parse(LDPApiInternal.class.getResourceAsStream(
+                    "testQueryContainerPermissions.trig"), "", RDFFormat.TRIG);
+            
+            LDPAssetsLoader.selectContentToLoad("assets",totalModel,con);   
+        }
+       
+    }
+
+    @Test
+    public void testLoadIntoExistingOtherDates() throws Exception {
+        
+        try (RepositoryConnection con = repositoryRule.getAssetRepository().getConnection()) {
+            con.add(LDPApiInternal.class.getResourceAsStream("testQueryContainerPermissions.trig"), "", RDFFormat.TRIG);
+            
+            Model totalModel = Rio.parse(LDPApiInternal.class.getResourceAsStream(
+                    "testQueryContainerPermissions-other-dates.trig"), "", RDFFormat.TRIG);
+            
+            LDPAssetsLoader.selectContentToLoad("assets",totalModel,con);
+        }
+        
+    }
+
+    @Test
+    public void testStatementKey() throws Exception {
+        
+       StatementKey st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               );
+       StatementKey st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               );
+       Assert.assertTrue(st1.equals(st2));
+
+       st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               );
+       st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               );
+       Assert.assertTrue(st1.equals(st2));
+
+       st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createBNode(), null)
+               );
+       st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createBNode(), null)
+               );
+       Assert.assertTrue(st1.equals(st2));
+
+       st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createBNode(), VF.createIRI("http://example1/context"))
+               );
+       st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createBNode(), null)
+               );
+       Assert.assertFalse(st1.equals(st2));
+
+       st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createBNode(), VF.createIRI("http://example1/context"))
+               );
+       st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createBNode(),  VF.createIRI("http://example1/context"))
+               );
+       Assert.assertTrue(st1.equals(st2));
+
+       
+       st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createBNode(), VF.createIRI("http://example1/context"))
+               );
+       st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
+               VF.createStatement(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createBNode(),  VF.createIRI("http://example1/context"))
+               );
+       Assert.assertFalse(st1.equals(st2));
+        
+    }
+
+    @Test
+    public void testCompareWithoutDates() throws Exception {
+
+        Model modelExisting = new LinkedHashModel();
+        modelExisting.add(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral(new Date()));
+        Model modelLoaded = new LinkedHashModel();
+        modelLoaded.add(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME));
+        //dataTimes are being ignored during comparison, since database may store double numbers differently
+        Assert.assertTrue(LDPAssetsLoader.compareModelsWithoutDates(modelExisting, modelLoaded));
+
+        modelLoaded.add(VF.createIRI("http://example1"), RDF.TYPE, FOAF.PERSON);
+        Assert.assertFalse(LDPAssetsLoader.compareModelsWithoutDates(modelExisting, modelLoaded));
+
+        modelExisting.add(VF.createIRI("http://example1"), RDF.TYPE, FOAF.PERSON);
+        Assert.assertTrue(LDPAssetsLoader.compareModelsWithoutDates(modelExisting, modelLoaded));
+
+        //doubles are being ignored during comparison, since database may store double numbers differently
+        modelExisting.add(VF.createIRI("http://example1"), FOAF.AGE, VF.createLiteral(5.0));
+        Assert.assertTrue(LDPAssetsLoader.compareModelsWithoutDates(modelExisting, modelLoaded));
+
+        modelExisting.add(VF.createIRI("http://example1"), FOAF.AGE, VF.createLiteral(5));
+        Assert.assertFalse(LDPAssetsLoader.compareModelsWithoutDates(modelExisting, modelLoaded));
+
+    }
 
     @Test
     public void testLoadIconsistent() throws Exception {
@@ -115,6 +229,110 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
         }
     }
 
+    @Test(timeout=5000) // 5 sec timeout
+    public void testComparisonTimeout() throws Exception {
+        Model testModel1 = getRandomSortedModelFromFile("testDiagram.trig");
+        Model testModel2 = getRandomSortedModelFromFile("testDiagram.trig");
+
+        Assert.assertTrue(LDPAssetsLoader.LDPModelComparator.compare(testModel2, testModel1));
+    }
+
+    @Test
+    public void testSuccessfulComparison() throws Exception {
+        IRI person1 = VF.createIRI("http://localhost:10214/person1");
+        IRI person2 = VF.createIRI("http://localhost:10214/person2");
+        IRI person3 = VF.createIRI("http://localhost:10214/person3");
+        BNode anonymous1 = VF.createBNode("anonymous1");
+        BNode anonymous2 = VF.createBNode("anonymous2");
+        BNode anonymous3 = VF.createBNode("anonymous3");
+        IRI knows = VF.createIRI("http://xmlns.com/foaf/0.1/knows");
+
+        Model model1 = new LinkedHashModel();
+        model1.add(person1, knows, person2);
+        model1.add(person1, knows, person3);
+        model1.add(person1, knows, anonymous1);
+        model1.add(anonymous1, knows, anonymous2);
+        model1.add(anonymous1, knows, anonymous3);
+        model1.add(anonymous2, knows, person2);
+        model1.add(anonymous3, knows, person3);
+
+        Model model2 = new LinkedHashModel();
+        model2.add(person1, knows, person2);
+        model2.add(person1, knows, person3);
+        model2.add(person1, knows, anonymous1);
+        model2.add(anonymous1, knows, anonymous2);
+        model2.add(anonymous1, knows, anonymous3);
+        model2.add(anonymous2, knows, person2);
+        model2.add(anonymous3, knows, person3);
+
+        Assert.assertTrue(LDPAssetsLoader.LDPModelComparator.compare(model1, model2));
+    }
+
+    @Test
+    public void testResourceIsNotDateTimeOrDouble() {
+        Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(null));
+        Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createIRI("http://a")));
+        Assert.assertFalse(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral(5.0003)));
+        Assert.assertFalse(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral("5.00000000E",XMLSchema.DOUBLE)));
+        Assert.assertFalse(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral(new Date())));
+        Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral(5)));
+        Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral("test")));
+    }
+
+    @Test
+    public void testFailureComparison() throws Exception {
+        IRI person1 = VF.createIRI("http://localhost:10214/person1");
+        IRI person2 = VF.createIRI("http://localhost:10214/person2");
+        IRI person3 = VF.createIRI("http://localhost:10214/person3");
+        BNode anonymous1 = VF.createBNode("anonymous1");
+        BNode anonymous2 = VF.createBNode("anonymous2");
+        BNode anonymous3 = VF.createBNode("anonymous3");
+        IRI knows = VF.createIRI("http://xmlns.com/foaf/0.1/knows");
+
+        Model model1 = new LinkedHashModel();
+        model1.add(person1, knows, person2);
+        model1.add(person1, knows, person3);
+        model1.add(person1, knows, anonymous1);
+        model1.add(anonymous1, knows, anonymous2);
+        model1.add(anonymous1, knows, anonymous3);
+        model1.add(anonymous2, knows, person2);
+        model1.add(anonymous3, knows, person3);
+
+        Model model2 = new LinkedHashModel();
+        model2.add(person1, knows, person2);
+        model2.add(person1, knows, person3);
+        model2.add(person1, knows, anonymous1);
+        model2.add(anonymous2, knows, person2);
+        model2.add(anonymous3, knows, person3);
+
+        Assert.assertFalse(LDPAssetsLoader.LDPModelComparator.compare(model1, model2));
+    }
+
+    private Model getRandomSortedModelFromFile(String fileId) {
+        Repository db = new SailRepository(new MemoryStore());
+        db.initialize();
+
+        ArrayList<Statement> arrayList = new ArrayList();
+        try (RepositoryConnection con = db.getConnection()) {
+            con.add(LDPApiInternal.class.getResourceAsStream(fileId), "", RDFFormat.TRIG);
+            RepositoryResult<Statement> result = con.getStatements(null, null, null);
+            while (result.hasNext()) {
+                arrayList.add(result.next());
+            }
+        } catch (Exception e) {
+            Assert.fail(e.getMessage() + ":" + e.getStackTrace());
+        }
+
+        for (int i = 0; i < arrayList.size(); i++) {
+            int index1 = new Long(Math.round(Math.random() * (arrayList.size() - 1))).intValue();
+            int index2 = new Long(Math.round(Math.random() * (arrayList.size() - 1))).intValue();
+            Statement st = arrayList.get(index1);
+            arrayList.set(index1, arrayList.get(index2));
+            arrayList.set(index2, st);
+        }
+        db.shutDown();
+        return new LinkedHashModel(arrayList);
+    }
     
     private Model copyContextToModel(IRI contextIri, Repository repository) {
         try (RepositoryConnection con = repository.getConnection()) {
@@ -125,8 +343,10 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
     }
     
     private void writeModelToStorage(IRI pointer, Model model) throws Exception {
-        String objectId = RepositoryManager.ASSET_REPOSITORY_ID + PathMapping.SEPARATOR
-                + ObjectStorage.objectIdFromIri(pointer) + ".trig";
+        StoragePath objectId = ObjectKind.LDP
+            .resolve(RepositoryManager.ASSET_REPOSITORY_ID)
+            .resolve(StoragePath.encodeIri(pointer))
+            .addExtension(".trig");
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         
         Rio.write(model, outStream, RDFFormat.TRIG);
@@ -134,10 +354,11 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
         
         ByteArrayInputStream content = new ByteArrayInputStream(bytes);
         platformStorage.getStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY).appendObject(
-                ObjectKind.LDP, objectId,
-                new ObjectMetadata(null, null), 
-                content,
-                bytes.length);
+            objectId,
+            new ObjectMetadata(),
+            content,
+            bytes.length
+        );
     }
     
 }

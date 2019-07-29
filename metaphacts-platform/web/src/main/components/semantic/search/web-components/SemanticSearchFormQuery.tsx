@@ -45,7 +45,7 @@ export interface SemanticFormBasedQueryConfig {
    * single argument as defined in the arguments map of the `queryTemplate`
    * as well as must be referenced by the `for=` attribute of the HTML form input elements.
    *
-   * - `maxOccurs` will be overridden to 1;
+   * - `maxOccurs` will be overridden to 1 (if the `multi` property set to `false`);
    * - `minOccurs` will be overridden to 0 or 1 depending on whether
    * corresponding query argument is optional or not.
    */
@@ -58,6 +58,16 @@ export interface SemanticFormBasedQueryConfig {
   domain?: string
 
   domainField?: string
+
+  /**
+   * Enables multi-value injection.
+   * If set to `true`, VALUES clause will be used to parametrize the base query for arguments with more than one value.
+   * If set to `false`, the first value will be used to parametrize the base query by replacement of the binding variable.
+   * To disable multi-value parameterization for particular variables, one can explicitly set `maxOccurs: 1` for corresponding fields.
+   *
+   * @default false
+   */
+  multi?: boolean;
 }
 
 export interface QueryTemplate {
@@ -140,7 +150,11 @@ export class FormQuery extends React.Component<SemanticFormBasedQueryConfig, Sta
   constructor(props: SemanticFormBasedQueryConfig) {
     super(props);
     this.state = {
-      definitions: adjustDefinitionsToTemplate(this.props.queryTemplate, this.props.fields),
+      definitions: adjustDefinitionsToTemplate({
+        queryTemplate: this.props.queryTemplate,
+        defs: this.props.fields,
+        multi: this.props.multi,
+      }),
     };
   }
 
@@ -236,7 +250,8 @@ export class FormQuery extends React.Component<SemanticFormBasedQueryConfig, Sta
     }
 
     const parametrized = parametrizeQueryFromForm(
-      this.props.queryTemplate, model);
+      this.props.queryTemplate, model
+    );
 
     return this.context.setBaseQuery(Just(parametrized));
   }
@@ -247,12 +262,18 @@ export class FormQuery extends React.Component<SemanticFormBasedQueryConfig, Sta
   }
 }
 
-function adjustDefinitionsToTemplate(queryTemplate: QueryTemplate, defs: FieldDefinitionProp[]) {
+function adjustDefinitionsToTemplate(
+  {queryTemplate, defs, multi}: {
+    queryTemplate: QueryTemplate;
+    defs: FieldDefinitionProp[];
+    multi: boolean;
+  }
+) {
   return defs.map(normalizeFieldDefinition)
     .map<FieldDefinition>(def => {
       const argument = queryTemplate.arguments[def.id];
       if (!argument) { return def; }
-      return {...def, maxOccurs: 1, minOccurs: argument.optional ? 0 : 1};
+      return {...def, maxOccurs: multi ? def.maxOccurs : 1, minOccurs: argument.optional ? 0 : 1};
     });
 }
 
@@ -297,33 +318,51 @@ function validateArgumentAndField(
 }
 
 function parametrizeQueryFromForm(
-  queryTemplate: QueryTemplate, model: CompositeValue,
+  queryTemplate: QueryTemplate, model: CompositeValue
 ): SparqlJs.SelectQuery {
-  const queryArguments = queryTemplate.arguments;
-  const bindings: SparqlClient.Dictionary<Rdf.Node> = {};
-  for (const argumentID in queryArguments) {
-    if (!queryArguments.hasOwnProperty(argumentID)) { continue; }
-    const argument = queryArguments[argumentID];
-
-    const fieldState = model.fields.get(argumentID);
-    const values = fieldState.values;
-
-    if (values.size === 0) {
-      if (argument.optional) { continue; }
-      throw new Error(`No field value for query argument ${argumentID}`);
-    }
-    const value = FieldValue.asRdfNode(values.first());
-    if (!value) {
-      if (argument.optional) { continue; }
-      throw new Error(`Empty field value for query argument ${argumentID}`);
-    }
-    bindings[argumentID] = value;
-  }
-
-  const parsedQuery = SparqlUtil.parseQuery(queryTemplate.queryString);
+  let parsedQuery = SparqlUtil.parseQuery(queryTemplate.queryString);
   if (parsedQuery.type !== 'query' || parsedQuery.queryType !== 'SELECT') {
     throw new Error('Query must be SELECT SPARQL query');
   }
+  const queryArguments = queryTemplate.arguments;
+  const bindings: SparqlClient.Dictionary<Rdf.Node> = {};
+
+  parsedQuery = Object.keys(queryArguments).reduce((query, argumentId) => {
+    const argument = queryArguments[argumentId];
+
+    const {values} = model.fields.get(argumentId);
+    const {maxOccurs} = model.definitions.get(argumentId);
+
+    if (values.size === 0) {
+      if (argument.optional) { return query; }
+      throw new Error(`No field value for query argument ${argumentId}`);
+    }
+
+    // use variable replacement if an argument has cardinality equals 1 or it has only one value
+    if (maxOccurs === 1 || values.size === 1) {
+      const rdfNode = FieldValue.asRdfNode(values.first());
+      if (!rdfNode) {
+        if (argument.optional) { return query; }
+        throw new Error(`Empty field value for query argument ${argumentId}`);
+      }
+      bindings[argumentId] = rdfNode;
+
+      return query;
+    }
+
+    const parameters: SparqlClient.Dictionary<Rdf.Node>[] = [];
+    values.forEach(value => {
+      const rdfNode = FieldValue.asRdfNode(value);
+      if (!rdfNode) {
+        if (argument.optional) { return; }
+        throw new Error(`Empty field value for query argument ${argumentId}`);
+      }
+      parameters.push({[argumentId]: rdfNode});
+    });
+
+    return SparqlClient.prepareParsedQuery(parameters)(query);
+  }, parsedQuery);
+
   return SparqlClient.setBindings(parsedQuery, bindings);
 }
 

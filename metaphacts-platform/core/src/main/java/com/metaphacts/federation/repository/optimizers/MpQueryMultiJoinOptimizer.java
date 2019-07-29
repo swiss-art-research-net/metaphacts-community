@@ -47,11 +47,17 @@ import com.google.common.collect.Sets;
 import com.metaphacts.federation.sparql.FederationSparqlAlgebraUtils;
 
 /**
- * A query optimizer that re-orders nested Joins. Copies {@link QueryMultiJoinOptimizer}.
+ * A query optimizer that re-orders nested Joins. Copies {@link QueryMultiJoinOptimizer} 
+ * adding the logic for join order optimization based on declared inputs/outputs of Ephedra services.
+ * 
+ * @deprecated After the query hints implementation, the process is split into substages, realized
+ *             by {@link MpQueryNaryJoinExtractor}, {@link MpQueryJoinOrderOptimizer},
+ *             {@link MpPostJoinReorderingLocalJoinOptimizer}.
  * 
  * @author Andriy Nikolov <an@metaphacts.com>
  *
  */
+@Deprecated
 public class MpQueryMultiJoinOptimizer implements QueryOptimizer {
 
     protected final EvaluationStatistics statistics;

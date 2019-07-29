@@ -25,6 +25,7 @@ import com.metaphacts.services.storage.StorageUtils;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectRecord;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -36,28 +37,21 @@ public abstract class FromStorageLoader extends AbstractTemplateLoader {
         this.storage = storage;
     }
 
-    protected abstract ResolvedObject resolveLocation(String location);
+    protected abstract StoragePath resolveLocation(String location);
 
     @Override
     public TemplateSource sourceAt(String location) throws IOException {
-        ResolvedObject resolved = resolveLocation(location);
+        StoragePath resolved = resolveLocation(location);
+        // handlebars library uses exception message as template location in their not-found-error,
+        // so the message should be phased as a template location noun
         PlatformStorage.FindResult found = storage
-            .findObject(resolved.kind, resolved.objectId)
+            .findObject(resolved)
             .orElseThrow(() -> new TemplateNotFoundException(
-                "Template \"" + location + "\" does not exist."));
+                "Storage object \"" + resolved.toString() + "\""
+            ));
         return new ReloadableTemplateSource(
             new StorageTemplateSource(location, found.getRecord())
         );
-    }
-
-    protected static class ResolvedObject {
-        public final ObjectKind kind;
-        public final String objectId;
-
-        public ResolvedObject(ObjectKind kind, String objectId) {
-            this.kind = kind;
-            this.objectId = objectId;
-        }
     }
 
     protected static class StorageTemplateSource implements TemplateSource {

@@ -42,6 +42,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.StreamingOutput;
 
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,11 +55,6 @@ import com.metaphacts.plugin.PlatformPluginManager;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.security.Permissions.APP;
 import com.metaphacts.security.Permissions.STORAGE;
-import com.metaphacts.services.storage.MainPlatformStorage;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.StorageException;
 
 import ro.fortsoft.pf4j.PluginWrapper;
 
@@ -76,7 +72,7 @@ public class AppAdminEndpoint {
     private PlatformPluginManager pluginManager;
     
     @Inject
-    private MainPlatformStorage storageManager;
+    private PlatformStorage storageManager;
 
     private class MetaObject {
         public MetaObject(String id, String storageKind, Boolean mutableStorage) {
@@ -95,7 +91,7 @@ public class AppAdminEndpoint {
 
     /**
      * List apps and respective meta-data,
-     * considering the {@link STORAGE.PREFIX_ZIP_EXPORT} 
+     * considering the {@link STORAGE#PREFIX_ZIP_EXPORT}
      * permission, i.e. storages to which the user does not have access,
      * will be filtered.
      * 
@@ -127,7 +123,7 @@ public class AppAdminEndpoint {
     
     /**
      * List storages and respective meta-data,
-     * considering the {@link STORAGE.PREFIX_ZIP_EXPORT} 
+     * considering the {@link STORAGE#PREFIX_ZIP_EXPORT}
      * permission, i.e. storages to which the user does not have access,
      * will be filtered.
      * 
@@ -139,13 +135,13 @@ public class AppAdminEndpoint {
     @RequiresAuthentication
     @Produces(MediaType.APPLICATION_JSON)
     public Response listStorages() {
-        ArrayList<MetaObject> l = Lists.newArrayList();
-        for(String storageId : storageManager.getStorages().keySet()){
+        ArrayList<MetaObject> list = Lists.newArrayList();
+        for (String storageId : storageManager.getOverrideOrder()) {
             if (checkPermission(STORAGE.PREFIX_VIEW_CONFIG + storageId)) {
-                l.add(getStorageMetaOject(storageId));
+                list.add(getStorageMetaOject(storageId));
             }
         }
-        return Response.ok().entity(l).build();
+        return Response.ok().entity(list).build();
     }
     
     @GET()
@@ -167,16 +163,14 @@ public class AppAdminEndpoint {
                 try (ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))){
                     ObjectStorage storage = storageManager.getStorage(storageId);
                     List<ObjectRecord> objects = Lists.newArrayList();
-                    objects.addAll(storage.getAllObjects(ObjectKind.TEMPLATE, ""));
-                    objects.addAll(storage.getAllObjects(ObjectKind.CONFIG, ""));
-                    objects.addAll(storage.getAllObjects(ObjectKind.ASSET, ""));
-                    objects.addAll(storage.getAllObjects(ObjectKind.LDP, ""));
+                    objects.addAll(storage.getAllObjects(StoragePath.EMPTY));
                     for (ObjectRecord storageObject : objects) {
                         // Get InputStream from storage
                         try (InputStream in = storageObject.getLocation().readContent()) {
                             // Add Zip Entry
-                            Optional<String> path = storageManager.getPathMapping().pathForObjectId(storageObject.getKind(), storageObject.getId());
-                            zip.putNextEntry(new ZipEntry(storageId+"/"+path.get()));
+                            Optional<StoragePath> path = storageManager.getPathMapping()
+                                .mapForward(storageObject.getPath());
+                            zip.putNextEntry(new ZipEntry(storageId + "/" + path.get().toString()));
                             // Write file into zip
                             IOUtils.copy(in, zip);
                             zip.closeEntry();

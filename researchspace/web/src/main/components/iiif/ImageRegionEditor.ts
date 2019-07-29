@@ -163,7 +163,7 @@ export class ImageRegionEditorComponentMirador
             ),
           });
         }
-        return createManifest(params, this.getRepositories());
+        return createManifest(params);
       })
     );
 

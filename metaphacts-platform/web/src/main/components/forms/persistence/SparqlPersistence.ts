@@ -24,27 +24,34 @@ import * as Immutable from 'immutable';
 import { SparqlUtil } from 'platform/api/sparql';
 
 import { CompositeValue, EmptyValue } from '../FieldValues';
-import { createFormUpdateQueries } from './RawSparqlPersistence';
+import { RawSparqlPersistence } from './RawSparqlPersistence';
 import { TriplestorePersistence } from './TriplestorePersistence';
 
+export interface SparqlPersistenceConfig {
+  type?: 'sparql';
+  repository?: string;
+}
+
 export class SparqlPersistence implements TriplestorePersistence {
+  constructor(private config: SparqlPersistenceConfig = {}) {}
+
   persist(
     initialModel: CompositeValue | EmptyValue,
     currentModel: CompositeValue | EmptyValue,
   ): Kefir.Property<void> {
-    const updateQueries = createFormUpdateQueries(initialModel, currentModel);
+    const updateQueries = RawSparqlPersistence.createFormUpdateQueries(initialModel, currentModel);
     const stringQueries = Immutable.List<SparqlJs.ConstructQuery>(updateQueries).map(
       SparqlUtil.serializeQuery
     ).flatten();
 
+    const {repository = 'default'} = this.config;
     const req = request
       .post('/form-persistence/sparql')
       .type('application/json')
+      .query({repository})
       .send(stringQueries);
     return Kefir.fromNodeCallback<void>(
         (cb) => req.end((err, res) => cb(err, res.body))
     ).toProperty();
   }
 }
-
-export default new SparqlPersistence();

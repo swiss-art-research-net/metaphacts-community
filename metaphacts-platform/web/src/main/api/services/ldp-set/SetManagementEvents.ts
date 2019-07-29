@@ -16,21 +16,32 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { EventType } from 'platform/api/events';
+import { EventMaker } from 'platform/api/events';
+
+export interface SetManagementEventData {
+  'Components.SetManagement.SetAdded': void;
+  'Components.SetManagement.SetRenamed': void;
+  'Components.SetManagement.SetRemoved': void;
+  'Components.SetManagement.ItemAdded': void;
+  'Components.SetManagement.ItemRemoved': void;
+  'Components.SetManagement.ItemSelected': string;
+  'Components.SetManagement.ItemsReordered': void;
+  'Components.SetManagement.ItemsFiltered': ItemsFilteredData;
+  'Components.SetManagement.ItemsFetched': { iris: Array<string> };
+}
+const event: EventMaker<SetManagementEventData> = EventMaker;
 
 export type SetManagementEvents = typeof SetManagementEvents;
 export namespace SetManagementEvents {
-  export const SetAdded = 'Components.SetManagement.SetAdded';
-  export const SetRenamed = 'Components.SetManagement.SetRenamed';
-  export const SetRemoved = 'Components.SetManagement.SetRemoved';
-  export const ItemAdded = 'Components.SetManagement.ItemAdded';
-  export const ItemRemoved = 'Components.SetManagement.ItemRemoved';
-  export const ItemSelected: EventType<string> = 'Components.SetManagement.ItemSelected';
-  export const ItemsReordered = 'Components.SetManagement.ItemsReordered';
-  export const ItemsFiltered: EventType<ItemsFilteredData> =
-    'Components.SetManagement.ItemsFiltered';
-  export const ItemsFetched: EventType<{ iris: Array<string> }> =
-    'Components.SetManagement.ItemsFetched';
+  export const SetAdded = event('Components.SetManagement.SetAdded');
+  export const SetRenamed = event('Components.SetManagement.SetRenamed');
+  export const SetRemoved = event('Components.SetManagement.SetRemoved');
+  export const ItemAdded = event('Components.SetManagement.ItemAdded');
+  export const ItemRemoved = event('Components.SetManagement.ItemRemoved');
+  export const ItemSelected = event('Components.SetManagement.ItemSelected');
+  export const ItemsReordered = event('Components.SetManagement.ItemsReordered');
+  export const ItemsFiltered = event('Components.SetManagement.ItemsFiltered');
+  export const ItemsFetched = event('Components.SetManagement.ItemsFetched');
 }
 
 export type SetManagementEventType = SetManagementEvents[keyof SetManagementEvents];

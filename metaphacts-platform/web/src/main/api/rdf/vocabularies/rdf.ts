@@ -27,6 +27,7 @@ module rdf {
   export const first = iri('first');
   export const rest = iri('rest');
   export const nil = iri('nil');
+  export const value = iri('value');
 }
 
 export default rdf;

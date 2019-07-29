@@ -90,12 +90,16 @@
     
     [[#if (ask "PREFIX ldp: <http://www.w3.org/ns/ldp#> ASK {?? ldp:contains ?c. MINUS { ?c a ldp:Container .} }")]]
       <h2> Resources </h2>
+    	<mp-selection-group>
+      <div>
       <div style='position: absolute; right: 0;'>
         [[> http://www.metaphacts.com/resource/assets/LdpContainerActionExport]]
       </div>
       <semantic-context repository='assets'>
         [[> http://www.metaphacts.com/resource/assets/LdpResources container=(this) query='SELECT DISTINCT ?subject ?ModificationDate ?attribution ?label WHERE { ?? <http://www.w3.org/ns/ldp#contains> ?subject . ?subject <http://www.w3.org/ns/prov#generatedAtTime> ?ModificationDate ; <http://www.w3.org/ns/prov#wasAttributedTo> ?attribution. OPTIONAL { ?subject rdfs:label ?label . }}']]
       </semantic-context>
+      </div>
+      </mp-selection-group>
     [[/if]]
   </div>
 </div>

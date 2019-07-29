@@ -67,10 +67,10 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
   }
 
   componentDidMount() {
-    const {definition, value} = this.props;
+    const {definition} = this.props;
     if (definition.valueSetPattern) {
       this.cancellation.map(
-        queryValues(definition.valueSetPattern, FieldValue.asRdfNode(value) as Rdf.Iri)
+        queryValues(definition.valueSetPattern)
       ).observe({
         value: valueSet => {
           this.isLoading = false;

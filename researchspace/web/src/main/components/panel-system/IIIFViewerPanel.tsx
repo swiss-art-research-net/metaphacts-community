@@ -17,7 +17,7 @@
  */
 
 import * as React from 'react';
-import { isEqual } from 'lodash';
+import { isEqual, flatten } from 'lodash';
 import * as Kefir from 'kefir';
 
 import { Cancellation } from 'platform/api/async';
@@ -78,24 +78,29 @@ export class IIIFViewerPanel extends Component<Props, State> {
   }
 
   private queryImages() {
-    const {query, iris} = this.props;
-    const {semanticContext: context} = this.context;
+    const {semanticContext} = this.context;
+    const {query, iris, repositories = [semanticContext.repository]} = this.props;
 
     const parsedQuery = SparqlUtil.parseQuery(query);
     const querying = iris.map(iri => {
       const sparql = SparqlClient.setBindings(parsedQuery, {[BINDING_VARIABLE]: Rdf.iri(iri)});
-      return SparqlClient.select(sparql, {context}).map(
-        ({results}) => ({iri, images: results.bindings.map(({image}) => image.value)})
+      const requests = repositories.map(repository =>
+        SparqlClient.select(sparql, {context: {repository}}).map(
+          ({results}) => ({iri, images: results.bindings.map(({image}) => image.value)})
+        )
       );
+      return Kefir.zip(requests);
     });
     this.queryingCancellation = this.cancellation.deriveAndCancel(this.queryingCancellation);
     this.queryingCancellation.map(
       Kefir.combine(querying)
     ).onValue(result => {
       const imageOrRegion: { [iri: string]: Array<string> } = {};
-      result.forEach(({iri, images}) =>
-        imageOrRegion[iri] = images
-      );
+      flatten(result).forEach(({iri, images}) => {
+        if (!(imageOrRegion[iri] && imageOrRegion[iri].length)) {
+          imageOrRegion[iri] = images;
+        }
+      });
       this.setState({imageOrRegion});
     });
   }

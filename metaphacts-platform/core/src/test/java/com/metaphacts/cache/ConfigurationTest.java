@@ -18,16 +18,15 @@
 
 package com.metaphacts.cache;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
 import com.metaphacts.config.UnknownConfigurationException;
 import com.metaphacts.junit.TestPlatformStorage;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -65,20 +64,101 @@ public class ConfigurationTest extends AbstractRepositoryBackedIntegrationTest {
     }
 
     @Test
-    public void testSetAndGetStringConfigParameter() throws UnknownConfigurationException {
-        String dummyQuery = "SELECT * WHERE { ?s ?p ?o }";
+    public void testPreferredLabelsHook() throws UnknownConfigurationException, ConfigurationException {
+        List<String> dummyPreferredLabels = Arrays.asList("<http://www.w3.org/2000/01/rdf-schema#label>", 
+            "<http://www.w3.org/2000/01/rdf-schema#label2>", 
+            "<http://www.w3.org/2000/01/rdf-schema#label3>");
         
+        config.getUiConfig().setParameter(
+            "preferredLabels",
+            dummyPreferredLabels,
+            TestPlatformStorage.STORAGE_ID
+        );
+        Assert.assertEquals(3, config.getUiConfig().getPreferredLabels().size());
+        Assert.assertEquals(dummyPreferredLabels.get(0), config.getUiConfig().getPreferredLabels().get(0));
+        Assert.assertEquals(dummyPreferredLabels.get(1), config.getUiConfig().getPreferredLabels().get(1));
+        Assert.assertEquals(dummyPreferredLabels.get(2), config.getUiConfig().getPreferredLabels().get(2));
+    }
+    
+    @Test
+    public void testPreferredLabelsHookException() throws UnknownConfigurationException, ConfigurationException {
+        String dummyPreferredLabel = "Dummy unparsable preferred label!";
+        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
+        exception.expectMessage("The \"preferredLabels\" that you have entered is invalid. Please add a valid value");
+        
+        config.getUiConfig().setParameter("preferredLabels",
+            Collections.singletonList(dummyPreferredLabel),
+            TestPlatformStorage.STORAGE_ID
+        );
+    }
+    
+    @Test
+    public void testTempalteInculdeHook() throws UnknownConfigurationException, ConfigurationException{
+        String dummyQuery = "SELECT ?type WHERE { ?? a ?type }";
         config.getUiConfig().setParameter(
             "templateIncludeQuery",
             Collections.singletonList(dummyQuery),
             TestPlatformStorage.STORAGE_ID
         );
         Assert.assertEquals(dummyQuery, config.getUiConfig().getTemplateIncludeQuery());
-        
     }
     
     @Test
-    public void testSetAndGetStringListConfigParameter() throws UnknownConfigurationException {
+    public void testTemplateIncludeHookException() throws UnknownConfigurationException, ConfigurationException {
+        String dummyQuery = "SELECT * WHERE { ? ?p ?o }";
+        
+        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
+        exception.expectMessage("The query that you have entered is invalid. Please add a valid query");
+        config.getUiConfig().setParameter(
+            "templateIncludeQuery",
+            Collections.singletonList(dummyQuery),
+            TestPlatformStorage.STORAGE_ID
+        );
+    }
+    
+    @Test
+    public void testTempalteInculdeHookBindingException() throws UnknownConfigurationException, ConfigurationException {
+        String dummyQuery = "SELECT * WHERE { ?s ?p ?o }";
+        
+        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
+        exception.expectMessage("Query as specified in \"templateIncludeQuery\" config for extracting the wiki include types must return a binding with name \"type\"");
+        config.getUiConfig().setParameter(
+            "templateIncludeQuery",
+            Collections.singletonList(dummyQuery),
+            TestPlatformStorage.STORAGE_ID
+        );
+    }
+    
+    @Test
+    public void testPreferredThumbnails() throws UnknownConfigurationException, ConfigurationException {
+        List<String> dummyPreferredThumbnails = Arrays.asList("<http://schema.org/thumbnail1>",
+            "<http://schema.org/thumbnail2>",
+            "<http://schema.org/thumbnail3>");
+        
+        config.getUiConfig().setParameter(
+            "preferredThumbnails",
+            dummyPreferredThumbnails,
+            TestPlatformStorage.STORAGE_ID
+        );
+        Assert.assertEquals(3, config.getUiConfig().getPreferredThumbnails().size());
+        Assert.assertEquals(dummyPreferredThumbnails.get(0), config.getUiConfig().getPreferredThumbnails().get(0));
+        Assert.assertEquals(dummyPreferredThumbnails.get(1), config.getUiConfig().getPreferredThumbnails().get(1));
+        Assert.assertEquals(dummyPreferredThumbnails.get(2), config.getUiConfig().getPreferredThumbnails().get(2));
+    }
+    
+    @Test
+    public void testPreferredThumbnailsHookException() throws UnknownConfigurationException, ConfigurationException {
+        String dummyPreferredThumbnails = "Dummy unparsable preferred thumbnails!";
+        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
+        exception.expectMessage("The \"preferredThumbnails\" that you have entered is invalid. Please add a valid value");
+        config.getUiConfig().setParameter("preferredThumbnails",
+            Collections.singletonList(dummyPreferredThumbnails),
+            TestPlatformStorage.STORAGE_ID
+        );
+    }
+    
+    @Test
+    public void testSetAndGetStringListConfigParameter() throws UnknownConfigurationException, ConfigurationException {
         List<String> languageConf = Arrays.asList("en", "uk", "de");
         
         config.getUiConfig().setParameter(
@@ -91,7 +171,7 @@ public class ConfigurationTest extends AbstractRepositoryBackedIntegrationTest {
     
     
     @Test
-    public void testSetAndGetStringListConfigParameterWithEscaping() throws UnknownConfigurationException {
+    public void testSetAndGetStringListConfigParameterWithEscaping() throws UnknownConfigurationException, ConfigurationException {
         List<String> languageConf = Arrays.asList("en", "uk", "de-with-,-inside");
         
         config.getUiConfig().setParameter(

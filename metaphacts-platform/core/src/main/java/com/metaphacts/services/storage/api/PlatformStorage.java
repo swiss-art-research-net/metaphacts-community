@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Represents a stack of registered {@link ObjectStorage} implementations in fixed override order.
+ * Represents a stack of registered {@link ObjectStorage} instances in fixed override order.
  */
 public interface PlatformStorage {
     String DEVELOPMENT_RUNTIME_STORAGE_KEY = "runtime";
@@ -37,33 +37,43 @@ public interface PlatformStorage {
     ObjectMetadata getDefaultMetadata();
 
     /**
-     * Searches registered storage implementations for given object in reverse override order,
+     * Searches registered storage instances for given object in reverse override order,
      * e.g. [overrideN, overrideN-1, ..., base], and returns the first match.
      */
-    Optional<FindResult> findObject(ObjectKind kind, String objectId) throws StorageException;
+    Optional<FindResult> findObject(StoragePath path) throws StorageException;
 
     /**
      * @return object results in override order, e.g. [base, override1, override2, ...]
      */
-    List<FindResult> findOverrides(ObjectKind kind, String objectId) throws StorageException;
+    List<FindResult> findOverrides(StoragePath path) throws StorageException;
 
     /**
-     * Searches registered storage implementations for all objects of specified type and
-     * matching specified object ID prefix; and returns first match for each object ID
-     * using the same semantics as {@link #findObject(ObjectKind, String)}.
+     * Searches registered storage instances for all objects matching specified path prefix;
+     * and returns first match for each object path using the same semantics
+     * as {@link #findObject(StoragePath)}.
      *
-     * @return map [objectId -> find result]
+     * @return map [object path -> find result]
      */
-    Map<String, FindResult> findAll(ObjectKind kind, String idPrefix) throws StorageException;
+    Map<StoragePath, FindResult> findAll(StoragePath prefix) throws StorageException;
 
+    /**
+     * Returns storage instance with specified ID.
+     * @throws IllegalArgumentException when storage with specified ID does not exists
+     */
     @NotNull
     ObjectStorage getStorage(String appId);
 
     /**
-     * Returns a list of registered storage implementations for specified object kind.
+     * Returns a list of all registered storage instances in override order, e.g.
+     * [base, override1, override2, ...]
+     */
+    List<String> getOverrideOrder();
+
+    /**
+     * Returns a list of registered storage instances for specified object kind.
      * @return storage status list in override order, e.g. [base, override1, override2, ...]
      */
-    List<StorageStatus> getStorageStatusFor(ObjectKind kind);
+    List<StorageStatus> getStorageStatusFor(StoragePath prefix);
 
     class FindResult {
         private final String appId;

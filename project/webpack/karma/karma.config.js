@@ -22,6 +22,7 @@ var webpack = require('webpack'),
 
 /**
  * @param {ReturnType<import('../defaults')>} defaults
+ * @returns {import('karma').ConfigOptions}
  */
 module.exports = function (defaults) {
     const webpackConfig = webpackConfigFn(defaults);
@@ -76,7 +77,20 @@ module.exports = function (defaults) {
                 chunkModules: false
             }
         },
-        browsers: ['ChromeHeadless'],
+        browsers: ['ChromiumHeadlessNoSandbox'],
+        customLaunchers: {
+          ChromiumHeadlessNoSandbox: {
+            base: 'ChromiumHeadless',
+            flags: [
+                '--no-sandbox',
+                '--headless',
+                '--disable-gpu',
+                '--disable-translate',
+                '--disable-extensions',
+                '--no-proxy-server'
+                ]
+          }
+        },
         client: {
             captureConsole: false
         },

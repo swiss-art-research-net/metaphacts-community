@@ -25,7 +25,8 @@
     "src/main/components/sets/views",
     "src/main/components/ui/highlight",
     "src/main/components/ui/reorderable-list",
-    "src/main/components/forms/file-manager"
+    "src/main/components/forms/file-manager",
+    "src/main/components/workflow"
   ],
   "generatedJsonSchemas": [
     "ChartTooltipData",
@@ -55,6 +56,11 @@
     "SemanticTableConfig",
     "SemanticTimelineConfig",
     "SemanticTreeConfig",
-    "SplitPaneConfig"
+    "SplitPaneConfig",
+    "BuiltInEventData",
+    "EventProxyConfig",
+    "EventTargetRefreshConfig",
+    "EventTargetTemplateRenderConfig",
+    "EventTriggerConfig"
   ]
 }

@@ -36,21 +36,14 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.lang.StringUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.metaphacts.services.storage.StorageUtils;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectMetadata;
-import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PathMapping;
-import com.metaphacts.services.storage.api.StorageConfig;
-import com.metaphacts.services.storage.api.StorageCreationParams;
-import com.metaphacts.services.storage.api.StorageException;
-import com.metaphacts.services.storage.api.StorageLocation;
 
 public class NonVersionedFileStorage implements ObjectStorage {
+    public final static String STORAGE_TYPE = "nonVersionedFile";
     private static final String FIXED_REVISION = "";
 
     private final PathMapping paths;
@@ -62,25 +55,25 @@ public class NonVersionedFileStorage implements ObjectStorage {
     }
 
     public static final class Config extends StorageConfig {
-        private Path rootPath;
+        private Path root;
 
-        public Config(String storageId) {
-            super(storageId);
+        public Config() {}
+
+        public Config(Path root) {
+            this.root = root;
         }
 
-        public Config(String storageId, String storageType) {
-            super(storageId, storageType);
+        @Override
+        public String getStorageType() {
+            return STORAGE_TYPE;
         }
 
-        public Config(String storageId, Path rootPath) {
-            super(storageId);
-            this.rootPath = rootPath;
+        public Path getRoot() {
+            return root;
         }
 
-        public Path getRootPath() {
-            // may consider to generalize it in the future for any storage type and move it 
-            // to MainPlatformStorage.addStorageFromConfig (c.f. also constructor of S3VersionedStorage)
-            return this.rootPath != null ? this.rootPath : this.root != null ? new File(this.root).toPath() :null;
+        public void setRoot(Path root) {
+            this.root = root;
         }
 
         @Override
@@ -89,12 +82,20 @@ public class NonVersionedFileStorage implements ObjectStorage {
         }
 
 		@Override
-		protected void validate() {
+		protected void validate() throws StorageConfigException {
+            super.validate();
 			if (getRoot() == null) {
-                throw new RuntimeException("Missing 'root' property for non-versioned file storage '"+ this.storageId);
+                throw new StorageConfigException("Missing required property 'root'");
+            }
+			if (!getRoot().isAbsolute()) {
+                throw new StorageConfigException(
+                    "'root' path must be absolute: '" + getRoot() + "'");
+            }
+			if (!Files.isDirectory(getRoot())) {
+                throw new StorageConfigException(
+                    "'root' path does not exists or not a directory: '" + getRoot() + "'");
             }
 		}
-
     }
 
     private class DirectStorageLocation implements StorageLocation {
@@ -113,6 +114,13 @@ public class NonVersionedFileStorage implements ObjectStorage {
         public InputStream readContent() throws IOException {
             return new FileInputStream(objectFile.toFile());
         }
+
+        @Override
+        public SizedStream readSizedContent() throws IOException {
+            FileInputStream inputStream = new FileInputStream(objectFile.toFile());
+            long size = inputStream.getChannel().size();
+            return new SizedStream(inputStream, size);
+        }
     }
 
     @Override
@@ -121,12 +129,12 @@ public class NonVersionedFileStorage implements ObjectStorage {
     }
 
     @Override
-    public Optional<ObjectRecord> getObject(ObjectKind kind, String id, @Nullable String revision) throws StorageException {
+    public Optional<ObjectRecord> getObject(StoragePath path, @Nullable String revision) throws StorageException {
         if (revision != null && !revision.equals(FIXED_REVISION)) {
             return Optional.empty();
         }
 
-        Optional<Path> mappedPath = getObjectFile(kind, id);
+        Optional<Path> mappedPath = fileFromObjectPath(path);
         if (!mappedPath.isPresent()) {
             return Optional.empty();
         }
@@ -148,37 +156,40 @@ public class NonVersionedFileStorage implements ObjectStorage {
         StorageLocation key = new DirectStorageLocation(objectFile);
         ObjectMetadata metadata = new ObjectMetadata(null, creationDate);
         return Optional.of(
-            new ObjectRecord(key, kind, id, FIXED_REVISION, metadata)
+            new ObjectRecord(key, path, FIXED_REVISION, metadata)
         );
     }
 
     @Override
-    public List<ObjectRecord> getRevisions(ObjectKind kind, String id) throws StorageException {
-        return getObject(kind, id, null).map(ImmutableList::of).orElse(ImmutableList.of());
+    public List<ObjectRecord> getRevisions(StoragePath path) throws StorageException {
+        return getObject(path, null).map(ImmutableList::of).orElse(ImmutableList.of());
     }
 
     @Override
-    public List<ObjectRecord> getAllObjects(ObjectKind kind, String idPrefix) throws StorageException {
-        Path objectFolder = fileFromStoragePath(paths.getPathPrefix(kind));
+    public List<ObjectRecord> getAllObjects(StoragePath prefix) throws StorageException {
+        Optional<Path> mappedFolder = fileFromObjectPath(prefix);
+        if (!mappedFolder.isPresent()) {
+            return ImmutableList.of();
+        }
 
-        List<String> objectIds;
-        try (Stream<Path> paths = Files.walk(objectFolder)) {
-            objectIds = paths
-                .flatMap(objectPath ->
-                    objectIdFromFile(kind, objectPath)
+        List<StoragePath> objectIds;
+        try (Stream<Path> files = Files.walk(mappedFolder.get())) {
+            objectIds = files
+                .flatMap(file ->
+                    objectPathFromFile(file)
                         .map(Stream::of).orElseGet(Stream::empty)
                 )
-                .filter(id -> id.startsWith(idPrefix))
+                .filter(prefix::isPrefixOf)
                 .collect(toList());
         } catch (NoSuchFileException e) {
             return ImmutableList.of();
         } catch (IOException e) {
-            throw new StorageException("Failed to list directory: " + objectFolder, e);
+            throw new StorageException("Failed to list directory: " + mappedFolder.get(), e);
         }
 
         List<ObjectRecord> objects = new ArrayList<>();
-        for (String objectId : objectIds) {
-            getObject(kind, objectId, null).ifPresent(object -> {
+        for (StoragePath path : objectIds) {
+            getObject(path, null).ifPresent(object -> {
                 objects.add(object);
             });
         }
@@ -187,15 +198,14 @@ public class NonVersionedFileStorage implements ObjectStorage {
 
     @Override
     public ObjectRecord appendObject(
-        ObjectKind kind,
-        String id,
+        StoragePath path,
         ObjectMetadata metadata,
         InputStream content,
-        @Nullable Integer contentLength
+        long contentLength
     ) throws StorageException {
         StorageUtils.throwIfNonMutable(isMutable());
-        Path objectPath = getObjectFile(kind, id).orElseThrow(() ->
-            new StorageException(String.format("Cannot map object ID to path: %s at %s", kind, id)));
+        Path objectPath = fileFromObjectPath(path).orElseThrow(() ->
+            new StorageException(String.format("Cannot map object ID to path: %s", path)));
         try {
             Files.createDirectories(objectPath.getParent());
             Files.copy(content, objectPath, StandardCopyOption.REPLACE_EXISTING);
@@ -204,17 +214,20 @@ public class NonVersionedFileStorage implements ObjectStorage {
                 metadata.getAuthor(),
                 getLastModified(objectPath)
             );
-            return new ObjectRecord(key, kind, id, FIXED_REVISION, createdMetadata);
+            return new ObjectRecord(key, path, FIXED_REVISION, createdMetadata);
         } catch (IOException e) {
             throw new StorageException(e);
         }
     }
 
     @Override
-    public void deleteObject(ObjectKind kind, String id) throws StorageException {
+    public void deleteObject(
+        StoragePath path,
+        ObjectMetadata metadata
+    ) throws StorageException {
         StorageUtils.throwIfNonMutable(isMutable());
-        Path objectFile = getObjectFile(kind, id).orElseThrow(() ->
-            new StorageException(String.format("Cannot map object ID to path: %s at %s", kind, id)));
+        Path objectFile = fileFromObjectPath(path).orElseThrow(() ->
+            new StorageException(String.format("Cannot map object path to filesystem: %s", path)));
         try {
             Files.deleteIfExists(objectFile);
         } catch (IOException e) {
@@ -226,33 +239,27 @@ public class NonVersionedFileStorage implements ObjectStorage {
         return Files.getLastModifiedTime(file).toInstant();
     }
 
-    private Optional<Path> getObjectFile(ObjectKind kind, String id) {
-        return paths.pathForObjectId(kind, id)
-            .map(this::fileFromStoragePath)
+    private Optional<Path> fileFromObjectPath(StoragePath path) {
+        return paths.mapForward(path)
+            .map(mapped -> {
+                String filesystemSubPath = mapped.toString()
+                    .replace(StoragePath.SEPARATOR, File.separator);
+                return config.getRoot().resolve(filesystemSubPath);
+            })
             .map(Path::normalize);
     }
 
-    private Optional<String> objectIdFromFile(ObjectKind kind, Path file) {
-        return storagePathFromFile(file)
-            .flatMap(storagePath -> paths.objectIdFromPath(kind, storagePath));
-    }
-
-    private Path fileFromStoragePath(String storagePath) {
-        PathMapping.throwIfNonCanonical(storagePath);
-        return config.getRootPath().resolve(storagePath.replace(PathMapping.SEPARATOR, File.separator));
-    }
-
-    private Optional<String> storagePathFromFile(Path file) {
+    private Optional<StoragePath> objectPathFromFile(Path file) {
         String absolutePath = file.toString();
-        String absoluteBase = config.getRootPath().toString();
+        String absoluteBase = config.getRoot().toString();
         if (!absolutePath.startsWith(absoluteBase)) {
             return Optional.empty();
         }
         String relativeFilePath = absolutePath.substring(absoluteBase.length());
         String storagePath = StringUtils.removeStart(
-            relativeFilePath.replace(File.separator, PathMapping.SEPARATOR),
-            PathMapping.SEPARATOR
+            relativeFilePath.replace(File.separator, StoragePath.SEPARATOR),
+            StoragePath.SEPARATOR
         );
-        return Optional.of(storagePath);
+        return paths.mapBack(StoragePath.parse(storagePath));
     }
 }

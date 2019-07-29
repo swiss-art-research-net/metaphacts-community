@@ -693,7 +693,7 @@ function wrapIntoService(
 ): SparqlJs.Pattern {
   return {
     type: 'service',
-    name: serviceUrl,
+    name: serviceUrl as SparqlJs.Term,
     silent: silent,
     patterns: patterns,
   };

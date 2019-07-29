@@ -19,6 +19,7 @@
 package com.metaphacts.federation.sparql.optimizers;
 
 import org.eclipse.rdf4j.query.algebra.BinaryTupleOperator;
+import org.eclipse.rdf4j.query.algebra.EmptySet;
 import org.eclipse.rdf4j.query.algebra.Join;
 import org.eclipse.rdf4j.query.algebra.LeftJoin;
 import org.eclipse.rdf4j.query.algebra.QueryModelNode;
@@ -77,6 +78,14 @@ public class RemoveNodeQueryModelVisitor extends AbstractQueryModelVisitor<Excep
             parent.replaceChildNode(operator, leftArg);
             leftArg.setParentNode(parent);
         }
+    }
+
+    @Override
+    protected void meetUnaryTupleOperator(UnaryTupleOperator node) throws Exception {
+        if (node.getArg().equals(toRemove)) {
+            node.replaceChildNode(toRemove, new EmptySet());
+        }
+        super.meetUnaryTupleOperator(node);
     }
 
     @Override

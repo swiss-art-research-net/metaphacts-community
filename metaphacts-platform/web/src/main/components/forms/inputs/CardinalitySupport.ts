@@ -45,6 +45,7 @@ import {
   MultipleValuesInput, MultipleValuesProps, ValuesWithErrors, checkCardinalityAndDuplicates,
 } from './MultipleValuesInput';
 import { CompositeInput } from './CompositeInput';
+import { FormSwitch } from './FormSwitch';
 
 export interface CardinalitySupportProps extends MultipleValuesProps {}
 
@@ -294,7 +295,8 @@ function isInputGroup(children: ReactNode) {
     return true;
   }
   return !hasBaseDerivedRelationship(SingleValueInput, child.type)
-    || child.type === CompositeInput;
+    || child.type === CompositeInput
+    || child.type === FormSwitch;
 }
 
 function getFirst<T>(items: IterableIterator<T>): T {

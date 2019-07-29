@@ -1,4 +1,4 @@
-FROM docker.metaphacts.com/release/jetty-jre8-alpine:9.4.12
+FROM 087043598540.dkr.ecr.us-east-1.amazonaws.com/codebuild/platform-base:jetty-jre8-alpine-9.4.12
 MAINTAINER metaphacts support@metaphacts.com
 
 USER root

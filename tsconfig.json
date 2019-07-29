@@ -11,6 +11,7 @@
       "graphscope/*": ["graphscope/web/src/*"],
 
 
+      "d3-color": ["metaphacts-platform/web/node_modules/@types/d3-color"],
       "tslib" : ["metaphacts-platform/web/node_modules/tslib/tslib.d.ts"],
       "react": ["metaphacts-platform/web/node_modules/@types/react"],
       "react-addons-css-transition-group": ["metaphacts-platform/web/node_modules/@types/react-addons-css-transition-group"],
@@ -41,7 +42,16 @@
     "noImplicitUseStrict": true,
     "importHelpers": true,
     "jsx": "react",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "plugins": [
+      {
+        "name": "typescript-tslint-plugin",
+        "alwaysShowRuleFailuresAsWarnings": true,
+        "ignoreDefinitionFiles": true,
+        "configFile": "./tslint.json",
+        "suppressWhileTypeErrorsPresent": false
+      }
+    ]
   },
   "exclude": [
     "*/web/node_modules"

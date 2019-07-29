@@ -21,13 +21,15 @@ package com.metaphacts.config.groups;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import com.metaphacts.config.*;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PlatformStorage;
+import javax.inject.Inject;
 
+import com.metaphacts.services.storage.api.StoragePath;
 import org.apache.commons.configuration2.CombinedConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -37,6 +39,22 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.metaphacts.cache.CacheManager;
+import com.metaphacts.config.ConfigParameterValueInfo;
+import com.metaphacts.config.Configuration;
+import com.metaphacts.config.ConfigurationParameter;
+import com.metaphacts.config.ConfigurationParameterHook;
+import com.metaphacts.config.ConfigurationUtil;
+import com.metaphacts.config.InvalidConfigurationException;
+import com.metaphacts.config.UnknownConfigurationException;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PlatformStorage;
+
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 
 
 /**
@@ -67,6 +85,9 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
     private final String description;
 
     protected final PlatformStorage platformStorage;
+    
+    @Inject
+    protected CacheManager cacheManager;
     
     /**
      * The internal configuration
@@ -99,8 +120,8 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
         assertConsistency();
     }
 
-    private String getObjectId() {
-        return id + ".prop";
+    private StoragePath getObjectId() {
+        return ObjectKind.CONFIG.resolve(id).addExtension(".prop");
     }
 
     private void reloadConfig() throws InvalidConfigurationException {
@@ -136,10 +157,10 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
      * @param parameterName the configuration parameter name relative to the group
      * @param configValues values of the configuration
      * @param targetAppId target app ID to save configuration parameter to
+     * @throws ConfigurationException 
      */
-    public void setParameter(
-        String parameterName, List<String> configValues, String targetAppId
-    ) throws UnknownConfigurationException {
+    public void setParameter(String parameterName, List<String> configValues, String targetAppId)
+        throws UnknownConfigurationException {
         try {
             // the call below also checks if configuration parameter with specified name exists
             ConfigurationParameterType type = getParameterType(parameterName);
@@ -197,12 +218,14 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
     /**
      * Internal save method of the configuration group base. Serializes the
      * saved value back to the backing file.
-     * 
      * @throws ConfigurationException 
+     * @throws NoSuchMethodException
+     * @throws Exception 
      */
     private synchronized void internalSetParameter(
         String configIdInGroup, Object configValue, String targetAppId
     ) throws ConfigurationException {
+
         ObjectStorage storage = platformStorage.getStorage(targetAppId);
 
         try {
@@ -216,14 +239,46 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
             if (configValue == null) {
                 targetConfig.clearProperty(configIdInGroup);
             } else {
-                targetConfig.setProperty(configIdInGroup, configValue);
+                try (ScanResult scanResult = new ClassGraph()
+                    .enableClassInfo()
+                    .enableAnnotationInfo()
+                    .enableMethodInfo()
+                    .enableStaticFinalFieldConstantInitializerValues()
+                    .whitelistPackages("com.metaphacts.config.groups")
+                    .scan()) {
+                    List<Method> allDeclaredMethods = new ArrayList<Method>();
+                    for (ClassInfo routeClassInfo : scanResult.getClassesWithMethodAnnotation(ConfigurationParameterHook.class.getName())) {
+                        Class<?> classWithConfigurationHook = routeClassInfo.loadClass();
+                        allDeclaredMethods = Arrays.asList(classWithConfigurationHook.getDeclaredMethods());
+                        for (Method method : allDeclaredMethods) {
+                            if (method.isAnnotationPresent(ConfigurationParameterHook.class)) {
+                                if (method.getName().equals("onUpdate"+StringUtils.capitalize(configIdInGroup))) {
+                                    method.invoke(this, configIdInGroup, configValue.toString(), targetConfig);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    targetConfig.setProperty(configIdInGroup, configValue);
+                    // in principal we could also move setProperty to the hooks itself in the future
+                    // and invalidate only specific caches
+                    cacheManager.invalidateAll();
+                } catch (Exception e) {
+                    if (e.getCause() instanceof ConfigurationException) {
+                        throw (ConfigurationException) e.getCause();
+                    } else { 
+                        // this may include target invocation exceptions for other reasons than the
+                        // configuration exception
+                    	throw new RuntimeException(e);
+                    }
+                    
+                }
             }
 
             try (ByteArrayOutputStream content = new ByteArrayOutputStream()) {
                 FileHandler handler = new FileHandler(targetConfig);
                 handler.save(content);
                 storage.appendObject(
-                    ObjectKind.CONFIG,
                     getObjectId(),
                     platformStorage.getDefaultMetadata(),
                     content.toInputStream(),

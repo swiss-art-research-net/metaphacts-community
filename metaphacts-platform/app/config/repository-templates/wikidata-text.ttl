@@ -1,6 +1,7 @@
 #
-# Example configuration template for a wrapper repository 
-# for a custom service
+# Example configuration template to wrap the wikidata service, please do not change anything below.
+# The wikidata-text service is already pre-installed, but will not be visible.
+# An additional ephedra service to include this as member service is additionally needed.
 #
 @prefix rep: <http://www.openrdf.org/config/repository#> .
 @prefix sail: <http://www.openrdf.org/config/sail#> .
@@ -11,12 +12,12 @@
 @prefix mps: <http://www.metaphacts.com/ontologies/platform/service#> .
 
 [] a rep:Repository ;
-   rep:repositoryID "wikidata-text" ;
+   rep:repositoryID "wikidata-text" ; 
    rdfs:label "Wikidata search service repository" ;
    rep:repositoryImpl [
       rep:repositoryType "openrdf:SailRepository" ;
       sr:sailImpl [
-         	sail:sailType "metaphacts:WikidataTextSearch" ; # Type of the Sail which implements the service functionalities.
-	 		mps:implementsService mps:WikidataTextSearch # Service descriptor reference (needed for Ephedra only) 
-      ] .
+         sail:sailType "metaphacts:WikidataTextSearch" ; 
+         mps:implementsService mps:WikidataTextSearch 
+      ]
    ] .

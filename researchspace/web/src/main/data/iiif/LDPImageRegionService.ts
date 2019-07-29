@@ -17,18 +17,18 @@
  */
 
 import * as Kefir from 'kefir';
-import * as jsonld from 'jsonld';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
+import * as JsonLd from 'platform/api/rdf/formats/JsonLd';
 import { SparqlClient, QueryContext, SparqlUtil } from 'platform/api/sparql';
 import { LdpService } from 'platform/api/services/ldp';
 
 import { rso } from '../vocabularies/vocabularies';
 
-import JsonLDUtils from './JsonLDUtils';
-const annotationFrame = require('./ld-resources/annotation-frame.json');
+const IIIF_PRESENTATION_CONTEXT = require('./ld-resources/iiif-context.json');
+const ANNOTATION_FRAME = require('./ld-resources/annotation-frame.json');
 
 export interface Region {
   annotation: OARegionAnnotation;
@@ -46,7 +46,6 @@ export class LdpRegionServiceClass extends LdpService {
 
   constructor(container: string) {
     super(container);
-    JsonLDUtils.registerLocalLoader();
   }
 
   /**
@@ -96,24 +95,23 @@ export class LdpRegionServiceClass extends LdpService {
   }
 
   private processRegionJsonResponse = (res: {}) => {
-    return Kefir.fromNodeCallback<OARegionAnnotation>(cb => {
-      jsonld.frame(res, annotationFrame, (err2, framed) => {
-        if (err2) {
-          cb(err2, framed);
-          return;
-        }
-        jsonld.compact(framed, framed['@context'], (err3, compacted) => {
-          const context = compacted['@context'];
-          if (Array.isArray(context)) {
-            // remove redundant context for 'on' property, which was added to frame
-            // in order to disable array compaction for this property, see:
-            // https://github.com/ProjectMirador/mirador/issues/1138
-            compacted['@context'] = context[0];
-          }
-          cb(err3, compacted);
-        });
-      });
+    const documentLoader = JsonLd.makeDocumentLoader({
+      overrideContexts: {
+        'http://iiif.io/api/presentation/2/context.json': IIIF_PRESENTATION_CONTEXT,
+      }
     });
+    return JsonLd.frame(res, ANNOTATION_FRAME, {documentLoader})
+      .flatMap(framed => JsonLd.compact(framed, framed['@context'], {documentLoader}))
+      .map<OARegionAnnotation>(compacted => {
+        const context = compacted['@context'];
+        if (Array.isArray(context)) {
+          // remove redundant context for 'on' property, which was added to frame
+          // in order to disable array compaction for this property, see:
+          // https://github.com/ProjectMirador/mirador/issues/1138
+          compacted['@context'] = context[0];
+        }
+        return compacted;
+      });
   }
 
   public getRegion(regionIri: Rdf.Iri): Kefir.Property<Region> {

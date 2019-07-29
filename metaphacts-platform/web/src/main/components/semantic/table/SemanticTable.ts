@@ -220,7 +220,6 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
       ...otherProps,
       ...controlledProps,
       layout: maybe.fromNullable(layout),
-      tupleTemplate: this.handleDeprecatedLayout(layout),
       numberOfDisplayedRows: maybe.fromNullable(this.props.numberOfDisplayedRows),
       data: Either.Right<any[], SparqlClient.SparqlSelectResult>(this.state.data),
       ref: this.TABLE_REF,

@@ -22,14 +22,10 @@
 
 import * as React from 'react';
 import { Component } from 'react';
-import { Event, listen, trigger } from 'platform/api/events';
+import { trigger } from 'platform/api/events';
 import { Cancellation } from 'platform/api/async';
 import { SelectionEvents } from './SelectionEvents';
-
-export interface ToggleDescription {
-  value: boolean,
-  tag: string
-}
+import { SelectionGroupContext, SelectionGroupContextTypes } from './SelectionGroupComponent';
 
 interface Props {
   /**
@@ -41,6 +37,10 @@ interface Props {
    * figure out, which of checkboxes was toggled
    */
   tag: string
+  /**
+   * Toggles the checkbox by default
+   */
+  defaultChecked?: boolean;
 }
 
 interface State {
@@ -53,31 +53,35 @@ interface State {
 class SelectionToggleComponent extends Component<Props, State> {
   private cancellation = new Cancellation();
 
+  static contextTypes = SelectionGroupContextTypes;
+  context: SelectionGroupContext;
+
   constructor(props, context) {
     super(props, context);
     this.state = {
-      value: false,
+      value: context.getSelectionValue ? context.getSelectionValue(props.tag) : false,
     };
   }
 
   componentDidMount() {
-    this.cancellation.map(
-      listen({
+    if (this.props.defaultChecked) {
+      this.toggleSelection();
+    }
+  }
+
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (this.state.value !== prevState.value) {
+      trigger({
         eventType: SelectionEvents.Toggle,
-        target: this.props.selection,
-      })
-    ).onValue(this.onSelectionChange);
+        source: 'SelectionToggle',
+        targets: [this.props.selection],
+        data: {value: this.state.value, tag: this.props.tag},
+      });
+    }
   }
 
   componentWillUnmount() {
     this.cancellation.cancelAll();
-  }
-
-  onSelectionChange = (event: Event<any>) => {
-    const data = event.data;
-    if (data.tag === this.props.tag) {
-      this.setState({value: data.value});
-    }
   }
 
   render() {
@@ -89,17 +93,7 @@ class SelectionToggleComponent extends Component<Props, State> {
   }
 
   private toggleSelection = () => {
-    const newValue = !this.state.value;
-    const description: ToggleDescription = {
-      value: newValue,
-      tag: this.props.tag,
-    };
-    trigger({
-      eventType: SelectionEvents.Toggle,
-      source: 'SelectionToggle',
-      targets: [this.props.selection],
-      data: description,
-    });
+    this.setState((prevState: State): State => ({value: !prevState.value}));
   }
 }
 

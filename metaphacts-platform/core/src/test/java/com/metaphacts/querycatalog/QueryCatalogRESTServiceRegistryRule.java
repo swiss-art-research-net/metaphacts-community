@@ -65,12 +65,12 @@ public class QueryCatalogRESTServiceRegistryRule extends TemporaryFolder {
     public void registerServiceFromPropertiesFile(File propFile) throws ConfigurationException {
         String serviceId = FilenameUtils.getBaseName(propFile.getName());
         try (FileInputStream content = new FileInputStream(propFile)) {
+            long contentLength = content.getChannel().size();
             platformStorage.getMainStorage().appendObject(
-                ObjectKind.CONFIG,
                 QueryCatalogRESTServiceRegistry.objectIdFromServiceId(serviceId),
                 platformStorage.getDefaultMetadata(),
                 content,
-                null
+                contentLength
             );
             registry.syncServices();
         } catch (IOException e) {

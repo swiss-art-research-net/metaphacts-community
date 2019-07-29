@@ -20,8 +20,8 @@ package com.metaphacts.cache;
 
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
@@ -126,7 +126,7 @@ public class TemplateIncludeCache implements PlatformCache {
     }
 
     @Override
-    public void invalidate(List<IRI> iris) {
+    public void invalidate(Set<IRI> iris) {
         includeTypesCache.invalidateAll(iris);
     }
 

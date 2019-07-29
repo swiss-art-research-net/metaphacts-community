@@ -19,16 +19,28 @@
 import * as Kefir from 'kefir';
 
 import { EventType } from './EventsApi';
+import { EventMaker } from './Utils';
 
-/**
- * Event which should be triggered when something should be refreshed.
- */
-export const ComponentRefresh: EventType<void> = 'Component.Refresh';
+export interface BuiltInEventData {
+  /**
+   * Event which should be triggered when something should be refreshed.
+   */
+  'Component.Refresh': void;
+  /**
+   * Event which should be triggered when data has been loaded.
+   */
+  'Component.Loaded': void;
+  /**
+   * Event which should be triggered when a template should be updated with new properties.
+   */
+  'Component.TemplateUpdate': object;
+}
+const event: EventMaker<BuiltInEventData> = EventMaker;
+
+export const ComponentRefresh = event('Component.Refresh');
 /**
  * Event which should be triggered when component starts loading data.
  */
 export const ComponentLoading: EventType<Kefir.Property<any>> = 'Component.Loading';
-/**
- * Event which should be triggered when data has been loaded.
- */
-export const ComponentLoaded: EventType<void> = 'Component.Loaded';
+export const ComponentLoaded = event('Component.Loaded');
+export const ComponentTemplateUpdate = event('Component.TemplateUpdate');

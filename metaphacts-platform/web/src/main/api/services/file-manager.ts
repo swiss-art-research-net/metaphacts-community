@@ -43,30 +43,42 @@ export const RESOURCE_QUERY = `
   } WHERE {}
 `;
 
-export type FileResource = {
-  iri: string;
+export interface FileResource {
+  iri: Rdf.Iri;
   fileName: string;
   mediaType: string;
 }
 
-class FileManager {
-  public ldp = new LdpService(FILE_LDP_CONTAINER_ID);
+export class FileManager {
+  private readonly repository: string;
+  private readonly ldp: LdpService;
 
-  public uploadFileAsResource(options: {
+  constructor(options: { repository: string }) {
+    const {repository} = options;
+    this.repository = repository;
+    this.ldp = new LdpService(FILE_LDP_CONTAINER_ID, {repository});
+  }
+
+  /**
+   * @returns file resource IRI
+   */
+  uploadFileAsResource(options: {
     file: File;
     storage: string;
     contextUri?: string;
     generateIriQuery?: string;
     resourceQuery?: string;
     onProgress?: (percent: number) => void;
-  }): Kefir.Property<FileResource> {
+  }): Kefir.Property<Rdf.Iri> {
     if (!options.storage) {
       return Kefir.constantError<any>(new Error('Storage is undefined!'));
     }
 
     const request = post(FILE_UPLOAD_SERVICE_URL + FILE_URL)
       .attach('file', options.file as any)
+      .field('fileSize', `${options.file.size}`)
       .field('storage', options.storage)
+      .field('repository', this.repository)
       .field('createResourceQuery', options.resourceQuery || RESOURCE_QUERY)
       .field('generateIriQuery', options.generateIriQuery || '')
       .field('contextUri', options.contextUri || '')
@@ -76,13 +88,16 @@ class FileManager {
         }
       });
 
-    return requestAsProperty(request).flatMap(response => {
+    return requestAsProperty(request).map(response => {
       const fileIri = Rdf.iri(response.header.location);
-      return this.getFileResourceByIri(fileIri.value);
-    }).toProperty();
+      return fileIri;
+    });
   }
 
-  public uloadFileDirectly(options: {
+  /**
+   * @returns object ID of the uploaded file, including object kind prefix "file/"
+   */
+  uploadFileDirectlyToStorage(options: {
     file: File;
     storage: string;
     folder: string;
@@ -98,8 +113,9 @@ class FileManager {
 
     const request = post(FILE_UPLOAD_SERVICE_URL + ADMIN_URL)
       .attach('file', options.file as any)
+      .field('fileSize', `${options.file.size}`)
       .field('storage', options.storage)
-      .field('path', options.folder)
+      .field('folder', options.folder)
       .field('fileName', options.fileName || '')
       .on('progress', e => {
         if (options.onProgress) {
@@ -112,18 +128,23 @@ class FileManager {
     });
   }
 
-  // Returns temporary resource
+  /**
+   * Uploads file to temporary storage and returns its description.
+   *
+   * @returns file resource IRI
+   */
   public uploadFileTemporary(options: {
     file: File;
     storage: string;
     onProgress?: (percent: number) => void;
-  }): Kefir.Property<FileResource> {
+  }): Kefir.Property<Rdf.Iri> {
     if (!options.storage) {
       return Kefir.constantError<any>(new Error('Storage is undefined!'));
     }
 
     const request = post(FILE_UPLOAD_SERVICE_URL + TEMPORARY_STORAGE_URL)
       .attach('file', options.file as any)
+      .field('fileSize', `${options.file.size}`)
       .field('storage', options.storage)
       .on('progress', e => {
         if (options.onProgress) {
@@ -131,15 +152,15 @@ class FileManager {
         }
       });
 
-    return requestAsProperty(request).map(response => {
-      return createTemporaryResource(
-        response.text,
-        options.file.type
-      );
-    });
+    return requestAsProperty(request).map(response =>
+      TemporaryFileSchema.encodeAsIri(response.text, options.file.type)
+    );
   }
 
-  public createResourceFromTemporaryFile(options: {
+  /**
+   * @returns file resource IRI
+   */
+  createResourceFromTemporaryFile(options: {
     fileName: string;
     storage: string;
     temporaryStorage: string;
@@ -148,11 +169,12 @@ class FileManager {
     generateIriQuery?: string;
     resourceQuery?: string;
     onProgress?: (percent: number) => void;
-  }): Kefir.Property<FileResource> {
+  }): Kefir.Property<Rdf.Iri> {
     const request = post(FILE_UPLOAD_SERVICE_URL + MOVE_URL)
       .field('fileName', options.fileName)
       .field('storage', options.storage)
       .field('temporaryStorage', options.temporaryStorage)
+      .field('repository', this.repository)
       .field('createResourceQuery',  options.resourceQuery || RESOURCE_QUERY)
       .field('mediaType', options.mediaType)
       .field('generateIriQuery', options.generateIriQuery || '')
@@ -163,53 +185,53 @@ class FileManager {
         }
       });
 
-    return requestAsProperty(request).flatMap(response => {
-      return this.getFileResourceByIri(response.header.location);
-    }).toProperty();
+    return requestAsProperty(request).map(response => {
+      const fileIri = Rdf.iri(response.header.location);
+      return fileIri;
+    });
   }
 
-  public deleteFileResource(resourceIri: string, fileStorage: string): Kefir.Property<Response> {
-    return this.getFileResourceByIri(resourceIri).flatMap(resource => {
+  deleteFileResource(resourceIri: Rdf.Iri, storage: string): Kefir.Property<Response> {
+    return this.getFileResource(resourceIri).flatMap(resource => {
       const request = del(FILE_UPLOAD_SERVICE_URL + FILE_URL)
         .field('fileName', resource.fileName)
-        .field('storage', fileStorage)
-        .field('resourceIri', resource.iri);
+        .field('storage', storage)
+        .field('repository', this.repository)
+        .field('resourceIri', resource.iri.value);
 
       return requestAsProperty(request);
     }).toProperty();
   }
 
-  public removeTemporaryFile(fileName: string, fileStorage: string): Kefir.Property<Response> {
+  removeTemporaryResource(resourceIri: Rdf.Iri, storage: string): Kefir.Property<Response> {
+    const {fileName} = TemporaryFileSchema.decodeFromIri(resourceIri);
     const request = del(FILE_UPLOAD_SERVICE_URL + TEMPORARY_STORAGE_URL)
       .field('fileName', fileName)
-      .field('storage', fileStorage);
+      .field('storage', storage);
 
     return requestAsProperty(request);
   }
 
-  public getFileResourceGraphByIri(resourceIri: string): Kefir.Property<Rdf.Graph> {
-    const fileIri = Rdf.iri(resourceIri);
-    return this.ldp.get(fileIri);
+  getFileResourceGraph(resourceIri: Rdf.Iri): Kefir.Property<Rdf.Graph> {
+    return this.ldp.get(resourceIri);
   }
 
-  public getFileResourceByIri(fileResourceIri: string, options?: {
+  getFileResource(resourceIri: Rdf.Iri, options?: {
     namePredicateIri?: string,
     mediaTypePredicateIri?: string,
   }): Kefir.Property<FileResource> {
-    if (this.isTemporaryResourceIri(fileResourceIri)) {
-      return Kefir.constant({
-        ...decodeTemporaryResourceIri(fileResourceIri),
-        iri: fileResourceIri
-      });
+    if (TemporaryFileSchema.isEncodedIri(resourceIri)) {
+      const {fileName, mediaType} = TemporaryFileSchema.decodeFromIri(resourceIri);
+      return Kefir.constant({iri: resourceIri, fileName, mediaType});
     } else {
       options = options || {};
       const namePredicateIri = options.namePredicateIri || VocabPlatform.fileName.value;
       const mediaTypePredicateIri = options.mediaTypePredicateIri || VocabPlatform.mediaType.value;
 
-      return this.getFileResourceGraphByIri(fileResourceIri).flatMap(graph => {
+      return this.getFileResourceGraph(resourceIri).flatMap(graph => {
         const triples = graph.triples;
         const resource: FileResource = {
-          iri: fileResourceIri,
+          iri: resourceIri,
           fileName:  triples.find(tripple => { return tripple.p.value === namePredicateIri; }).o.value,
           mediaType:  triples.find(tripple => { return tripple.p.value === mediaTypePredicateIri; }).o.value,
         };
@@ -217,60 +239,66 @@ class FileManager {
         if (resource.fileName && resource.mediaType) {
           return Kefir.constant<FileResource>(resource);
         } else {
-          return Kefir.constantError<any>(new Error(`
-One or both of resource properties was missed!
-Probably it happened because you defined new resource query,
-but didn't provide custom values to this function.
-          `));
+          return Kefir.constantError<any>(new Error(
+            `Either 'fileName' or 'mediaType' properties not found in the file resource graph`
+          ));
         }
       }).toProperty();
     }
   }
 
-  public getFileUrl(fileName: string, fileStorage: string): string {
+  static getFileUrl(fileName: string, storage: string): string {
     return new URI(FILE_UPLOAD_SERVICE_URL).addQuery({
       'fileName': fileName,
-      'storage': fileStorage,
+      'storage': storage,
     }).toString();
   }
 
-  // FileInput component encode its state into iri, and FileVizualizer support visualization of temporary IRIs
-  // so this function is here - don't store this-kind of IRIs because they are in-memory entities.
-  public isTemporaryResourceIri(resourceIri: string): boolean {
-    return resourceIri.startsWith(VocabPlatform.temporaryFilePrefix);
+  static isTemporaryResource(resourceIri: Rdf.Iri): boolean {
+    return TemporaryFileSchema.isEncodedIri(resourceIri);
   }
 }
-
-export const FileManagerService = new FileManager();
 
 // These functions are used by FileInput and FileVisualizer component
 // to store and visualize temporary state of FileInput component
 function createTemporaryResource(fileName: string, mediaType: string): FileResource {
   return {
-    iri: encodeTemporaryResourceIri(fileName, mediaType),
+    iri: TemporaryFileSchema.encodeAsIri(fileName, mediaType),
     fileName,
     mediaType,
   };
 }
 
-function encodeTemporaryResourceIri(fileName: string, mediaType: string): string {
-  const encodedMediaType = encodeURIComponent(mediaType);
-  const encodedName = encodeURIComponent(fileName);
-  return `${VocabPlatform.temporaryFilePrefix}${encodedMediaType}/${encodedName}`;
-}
+/**
+ * Represents temporary file description into an IRI with custom schema.
+ * This IRIs are natively supported by FileInput and FileVizualizer components,
+ * but should not be persisted anywhere and only stored in-memory.
+ */
+namespace TemporaryFileSchema {
+  const SCHEMA_PREFIX = 'mp-temporary-file:';
 
-function decodeTemporaryResourceIri(iri: string): { mediaType: string; fileName: string } {
-  const bufferString = iri.substring(VocabPlatform.temporaryFilePrefix.length, iri.length);
-  if (!bufferString) {
-    throw new Error(`Unable to decode IRI ${iri}!`);
+  export function isEncodedIri(iri: Rdf.Iri): boolean {
+    return iri.value.startsWith(SCHEMA_PREFIX);
   }
-  const [encodedMediaType, encodedName] = bufferString.split('/');
-  if (!(encodedMediaType && encodedName)) {
-    throw new Error(`Unable to decode IRI ${iri}! One of provided parameters is missing!`);
+
+  export function encodeAsIri(fileName: string, mediaType: string): Rdf.Iri {
+    const encodedMediaType = encodeURIComponent(mediaType);
+    const encodedName = encodeURIComponent(fileName);
+    return Rdf.iri(`${SCHEMA_PREFIX}${encodedMediaType}/${encodedName}`);
   }
-  const _fileName = decodeURIComponent(encodedName);
-  return {
-    mediaType: decodeURIComponent(encodedMediaType),
-    fileName: _fileName,
-  };
+
+  export function decodeFromIri(encoded: Rdf.Iri): { mediaType: string; fileName: string } {
+    if (!isEncodedIri(encoded)) {
+      throw new Error(`IRI is not an encoded temporary file: ${encoded}`);
+    }
+    const bufferString = encoded.value.substring(SCHEMA_PREFIX.length);
+    const [encodedMediaType, encodedName] = bufferString.split('/');
+    if (!(encodedMediaType && encodedName)) {
+      throw new Error(`Failed to decode temporary file IRI: ${encoded}`);
+    }
+    return {
+      mediaType: decodeURIComponent(encodedMediaType),
+      fileName: decodeURIComponent(encodedName),
+    };
+  }
 }

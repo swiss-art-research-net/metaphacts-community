@@ -18,34 +18,32 @@
 
 package com.metaphacts.services.storage.file;
 
-import com.metaphacts.services.storage.api.AbstractStorageFactory;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.StorageConfig;
-import com.metaphacts.services.storage.api.StorageConfigException;
-import com.metaphacts.services.storage.api.StorageCreationParams;
+import com.metaphacts.services.storage.api.*;
+import org.apache.commons.configuration2.Configuration;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
- *
  */
-public class NonVersionedFileStorageFactory extends AbstractStorageFactory {
-
-    public final static String STORAGE_TYPE="nonVersionedFile";
-
+public class NonVersionedFileStorageFactory implements StorageFactory {
     @Override
     public String getStorageType() {
-        return NonVersionedFileStorageFactory.STORAGE_TYPE;
+        return NonVersionedFileStorage.STORAGE_TYPE;
     }
 
     @Override
-    public StorageConfig getConfig(String storageId) {
-        return new NonVersionedFileStorage.Config(storageId, STORAGE_TYPE);
+    public StorageConfig parseStorageConfig(
+        String storageType,
+        Configuration properties
+    ) throws StorageConfigException {
+        NonVersionedFileStorage.Config config = new NonVersionedFileStorage.Config();
+        StorageConfig.readBaseProperties(config, properties);
+        if (properties.containsKey("root")) {
+            Path root = Paths.get(properties.getString("root"));
+            config.setRoot(root);
+        }
+        return config;
     }
-
-    @Override
-    public ObjectStorage getStorage(StorageConfig config,
-            StorageCreationParams creationParams) throws StorageConfigException {
-        return config.createStorage(creationParams);
-    }
-
 }

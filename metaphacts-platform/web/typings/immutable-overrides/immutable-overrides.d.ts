@@ -62,5 +62,5 @@ declare module Immutable {
     merge(...iterables: Map<K, V>[]): Map<K, V>;
   }
 
-  export function Map<K, V>(array: Array<[K, V]>): Map<K, V>;
+  export function Map<K, V>(array: ReadonlyArray<[K, V]>): Map<K, V>;
 }

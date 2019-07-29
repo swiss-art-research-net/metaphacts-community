@@ -28,6 +28,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -47,10 +48,6 @@ import com.google.common.base.Throwables;
 import com.metaphacts.data.rdf.container.LDPApiInternal;
 import com.metaphacts.junit.MetaphactsJerseyTest;
 import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PathMapping;
-import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.services.storage.api.PlatformStorage.FindResult;
 
 public class ContainerEndpointTest extends MetaphactsJerseyTest {
@@ -125,14 +122,16 @@ public class ContainerEndpointTest extends MetaphactsJerseyTest {
         MultivaluedMap<String, Object> headers = response.getHeaders();
         String location = (String)headers.getFirst("Location");
         IRI resourceIri = VF.createIRI(location);
-        String objectId = RepositoryManager.ASSET_REPOSITORY_ID + PathMapping.SEPARATOR
-                + ObjectStorage.objectIdFromIri(resourceIri) + ".trig";
-        Optional<FindResult> optResult = platformStorage.findObject(ObjectKind.LDP, objectId);
+        StoragePath objectId = ObjectKind.LDP
+            .resolve(RepositoryManager.ASSET_REPOSITORY_ID)
+            .resolve(StoragePath.encodeIri(resourceIri))
+            .addExtension(".trig");
+        Optional<FindResult> optResult = platformStorage.findObject(objectId);
         Assert.assertTrue(optResult.isPresent());
         // Now, delete the resource and check that it was deleted in the storage as well
         response = deleteResourceRequest(resourceIri.stringValue());
         Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        optResult = platformStorage.findObject(ObjectKind.LDP, objectId);
+        optResult = platformStorage.findObject(objectId);
         Assert.assertFalse(optResult.isPresent());
     }
 

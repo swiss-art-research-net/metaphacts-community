@@ -20,7 +20,7 @@ const path = require('path');
 const fs = require('fs');
 const {execFile} = require('child_process');
 
-if (process.argv.length !== 4) {
+if (process.argv.length < 4) {
   const scriptName = path.basename(process.argv[1]);
   console.error(
     `Invalid arguments for ${scriptName}:\n` +
@@ -29,7 +29,7 @@ if (process.argv.length !== 4) {
   process.exit(1);
 }
 
-const [nodePath,, projectName, interfaceName] = process.argv;
+const [nodePath,, projectName, interfaceName, required = '--required'] = process.argv;
 const projectRoot = path.normalize(`${__dirname}/../..`);
 
 if (!fs.existsSync(path.join(projectRoot, projectName))) {
@@ -43,7 +43,7 @@ const args = [
   'tsconfig.json',
   interfaceName,
   '--out', `${projectName}/web/schemas/${interfaceName}.json`,
-  '--required', 'true',
+  required,
   '--propOrder', 'true'
 ];
 execFile(nodePath, args, {cwd: projectRoot}, (/** @type {NodeJS.ErrnoException} */error, stdout, stderr) => {

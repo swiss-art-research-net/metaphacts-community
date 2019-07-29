@@ -38,7 +38,7 @@ import { SparqlUtil, SparqlClient } from 'platform/api/sparql';
 import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
-import { Rdf } from 'platform/api/rdf';
+import { Rdf, vocabularies } from 'platform/api/rdf';
 import * as LabelsService from 'platform/api/services/resource-label';
 
 import 'vis/dist/vis-timeline-graph2d.min.css';
@@ -466,7 +466,7 @@ export interface TimelineGroup {
 
 interface SemanticTimelineConfigBase {
   /**
-   * SPARQL select query. The required variables are <code>?start</code> and <code>?end</code>. The expected date format is <code>YYYY-MM-DD</code>.
+   * SPARQL select query. The required variables are <code>?start</code> and <code>?end</code>. The expected date formats are <code>YYYY-MM-DD</code>, <code>YYYY-MM-DDTHH:mm:ss</code> and <code>HH:mm:ss</code>.
    */
   query: string;
   /**
@@ -506,6 +506,13 @@ interface SemanticTimelineConfigBase {
    * CSS classes for component holder element.
    */
   className?: string;
+  /**
+   * Parsing format.
+   * By default, the <code>Y-MM-DD</code> format is used.
+   * If dates have type <code>xsd:dateTime</code>, the <code>Y-MM-DDTHH:mm:ss</code> format will be used.
+   * If dates have type <code>xsd:time</code>, the <code>HH:mm:ss</code> format will be used.
+   */
+  dateFormat?: string;
 }
 
 /*
@@ -591,10 +598,19 @@ export class SemanticTimeline extends Component<SemanticTimelineProps, SemanticT
     }
   }
 
-  private parseDate(date: Rdf.Node): moment.Moment | undefined {
+  private parseDate(date: Rdf.Literal): moment.Moment | undefined {
     if (!date) { return; }
 
-    return moment(date.value, 'Y-MM-DD');
+    let format = 'Y-MM-DD';
+    const {dateFormat} = this.props;
+    if (dateFormat) {
+      format = dateFormat;
+    } else if (date.dataType.equals(vocabularies.xsd.dateTime)) {
+      format = 'Y-MM-DDTHH:mm:ss';
+    } else if (date.dataType.equals(vocabularies.xsd.time)) {
+      format = 'HH:mm:ss';
+    }
+    return moment(date.value, format);
   }
 
   private prepareData(props: SemanticTimelineConfigProps) {
@@ -657,8 +673,8 @@ export class SemanticTimeline extends Component<SemanticTimelineProps, SemanticT
     const data = [];
 
     for (const binding of res.results.bindings) {
-      const start = this.parseDate(binding.start);
-      const end = this.parseDate(binding.end);
+      const start = this.parseDate(binding.start as Rdf.Literal);
+      const end = this.parseDate(binding.end as Rdf.Literal);
       const type = binding.type ? binding.type.value : defaultItemOptions.type;
 
       const error = this.validateDates(start, end, type);

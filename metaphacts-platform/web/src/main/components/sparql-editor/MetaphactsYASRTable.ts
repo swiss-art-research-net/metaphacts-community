@@ -23,7 +23,7 @@ import * as Either from 'data.either';
 import * as maybe from 'data.maybe';
 import * as bindingsToCsv from 'yasgui-yasr/src/bindingsToCsv.js';
 import * as classnames from 'classnames';
-import ReactSelect from 'react-select';
+import ReactSelect, { Option } from 'react-select';
 
 import { SparqlClient } from 'platform/api/sparql';
 import { Table } from 'platform/components/semantic/table';
@@ -102,7 +102,9 @@ function table(jsonResult) {
               {value: 25, label: '25'},
               {value: 100, label: '100'},
             ],
-            onChange: ({value}) => this.setState({resultsPerPage: value}),
+            onChange: selected => this.setState({
+              resultsPerPage: (selected as Option<number>).value,
+            }),
             clearable: false,
             className: 'pull-right',
             style: {width: 70, marginRight: 10},

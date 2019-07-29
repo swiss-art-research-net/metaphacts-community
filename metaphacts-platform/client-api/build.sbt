@@ -31,3 +31,5 @@ libraryDependencies ++= Seq(
   sesame, javaxWsRs, apacheCommons, testLibs
 ).flatten excluding dependenciesToExclude ++ Seq("commons-beanutils" -> "commons-beanutils")
 // comes with shiro 1.2.4, but we need 1.9.2 for commons configuration
+
+EclipseKeys.projectFlavor := EclipseProjectFlavor.Java

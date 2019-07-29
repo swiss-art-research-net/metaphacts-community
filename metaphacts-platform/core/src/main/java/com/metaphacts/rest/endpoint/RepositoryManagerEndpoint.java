@@ -43,10 +43,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.PathMapping;
-import com.metaphacts.services.storage.api.PlatformStorage;
-import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -87,7 +84,8 @@ public class RepositoryManagerEndpoint {
 
     private static final Logger logger = LogManager.getLogger(RepositoryManagerEndpoint.class);
 
-    private static final String REPOSITORY_TEMPLATES_OBJECT_PREFIX = "repository-templates/";
+    private static final StoragePath REPOSITORY_TEMPLATES_OBJECT_PREFIX =
+        ObjectKind.CONFIG.resolve("repository-templates");
     
     private static final String PASSWORD_MASK = "****";
     
@@ -106,8 +104,8 @@ public class RepositoryManagerEndpoint {
         return SecurityUtils.getSubject().isPermitted(new WildcardPermission(permission));
     }
 
-    private static String getObjectIdForTemplate(String templateId) {
-        return REPOSITORY_TEMPLATES_OBJECT_PREFIX + templateId + ".ttl";
+    private static StoragePath getObjectIdForTemplate(String templateId) {
+        return REPOSITORY_TEMPLATES_OBJECT_PREFIX.resolve(templateId).addExtension(".ttl");
     }
 
     @GET
@@ -217,11 +215,11 @@ public class RepositoryManagerEndpoint {
     @RequiresAuthentication
     public List<String> listTurtleRepositoryTemplates() throws StorageException {
         List<String> templateIds = platformStorage
-            .findAll(ObjectKind.CONFIG, REPOSITORY_TEMPLATES_OBJECT_PREFIX)
+            .findAll(REPOSITORY_TEMPLATES_OBJECT_PREFIX)
             .values().stream()
-            .map(foundObject -> foundObject.getRecord().getId())
-            .filter(objectId -> objectId.endsWith(".ttl"))
-            .map(PathMapping::nameWithoutExtension)
+            .map(foundObject -> foundObject.getRecord().getPath())
+            .filter(path -> path.hasExtension(".ttl"))
+            .map(path -> StoragePath.removeAnyExtension(path.getLastComponent()))
             .collect(Collectors.toList());
 
         return templateIds;
@@ -236,7 +234,7 @@ public class RepositoryManagerEndpoint {
         InputStream resourceInputStream;
         try {
             Optional<PlatformStorage.FindResult> foundTemplate = platformStorage
-                .findObject(ObjectKind.CONFIG, getObjectIdForTemplate(templateId));
+                .findObject(getObjectIdForTemplate(templateId));
 
             if (!foundTemplate.isPresent()) {
                 return Response.status(Status.NOT_FOUND)

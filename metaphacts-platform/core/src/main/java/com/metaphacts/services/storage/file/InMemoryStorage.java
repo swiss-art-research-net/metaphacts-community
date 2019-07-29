@@ -33,22 +33,14 @@ import java.util.stream.Collectors;
  * Thread-safe in-memory object storage implementation.
  */
 public class InMemoryStorage implements ObjectStorage {
-    private final Map<ObjectKind, Map<String, Record>> buckets = new HashMap<>();
-
-    public InMemoryStorage() {
-        for (ObjectKind kind : ObjectKind.values()) {
-            buckets.put(kind, new HashMap<>());
-        }
-    }
+    private final Map<StoragePath, Record> records = new HashMap<>();
 
     private static class Record {
-        public final ObjectKind kind;
-        public final String id;
+        public final StoragePath path;
         public final SortedMap<Integer, ObjectRevision> revisions = new TreeMap<>();
 
-        public Record(ObjectKind kind, String id) {
-            this.kind = kind;
-            this.id = id;
+        public Record(StoragePath path) {
+            this.path = path;
         }
     }
 
@@ -104,10 +96,10 @@ public class InMemoryStorage implements ObjectStorage {
     }
 
     @Override
-    public Optional<ObjectRecord> getObject(ObjectKind kind, String id, @Nullable String revision) throws StorageException {
+    public Optional<ObjectRecord> getObject(StoragePath path, @Nullable String revision) throws StorageException {
         Record foundRecord;
-        synchronized (buckets) {
-            foundRecord = buckets.get(kind).get(id);
+        synchronized (records) {
+            foundRecord = records.get(path);
         }
         return Optional.ofNullable(foundRecord)
             .flatMap(record -> {
@@ -121,18 +113,17 @@ public class InMemoryStorage implements ObjectStorage {
             })
             .map(rev -> new ObjectRecord(
                 new InMemoryLocation(rev),
-                kind,
-                id,
+                path,
                 String.valueOf(rev.key),
                 rev.metadata
             ));
     }
 
     @Override
-    public List<ObjectRecord> getRevisions(ObjectKind kind, String id) throws StorageException {
+    public List<ObjectRecord> getRevisions(StoragePath path) throws StorageException {
         Record record;
-        synchronized (buckets) {
-            record = buckets.get(kind).get(id);
+        synchronized (records) {
+            record = records.get(path);
         }
         if (record == null) {
             return ImmutableList.of();
@@ -141,8 +132,7 @@ public class InMemoryStorage implements ObjectStorage {
             return record.revisions.values().stream()
                 .map(revision -> new ObjectRecord(
                     new InMemoryLocation(revision),
-                    kind,
-                    id,
+                    path,
                     String.valueOf(revision.key),
                     revision.metadata
                 ))
@@ -151,34 +141,33 @@ public class InMemoryStorage implements ObjectStorage {
     }
 
     @Override
-    public List<ObjectRecord> getAllObjects(ObjectKind kind, String idPrefix) throws StorageException {
-        List<Record> records;
-        synchronized (buckets) {
-            records = buckets.get(kind).values().stream()
-                .filter(record -> record.id.startsWith(idPrefix))
+    public List<ObjectRecord> getAllObjects(StoragePath prefix) throws StorageException {
+        List<Record> found;
+        synchronized (records) {
+            found = records.values().stream()
+                .filter(record -> prefix.isPrefixOf(record.path))
                 .collect(Collectors.toList());
         }
         List<ObjectRecord> result = new ArrayList<>();
-        for (Record record : records) {
-            getObject(record.kind, record.id, null).ifPresent(result::add);
+        for (Record record : found) {
+            getObject(record.path, null).ifPresent(result::add);
         }
         return result;
     }
 
     @Override
     public ObjectRecord appendObject(
-        ObjectKind kind,
-        String id,
+        StoragePath path,
         ObjectMetadata metadata,
         InputStream content,
-        @Nullable Integer contentLength
+        long contentLength
     ) throws StorageException {
         Record record;
-        synchronized (buckets) {
-            record = buckets.get(kind).get(id);
+        synchronized (records) {
+            record = records.get(path);
             if (record == null) {
-                record = new Record(kind, id);
-                buckets.get(kind).put(record.id, record);
+                record = new Record(path);
+                records.put(record.path, record);
             }
         }
 
@@ -197,17 +186,19 @@ public class InMemoryStorage implements ObjectStorage {
         }
         return new com.metaphacts.services.storage.api.ObjectRecord(
             new InMemoryLocation(revision),
-            record.kind,
-            record.id,
+            record.path,
             String.valueOf(revision.key),
             revision.metadata
         );
     }
 
     @Override
-    public void deleteObject(ObjectKind kind, String id) throws StorageException {
-        synchronized (buckets) {
-            buckets.get(kind).remove(id);
+    public void deleteObject(
+        StoragePath path,
+        ObjectMetadata metadata
+    ) throws StorageException {
+        synchronized (records) {
+            records.remove(path);
         }
     }
 }

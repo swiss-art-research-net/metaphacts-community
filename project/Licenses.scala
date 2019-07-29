@@ -132,6 +132,7 @@ object Licenses {
     case DepModuleInfo("org.eclipse.rdf4j", _, version) => licenseinfo.LicenseEclipse
     case DepModuleInfo("junit", _, version) => licenseinfo.LicenseEclipse
     case DepModuleInfo("org.locationtech.jts", _, version) => licenseinfo.LicenseEclipse
+    case DepModuleInfo("org.eclipse.jgit", _, version) => LicenseInfo(Licenses.builtin.Eclipse, "Eclipse Distribution License v1.0", "https://github.com/eclipse/jgit/blob/v5.4.0.201906121030-r/LICENSE")
 
     // Public Domain
     case DepModuleInfo("aopalliance", _, version) => licenseinfo.LicensePublicDomain

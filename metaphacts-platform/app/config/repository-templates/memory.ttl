@@ -9,14 +9,14 @@
 @prefix sb: <http://www.openrdf.org/config/sail/base#>.
 
 [] a rep:Repository ;
-   rep:repositoryID "default" ;
-   rdfs:label "Memory store" ;
+   rep:repositoryID "default" ; # Replace with your repository ID or leave default if this is the main repository
+   rdfs:label "Memory store" ; # Replace with a meaningful description for this repository
    rep:repositoryImpl [
       rep:repositoryType "openrdf:SailRepository" ;
       sr:sailImpl [
          sail:sailType "openrdf:MemoryStore" ;
-	     sail:iterationCacheSyncThreshold "0"; # Threshold for syncing query evaluation iteration caches to disk
-         ms:persist "false" ; # Flag specifying whether the repository must be persisted on disk
-         ms:syncDelay "0" # Delay for the memory store synchronization
+         sail:iterationCacheSyncThreshold "0" ; # Threshold for syncing query evaluation iteration caches to disk, change if needed
+         ms:persist "false" ; # Flag specifying whether the repository must be persisted on disk, change if needed
+         ms:syncDelay "0" # Delay for the memory store synchronization, change if needed
       ]
    ].

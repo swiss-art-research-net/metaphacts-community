@@ -22,14 +22,17 @@ import * as ReactBootstrap from 'react-bootstrap';
 import * as ReactDropzone from 'react-dropzone';
 import ReactSelect from 'react-select';
 
+import { Cancellation } from 'platform/api/async';
+import { Component } from 'platform/api/components';
+import { getStorageStatus, ConfigStorageStatus } from 'platform/api/services/config';
+import { FileManager, FileResource } from 'platform/api/services/file-manager';
+
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
-import { FileManagerService, FileResource } from 'platform/api/services/file-manager';
+import { addNotification } from 'platform/components/ui/notification';
+
+import { getFileIcon } from './FileVisualizer';
 
 import * as styles from './FileManager.scss';
-import { getStorageStatus, ConfigStorageStatus } from 'platform/api/services/config';
-import { Cancellation } from 'platform/api/async';
-import { addNotification } from 'platform/components/ui/notification';
-import { getFileIcon } from './FileVisualizer';
 
 const OBJECT_KINDS =[
   'assets',
@@ -71,7 +74,7 @@ export interface DirectFileUploaderProps {
    * defined in '/runtime-data/config/data-storage.prop.
    */
   defaultStorageId?: string;
-  
+
   /**
    * Path to a destination folder in the storage. (It should start with an Object.Kind prefix).
   */
@@ -93,15 +96,15 @@ export interface DirectFileUploaderProps {
  *     default-object-kind="file"
  *     default-folder="/">
  * </mp-direct-file-uploader>
- * 
+ *
  * To have ability to upload files into storage you have to have permissions on this action.
  * Permission should be defined this way:
  * storage:{write}:{storage-id}
  * You can define it in shiro.ini
- * 
+ *
  * You can redefine inner body by passing custom body as a child component
  */
-export class DirectFileUploader extends React.Component<DirectFileUploaderProps, DirectFileUploaderState> {
+export class DirectFileUploader extends Component<DirectFileUploaderProps, DirectFileUploaderState> {
   private readonly cancellation = new Cancellation();
 
   constructor(props: DirectFileUploaderProps, context: any) {
@@ -138,11 +141,16 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
     }
   }
 
+  private getFileManager() {
+    const {repository} = this.context.semanticContext;
+    return new FileManager({repository});
+  }
+
   uploadFile() {
     const file = this.state.file;
 
     this.cancellation.map(
-      FileManagerService.uloadFileDirectly({
+      this.getFileManager().uploadFileDirectlyToStorage({
         storage: this.state.storageId,
         folder: this.getFolder(),
         fileName: this.state.path.name,
@@ -157,14 +165,15 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
     ).observe({
       value: resource => {
         addNotification({
-          message: 'Uploading succeeded!',
+          message: 'File succesfully uploaded.',
           level: 'success',
         });
         this.setState({
           alertState: {
             alert: AlertType.SUCCESS,
             message:
-            `File ${this.state.path.name} has been successfully uploaded to the storage "${this.state.storageId}". Relativ Path: "/${this.getFolder()}${this.state.path.name}"`
+              `File "${resource}" has been successfully ` +
+              `uploaded to the storage "${this.state.storageId}".`
             ,
           },
           progress: null,
@@ -177,13 +186,13 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
       },
       error: error => {
         addNotification({
-          message: 'Uploading failed!',
+          message: 'Failed to upload file.',
           level: 'error',
         });
         this.setState({
           alertState: {
             alert: AlertType.WARNING,
-            message: `File ${file.name}: uploading failed (${error} - ${error.response.text}).`,
+            message: `Failed to upload file "${file.name}": ${error} - ${error.response.text}`,
           },
           progress: null,
           path: {
@@ -215,7 +224,7 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
     this.setState({
       alertState: {
         alert: AlertType.WARNING,
-        message: `Incompatible file type! Expected ${this.props.acceptPattern}, got ${file.type}`,
+        message: `Incompatible file type: expected ${this.props.acceptPattern}, got ${file.type}`,
       },
       progress: null,
     });
@@ -237,7 +246,7 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
         this.setState({
           alertState: {
             alert: AlertType.WARNING,
-            message: `Storages status fetching failed (${error}).`,
+            message: `Failed to fetch storage list: ${error}`,
           },
           progress: null,
         });
@@ -248,27 +257,23 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
   private getFolder() {
     const {objectKind} = this.state.path;
     let folder = this.state.path.folder;
+    // filter following situations: some/path/////folder
     folder = folder.split('/').filter(token => Boolean(token)).join('/');
-    if (!folder.startsWith('/')) {
-      folder = '/' + folder;
-    }
-    if (!folder.endsWith('/')) {
-      folder = folder + '/';
-    }
-    return `${objectKind}${folder || ''}`;
-  }
 
-  private getPath() {
-    const {storageId, path} = this.state;
-    return `${storageId}: ${this.getFolder()}${path.name || ''}`;
+    if (folder) {
+      return `${objectKind}/${folder}`;
+    } else {
+      return objectKind;
+    }
   }
 
   render() {
     const alert = this.state.alertState ? <div className={styles.alertComponent}>
       <Alert {...this.state.alertState}></Alert>
     </div> : null;
-    const {storages: storages, path, file} = this.state;
+    const {storages: storages, path, file, storageId} = this.state;
     const fileNotSelected = !file;
+    const renderedPath = `${storageId}: ${this.getFolder()}/${path.name || 'undefined'}`;
 
     return <div className={styles.DirectFileUploader}>
       <div className={styles.row}>
@@ -286,7 +291,7 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
             onDropRejected={this.onDropRejected.bind(this)}
             disableClick={Boolean(this.state.progress || !storages)}
             >
-              {fileNotSelected ? 
+              {fileNotSelected ?
                 <div className={styles.mpDropZonePlaceHolder}>{
                   this.props.children ||
                   <div className = {styles.mpDropZonePlaceHolder}>{this.props.placeholder || 'Select file to upload.'}</div>
@@ -356,11 +361,11 @@ export class DirectFileUploader extends React.Component<DirectFileUploaderProps,
         <div className={styles.storageInput} style={{display: 'flex'}}>
           <input
             disabled={true}
-            value={fileNotSelected ? '' : this.getPath()}
+            value={fileNotSelected ? '' : renderedPath}
             style={{marginRight: 15}}
             placeholder='Please use the file selector to select a file to upload...'
             title={fileNotSelected ? 'Please use the file selector to select a file to upload' :
-              'Target path: ' + this.getPath()
+              'Target path: ' + renderedPath
             }
             className={`plain-text-field__text form-control ${styles.storageInput}`}
           />

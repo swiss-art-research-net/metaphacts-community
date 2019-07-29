@@ -23,7 +23,7 @@ object dependencies {
   val RDF4J_VERSION = "2.4.3"
   val LOG4J_VERSION = "2.8.2"
   val JERSEY_VERSION = "2.22.2"
-  val JACKSON_VERSION = "2.9.6" 
+  val JACKSON_VERSION = "2.9.6"
   val GUICE_VERSION = "4.0"
 
   //Sesame related
@@ -116,7 +116,7 @@ object dependencies {
     // pulled by OWL2VOWL
     "org.apache.servicemix.bundles" -> "org.apache.servicemix.bundles.collections-generic",
 
-    // RDF4J sub-modules which are already packaged inside rdf4j-client 
+    // RDF4J sub-modules which are already packaged inside rdf4j-client
     "org.eclipse.rdf4j" -> "rdf4j-util",
     "org.eclipse.rdf4j" -> "rdf4j-model",
     "org.eclipse.rdf4j" -> "rdf4j-query",
@@ -199,7 +199,10 @@ object dependencies {
 
     // AWS storage implementation
     "com.amazonaws" % "aws-java-sdk-s3" % "1.11.368",
-    "com.amazonaws" % "aws-java-sdk-sts" % "1.11.368"
+    "com.amazonaws" % "aws-java-sdk-sts" % "1.11.368",
+
+    // JGit for Git storage support
+    "org.eclipse.jgit" % "org.eclipse.jgit" % "5.4.0.201906121030-r"
   )
 
   val testLibs = Seq(

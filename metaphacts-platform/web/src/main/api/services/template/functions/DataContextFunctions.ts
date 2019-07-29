@@ -26,20 +26,20 @@ export interface DataContext {
 export class ContextCapturer {
   static readonly DATA_KEY = '$contextCapturer';
 
-  constructor(private contexts?: Map<string, DataContext>) {}
+  constructor(private contexts?: Map<number, DataContext>) {}
 
   private static lastContextKey = 0;
-  private static generateUniqueContextKey(): string {
+  private static generateUniqueContextKey(): number {
     ContextCapturer.lastContextKey++;
-    return ContextCapturer.lastContextKey.toString();
+    return ContextCapturer.lastContextKey;
   }
 
   /** @returns context key for {{expose}} block */
-  captureContext(dataContext: DataContext): string {
+  captureContext(dataContext: DataContext): number {
     const {context, data} = dataContext;
     const key = ContextCapturer.generateUniqueContextKey();
     if (!this.contexts) {
-      this.contexts = new Map<string, DataContext>();
+      this.contexts = new Map<number, DataContext>();
     }
     this.contexts.set(key, {context, data: cloneContextData(data)});
     return key;
@@ -53,9 +53,9 @@ export class ContextCapturer {
 export class CapturedContext {
   static readonly DATA_KEY = '$capturedContext';
 
-  constructor(private contexts?: ReadonlyMap<string, DataContext>) {}
+  constructor(private contexts?: ReadonlyMap<number, DataContext>) {}
 
-  getContext(contextKey: string): DataContext | undefined {
+  getContext(contextKey: number): DataContext | undefined {
     if (!this.contexts) { return undefined; }
     const context = this.contexts.get(contextKey);
     if (!context) {
@@ -173,7 +173,7 @@ export const DataContextFunctions = {
     const capturedContext = data[ContextCapturer.DATA_KEY];
     if (capturedContext instanceof ContextCapturer) {
       const key = capturedContext.captureContext({context: this, data: options.data});
-      return `{{#expose '${key}'}}${options.fn(this)}{{/expose}}`;
+      return `{{#expose ${key}}}${options.fn(this)}{{/expose}}`;
     }
     return options.fn(this);
   },
@@ -182,9 +182,9 @@ export const DataContextFunctions = {
    * {{expose <generated-key>}} helper restores previously captured template context
    * (`this` context and `@data` stack) using `CapturedContext` in `@data` stack.
    */
-  expose: function (this: any, key: string, options: any) {
-    if (typeof key !== 'string') {
-      throw new Error('{{#expose}} context key is missing or not a string');
+  expose: function (this: any, key: number, options: any) {
+    if (typeof key !== 'number') {
+      throw new Error('{{#expose}} context key is missing or not a number');
     }
 
     const data = options ? options.data : {};

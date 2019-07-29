@@ -22,3 +22,4 @@ export {
 import * as BuiltInEvents from './BuiltInEvents';
 export { BuiltInEvents };
 export * from './EventsStore';
+export * from './Utils';

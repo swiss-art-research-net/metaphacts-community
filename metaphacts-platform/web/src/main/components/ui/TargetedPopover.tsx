@@ -95,7 +95,7 @@ export class TargetedPopover extends React.Component<TargetedPopoverProps, State
     return (
       <Popover ref={this.onPopoverMount}
         id={id}
-        style={{whiteSpace: 'nowrap'}}
+        style={{whiteSpace: 'nowrap', maxWidth: 'unset'}}
         onMouseEnter={this.onMouseEnter}
         onMouseLeave={this.onMouseLeave}
         placement={popoverSide}

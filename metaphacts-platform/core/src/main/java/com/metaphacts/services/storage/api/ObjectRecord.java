@@ -28,21 +28,18 @@ package com.metaphacts.services.storage.api;
  */
 public final class ObjectRecord {
     private StorageLocation location;
-    private ObjectKind kind;
-    private String id;
+    private StoragePath path;
     private String revision;
     private ObjectMetadata metadata;
 
     public ObjectRecord(
         StorageLocation location,
-        ObjectKind kind,
-        String id,
+        StoragePath path,
         String revision,
         ObjectMetadata metadata
     ) {
         this.location = location;
-        this.kind = kind;
-        this.id = id;
+        this.path = path;
         this.revision = revision;
         this.metadata = metadata;
     }
@@ -51,12 +48,8 @@ public final class ObjectRecord {
         return location;
     }
 
-    public ObjectKind getKind() {
-        return kind;
-    }
-
-    public String getId() {
-        return id;
+    public StoragePath getPath() {
+        return path;
     }
 
     public String getRevision() {

@@ -27,6 +27,7 @@ const devMode = process.env.NODE_ENV !== 'production';
 
 /**
  * @param {ReturnType<import('./defaults')>} defaults
+ * @returns {import('webpack').Configuration}
  */
 module.exports = function(defaults) {
     const {themeDir} = resolveTheme(defaults);

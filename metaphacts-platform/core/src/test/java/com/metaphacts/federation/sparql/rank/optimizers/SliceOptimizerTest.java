@@ -30,7 +30,7 @@ import org.eclipse.rdf4j.query.parser.QueryParserUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.metaphacts.federation.repository.optimizers.MpQueryMultiJoinOptimizer;
+import com.metaphacts.federation.repository.optimizers.MpQueryNaryJoinExtractor;
 import com.metaphacts.federation.sparql.rank.optimizers.SliceOptimizer;
 
 public class SliceOptimizerTest {
@@ -41,7 +41,7 @@ public class SliceOptimizerTest {
 
     private String loadQuery(String queryId) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                OrderOptimizerTest.class.getResourceAsStream(queryId + ".sq"), "UTF-8"));
+                SliceOptimizerTest.class.getResourceAsStream(queryId + ".sq"), "UTF-8"));
         StringBuilder textBuilder = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -56,7 +56,7 @@ public class SliceOptimizerTest {
         String original = loadQuery("querySimpleSliceUnion");
         ParsedTupleQuery tq = QueryParserUtil.parseTupleQuery(QueryLanguage.SPARQL, original,
                 "http://www.example.org/");
-        new MpQueryMultiJoinOptimizer().optimize(tq.getTupleExpr(), null, null);
+        new MpQueryNaryJoinExtractor().optimize(tq.getTupleExpr(), null, null);
         SliceOptimizer optimizer = new SliceOptimizer();
         optimizer.optimize(tq.getTupleExpr(), null, null);
 

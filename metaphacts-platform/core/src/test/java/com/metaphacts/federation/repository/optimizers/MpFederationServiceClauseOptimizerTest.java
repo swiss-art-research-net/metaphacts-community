@@ -129,7 +129,7 @@ public class MpFederationServiceClauseOptimizerTest {
                 sQuery, null);
 
         MpFederationServiceClauseOptimizer optimizer = new MpFederationServiceClauseOptimizer(
-                Lists.newArrayList(mainMember), mainMember, serviceMappings);
+                Lists.newArrayList(mainMember), mainMember, serviceMappings, new QueryHintsSetup());
 
         optimizer.optimize(query.getTupleExpr(), null, null);
 

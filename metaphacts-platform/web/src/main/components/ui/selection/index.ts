@@ -22,3 +22,4 @@
 
 export * from './SelectionEvents';
 export * from './SelectionToggleComponent';
+export * from './SelectionGroupComponent';

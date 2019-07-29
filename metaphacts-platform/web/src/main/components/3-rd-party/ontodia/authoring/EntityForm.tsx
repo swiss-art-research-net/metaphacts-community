@@ -32,6 +32,7 @@ export interface EntityFormProps {
   fields: ReadonlyArray<FieldDefinition>;
   model: CompositeValue;
   onSubmit: (newData: CompositeValue) => void;
+  onCancel: () => void;
 }
 
 interface State {
@@ -39,12 +40,19 @@ interface State {
 }
 
 export class EntityForm extends Component<EntityFormProps, State> {
-  private readonly initModel: CompositeValue;
+  private initModel: CompositeValue;
 
   constructor(props: EntityFormProps, context) {
     super(props, context);
     this.initModel = this.props.model;
     this.state = {model: this.initModel};
+  }
+
+  componentWillReceiveProps(nextProps: EntityFormProps) {
+    if (this.props.model !== nextProps.model) {
+      this.initModel = nextProps.model;
+      this.setState({model: this.initModel});
+    }
   }
 
   private mapChildren(children: ReactNode): ReactNode {
@@ -55,6 +63,8 @@ export class EntityForm extends Component<EntityFormProps, State> {
             return cloneElement(child, {onClick: this.onReset});
           } else if (child.props.name === 'submit') {
             return cloneElement(child, {onClick: this.onSubmit});
+          } else if (child.props.name === 'cancel') {
+            return cloneElement(child, {onClick: () => this.props.onCancel()});
           }
         }
         if ('children' in child.props) {

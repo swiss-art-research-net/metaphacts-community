@@ -11,11 +11,10 @@
 
 
 [] a rep:Repository ;
-   rep:repositoryID "default" ; # Replace with your repository ID
-   rdfs:label "SPARQL repository" ;
+   rep:repositoryID "default" ; # Replace with your repository ID or leave default if this is the main repository
+   rdfs:label "SPARQL repository" ; # Replace with a meaningful description for this repository
    rep:repositoryImpl [
-      rep:repositoryType "metaphactory:SPARQLRepository" ;
-      sparqlr:query-endpoint {%Query endpoint|<http://example.org/query>%} ;
-      # sparqlr:update-endpoint <http://example.org/update> ; # Update endpoint (optional - only if different from the query endpoint)
-      mph:quadMode "true"
+      rep:repositoryType "metaphactory:SPARQLRepository" ;  
+      # sparqlr:update-endpoint <http://example.org/update> ; # (Optional) Uncomment and replace with the update endpoint (only if different from the query endpoint)
+      sparqlr:query-endpoint <http://example.org/query> # Replace with the URL of the SPARQL endpoint to submit queries to
    ].

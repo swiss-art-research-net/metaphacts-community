@@ -18,94 +18,39 @@
 
 package com.metaphacts.services.storage.api;
 
-import javax.validation.constraints.NotNull;
-
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * Abstract representation of a storage configuration. Specializations may extend it and implement
- * own validation logic in {@link #validate()}, which will be called on {@link #performValidation()}.
- * 
- * Please note that the {@link #setStorageType(String)} is supposed to be called externally after
- * the initialization through the constructor, i.e.in principle it is possible to use the same
- * storage configuration for instantiation of different storage {@link ObjectStorage}
- * implementations through respective {@link StorageFactory}s.
+ * own validation logic in {@link #validate()}.
  * 
  * @author Alexey Morozov
  * @author Johannes Trame <jt@metaphacts.com>
- *
  */
 public abstract class StorageConfig {
-    private String storageType;
-
-    protected String storageId;
     protected boolean mutable = false;
-    protected String root;
+    protected String subroot;
 
-    /**
-     * Creates a read-only storage config.
-     * 
-     * <b>If you this constructor, you should call {@link #setStorageType(String)} externally</b>.
-     * @param storageId
-     */
-    public StorageConfig(@NotNull String storageId) {
-        this.storageId = storageId;
-    }
-
-    /**
-     * Creates a read-only storage config.
-     * @param storageId
-     * @param storageType
-     */
-    public StorageConfig(@NotNull String storageId,@NotNull String storageType) {
-        this.storageId = storageId;
-        this.storageType = storageType;
-    }
-
-    public abstract ObjectStorage createStorage(StorageCreationParams params);
-    
     /**
      * Returns a key to identify the type of storage that can be instantiated with this
      * configuration.
-     * 
-     * @return
      */
-    public String getStorageType(){
-        return this.storageType;
-    }
+    public abstract String getStorageType();
+
+    public abstract ObjectStorage createStorage(StorageCreationParams params) throws StorageException;
 
     /**
-     * Triggers validation and is supposed to be called externally. Asserts that all mandatory
-     * fields like {@link StorageConfig#storageId} and {@link StorageConfig#storageType} are set.
-     * Also calls storage specific validation {@link StorageConfig#validate()}.
-     * 
-     * @throws StorageConfigException
+     * Storage specific configuration validation logic.
+     * Should check whether storage config is consistent and valid.
      */
-    public void performValidation() throws StorageConfigException{
-        if (StringUtils.isEmpty(this.storageType)) {
-            throw new RuntimeException("'storageType' must not be null or an empty string.");
+    protected void validate() throws StorageConfigException {
+        if (this.subroot != null) {
+            try {
+                StoragePath.parse(this.subroot);
+            } catch (Exception ex) {
+                throw new StorageConfigException("Invalid value for property 'subroot'", ex);
+            }
         }
-        if (StringUtils.isEmpty(this.storageId)) {
-            throw new RuntimeException("'storageId' must not be null or an empty string.");
-        }
-        this.validate();
-    }
-
-    /**
-     * Storage specific configuration validation logic. Will be called in
-     * {@link AbstractStorageFactory} to validate, whether after the initialization from
-     * configuration properties the storage config is consistent and valid.
-     * 
-     * @throws StorageConfigException
-     */
-    protected abstract void validate();
-
-    public void setStorageType(String storageType) {
-        this.storageType = storageType;
-    }
-
-    public void setStorageId(String storageId) {
-        this.storageId = storageId;
     }
 
     public void setMutable(boolean mutable) {
@@ -116,16 +61,20 @@ public abstract class StorageConfig {
         return this.mutable;
     }
 
-    public void setRoot(String root) {
-        this.root = root;
-    }
-    
-    public String getStorageId() {
-        return storageId;
+    public void setSubroot(String subroot) {
+        this.subroot = subroot;
     }
 
-    public String getRoot() {
-        return root;
+    public String getSubroot() {
+        return subroot;
     }
 
+    public static void readBaseProperties(StorageConfig config, Configuration properties) {
+        if (properties.containsKey("mutable")) {
+            config.setMutable(properties.getBoolean("mutable"));
+        }
+        if (properties.containsKey("subroot")) {
+            config.setSubroot(properties.getString("subroot"));
+        }
+    }
 }

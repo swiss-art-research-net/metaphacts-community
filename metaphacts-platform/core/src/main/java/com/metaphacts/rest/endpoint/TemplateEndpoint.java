@@ -65,6 +65,7 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -91,12 +92,6 @@ import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.security.PermissionUtil;
 import com.metaphacts.security.Permissions.PAGES;
 import com.metaphacts.services.storage.StorageUtils;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectMetadata;
-import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PlatformStorage;
-import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.templates.HandlebarsHelperRegistry;
 import com.metaphacts.templates.MetaphactsHandlebars;
 import com.metaphacts.templates.TemplateByIriLoader;
@@ -349,9 +344,9 @@ public class TemplateEndpoint extends ResourceConfig {
                     .build();
         }
         
-        String objectId = ObjectStorage.objectIdFromIri(iri);
+        StoragePath objectId = TemplateByIriLoader.templatePathFromIri(iri);
         List<PlatformStorage.FindResult> overrides =
-            platformStorage.findOverrides(ObjectKind.TEMPLATE, objectId);
+            platformStorage.findOverrides(objectId);
 
         String templateContent = "";
         String appId = null;
@@ -481,12 +476,12 @@ public class TemplateEndpoint extends ResourceConfig {
                     .build();
         }
 
-        String objectId = ObjectStorage.objectIdFromIri(iri);
+        StoragePath objectId = TemplateByIriLoader.templatePathFromIri(iri);
 
         if (sourceAppId != null && sourceRevision != null) {
             // content revision before saving
             PlatformStorage.FindResult current = platformStorage
-                .findObject(ObjectKind.TEMPLATE, objectId).orElse(null);
+                .findObject(objectId).orElse(null);
 
             boolean templateHasChanged = current == null
                 || !current.getAppId().equals(sourceAppId)
@@ -512,7 +507,8 @@ public class TemplateEndpoint extends ResourceConfig {
         // preserve old behavior to delete template if it's empty
         if (pageSource.length() == 0) {
             try {
-                platformStorage.getStorage(targetAppId).deleteObject(ObjectKind.TEMPLATE, objectId);
+                platformStorage.getStorage(targetAppId).deleteObject(
+                    objectId, platformStorage.getDefaultMetadata());
                 return Response.ok().build();
             } catch (StorageException e) {
                 logger.error("Failed to delete from storage while saving template", e);
@@ -525,7 +521,6 @@ public class TemplateEndpoint extends ResourceConfig {
             InputStream newContent = new ByteArrayInputStream(bytes);
             try {
                 platformStorage.getStorage(targetAppId).appendObject(
-                    ObjectKind.TEMPLATE,
                     objectId,
                     new ObjectMetadata(author.get(), null),
                     newContent,
@@ -549,16 +544,19 @@ public class TemplateEndpoint extends ResourceConfig {
     public List< TemplateInfo> getAllInfo() throws IOException, URISyntaxException {
         
         Collection<PlatformStorage.FindResult> templateObjects =
-            platformStorage.findAll(ObjectKind.TEMPLATE, "").values();
+            platformStorage.findAll(ObjectKind.TEMPLATE).values();
 
         List<TemplateInfo> list = new ArrayList<>();
 
         for (PlatformStorage.FindResult result : templateObjects) {
             ObjectRecord record = result.getRecord();
             ObjectMetadata metadata = record.getMetadata();
-            IRI iri = ObjectStorage.iriFromObjectId(record.getId());
+            Optional<IRI> iri = TemplateByIriLoader.templateIriFromPath(record.getPath());
+            if (!iri.isPresent()) {
+                continue;
+            }
             
-            if (!PermissionUtil.hasTemplateActionPermission(iri, PAGES.Action.INFO_VIEW)) {
+            if (!PermissionUtil.hasTemplateActionPermission(iri.get(), PAGES.Action.INFO_VIEW)) {
                 continue;
             }
             
@@ -569,7 +567,7 @@ public class TemplateEndpoint extends ResourceConfig {
             }
             TemplateInfo info = new TemplateInfo(
                 result.getAppId(),
-                iri.stringValue(),
+                iri.get().stringValue(),
                 record.getRevision(),
                 metadata.getAuthor(),
                 creationDate
@@ -621,16 +619,15 @@ public class TemplateEndpoint extends ResourceConfig {
                             throw new SecurityException("No permission to export the " + info.iri + " template");
                         }
                         
-                        String objectId = ObjectStorage.objectIdFromIri(iri);
+                        StoragePath objectId = TemplateByIriLoader.templatePathFromIri(iri);
 
                         String path = platformStorage.getPathMapping()
-                            .pathForObjectId(ObjectKind.TEMPLATE, objectId)
-                            .get();
+                            .mapForward(objectId).get().toString();
                         ZipArchiveEntry entry = new ZipArchiveEntry(path);
                         zos.putNextEntry(entry);
 
                         Optional<ObjectRecord> record = platformStorage.getStorage(info.appId)
-                                .getObject(ObjectKind.TEMPLATE, objectId, info.revision);
+                                .getObject(objectId, info.revision);
 
                         byte[] bytes;
                         if (record.isPresent()) {
@@ -688,8 +685,9 @@ public class TemplateEndpoint extends ResourceConfig {
         
         for (RevisionInfo info : selected) {
             IRI iri = vf.createIRI(info.iri);
-            String objectId = ObjectStorage.objectIdFromIri(iri);
-            platformStorage.getStorage(info.appId).deleteObject(ObjectKind.TEMPLATE, objectId);
+            StoragePath objectId = TemplateByIriLoader.templatePathFromIri(iri);
+            platformStorage.getStorage(info.appId).deleteObject(
+                objectId, platformStorage.getDefaultMetadata());
         }
     }
 

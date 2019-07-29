@@ -210,7 +210,9 @@ export class MainAppComponent extends Component<{}, {
    */
   addLastRequestTimeInterceptorToHttpRequests(): void {
     (function(open) {
-      XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
+      XMLHttpRequest.prototype.open = function (
+        method: any, url: any, async?: any, user?: any, pass?: any
+      ) {
           this.addEventListener('readystatechange', function() {
                 Cookies.set(WINDOW_LAST_REQUEST_TIME, Date.now());
           }, false);

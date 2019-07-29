@@ -24,6 +24,8 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
+import java.util.Optional;
+
 public class TemplateByIriLoader extends FromStorageLoader {
     protected final NamespaceRegistry ns;
 
@@ -36,10 +38,9 @@ public class TemplateByIriLoader extends FromStorageLoader {
     }
 
     @Override
-    protected ResolvedObject resolveLocation(String location) {
+    protected StoragePath resolveLocation(String location) {
         IRI templateIri = constructTemplateIri(location);
-        String objectId = ObjectStorage.objectIdFromIri(templateIri);
-        return new ResolvedObject(ObjectKind.TEMPLATE, objectId);
+        return templatePathFromIri(templateIri);
     }
 
     private IRI constructTemplateIri(String location) {
@@ -63,5 +64,18 @@ public class TemplateByIriLoader extends FromStorageLoader {
 
         IRI templateIri = isTemplate ? vf.createIRI(TEMPLATE_PREFIX + iri.stringValue()) : iri;
         return templateIri;
+    }
+
+    public static StoragePath templatePathFromIri(IRI templateIri) {
+        return ObjectKind.TEMPLATE.resolve(StoragePath.encodeIri(templateIri)).addExtension(".html");
+    }
+
+    public static Optional<IRI> templateIriFromPath(StoragePath objectPath) {
+        if (!objectPath.hasExtension(".html")) {
+            return Optional.empty();
+        }
+        return ObjectKind.TEMPLATE
+            .relativize(objectPath.stripExtension(".html"))
+            .map(StoragePath::decodeIri);
     }
 }

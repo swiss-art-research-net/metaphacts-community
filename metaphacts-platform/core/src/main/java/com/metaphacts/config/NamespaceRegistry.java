@@ -32,10 +32,7 @@ import java.net.URLEncoder;
 import com.google.common.collect.*;
 import com.metaphacts.api.sparql.SparqlUtil;
 import com.metaphacts.services.storage.StorageUtils;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.io.FileHandler;
@@ -60,7 +57,7 @@ import javax.inject.Inject;
  * @author Michael Schmidt <ms@metaphacts.com>
  */
 public class NamespaceRegistry {
-    private static final String CONFIG_OBJECT_ID = "namespaces.prop";
+    private static final StoragePath CONFIG_OBJECT_ID = ObjectKind.CONFIG.resolve("namespaces.prop");
     private static final Logger logger = LogManager.getLogger(NamespaceRegistry.class);
 
     static final String DFLT_PLATFORM_NAMESPACE = "http://www.metaphacts.com/ontologies/platform#";
@@ -132,7 +129,7 @@ public class NamespaceRegistry {
 
     private Map<String, NamespaceRecord> readNamespacesFromStorage() throws IOException, ConfigurationException {
         List<PlatformStorage.FindResult> overrides =
-            platformStorage.findOverrides(ObjectKind.CONFIG, CONFIG_OBJECT_ID);
+            platformStorage.findOverrides(CONFIG_OBJECT_ID);
 
         Map<String, NamespaceRecord> prefixToNs = new HashMap<>();
         for (PlatformStorage.FindResult found : overrides) {
@@ -219,7 +216,7 @@ public class NamespaceRegistry {
         ObjectStorage storage = platformStorage.getStorage(appId);
         PropertiesConfiguration config = ConfigurationUtil.createEmptyConfig();
 
-        Optional<ObjectRecord> existing = storage.getObject(ObjectKind.CONFIG, CONFIG_OBJECT_ID, null);
+        Optional<ObjectRecord> existing = storage.getObject(CONFIG_OBJECT_ID, null);
         if (existing.isPresent()) {
             ObjectRecord record = existing.get();
             try (InputStream content = record.getLocation().readContent()) {
@@ -232,7 +229,6 @@ public class NamespaceRegistry {
             try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
                 new FileHandler(config).save(os);
                 storage.appendObject(
-                    ObjectKind.CONFIG,
                     CONFIG_OBJECT_ID,
                     platformStorage.getDefaultMetadata(),
                     os.toInputStream(),

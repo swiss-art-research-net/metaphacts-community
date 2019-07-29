@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -68,10 +69,18 @@ public class FormPersistenceSparqlEndpoint {
     @RequiresAuthentication
     @Consumes(MediaType.APPLICATION_JSON)
     @RequiresPermissions(value = { FORMS_SPARQL.CREATE, FORMS_SPARQL.UPDATE }, logical = Logical.OR)
-    public Response executeUpdates(List<String> deleteAndInserts) {
+    public Response executeUpdates(
+        List<String> deleteAndInserts,
+        @QueryParam("repository") String repositoryID
+    ) {
+        if (repositoryID == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("Missing required parameter 'repository'")
+                .build();
+        }
         logger.debug("Received SPARQL insert and delete queries: {}", deleteAndInserts);
         try {
-            try (RepositoryConnection con = repositoryManager.getDefault().getConnection()) {
+            try (RepositoryConnection con = repositoryManager.getRepository(repositoryID).getConnection()) {
                 // TODO currently we can't execute all update operations in one transaction, see https://github.com/eclipse/rdf4j/issues/972
                 try{
                     for (String updateString : deleteAndInserts) {

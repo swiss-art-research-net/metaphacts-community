@@ -65,6 +65,19 @@
                             "$ref": "#/definitions/Rdf.Iri"
                         },
                         {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/definitions/Rdf.Iri"
+                                    },
+                                    {
+                                        "type": "string"
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        },
+                        {
                             "type": "string"
                         }
                     ]
@@ -76,7 +89,17 @@
                     "type": "string"
                 },
                 "label": {
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/definitions/Rdf.LangLiteral"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
                 },
                 "maxOccurs": {
                     "anyOf": [
@@ -108,6 +131,19 @@
                     "anyOf": [
                         {
                             "$ref": "#/definitions/Rdf.Iri"
+                        },
+                        {
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/definitions/Rdf.Iri"
+                                    },
+                                    {
+                                        "type": "string"
+                                    }
+                                ]
+                            },
+                            "type": "array"
                         },
                         {
                             "type": "string"
@@ -345,6 +381,101 @@
             ],
             "type": "object"
         },
+        "Rdf.LangLiteral": {
+            "properties": {
+                "_dataType": {
+                    "$ref": "#/definitions/Rdf.Iri"
+                },
+                "_lang": {
+                    "type": "string"
+                },
+                "_value": {
+                    "type": "string"
+                },
+                "cata": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "dataType": {
+                    "$ref": "#/definitions/Rdf.Iri"
+                },
+                "equals": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "hashCode": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "isBnode": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "isIri": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "isLiteral": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "lang": {
+                    "type": "string"
+                },
+                "toJSON": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "toString": {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "_lang",
+                "lang",
+                "equals",
+                "toString",
+                "toJSON",
+                "_dataType",
+                "dataType",
+                "_value",
+                "value",
+                "hashCode",
+                "cata",
+                "isIri",
+                "isLiteral",
+                "isBnode"
+            ],
+            "required": [
+                "_dataType",
+                "_lang",
+                "_value",
+                "cata",
+                "dataType",
+                "equals",
+                "hashCode",
+                "isBnode",
+                "isIri",
+                "isLiteral",
+                "lang",
+                "toJSON",
+                "toString",
+                "value"
+            ],
+            "type": "object"
+        },
         "SimpleTreeConfig": {
             "properties": {
                 "relationPattern": {
@@ -387,11 +518,16 @@
             "type": "string"
         },
         "fields": {
-            "description": "Definitions for form fields. Every field `id` must be map exactly to a\nsingle argument as defined in the arguments map of the `queryTemplate`\nas well as must be referenced by the `for=` attribute of the HTML form input elements.\n\n- `maxOccurs` will be overridden to 1;\n- `minOccurs` will be overridden to 0 or 1 depending on whether\ncorresponding query argument is optional or not.",
+            "description": "Definitions for form fields. Every field `id` must be map exactly to a\nsingle argument as defined in the arguments map of the `queryTemplate`\nas well as must be referenced by the `for=` attribute of the HTML form input elements.\n\n- `maxOccurs` will be overridden to 1 (if the `multi` property set to `false`);\n- `minOccurs` will be overridden to 0 or 1 depending on whether\ncorresponding query argument is optional or not.",
             "items": {
                 "$ref": "#/definitions/FieldDefinitionProp"
             },
             "type": "array"
+        },
+        "multi": {
+            "default": false,
+            "description": "Enables multi-value injection.\nIf set to `true`, VALUES clause will be used to parametrize the base query for arguments with more than one value.\nIf set to `false`, the first value will be used to parametrize the base query by replacement of the binding variable.\nTo disable multi-value parameterization for particular variables, one can explicitly set `maxOccurs: 1` for corresponding fields.",
+            "type": "boolean"
         },
         "queryTemplate": {
             "$ref": "#/definitions/QueryTemplate",
@@ -402,7 +538,8 @@
         "queryTemplate",
         "fields",
         "domain",
-        "domainField"
+        "domainField",
+        "multi"
     ],
     "required": [
         "fields",

@@ -21,8 +21,9 @@ import * as _ from 'lodash';
 import * as ReactBootstrap from 'react-bootstrap';
 import * as ReactDropzone from 'react-dropzone';
 
+import { Component } from 'platform/api/components';
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
-import { FileManagerService } from 'platform/api/services/file-manager';
+import { FileManager } from 'platform/api/services/file-manager';
 
 import * as styles from './FileManager.scss';
 import { Cancellation } from 'platform/api/async';
@@ -38,7 +39,7 @@ interface FileUploaderState {
 
 interface FileUploaderProps {
   /**
-   * Allow specific types of files. 
+   * Allow specific types of files.
    * Several pattern can be concatenated by a comma.
    * See https://github.com/okonet/attr-accept for more information
    * @example
@@ -74,7 +75,7 @@ interface FileUploaderProps {
   resourceQuery?: string
 
   /**
-   * Placeholder for the dropzone. If html child components of the mp-file-uploader are defined, those will be be used as dropzone placeholder. 
+   * Placeholder for the dropzone. If html child components of the mp-file-uploader are defined, those will be be used as dropzone placeholder.
    */
   placeholder?: string;
 
@@ -86,7 +87,7 @@ interface FileUploaderProps {
 
 /**
  * File uploader which uploads a file into a storage and
- * creates RDF meta-data, which is managed as a LDP resource. 
+ * creates RDF meta-data, which is managed as a LDP resource.
  * @example:
  * <mp-file-uploader
  *   placeholder="Please drag&drop your image-file here"
@@ -101,14 +102,14 @@ interface FileUploaderProps {
  *   '
  *   generate-iri-query='
  *     SELECT ?resourceIri WHERE {
- *       BIND(URI(CONCAT(CONCAT(STR(?__contextUri__), "/"), ?__sequence__)) as ?resourceIri)
+ *       BIND(URI(CONCAT(STR(?__contextUri__), "/", ?__fileName__)) as ?resourceIri)
  *     }
  *   '
  *   context-uri='[[this]]'
  *   storage='file-storage'
  * ></mp-file-uploader>
  */
-export class FileUploader extends React.Component<FileUploaderProps, FileUploaderState> {
+export class FileUploader extends Component<FileUploaderProps, FileUploaderState> {
   private readonly cancellation = new Cancellation();
 
   constructor(props: FileUploaderProps, context: any) {
@@ -121,6 +122,11 @@ export class FileUploader extends React.Component<FileUploaderProps, FileUploade
     };
   }
 
+  private getFileManager() {
+    const {repository} = this.context.semanticContext;
+    return new FileManager({repository});
+  }
+
   componentWillUnmount() {
     this.cancellation.cancelAll();
   }
@@ -130,7 +136,7 @@ export class FileUploader extends React.Component<FileUploaderProps, FileUploade
     const file = files[0];
 
     this.cancellation.map(
-      FileManagerService.uploadFileAsResource({
+      this.getFileManager().uploadFileAsResource({
         file: file,
         storage: this.props.storage,
         generateIriQuery: this.props.generateIriQuery,
@@ -144,13 +150,13 @@ export class FileUploader extends React.Component<FileUploaderProps, FileUploade
     ).observe({
       value: resource => {
         addNotification({
-          message: 'Uploading succeeded!',
+          message: 'File succesfully uploaded.',
           level: 'success',
         });
         this.setState({
           alertState: {
             alert: AlertType.SUCCESS,
-            message: `File ${file.name} has been successfully uploaded into the storage "${this.props.storage})".`,
+            message: `File "${file.name}" has been successfully uploaded.`,
           },
           progress: null,
           uploadCompleted: true,
@@ -158,13 +164,13 @@ export class FileUploader extends React.Component<FileUploaderProps, FileUploade
       },
       error: error => {
         addNotification({
-          message: 'Uploading failed!',
+          message: 'Failed to upload file.',
           level: 'error',
         });
         this.setState({
           alertState: {
             alert: AlertType.WARNING,
-            message: `File: ${file.name} uploading failed (${error} - ${error.response.text}).`,
+            message: `Failed to upload file "${file.name}": ${error} - ${error.response.text}`,
           },
           progress: null,
           uploadCompleted: false,
@@ -178,7 +184,7 @@ export class FileUploader extends React.Component<FileUploaderProps, FileUploade
     this.setState({
       alertState: {
         alert: AlertType.WARNING,
-        message: `Incompatible file type! Expected ${this.props.acceptPattern}, got ${file.type}`,
+        message: `Incompatible file type: expected ${this.props.acceptPattern}, got ${file.type}`,
       },
       progress: null,
       uploadCompleted: false,
@@ -212,4 +218,5 @@ export class FileUploader extends React.Component<FileUploaderProps, FileUploade
     </div>;
   }
 }
+
 export default FileUploader;

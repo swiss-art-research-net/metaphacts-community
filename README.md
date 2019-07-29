@@ -5,7 +5,6 @@ The development workspace (i.e. the root folder) is divided into these parts:
 
 * `metaphacts-platform` - core metaphacts platform;
 * `project` - all build related artifacts (SBT script, Webpack config, etc);
-* `configurations` - build configuration files for compiling the platform with different extensions;
 * additional extension folders - extensions for backend services and/or frontend components.
 
 For the frontend we are using Yarn for dependency management, Webpack for bundling.
@@ -35,12 +34,13 @@ The file `build.(sh|bat)` located in the root directory, provides a simple wrapp
 It is possible to use an unix-based OS as well as Windows for development against the platform. As prerequisites you need to have installed on your machine:
 
 * OpenJDK 8 (preferred, but Oracle JDK 8 is fine too)
-* Node.js >= 8.x
+* Node.js 8.x
 * SBT
 * Yarn
 * an RDF database or at least access to such (see section below)
 
 In particular, on OSX and Unix systems the most stable versions for SBT and Node.js are usually available from common package managers (e.g. homebrew, apt) and as such easy to install and to upgrade.
+On Windows the use of [Chocolatey](https://chocolatey.org/) is highly recommended.
 
 ### RDF Database (Triplestore)
 
@@ -48,11 +48,13 @@ For most developments (i.e. for starting-up the platform properly) you will need
 
 1. Login into Metaphacts docker registry: `docker login docker.metaphacts.com`
 2. Pull latest blazegraph image: `docker pull docker.metaphacts.com/snapshot/blazegraph:2.2.0-20160908.003514-6`
-3. Run Blazegraph container with data container mounted: `docker run --name blazegraph -d --restart=always -p 10080:8080 --env JAVA_OPTS="" -v /home/user/path-to-blazegraph-journal:/blazegraph-data docker.metaphacts.com/snapshot/blazegraph:2.2.0-20160908.003514-6`
+3. Run Blazegraph container with local storage mounted as data volume: `docker run --name blazegraph -d --restart=always -p 10080:8080 --env JAVA_OPTS="" -v /home/user/path-to-blazegraph-journal:/blazegraph-data docker.metaphacts.com/snapshot/blazegraph:2.2.0-20160908.003514-6`
 
 Where `/home/user/path-to-blazegraph-journal-folder` is the folder on the host system where blazegraph journal will be stored.
 
-Afterwards, **connect your development setup to the SPARQL endpoint** as exposed by the Blazegraph container running on your docker machine by adding `sparqlEndpoint=http://{yourdockerip}:10080/blazegraph/sparql` to your `runtime/config/environment.prop` configuration file (run, for example, `docker-machine ip` to get the IP from you docker instance).
+**Please note that on Windows, it is required to first activate sharing of drives through `Docker Desktop App > Settings > Shared Drives`. You can afterwards specify the folder like `C:\path-to-blzaegraph-journal`**
+
+Afterwards, **connect your development setup to the SPARQL endpoint** as exposed by the Blazegraph container running on your docker machine by adding `sparqlEndpoint=http://localhost:10080/blazegraph/sparql` to your `runtime/config/environment.prop` configuration file. The folder structure and the `environment.prop file` do not exist right after checkout and have to be created manually or will be created during first build run.
 
 ### IDE
 At metaphacts we are using various IDEs and text editors like Eclipse, IDEA, VSCode, Atom and Emacs. While there exist some addons for JavaScript and Typescript in Eclipse, it is in principle possible to develop everything in only one IDE, e.g. Eclipse or IDEA. However, in particular for the JavaScript/TypeScript development it can be convenient to use editors such as VSCode, Atom or Emacs with much more powerful plugins.
@@ -74,7 +76,7 @@ When developing frontend code in the Visual Studio Code we recommend setting Typ
 * IntelliJ IDEA - should add `-Dsbt.override.build.repos=true -Dsbt.repository.config=./project/repositories` to VM parameters when importing the project (c.f. this [answer](https://stackoverflow.com/questions/26933523/why-intellij-cant-find-sbt-snapshot-dependencies/27173389#27173389)).
 
 ## Running the Platform
-Once being in the SBT console (`sh build.sh`), run `˜jetty:start` which will compile all sources and start the jetty server. The tilde `~` will make SBT to watch source directories for changes in order to trigger incremental compilation, so any change to the server-side or client-side sources triggers re-deployment, which takes no more than a few seconds until they are picked-up by Jetty.
+Once being in the SBT console (`sh build.sh`), run `~jetty:start` which will compile all sources and start the jetty server. The tilde `~` will make SBT to watch source directories for changes in order to trigger incremental compilation, so any change to the server-side or client-side sources triggers re-deployment, which takes no more than a few seconds until they are picked-up by Jetty.
 
 Finally, go to [http://127.0.0.1:10214/](http://127.0.0.1:10214/). You should see the login screen and should be able to login with standard login `admin:admin`.
 
@@ -108,8 +110,25 @@ to the sbt console. The `log4j2-trace` and `log4j2-trace2` profile produce a lot
 
 **Please note:** If an old `log4j2.xml` file is still present in the compilation `/target/webapp/WEB-INF` folder, it will always be be preceded over the file set via the `-Dlog` env variable. Execute `clean` and `clean-files` in the sbt console to clean the target folder.
 
+## Codestyle & Linting
+
+###Java
+
+You will find a readymade Java checkstyle file in `project/checkstyle.xml`. We recommend to use the [eclipse-cs](https://github.com/checkstyle/eclipse-cs) plugin. You can install the plugin if you drag&drop the following link into your eclipse: [Install](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=150) . Afterwards  you should create a new global check configuration and import the checkstyle file: Preferences -> Checkstyle -> New… -> Name "metaphacts-platform" -> Import … (Select from `project/checkstyle.xml`) -> Set as Default (optional).
+
+### Typescript & SCSS
+
+You will find a `tslint.json` file in the root folder of the project, which should automatically be recognised by your IDE and respective linting extensions. Make sure that your IDE has installed the latest tslint plugin/extension, i.e.  the `tslint@1.0.x` extension in Visual Code (View -> Extensions -> search … 'tslint' ) is deprecated and you should install `tslint@1.2.x` or newer, which is a separate extension and requires to uninstall the old extension.
+
 ## Testing
 Running `test` command in the SBT console will execute all backend tests (Java JUnit) as well as client-side unit tests (using mainly mocha, chai, sinon). To just execute the client-side test, you can also run `npm run test` in the `project/webpack` folder. We also have a number of integration tests, see `researchspace/integration-tests`.
 
 ## Packaging
 Run `build.sh -DbuildEnv=prod` and then `package`. The compiled war file will be copied to `/target/platform-*.war` and can be deployed using common servlet containers such as Jetty or Tomcat.
+
+
+
+## Troubleshooting
+
+* We have been reported that fetching and installing dependencies may fail on the first run, i.e. when running `build.(bat|sh)` initially, there might be random `npm` errors/race conditions. These are typically related to compiling certain `npm` (peer/dev)  dependencies  (depending on the node.js version and operation system being used) . Usually running `build.(bat|sh)` a second time will solve the issue. Once the dependencies are compiled/installed, these will be cached unless running `build.(bat|sh) clean`.
+

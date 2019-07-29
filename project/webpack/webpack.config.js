@@ -16,27 +16,22 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-var path = require('path'),
-    glob = require('glob'),
-    fs = require('fs'),
-    _ = require('lodash'),
-    webpack = require('webpack'),
-    AssetsPlugin = require('assets-webpack-plugin'),
-    autoprefixer = require('autoprefixer'),
-    MergePlugin = require('merge-webpack-plugin'),
-    HappyPack = require('happypack'),
-    resolveTheme = require('./theme');
+const path = require('path');
+const fs = require('fs');
+const webpack = require('webpack');
+const AssetsPlugin = require('assets-webpack-plugin');
+const autoprefixer = require('autoprefixer');
+const HappyPack = require('happypack');
+const resolveTheme = require('./theme');
 
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 // GS:
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
-var getRepoInfo = require('git-repo-info');
+const getRepoInfo = require('git-repo-info');
 
 /**
  * @param {ReturnType<import('./defaults')>} defaults
+ * @returns {import('webpack').Configuration}
  */
 module.exports = function (defaults) {
     const {
@@ -69,6 +64,11 @@ module.exports = function (defaults) {
     let extensions = [];
     /** @type {Array<string>} */
     const cssModulesBasedComponents = [];
+    /**
+     * Mapping from schemaName -> import path for JSON file
+     * @type {{ [schemaName: string]: string }}
+     */
+    const jsonSchemas = {};
     /** @type {{ [componentTag: string]: string }} */
     const components = {};
 
@@ -92,6 +92,13 @@ module.exports = function (defaults) {
         extensions = [...extensions, ...project.extensions];
       }
 
+      if (project.generatedJsonSchemas) {
+        for (const schemaName of project.generatedJsonSchemas) {
+          const schemaPath = `${project.schemasAlias}/${schemaName}.json`;
+          jsonSchemas[schemaName] = schemaPath;
+        }
+      }
+
       const componentsJsonPath = path.join(project.webDir, 'component.json');
       if (fs.existsSync(componentsJsonPath)) {
         const componentsJson = JSON.parse(fs.readFileSync(componentsJsonPath, 'utf8'));
@@ -103,6 +110,8 @@ module.exports = function (defaults) {
     fs.writeFileSync(path.join(__dirname, '.mp-extensions'), JSON.stringify(extensions), 'utf8');
     // generate combined .mp-components JSON
     fs.writeFileSync(path.join(__dirname, '.mp-components'), JSON.stringify(components), 'utf8');
+    // generate combined .mp-schemas JSON
+    fs.writeFileSync(path.join(__dirname, '.mp-schemas'), JSON.stringify(jsonSchemas), 'utf8');
 
     const {themeDir} = resolveTheme(defaults);
     console.log('Using theme directory: ' + themeDir);
@@ -160,12 +169,17 @@ module.exports = function (defaults) {
                 },
                 {
                     test: /\.mp-components$/,
-                    use: [{loader: 'components-loader'}],
+                    use: [{loader: 'loaders/components-loader'}],
                     exclude: [/node_modules/]
                 },
                 {
                     test: /\.mp-extensions$/,
-                    use: [{loader: 'extensions-loader'}],
+                    use: [{loader: 'loaders/extensions-loader'}],
+                    exclude: [/node_modules/]
+                },
+                {
+                    test: /\.mp-schemas$/,
+                    use: [{loader: 'loaders/schemas-loader'}],
                     exclude: [/node_modules/]
                 },
 
@@ -216,26 +230,6 @@ module.exports = function (defaults) {
                     loader: "expose-loader?CodeMirror",
                     exclude: GRAPHSCOPE_SOURCE_DIR
                 },
-                // load images for simile timeline
-                {
-                    test: /.*red-circle\.png$/,
-                    loader: 'file-loader?name=[name].[ext]&context=src/main/components/semantic/timeline/lib/timeline_2.3.0/timeline_js/images',
-                    include: [path.join(METAPHACTORY_DIRS.src, 'components/semantic/timeline')],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
-                },
-                {
-                    test: /.*copyright-vertical\.png$/,
-                    loader: 'file-loader?name=images/[name].[ext]&context=src/main/components/semantic/timeline/lib/timeline_2.3.0/timeline_js/images',
-                    include: [path.join(METAPHACTORY_DIRS.src, 'components/semantic/timeline')],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
-                },
-                {
-                    test: /.*progress-running\.gif$/,
-                    loader: 'file-loader?name=images/[name].[ext]&context=src/main/components/semantic/timeline/lib/timeline_2.3.0/timeline_js/images',
-                    include: [path.join(METAPHACTORY_DIRS.src, 'components/semantic/timeline')],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
-                },
-
                 // graphscope
                 // .ts
                 // {
@@ -390,6 +384,7 @@ module.exports = function (defaults) {
               {
                 'platform-components': path.join(__dirname, '.mp-components'),
                 'platform-extensions': path.join(__dirname, '.mp-extensions'),
+                'platform-schemas': path.join(__dirname, '.mp-schemas'),
                 'platform-theme': themeDir,
                 _: 'lodash',
                 'basil.js': 'basil.js/src/basil.js',
@@ -507,25 +502,6 @@ module.exports = function (defaults) {
             })
         ]
     };
-
-    const addVendor = function(name, path) {
-        config.resolve.alias[name + '$'] = path;
-        config.module.noParse.push(new RegExp(path));
-    };
-
-
-    var minifiedLibs = [
-        ['simile-ajax-bundle', path.join(METAPHACTORY_DIRS.src, 'components/semantic/timeline/lib/timeline_2.3.0/timeline_ajax/simile-ajax-bundle.js')],
-        ['timeline-bundle', path.join(METAPHACTORY_DIRS.src, 'components/semantic/timeline/lib/timeline_2.3.0/timeline_js/timeline-bundle.js')],
-        ['openlayers', path.join(METAPHACTORY_ROOT_DIR, 'node_modules/openlayers/dist/ol.js')]
-    ];
-
-    _.forEach(
-        minifiedLibs,
-        function(lib) {
-            addVendor(lib[0], lib[1]);
-        }
-    );
 
     return config;
 };

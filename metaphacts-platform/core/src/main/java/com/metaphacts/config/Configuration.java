@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -124,6 +125,11 @@ public class Configuration {
     public static String getAppsDirectory() {
         String value = System.getProperty("appsDirectory");
         return StringUtils.isEmpty(value) ? (getRuntimeDirectory() + "/apps/") : value;
+    }
+
+    public static boolean arePluginBasedAppsMutable() {
+        String value = System.getProperty("config.mutablePluginApps");
+        return value != null && value.equals("true");
     }
 
     /**
@@ -294,13 +300,14 @@ public class Configuration {
      *             If the config group or parameter in the group does not exit
      *             or there are any unexpected exceptions while writing the
      *             property.
+     * @throws ConfigurationException 
      */
     public void setProperty(
         String configGroup,
         String configIdInGroup,
         List<String> configValues,
         String targetAppId
-    ) throws UnknownConfigurationException {
+    ) throws UnknownConfigurationException, ConfigurationException {
 
         // assert parameters are set correctly
         if (StringUtils.isEmpty(configGroup)
@@ -343,6 +350,9 @@ public class Configuration {
                 throw new UnknownConfigurationException();
             }
         } catch (Exception e) {
+            if (e.getCause() instanceof ConfigurationException) {
+            	throw (ConfigurationException) e.getCause();
+            }
             // this should not happen, so write some log output
             logger.warn("Exception during setting values [" + configValues +
                 "]\" for configuration property \"" + configIdInGroup + "\"", e);

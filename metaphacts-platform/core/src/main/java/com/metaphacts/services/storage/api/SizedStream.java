@@ -49,7 +49,13 @@ public class SizedStream implements AutoCloseable {
         stream.close();
     }
 
-    public static SizedStream measureStream(InputStream stream) throws IOException {
+    /**
+     * Buffers the whole stream in memory to compute its byte length.
+     *
+     * Warning: try avoid using this method if possible, otherwise it may lead to out of memory
+     * issues if the stream content is too large.
+     */
+    public static SizedStream bufferAndMeasure(InputStream stream) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         IOUtils.copy(stream, buffer);
         return new SizedStream(buffer.toInputStream(), buffer.size());

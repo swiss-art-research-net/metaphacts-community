@@ -22,8 +22,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -56,10 +59,12 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.data.json.JsonUtil;
-import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.MpRepositoryProvider;
+import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.rest.feature.CacheControl.MaxAgeCache;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.security.AnonymousUserFilter;
 import com.metaphacts.security.LDAPRealm;
@@ -67,10 +72,14 @@ import com.metaphacts.security.MetaphactsSecurityManager;
 import com.metaphacts.security.Permissions.ACCOUNTS;
 import com.metaphacts.security.Permissions.PERMISSIONS;
 import com.metaphacts.security.Permissions.ROLES;
+import com.metaphacts.security.PermissionsDocGroup;
+import com.metaphacts.security.PermissionsParameterInfo;
 import com.metaphacts.security.SecurityService;
 import com.metaphacts.security.ShiroTextRealm;
 
-
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 /**
  * @author Johannes Trame <jt@metaphacts.com>
  */
@@ -260,6 +269,36 @@ public class SecurityEndpoint {
         }
     }
 
+
+    @GET()
+    @MaxAgeCache(time=1, unit=TimeUnit.DAYS)
+    @Path("getAllPermissionsDoc")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RequiresAuthentication
+    public Map<String, ArrayList<PermissionsParameterInfo>> getAllPermissionsDoc() {
+        PermissionsParameterInfo permissionParameters = new PermissionsParameterInfo();
+        ArrayList<PermissionsParameterInfo> permissions = Lists.newArrayList();
+        HashMap<String, ArrayList<PermissionsParameterInfo>> map = Maps.newHashMap();
+        String pkg = "com.metaphacts.security";
+        String routeAnnotation = pkg + ".PermissionsDocGroup";
+        try (ScanResult scanResult = new ClassGraph()
+                .enableClassInfo()
+                .enableAnnotationInfo()
+                .enableStaticFinalFieldConstantInitializerValues()
+                .whitelistPackages(pkg)
+                .scan()) {
+            for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(routeAnnotation)) {
+                Class<?> permissionGroup = routeClassInfo.loadClass();
+                String desc = permissionGroup.getAnnotation(PermissionsDocGroup.class).desc();
+                permissions = new ArrayList<PermissionsParameterInfo>();
+                permissionParameters.setAllAnnotationParameters(permissionGroup, permissions);
+                map.put(desc, permissions);
+            }
+        }
+        return map;
+    }
+
+    
     @GET()
     @NoCache
     @Path("getAllAccounts")

@@ -29,6 +29,7 @@ import java.util.Map;
 import com.metaphacts.junit.AbstractIntegrationTest;
 import com.metaphacts.junit.PlatformStorageRule;
 import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.SizedStream;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
@@ -193,13 +194,14 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
     }
 
     private void writeConfigToStorage(String repositoryId, InputStream content) throws IOException {
-        storage.getObjectStorage().appendObject(
-            ObjectKind.CONFIG,
-            RepositoryConfigUtils.getConfigObjectId(repositoryId),
-            storage.getPlatformStorage().getDefaultMetadata(),
-            content,
-            null
-        );
+        try (SizedStream bufferedContent = SizedStream.bufferAndMeasure(content)) {
+            storage.getObjectStorage().appendObject(
+                RepositoryConfigUtils.getConfigObjectPath(repositoryId),
+                storage.getPlatformStorage().getDefaultMetadata(),
+                bufferedContent.getStream(),
+                bufferedContent.getLength()
+            );
+        }
     }
 
     @Test

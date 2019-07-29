@@ -93,15 +93,24 @@ public class StorageConfigLoader {
         for (String storageId : orderedIds) {
             Configuration properties = allStoragesSubset.subset(storageId);
             String storageType = properties.getString("type");
-            if (storageRegistry.has(storageType)) {
-                StorageConfig c = storageRegistry.get(storageType).get()
-                        .getStorageConfigFromProperties(storageId, storageType, properties);
-                configs.put(storageId, c);
-            } else {
-                throw new StorageConfigException("Unknown storage type '" + storageType + "'");
+            if (storageType == null) {
+                throw new StorageConfigException(
+                    "Missing property 'type' for storage '" + storageId + "'");
             }
+
+            StorageFactory factory = storageRegistry.get(storageType).orElseThrow(
+                () -> new StorageConfigException("Unknown storage type '" + storageType + "'"));
+
+            StorageConfig parsedConfig = factory.parseStorageConfig(storageType, properties);
+            try {
+                parsedConfig.validate();
+            } catch (StorageConfigException e) {
+                throw new StorageConfigException(
+                    "Invalid configuration for storage ID '" + storageId + "'", e);
+            }
+            configs.put(storageId, parsedConfig);
         }
+
         return configs;
     }
-
 }

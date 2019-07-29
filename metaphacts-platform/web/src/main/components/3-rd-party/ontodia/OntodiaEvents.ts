@@ -16,9 +16,14 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { EventType } from 'platform/api/events';
+import { EventMaker } from 'platform/api/events';
 
-/**
- * Event which should be triggered when diagram has been saved.
- */
-export const DiagramSaved: EventType<void> = 'Ontodia.DiagramSaved';
+export interface OntodiaEventData {
+  /**
+   * Event which should be triggered when diagram has been saved.
+   */
+  'Ontodia.DiagramSaved': void;
+}
+const event: EventMaker<OntodiaEventData> = EventMaker;
+
+export const DiagramSaved = event('Ontodia.DiagramSaved');

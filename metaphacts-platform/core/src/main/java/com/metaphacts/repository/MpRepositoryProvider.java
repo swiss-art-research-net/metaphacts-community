@@ -32,6 +32,9 @@ public class MpRepositoryProvider {
     private final String repositoryId;
 
     public MpRepositoryProvider(RepositoryManager repositoryManager, String repositoryId) {
+        if (repositoryId == null) {
+            throw new IllegalArgumentException("repositoryId cannot be null");
+        }
         this.repositoryManager = repositoryManager;
         this.repositoryId = repositoryId;
     }

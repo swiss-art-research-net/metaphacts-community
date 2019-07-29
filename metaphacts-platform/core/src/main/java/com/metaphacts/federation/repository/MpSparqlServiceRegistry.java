@@ -36,6 +36,7 @@ import com.metaphacts.services.storage.api.PlatformStorage.FindResult;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.RDF4JException;
@@ -58,7 +59,7 @@ import com.google.inject.Inject;
  */
 @Singleton
 public class MpSparqlServiceRegistry {
-    private static final String SERVICES_OBJECT_PREFIX = "services/";
+    private static final StoragePath SERVICES_OBJECT_PREFIX = ObjectKind.CONFIG.resolve("services");
 
     private static final Logger logger = LogManager.getLogger(MpSparqlServiceRegistry.class);
     
@@ -80,8 +81,10 @@ public class MpSparqlServiceRegistry {
         return configFilePattern.matcher(serviceID).replaceAll("-");
     }
 
-    private static String getConfigObjectId(String serviceID) {
-        return SERVICES_OBJECT_PREFIX + normalizeServiceConfigId(serviceID) + ".ttl";
+    private static StoragePath getConfigObjectId(String serviceID) {
+        return SERVICES_OBJECT_PREFIX
+            .resolve(normalizeServiceConfigId(serviceID))
+            .addExtension(".ttl");
     }
 
     public Optional<ServiceDescriptor> getDescriptorForId(String id) {
@@ -97,22 +100,22 @@ public class MpSparqlServiceRegistry {
     }
     
     protected void init() throws IOException {
-        List<ObjectRecord> turtleFiles = platformStorage.findAll(ObjectKind.CONFIG, SERVICES_OBJECT_PREFIX)
+        List<ObjectRecord> turtleFiles = platformStorage.findAll(SERVICES_OBJECT_PREFIX)
             .values().stream()
             .map(result -> result.getRecord())
-            .filter(metadata -> metadata.getId().endsWith(".ttl"))
+            .filter(record -> record.getPath().hasExtension(".ttl"))
             .collect(Collectors.toList());
 
         for (ObjectRecord configFile : turtleFiles) {
             try (InputStream content = configFile.getLocation().readContent()) {
-                String serviceId = PathMapping.nameWithoutExtension(configFile.getId());
+                String serviceId = StoragePath.removeAnyExtension(configFile.getPath().getLastComponent());
                 Model model = Rio.parse(content, "", RDFFormat.TURTLE);
                 Optional<IRI> optional = Models
                         .subjectIRI(model.filter(null, RDF.TYPE, MpRepositoryVocabulary.SERVICE_TYPE));
 
                 if (!optional.isPresent()) {
                     throw new RepositoryConfigException(
-                        "Object at path \"" + configFile.getId()
+                        "Object at path \"" + configFile.getPath()
                             + "\" does not contain a service descriptor");
                 }
 
@@ -131,7 +134,7 @@ public class MpSparqlServiceRegistry {
     public void addOrUpdateServiceConfig(
         String serviceId, String configText, @Nullable ServiceDescriptor existing
     ) throws IllegalArgumentException, StorageException {
-        String objectId = getConfigObjectId(serviceId);
+        StoragePath objectId = getConfigObjectId(serviceId);
         Model serviceDescriptorModel;
 
         try {
@@ -172,7 +175,6 @@ public class MpSparqlServiceRegistry {
                 .getStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY);
 
             targetStorage.appendObject(
-                ObjectKind.CONFIG,
                 objectId,
                 platformStorage.getDefaultMetadata(),
                 new ByteArrayInputStream(content),
@@ -205,7 +207,7 @@ public class MpSparqlServiceRegistry {
     
     public String getDescriptorText(String id) throws IOException {
         FindResult serviceConfig = platformStorage
-            .findObject(ObjectKind.CONFIG, getConfigObjectId(id))
+            .findObject(getConfigObjectId(id))
             .orElseThrow(() -> new IOException(
                 "Descriptor with ID '" + id + "' was not found in the storage"));
 
@@ -223,12 +225,15 @@ public class MpSparqlServiceRegistry {
             .orElseThrow(() -> new IllegalArgumentException("Non-existing service ID: " + id));
         
         Optional<FindResult> optServiceConfig = platformStorage
-            .findObject(ObjectKind.CONFIG, getConfigObjectId(id));
+            .findObject(getConfigObjectId(id));
         
         if (optServiceConfig.isPresent()) {
             FindResult res = optServiceConfig.get();
             ObjectStorage storage = platformStorage.getStorage(res.getAppId());
-            storage.deleteObject(res.getRecord().getKind(), res.getRecord().getId());
+            storage.deleteObject(
+                res.getRecord().getPath(),
+                platformStorage.getDefaultMetadata()
+            );
         }
 
         synchronized (descriptorsLock) {

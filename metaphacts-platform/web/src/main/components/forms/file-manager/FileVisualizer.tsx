@@ -19,12 +19,15 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 
+import { Cancellation } from 'platform/api/async';
+import { Component } from 'platform/api/components';
+import { Rdf } from 'platform/api/rdf';
+import { FileManager, FileResource } from 'platform/api/services/file-manager';
+
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
-import { FileManagerService, FileResource } from 'platform/api/services/file-manager';
+import { Spinner } from 'platform/components/ui/spinner';
 
 import * as styles from './FileManager.scss';
-import { Spinner } from 'platform/components/ui/spinner';
-import { Cancellation } from 'platform/api/async';
 
 const DEFAULT_TITLE = 'Download file';
 const IMAGE_TYPES = [
@@ -69,15 +72,20 @@ interface FileVisualizerProps {
  *  media-type-predicate-iri='{some-iri}'>
  * </mp-file-visualizer>
  * where 'iri' is an IRI of a LDP resource created by either the <semantic-form-file-input/> or <mp-file-uploader/>.
- * 
+ *
  * Requires dedicated ACL permissions to access the REST file upload endpoint.
  */
-export class FileVisualizer extends React.Component<FileVisualizerProps, FileVisualizerState> {
+export class FileVisualizer extends Component<FileVisualizerProps, FileVisualizerState> {
   private readonly cancellation = new Cancellation();
 
   constructor(props: FileVisualizerProps, context: any) {
     super(props, context);
     this.state = { progress: undefined };
+  }
+
+  private getFileManager() {
+    const {repository} = this.context.semanticContext;
+    return new FileManager({repository});
   }
 
   componentDidMount() {
@@ -99,7 +107,7 @@ export class FileVisualizer extends React.Component<FileVisualizerProps, FileVis
 
     if (props.iri) {
       this.cancellation.map(
-        FileManagerService.getFileResourceByIri(props.iri, {
+        this.getFileManager().getFileResource(Rdf.iri(props.iri), {
           namePredicateIri: this.props.namePredicateIri,
           mediaTypePredicateIri: this.props.mediaTypePredicateIri,
         }),
@@ -123,7 +131,7 @@ export class FileVisualizer extends React.Component<FileVisualizerProps, FileVis
   render() {
     const resourceIri = this.props.iri;
     const {resource} = this.state;
-    
+
     let content: JSX.Element;
     if (resource) {
       const isImage = IMAGE_TYPES.indexOf(resource.mediaType) !== -1;
@@ -148,8 +156,8 @@ export class FileVisualizer extends React.Component<FileVisualizerProps, FileVis
   }
 
   renderImageContent(resource: FileResource) {
-    const fileUrl = FileManagerService.getFileUrl(resource.fileName, this.props.storage);
-    return <a className={styles.uploadedImageDepiction} 
+    const fileUrl = FileManager.getFileUrl(resource.fileName, this.props.storage);
+    return <a className={styles.uploadedImageDepiction}
       href={fileUrl}>
         <img src={fileUrl}/>
     </a>;
@@ -157,7 +165,7 @@ export class FileVisualizer extends React.Component<FileVisualizerProps, FileVis
 
   renderFileContent(resource: FileResource) {
     const icon = getFileIcon(resource.mediaType);
-    const fileUrl = FileManagerService.getFileUrl(resource.fileName, this.props.storage);
+    const fileUrl = FileManager.getFileUrl(resource.fileName, this.props.storage);
     return <a
       key='resource-iri'
       href={fileUrl}

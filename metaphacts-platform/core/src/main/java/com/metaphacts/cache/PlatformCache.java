@@ -20,7 +20,7 @@ package com.metaphacts.cache;
 
 import org.eclipse.rdf4j.model.IRI;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * @author Michael Schmidt <ms@metaphacts.com>
@@ -28,7 +28,7 @@ import java.util.List;
  */
 public interface PlatformCache {
     void invalidate();
-    void invalidate(List<IRI> iris);
+    void invalidate(Set<IRI> iris);
 
     String getId();
 }

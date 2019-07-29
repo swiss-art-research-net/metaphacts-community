@@ -16,10 +16,15 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { EventType } from 'platform/api/events';
+import { EventMaker } from 'platform/api/events';
 
-export const ShowResource: EventType<{pageId: string, pageProps: any}> = 'PanelSystem.ShowResource';
-export const InitiateIIIFViewer: EventType<{ iris: Array<string> }> =
-  'PanelSystem.InitiateIIIFViewer';
-export const InitiateGraphAuthoring: EventType<{ iris: Array<string> } | { diagram: string }> =
-  'PanelSystem.InitiateGraphAuthoring';
+export interface PanelSystemEventData {
+  'PanelSystem.ShowResource': { pageId: string, pageProps: any };
+  'PanelSystem.InitiateIIIFViewer': { iris: Array<string> };
+  'PanelSystem.InitiateGraphAuthoring': { iris: Array<string> } | { diagram: string };
+}
+const event: EventMaker<PanelSystemEventData> = EventMaker;
+
+export const ShowResource = event('PanelSystem.ShowResource');
+export const InitiateIIIFViewer = event('PanelSystem.InitiateIIIFViewer');
+export const InitiateGraphAuthoring = event('PanelSystem.InitiateGraphAuthoring');

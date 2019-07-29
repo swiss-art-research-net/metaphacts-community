@@ -28,5 +28,7 @@ export { turtle };
 import * as ObjectGraph from './formats/JsObjectGraph';
 export { ObjectGraph };
 
+// we don't export './formats/JsonLd' due to large library size
+
 import * as XsdDataTypeValidation from './core/XsdDatatypeValidation';
 export { XsdDataTypeValidation };

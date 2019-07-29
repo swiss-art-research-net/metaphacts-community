@@ -41,5 +41,8 @@
   "rs-panel-system": "researchspace/components/panel-system/PanelSystem.tsx",
   "rs-panel-system-holder": "researchspace/components/panel-system/PanelSystemHolder.tsx",
   "rs-iiif-viewer-panel": "researchspace/components/panel-system/IIIFViewerPanel.tsx",
-  "rs-ontodia-panel": "researchspace/components/panel-system/OntodiaPanel.tsx"
+  "rs-ontodia-panel": "researchspace/components/panel-system/OntodiaPanel.tsx",
+
+  "rs-text-annotation-workspace": "researchspace/components/text-annotation/components/TextAnnotationWorkspace.tsx",
+  "rs-text-annotation-type": "researchspace/components/text-annotation/components/TextAnnotationType.tsx"
 }

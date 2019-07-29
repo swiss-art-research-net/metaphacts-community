@@ -16,12 +16,18 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-package com.metaphacts.federation.repository.optimizers;
+package com.metaphacts.security;
 
-public class MpFederationOptimizerTest {
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
 
-    public MpFederationOptimizerTest() {
-        // TODO Auto-generated constructor stub
-    }
 
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+
+public @interface PermissionsDocGroup {
+    public String desc() default "";
 }
+

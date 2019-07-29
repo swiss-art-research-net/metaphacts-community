@@ -18,10 +18,7 @@
 
 package com.metaphacts.cache;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.google.inject.Singleton;
 import org.apache.logging.log4j.LogManager;
@@ -75,9 +72,11 @@ public class CacheManager {
      * Purges specific resources from all caches.
      * @param resources List of resources to purge from all caches
      */
-    public void invalidateResources(List<IRI> resources) {
-        logger.info("Invalidating the following resources: {}", String.join(
-            ", ", resources.stream().map(IRI::toString).collect(toList())));
+    public void invalidateResources(Set<IRI> resources) {
+        if (logger.isInfoEnabled()) {
+            logger.info("Invalidating the following resources: {}", String.join(
+                ", ", resources.stream().map(IRI::toString).collect(toList())));
+        }
         for (PlatformCache cache : instances.values()) {
             cache.invalidate(resources);
         }

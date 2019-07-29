@@ -20,17 +20,75 @@ import { initModuleRegistry } from '../bootstrap';
 initModuleRegistry();
 
 import * as Kefir from 'kefir';
+import * as ReactDOM from 'react-dom';
 import { render } from 'react-dom';
-
+import { Component, createElement } from 'react';
 import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil } from 'platform/api/sparql';
 import { DefaultRepositoryInfo } from 'platform/api/services/repository';
 import { ConfigHolder } from 'platform/api/services/config-holder';
 import { getRegisteredPrefixes } from 'platform/api/services/namespace';
 import PageViewer from '../page/PageViewer';
+import * as D from 'react-dom-factories';
 
 import { init as initNavigation, __unsafe__setCurrentResource } from 'platform/api/navigation';
 import { init as initBaseUrl } from 'platform/api/http';
+import {
+  renderNotificationSystem,
+  registerNotificationSystem
+} from 'platform/components/ui/notification';
+import {
+  renderOverlaySystem,
+  registerOverlaySystem
+} from 'platform/components/ui/overlay';
+
+/*
+ * Example for using
+ *
+ * @example
+ * <html lang="en">
+ *  <head>
+ *    <meta name="version" content="{{version}}" />
+ *    <meta name="viewport" content="width=device-width, initial-scale=1">
+ *    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+ *    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" />
+ *    {{{html-head}}}
+ *    <script defer type='text/javascript' src='{{assetsMap.vendor}}'></script>
+ *    <script defer type='text/javascript'
+ *      src='http://localhost:3000/assets/page-renderer-bundle.js'>
+ *    </script>
+ *  </head>
+ *  <body>
+ *    <div id="application"></div>
+ *    <script>
+ *      addEventListener('DOMContentLoaded', () => {
+ *        metaphactory.init();
+ *        var app = document.getElementById('application');
+ *        metaphactory.render('http://www.metaphacts.com/resource/assets/OntodiaView', {}, app);
+ *      });
+ *    </script>
+ *  </body>
+ *  </html>
+ */
+
+export class SubsystemContainer extends Component<{}, {}> {
+  constructor(props: {}, context: any) {
+    super(props, context);
+  }
+
+  componentDidMount() {
+    registerNotificationSystem(this);
+    registerOverlaySystem(this);
+  }
+
+  render() {
+    return D.div(
+      {},
+      renderNotificationSystem(),
+      renderOverlaySystem()
+    );
+  }
+}
 
 function initPlatform(baseUrl?: string) {
   initBaseUrl(baseUrl);
@@ -39,6 +97,7 @@ function initPlatform(baseUrl?: string) {
     prefixes: getRegisteredPrefixes(),
     rawConfig: ConfigHolder.fetchConfig(),
     repositories: DefaultRepositoryInfo.init(),
+    subsystem: initSubsystems(),
   }).flatMap(({url, prefixes, rawConfig}) => {
     try {
       SparqlUtil.init(prefixes);
@@ -54,6 +113,22 @@ function initPlatform(baseUrl?: string) {
   );
 }
 
+function initSubsystems() {
+  const element = document.createElement('div');
+  return Kefir.stream<SubsystemContainer>(emitter => {
+    const ref = (instance) => {
+      if (instance) {
+        emitter.emit(instance);
+        emitter.end();
+      }
+    };
+    ReactDOM.render(
+      createElement(SubsystemContainer, {ref}),
+      document.body.appendChild(element)
+    );
+  }).toProperty();
+}
+
 let platform = null;
 declare var __webpack_public_path__;
 
@@ -62,7 +137,6 @@ window['metaphactory'] = {
     if (baseUrl) {
       __webpack_public_path__ = baseUrl + '/assets/';
     }
-
     platform = initPlatform(baseUrl);
   },
   render: function(pageIri: string, params: {}, htmlElement: HTMLElement) {

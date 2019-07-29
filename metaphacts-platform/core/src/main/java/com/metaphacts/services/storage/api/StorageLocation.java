@@ -34,14 +34,13 @@ public interface StorageLocation {
      * Opens a stream to read object content.
      * <p>The stream required to be closed by the caller.</p>
      */
-    InputStream readContent() throws IOException;
+    default InputStream readContent() throws IOException {
+        return readSizedContent().getStream();
+    }
 
     /**
-     * Fetches object content's byte length then opens a stream to read the content. If underlying
-     * storage doesn't store content length it caches the whole content in memory to measure it.
+     * Opens a stream with known size to read object content.
      * <p>The stream required to be closed by the caller.</p>
      */
-    default SizedStream readSizedContent() throws IOException {
-        return SizedStream.measureStream(readContent());
-    }
+    SizedStream readSizedContent() throws IOException;
 }

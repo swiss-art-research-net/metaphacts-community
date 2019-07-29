@@ -6,13 +6,19 @@
     "src/main/components/alignment",
     "src/main/components/arguments",
     "src/main/components/collapsible",
+    "src/main/components/panel-system",
     "src/main/components/search/configuration",
     "src/main/components/search/date",
     "src/main/components/search/facet/breadcrumbs",
     "src/main/components/search/facet/slider",
     "src/main/components/search/query-builder",
     "src/main/components/search/web-components",
-    "src/main/components/timeline",
-    "src/main/components/panel-system"
+    "src/main/components/text-annotation",
+    "src/main/components/timeline"
+  ],
+  "generatedJsonSchemas": [
+    "TextAnnotationTemplateBindings",
+    "TextAnnotationTypeOptions",
+    "TextAnnotationWorkspaceProps"
   ]
 }

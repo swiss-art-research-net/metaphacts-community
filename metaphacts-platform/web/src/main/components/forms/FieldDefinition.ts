@@ -98,7 +98,11 @@ export interface FieldDefinition {
    * SparQL SELECT query to generate a fixed list (choices) of values
    * that the user may choose from.
    *
-   * Query bindings and exposed variables are the same as in {@link selectPattern}.
+   * Exposed projection variables:
+   *   value: (required) as initial value of the field;
+   *   label: (optional) as label of this value;
+   *   further projection variables might be exposed
+   *     to format the rendering within the input element.
    */
   valueSetPattern?: string;
   /**
@@ -121,10 +125,14 @@ export interface FieldDefinition {
   /**
    * SparQL SELECT query to generate a dynamic suggestion list based on
    * textindex or regex search.
-   *
-   * Query bindings and exposed variables are the same as in {@link selectPattern}
-   * with additional special ?token binding to replace with
-   * an actual token the user is typing.
+   * 
+   * Query bindings:
+   *   $token refers to text token the user is typing.
+   * Exposed projection variables:
+   *   value: (required) as initial value of the field;
+   *   label: (optional) as label of this value;
+   *   further projection variables might be exposed
+   *     to format the rendering within the input element.
    */
   autosuggestionPattern?: string;
   /**

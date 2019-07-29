@@ -34,7 +34,13 @@ public class Permissions {
      *
      * @author Michael Schmidt <ms@metaphacts.com>
      */
+    @PermissionsDocGroup(desc = "Permissions for managing configuration properties.")
     public static class CONFIGURATION {
+        @PermissionsDocField(
+            desc = "Grants permission to configuration properties.",
+            example = "/com/metaphacts/security/aclhelp/api_config.html"
+        )
+        public static final String API_CONFIG = "api:config:{configGroup}:{propertyName}:{usageMode}";
         /**
          * Returns the required permission string for using the API in usageMode.
          * This is a SHIRO permission string of the following form:
@@ -46,14 +52,46 @@ public class Permissions {
             return "api:config:" + configGroup + ":" + configIdInGroup + ":" + usageMode;
         }
     }
-
+    @PermissionsDocGroup(desc = "Permissions for pages.")
     public static class PAGES{
         public static enum Action {
-            EDIT_VIEW("edit:view"), 
+            @PermissionsDocField(
+                desc = "Grants permission to view template page html code.",
+                pattern = "pages:edit:view:<page_iri>|regex(<regex_expression>)",
+                example = "/com/metaphacts/security/aclhelp/page_edit_view.html"
+            )
+            EDIT_VIEW("edit:view"),
+
+            @PermissionsDocField(
+                desc = "Grants permission to save template and page html code.",
+                pattern = "pages:edit:save:<page_iri>|regex(<regex_expression>)",
+                example = "/com/metaphacts/security/aclhelp/page_edit_save.html"
+            )
             EDIT_SAVE("edit:save"),
+
+            @PermissionsDocField(
+                desc = "Grants permission to export templates and static pages",
+                pattern = "pages:info:export:<page_iri>|regex(<regex_expression>)"
+            )
             INFO_EXPORT("info:export"),
+
+            @PermissionsDocField(
+                desc = "Grants permission to view meta-information about templates and static pages",
+                pattern = "pages:info:view:<page_iri>|regex(<regex_expression>)"
+            )
             INFO_VIEW("info:view"),
+
+            @PermissionsDocField(
+                desc = "Grants permission to delete templates and static pages",
+                pattern = "pages:info:delete:<page_iri>|regex(<regex_expression>)"
+            )
             INFO_DELETE("info:delete"),
+
+            @PermissionsDocField(
+                desc = "Grants permission to view pages with given URIs.",
+                pattern = "pages:view:<page_iri>|regex(<regex_expression>)",
+                example = "/com/metaphacts/security/aclhelp/page_view.html"
+            )
             VIEW("view");
             
             final String action;
@@ -80,46 +118,99 @@ public class Permissions {
         }
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing accounts.")
     public static class ACCOUNTS{
-        // right to query account informations
+
+        @PermissionsDocField(
+            desc = "Grants permission to query user account information (i.e. roles/permissions)."
+        )
         public static final String QUERY = "accounts:users:query";
-        // right to create new accounts
+
+        @PermissionsDocField(
+            desc = "Grants permission to create and update user accounts."
+        )
         public static final String CREATE = "accounts:users:create";
-        // right to delete accounts
+
+        @PermissionsDocField(
+            desc = "Grants permission to delete user accounts."
+        )
         public static final String DELETE = "accounts:users:delete";
-        // right to query LDAP users metadata
+
+        @PermissionsDocField(desc = "Grants permission to trigger LDAP metadata synchronization.")
         public static final String LDAP_SYNC = "accounts:ldap:sync";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing permissions.")
     public static class PERMISSIONS{
-        // right to query permissions for others
+
+        @PermissionsDocField(desc = "Grants permission to query permissions information.")
         public static final String QUERY = "accounts:permissions:query";
-        // right to assign permissions to users
+
+        @PermissionsDocField(desc = "Grants permission to assign permissions to users.")
         public static final String ASSIGN_TO_USERS = "accounts:permissions:assign:user";
-        // right to assign permissions to roles
+
+        @PermissionsDocField(desc = "Grants permission to assign permissions to roles.")
         public static final String ASSIGN_TO_ROLES = "accounts:permissions:assign:roles";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing roles.")
     public static class ROLES{
+
+        @PermissionsDocField(desc = "Grants permission to query user-role assignments (for users defined in the local shiro.ini only).")
         public static final String QUERY = "accounts:roles:query";
-        // right to create new roles
+
+        @PermissionsDocField(desc = "Grants permission to create new role.")
         public static final String CREATE = "accounts:roles:create";
-        // right to assign roles to user
+
+        @PermissionsDocField(desc = "Grants permission to assign a role to user.")
         public static final String ASSIGN_TO_USER = "accounts:roles:assign";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for accessing the RDF namespace service.")
     public static class NAMESPACES{
+
+        @PermissionsDocField(desc = "Grants permission to delete entries in the RDF namespace service.")
         public static final String DELETE = "namespaces:delete";
+
+        @PermissionsDocField(desc = "Grants permission to create entries in the RDF namespace service.")
         public static final String CREATE = "namespaces:create";
+
+        @PermissionsDocField(desc = "Grants permission to change entries in the RDF namespace service.")
         public static final String CHANGE = "namespaces:change";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for the SPARQL endpoint /sparql and GraphStore /rdf-graph-store interface.")
     public static class SPARQL{
         public static final String PREFIX = "sparql:";
+        @PermissionsDocField(
+            desc = "Grants permission to execute SPARQL Select queries on the given {repositoryID}.",
+            pattern = "sparql:{repositoryID}:query:select",
+            example="/com/metaphacts/security/aclhelp/sparql_select.html"
+        )
         public static final String QUERY_SELECT_POSTFIX = "query:select";
+        @PermissionsDocField(
+            desc = "Grants permission to execute SPARQL Ask queries on the given {repositoryID}.",
+            pattern = "sparql:{repositoryID}:query:ask",
+            example="/com/metaphacts/security/aclhelp/sparql_ask.html"
+        )
         public static final String QUERY_ASK_POSTFIX = "query:ask";
+        @PermissionsDocField(
+            desc = "Grants permission to execute SPARQL Describe queries on the given {repositoryID}.",
+            pattern = "sparql:{repositoryID}:query:describe",
+            example="/com/metaphacts/security/aclhelp/sparql_describe.html"
+        )
         public static final String QUERY_DESCRIBE_POSTFIX = "query:describe";
+        @PermissionsDocField(
+            desc = "Grants permission to execute SPARQL Construct queries on the given {repositoryID}.",
+            pattern = "sparql:{repositoryID}:query:construct",
+            example="/com/metaphacts/security/aclhelp/sparql_construct.html"
+        )
         public static final String QUERY_CONSTRUCT_POSTFIX = "query:construct";
+        @PermissionsDocField(
+            desc = "Grants permission to perform any SPARQL Update operation on the given {repositoryID}.",
+            pattern = "sparql:{repositoryID}:update",
+            example="/com/metaphacts/security/aclhelp/sparql_update.html"
+        )
         public static final String UPDATE_POSTFIX = "update";
         
         private static final String QUERY_SELECT_DEFAULT = PREFIX + QUERY_SELECT_POSTFIX;
@@ -171,13 +262,29 @@ public class Permissions {
             }
         }
         
+        @PermissionsDocField(
+            desc = "Grants permission to get, create, modify or delete any named graph by performing a HEAD operation on /rdf-graph-store?graph={URI}."
+        )
         public static final String GRAPH_STORE_HEAD = "sparql:graphstore:head";
+        @PermissionsDocField(
+            desc = "Grants permission to get any named graph by performing a GET operation on /rdf-graph-store?graph={URI}."
+        )
         public static final String GRAPH_STORE_GET = "sparql:graphstore:get";
+        @PermissionsDocField(
+            desc = "Grants permission to create any named graph by performing a PUT operation on /rdf-graph-store?graph={URI}."
+        )
         public static final String GRAPH_STORE_CREATE = "sparql:graphstore:create";
+        @PermissionsDocField(
+            desc = "Grants permission to modify any named graph by performing a POST operation on /rdf-graph-store?graph={URI}."
+        )
         public static final String GRAPH_STORE_UPDATE = "sparql:graphstore:update";
+        @PermissionsDocField(
+            desc = "Grants permission to delete any named graph by performing a DELETE operation on /rdf-graph-store?graph={URI}."
+        )
         public static final String GRAPH_STORE_DELETE = "sparql:graphstore:delete";
     }
-
+    
+    @PermissionsDocGroup(desc = "Permissions for managing and accessing LDP containers.")
     public static class CONTAINER {
         /**
          * Helper to build LDP Container/Resource permission strings:
@@ -200,8 +307,23 @@ public class Permissions {
         public static final String IDENTITY_BASED =  "container";
         public static final String TYPE_BASED = "type";
         public static final String READ = "read";
+        @PermissionsDocField(
+            desc = "Grants permission to create items to the specified container.",
+            pattern = "api:ldp:container:<container_iri>|<item_rdf_type_iri>:create",
+            example = "/com/metaphacts/security/aclhelp/api_container_create.html"
+        )
         public static final String CREATE = "create";
+        @PermissionsDocField(
+            desc = "Grants permission to update items to the specified container.",
+            pattern = "api:ldp:container:<container_iri>|<item_rdf_type_iri>:(update:any)|(update:owner)",
+            example = "/com/metaphacts/security/aclhelp/api_container_update.html"
+        )
         public static final String UPDATE = "update";
+        @PermissionsDocField(
+            desc = "Grants permission to delete items to the specified container.",
+            pattern = "api:ldp:container:<container_iri>|<item_rdf_type_iri>:(delete:any)|(delete:owner)",
+            example = "/com/metaphacts/security/aclhelp/api_container_delete.html"
+        )
         public static final String DELETE = "delete";
         public static final String EXPORT = "export";
         public static final String IMPORT = "import";
@@ -209,18 +331,35 @@ public class Permissions {
         public static final String OWNER = "owner";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for forms in LDP persistence mode.")
     public static class FORMS_LDP{
-    	public static final String CREATE = "forms:ldp:create";
-    	public static final String UPDATE = "forms:ldp:update";
-    	public static final String DELETE = "forms:ldp:delete";
+        @PermissionsDocField(
+            desc = "Grants permission to create LDP container, which are created when using the authoring forms in LDP persistence mode."
+        )
+        public static final String CREATE = "forms:ldp:create";
+        @PermissionsDocField(
+            desc = "Grants permission to update LDP container, which are created when using the authoring forms in LDP persistence mode."
+        )
+        public static final String UPDATE = "forms:ldp:update";
+        @PermissionsDocField(desc = "Grants permission to delete LDP container.")
+        public static final String DELETE = "forms:ldp:delete";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for forms in SPARQL persistence mode.")
     public static class FORMS_SPARQL{
+        @PermissionsDocField(
+            desc = "Grants permission to run SPARQL Insert operations, which are executed when using the authoring forms in SPARQL persistence mode."
+        )
         public static final String CREATE = "forms:sparql:insert";
+        @PermissionsDocField(
+            desc = "Grants permission to run SPARQL Delete operations, which are executed when using the authoring forms in SPARQL persistence mode."
+        )
         public static final String UPDATE = "forms:sparql:delete";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing caches.")
     public static class CACHES{
+        @PermissionsDocField(desc = "Grants permission to invalidate all caches.")
         public static final String INVALIDATE_ALL = "caches:*:invalidate";
     }
 
@@ -228,20 +367,49 @@ public class Permissions {
         public static final String URL_MINIFY = "services:url-minify";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing and executing Query as a Service (QaaS) objects.")
     public static class QAAS {
+        @PermissionsDocField(desc = "Grants permission to create QaaS objects.")
         public static final String CREATE = "qaas:create";
+        @PermissionsDocField(desc = "Grants permission to update QaaS objects.")
         public static final String UPDATE = "qaas:update";
+        @PermissionsDocField(desc = "Grants permission to delete QaaS objects.")
         public static final String DELETE = "qaas:delete";
+        @PermissionsDocField(desc = "Grants permission to read QaaS meta-information/configs.")
         public static final String INFO = "qaas:info";
+        @PermissionsDocField(
+            desc = "Grants permission to execute a particulular \"Query as a Service\".",
+            pattern = "qaas:execute:{service-permission-string}", example="/com/metaphacts/security/aclhelp/qaas_execute.html"
+        )
         public static final String PREFIX_EXECUTE = "qaas:execute:";
         public static final String EXECUTE_ALL = "qaas:execute:*";
     }
 
-
+    @PermissionsDocGroup(desc = "Permissions for managing repository configurations.")
     public static class REPOSITORY_CONFIG {
+        @PermissionsDocField(
+            desc = "Grants permission to update repository configurations. These permissions should only be granted to root administrators, if repository configurations need to be changed through the UI.",
+            pattern="repository-config:update:{repository-id}",
+            example="/com/metaphacts/security/aclhelp/repository_config_update.html"
+        )
         public static final String PREFIX_UPDATE = "repository-config:update:";
+        @PermissionsDocField(
+            desc = "Grants permission to delete repository configurations. These permissions should only be granted to root administrators, if repository configurations need to be deleted through the UI.",
+            pattern="repository-config:delete:{repository-id}",
+            example="/com/metaphacts/security/aclhelp/repository_config_delete.html"
+        )
         public static final String PREFIX_DELETE = "repository-config:delete:";
+        @PermissionsDocField(
+            desc = "Grants permission to view repository configurations. These permissions should only be granted to root administrators, if repositories need to be changed through the UI.",
+            pattern="repository-config:view:{repository-id}",
+            example="/com/metaphacts/security/aclhelp/repository_config_view.html"
+        )
         public static final String PREFIX_VIEW = "repository-config:view:";
+        @PermissionsDocField(
+            desc = "Grants permission to create repository configurations. These permissions should only be granted to root administrators, if repositories need to be changed through the UI.",
+            pattern="repository-config:create:{repository-id}",
+            example="/com/metaphacts/security/aclhelp/repository_config_create.html"
+        )
         public static final String CREATE = "repository-config:create";
     }
     
@@ -256,23 +424,64 @@ public class Permissions {
     	public static final String PREFIX_CONFIG_VIEW = "app:view-config:";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing storages.")
     public static class STORAGE {
-    	public static final String PREFIX_VIEW_CONFIG = "storage:view-config:";
-    	public static final String PREFIX_ZIP_EXPORT = "storage:zip-export:";
-    	public static final String PREFIX_WRITE = "storage:upload:";
+
+        @PermissionsDocField(
+            desc="Permissions for viewing the storage configurations for the specified {storageId}.",
+            pattern="storage:view-config:{storageId}",
+            example="/com/metaphacts/security/aclhelp/storage_view_config.html"
+        )
+        public static final String PREFIX_VIEW_CONFIG = "storage:view-config:";
+
+        @PermissionsDocField(
+            desc="Permissions to export and download the specified {storageId} as a zip archive.",
+            pattern="storage:zip-export:{storageId}",
+            example="/com/metaphacts/security/aclhelp/storage_zip_export.html"
+        )
+        public static final String PREFIX_ZIP_EXPORT = "storage:zip-export:";
+
+        @PermissionsDocField(
+            desc="Permissions for uploading files to the specified {storageId}",
+            pattern="storage:upload:{storageId}",
+            example="/com/metaphacts/security/aclhelp/storage_upload.html"
+        )
+        public static final String PREFIX_WRITE = "storage:upload:";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing file related operations (e.g. file upload in forms).")
     public static class FILE {
+        @PermissionsDocField(
+            desc="Permissions for retrieving files.",
+            pattern="file:read:{storageId}",
+            example="/com/metaphacts/security/aclhelp/file_read.html"
+        )
         public static final String PREFIX_READ = "file:read:";
+        @PermissionsDocField(
+            desc="Permissions for writing files.",
+            pattern="file:write:{storageId}",
+            example="/com/metaphacts/security/aclhelp/file_write.html"
+        )
         public static final String PREFIX_WRITE = "file:write:";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for managing data quality jobs.")
     public static class JOBS {
+        @PermissionsDocField(desc = "Grants permission to run the data-quality job.")
         public static final String DATA_QUALITY_CREATE = "job:create:data-quality";
+
+        @PermissionsDocField(desc = "Grants permission to retrieve the job status.")
         public static final String DATA_QUALITY_INFO = "job:info:data-quality";
     }
 
+    @PermissionsDocGroup(desc = "Permissions for accessing proxy services.")
     public static class PROXY {
+
+        @PermissionsDocField(
+            desc = "Permission for accessing the specified service, which is proxied through the platforms proxy service /proxy/{proxy-id}.",
+            pattern="proxy:{proxy-id}",
+            example="/com/metaphacts/security/aclhelp/proxy.html"
+        )
         public static final String PREFIX = "proxy:";
     }
 

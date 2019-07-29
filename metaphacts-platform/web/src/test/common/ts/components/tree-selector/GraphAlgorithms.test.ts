@@ -38,7 +38,7 @@ function graphFromUnorderedJSON(graph: JSONGraphNode): GraphNode[] {
     if (allNodes.has(key)) {
       return allNodes.get(key);
     } else {
-      const node = {key, children: new Set()};
+      const node: GraphNode = {key, children: new Set()};
       allNodes.set(key, node);
       return node;
     }

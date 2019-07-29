@@ -61,7 +61,7 @@ export class LdpAnnotationServiceClass extends LdpService {
   private serializeAnnotation(annotation: Annotation): Kefir.Property<Rdf.Graph> {
     const metadata = annotation.metadata
       ? turtle.deserialize.turtleToGraph(annotation.metadata)
-      : Kefir.constant(Rdf.graph());
+      : Kefir.constant(Rdf.graph([]));
 
     return metadata.map(
       mGraph => Rdf.union(mGraph, this.annotationToGraph(annotation))
@@ -87,7 +87,7 @@ export class LdpAnnotationServiceClass extends LdpService {
     annotation.rdfa.forEach((rdfaItem: RdfaLink) => {
       triples.push(Rdf.triple(annotationIri, rdfaItem.predicate, rdfaItem.object));
     });
-    return Rdf.graph(...triples);
+    return Rdf.graph(triples);
   }
 
   public getAnnotation(annotationIri: Rdf.Iri): Kefir.Property<Annotation> {

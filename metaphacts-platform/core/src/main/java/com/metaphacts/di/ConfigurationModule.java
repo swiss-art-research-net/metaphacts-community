@@ -25,6 +25,7 @@ import com.metaphacts.sail.rest.sql.MpJDBCDriverManager;
 import com.metaphacts.services.storage.MainPlatformStorage;
 import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.services.storage.api.StorageRegistry;
+import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
 
@@ -34,6 +35,7 @@ import com.metaphacts.config.NamespaceRegistry;
 public class ConfigurationModule extends AbstractModule {
     @Override
     protected void configure() {
+        bind(CacheManager.class).in(Singleton.class);
         bind(StorageRegistry.class).in(Singleton.class);
         bind(PlatformPluginManager.class).in(Singleton.class);
         bind(PlatformStorage.class).to(MainPlatformStorage.class).in(Singleton.class);

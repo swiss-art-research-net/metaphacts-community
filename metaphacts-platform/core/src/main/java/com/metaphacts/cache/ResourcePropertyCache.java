@@ -26,7 +26,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
-import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.PropertyPattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -112,11 +111,10 @@ public abstract class ResourcePropertyCache<Key, Property> implements PlatformCa
     }
 
     @Override
-    public void invalidate(List<IRI> iris) {
-        Set<IRI> invalidatedIris = new HashSet<>();
+    public void invalidate(Set<IRI> iris) {
         repositoryMap.values().forEach(cache -> {
             List<Key> keysToInvalidate = cache.asMap().keySet().stream()
-                .filter(key -> invalidatedIris.contains(keyToIri(key)))
+                .filter(key -> iris.contains(keyToIri(key)))
                 .collect(Collectors.toList());
             cache.invalidateAll(keysToInvalidate);
         });

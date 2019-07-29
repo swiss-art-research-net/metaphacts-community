@@ -16,18 +16,29 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import RDF = require('../core/Rdf');
+import Rdf = require('../core/Rdf');
 
 module oa {
-  export var _NAMESPACE = 'http://www.w3.org/ns/oa#';
+  export const _NAMESPACE = 'http://www.w3.org/ns/oa#';
 
-  export var Annotation = RDF.iri(_NAMESPACE + 'Annotation');
-  export var TextualBody = RDF.iri(_NAMESPACE + 'TextualBody');
+  export const Annotation = Rdf.iri(_NAMESPACE + 'Annotation');
+  export const SpecificResource = Rdf.iri(_NAMESPACE + 'SpecificResource');
+  export const TextualBody = Rdf.iri(_NAMESPACE + 'TextualBody');
+  export const RangeSelector = Rdf.iri(_NAMESPACE + 'RangeSelector');
+  export const XPathSelector = Rdf.iri(_NAMESPACE + 'XPathSelector');
+  export const TextPositionSelector = Rdf.iri(_NAMESPACE + 'TextPositionSelector');
 
-  export var hasBody = RDF.iri(_NAMESPACE + 'hasBody');
-  export var hasTarget = RDF.iri(_NAMESPACE + 'hasTarget');
-  export var text = RDF.iri(_NAMESPACE + 'text');
-  export var hasRole = RDF.iri(_NAMESPACE + 'hasRole');
+  export const end = Rdf.iri(_NAMESPACE + 'end');
+  export const hasBody = Rdf.iri(_NAMESPACE + 'hasBody');
+  export const hasEndSelector = Rdf.iri(_NAMESPACE + 'hasEndSelector');
+  export const hasRole = Rdf.iri(_NAMESPACE + 'hasRole');
+  export const hasSelector = Rdf.iri(_NAMESPACE + 'hasSelector');
+  export const hasSource = Rdf.iri(_NAMESPACE + 'hasSource');
+  export const hasStartSelector = Rdf.iri(_NAMESPACE + 'hasStartSelector');
+  export const hasTarget = Rdf.iri(_NAMESPACE + 'hasTarget');
+  export const refinedBy = Rdf.iri(_NAMESPACE + 'refinedBy');
+  export const start = Rdf.iri(_NAMESPACE + 'start');
+  export const text = Rdf.iri(_NAMESPACE + 'text');
 }
 
 export default oa;

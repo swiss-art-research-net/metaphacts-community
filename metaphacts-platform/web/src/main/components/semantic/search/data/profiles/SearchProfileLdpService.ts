@@ -79,15 +79,15 @@ export class SearchProfileProfileLdpServiceClass extends LdpService {
 
   private createProfileGraph(name: string, description: string) {
     const iri = Rdf.iri('');
-    return Rdf.graph(
+    return Rdf.graph([
       Rdf.triple(iri, rdf.type, StructuredSearchVocab.Profile),
       Rdf.triple(iri, rdfs.label, Rdf.literal(name)),
       Rdf.triple(iri, rdfs.comment, Rdf.literal(description))
-    );
+    ]);
   }
 
   private profileToGraph(iri: Rdf.Iri, profile: Profile): Rdf.Graph {
-    const base = Rdf.graph(
+    const base = Rdf.graph([
       Rdf.triple(
         iri, rdf.type, StructuredSearchVocab.Profile
       ),
@@ -96,8 +96,8 @@ export class SearchProfileProfileLdpServiceClass extends LdpService {
       ),
       Rdf.triple(
         iri, rdfs.comment, Rdf.literal(profile.description)
-      )
-    ).triples;
+      ),
+    ]).triples;
     const categories = this.categoriesToGraph(iri, profile.categories);
     const relations = this.relationsToGraph(iri, profile.relations);
 

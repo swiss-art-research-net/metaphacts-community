@@ -18,10 +18,18 @@
 
 package com.metaphacts.federation.sparql;
 
+import java.util.List;
+
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.algebra.Join;
 import org.eclipse.rdf4j.query.algebra.Projection;
 import org.eclipse.rdf4j.query.algebra.QueryModelNode;
 import org.eclipse.rdf4j.query.algebra.StatementPattern;
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.algebra.Var;
+import org.eclipse.rdf4j.sail.federation.algebra.NaryJoin;
 
 import com.metaphacts.federation.sparql.optimizers.RemoveNodeQueryModelVisitor;
 
@@ -80,6 +88,60 @@ public class SparqlAlgebraUtils {
             return leaf;
         } else {
             return getScopeRoot(parent);
+        }
+    }
+    
+    /**
+     * Gathers join args from nested joins into a flat list. 
+     * Moved from {@link QueryMultiJoinOptimizer}
+     * 
+     * @param tupleExpr
+     * @param joinArgs
+     * @return
+     */
+    public static <L extends List<TupleExpr>> L getJoinArgs(TupleExpr tupleExpr, L joinArgs) {
+        if (tupleExpr instanceof NaryJoin) {
+            NaryJoin join = (NaryJoin) tupleExpr;
+            for (TupleExpr arg : join.getArgs()) {
+                getJoinArgs(arg, joinArgs);
+            }
+        } else if (tupleExpr instanceof Join) {
+            Join join = (Join) tupleExpr;
+            getJoinArgs(join.getLeftArg(), joinArgs);
+            getJoinArgs(join.getRightArg(), joinArgs);
+        } else {
+            joinArgs.add(tupleExpr);
+        }
+
+        return joinArgs;
+    }
+    
+    /**
+     * Checks that the statement pattern matches given subject, predicate, and object.
+     * Values for subject, predicate, and object can be null (interpreted as wildcard).
+     * For the object value, compares both on the typed literal as well as on a string match: 
+     * i.e., "true"^^xsd:bolean = "true".
+     * 
+     */
+    public static boolean statementPatternMatches(StatementPattern pattern, IRI subject, IRI predicate, Value object) {
+        boolean matches = true;
+        if (subject != null) {
+            matches = matches && varHasValue(pattern.getSubjectVar(), subject, true);
+        }
+        if (predicate != null) {
+            matches = matches && varHasValue(pattern.getPredicateVar(), predicate, true);
+        }
+        if (object != null) {
+            matches = matches && varHasValue(pattern.getObjectVar(), object, false);
+        }
+        return matches;
+    }
+    
+    public static boolean varHasValue(Var var, Value val, boolean matchDatatypes) {
+        if (matchDatatypes || !(val instanceof Literal)) {
+            return var.hasValue() && var.getValue().equals(val);
+        } else {
+            return var.hasValue() && var.getValue().stringValue().equals(val.stringValue());
         }
     }
 

@@ -18,9 +18,13 @@
 
 package com.metaphacts.repository;
 
+import java.util.Set;
+
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+
+import com.google.common.collect.Sets;
 
 /**
  * Singleton class holding the static constants for the repository manager-specific vocabulary.
@@ -91,7 +95,14 @@ public class MpRepositoryVocabulary {
             .createIRI(FEDERATION_NAMESPACE, "hasSPARQLPattern");
     
     public static final IRI SERVICE_TYPE = VF.createIRI(FEDERATION_NAMESPACE, "Service");
+    public static final IRI EXECUTE_FIRST = VF.createIRI(FEDERATION_NAMESPACE, "executeFirst");
+    public static final IRI EXECUTE_LAST = VF.createIRI(FEDERATION_NAMESPACE, "executeLast");
+    public static final IRI DISABLE_JOIN_REORDERING = VF.createIRI(FEDERATION_NAMESPACE, "disableJoinReordering");
+    public static final IRI ENABLE_QUERY_HINTS = VF.createIRI(FEDERATION_NAMESPACE, "enableQueryHints");
+    public static final IRI PRIOR = VF.createIRI(FEDERATION_NAMESPACE, "Prior");
+    public static final IRI QUERY = VF.createIRI(FEDERATION_NAMESPACE, "Query");
 
+    public static final Set<IRI> queryHints = Sets.newHashSet(EXECUTE_FIRST, EXECUTE_LAST, DISABLE_JOIN_REORDERING);
 
     private MpRepositoryVocabulary() {
 

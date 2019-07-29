@@ -16,12 +16,10 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-var path = require('path'),
-    glob = require('glob'),
-    fs = require('fs'),
-    _ = require('lodash'),
-    HappyPack = require('happypack'),
-    ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const path = require('path');
+const fs = require('fs');
+const HappyPack = require('happypack');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 /**
  * @typedef {Object} RootBuildConfig
@@ -37,10 +35,12 @@ var path = require('path'),
  * @property {string} name
  * @property {string} rootDir
  * @property {string} webDir
+ * @property {string} [schemasAlias]
  * @prop {{ [entry: string]: string }} [entries]
  * @prop {{ [entry: string]: string }} [aliases]
  * @prop {Array<string>} [extensions]
  * @prop {Array<string>} [cssModulesBasedComponents]
+ * @prop {Array<string>} [generatedJsonSchemas]
  */
 
 module.exports = function () {
@@ -72,6 +72,9 @@ module.exports = function () {
     settings.name = projectName;
     settings.rootDir = rootDir;
     settings.webDir = webDir;
+    if (settings.generatedJsonSchemas) {
+      settings.schemasAlias = `platform-schemas-root/${settings.name}`;
+    }
     WEB_PROJECTS.push(settings);
   }
 
@@ -138,6 +141,7 @@ module.exports = function () {
  * @param {Array<WebProject>} projects
  */
 function makeAliasesConfig(projects) {
+  /** @type {{ [alias: string]: string }} */
   const aliases = {};
   for (const project of projects) {
     if (project.aliases) {
@@ -145,6 +149,9 @@ function makeAliasesConfig(projects) {
         const aliasPath = project.aliases[key];
         aliases[key] = path.join(project.webDir, aliasPath);
       });
+    }
+    if (project.schemasAlias) {
+      aliases[project.schemasAlias] = path.join(project.webDir, 'schemas');
     }
   }
   return aliases;

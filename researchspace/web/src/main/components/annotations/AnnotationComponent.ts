@@ -28,12 +28,14 @@ import {
   factory as AnnotationTextEditor, component as AnnotationTextEditorComponent
 } from './AnnotationTextEditorComponent';
 import {
-  LdpAnnotationService, Annotation, RdfaLink,
+  LdpAnnotationServiceClass, Annotation, RdfaLink,
 } from '../../services/LDPAnnotationService';
 import {
   Error, Alert, AlertType, AlertConfig,
 } from 'platform/components/ui/alert';
 import { TemplateItem } from 'platform/components/ui/template';
+
+import { rso } from '../../data/vocabularies/vocabularies';
 
 import '../../scss/annotation-component.scss';
 
@@ -116,7 +118,9 @@ export class AnnotationComponentClass extends Component<Props, State> {
         return state;
       });
     } else if (this.props.annotationToEdit) {
-      LdpAnnotationService.getAnnotation(
+      new LdpAnnotationServiceClass(
+        rso.AnnotationsContainer.value, this.context.semanticContext
+      ).getAnnotation(
         Rdf.iri(this.props.annotationToEdit.replace(/<|>/g, ''))
       ).onValue((annotation: Annotation) => {
         this.setState(state => {
@@ -207,8 +211,12 @@ export class AnnotationComponentClass extends Component<Props, State> {
       metadata: this.props.metadata,
     };
 
+    const ldpAnnotationService = new LdpAnnotationServiceClass(
+      rso.AnnotationsContainer.value, this.context.semanticContext
+    );
+
     if (this.isEditMode()) {
-      LdpAnnotationService.updateAnnotation(
+      ldpAnnotationService.updateAnnotation(
         Rdf.iri(this.props.annotationToEdit.replace(/<|>/g, '')), annotation
       ).onValue(annotationUri =>
         refresh()
@@ -219,7 +227,7 @@ export class AnnotationComponentClass extends Component<Props, State> {
         });
       });
     } else {
-      LdpAnnotationService.addAnnotation(
+      ldpAnnotationService.addAnnotation(
         annotation
       ).onValue(annotationUri =>
         this.isNavigateToNew() ? navigateToResource(annotationUri).onValue(v => v) : refresh()

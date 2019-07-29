@@ -27,39 +27,46 @@ import { CompositeValue, EmptyValue } from '../FieldValues';
 import { parseQueryStringAsUpdateOperation } from './PersistenceUtils';
 import { TriplestorePersistence, computeModelDiff } from './TriplestorePersistence';
 
+export interface RawSparqlPersistenceConfig {
+  type?: 'client-side-sparql';
+  repository?: string;
+}
+
 export class RawSparqlPersistence implements TriplestorePersistence {
+  constructor(private config: RawSparqlPersistenceConfig = {}) {}
+
   persist(
     initialModel: CompositeValue | EmptyValue,
     currentModel: CompositeValue | EmptyValue,
   ): Kefir.Property<void> {
-    const updateQueries = createFormUpdateQueries(initialModel, currentModel);
+    const updateQueries = RawSparqlPersistence.createFormUpdateQueries(initialModel, currentModel);
     if (updateQueries.size === 0) {
       return Kefir.constant<void>(undefined);
     }
     updateQueries.forEach(query => {
       console.log(SparqlUtil.serializeQuery(query));
     });
+    const {repository = 'default'} = this.config;
+    const context: SparqlClient.QueryContext = {repository};
     const updateOperations = Kefir.zip<void>(updateQueries.map(
-      query => SparqlClient.executeSparqlUpdate(query)).toArray());
+      query => SparqlClient.executeSparqlUpdate(query, {context})).toArray());
     return updateOperations.map(() => {/* void */}).toProperty();
   }
-}
 
-export function createFormUpdateQueries(
-  initialModel: CompositeValue | EmptyValue,
-  currentModel: CompositeValue | EmptyValue,
-): Immutable.List<SparqlJs.Update> {
-  const entries = computeModelDiff(initialModel, currentModel);
-  return Immutable.List(entries)
-    .filter(({definition}) => Boolean(definition.insertPattern && definition.deletePattern))
-    .map(({definition, subject, inserted, deleted}) => {
-      const deleteQuery = parseQueryStringAsUpdateOperation(definition.deletePattern);
-      const insertQuery = parseQueryStringAsUpdateOperation(definition.insertPattern);
-      return createFieldUpdateQueries(subject, deleteQuery, insertQuery, inserted, deleted);
-    }).filter(update => update.size > 0).flatten().toList();
+  static createFormUpdateQueries(
+    initialModel: CompositeValue | EmptyValue,
+    currentModel: CompositeValue | EmptyValue,
+  ): Immutable.List<SparqlJs.Update> {
+    const entries = computeModelDiff(initialModel, currentModel);
+    return Immutable.List(entries)
+      .filter(({definition}) => Boolean(definition.insertPattern && definition.deletePattern))
+      .map(({definition, subject, inserted, deleted}) => {
+        const deleteQuery = parseQueryStringAsUpdateOperation(definition.deletePattern);
+        const insertQuery = parseQueryStringAsUpdateOperation(definition.insertPattern);
+        return createFieldUpdateQueries(subject, deleteQuery, insertQuery, inserted, deleted);
+      }).filter(update => update.size > 0).flatten().toList();
+  }
 }
-
-export default new RawSparqlPersistence();
 
 function createFieldUpdateQueries(
   subject: Rdf.Iri,

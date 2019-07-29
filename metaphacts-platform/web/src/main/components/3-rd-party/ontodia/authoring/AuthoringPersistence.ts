@@ -321,7 +321,10 @@ export function convertCompositeValueToElementModel(
           const {value: text, lang = ''} = FieldValue.asRdfNode(v) as Rdf.LangLiteral;
           const property = properties[definition.iri] || {type: 'string', values: []};
           if (isLiteralProperty(property)) {
-            property.values = [...property.values, {text, lang}];
+            property.values = [...property.values, {
+              text, lang,
+              datatype: definition.xsdDatatype ? definition.xsdDatatype.value : undefined,
+            }];
           }
           properties[definition.iri] = property;
         } else if (v.value.isIri()) {
@@ -477,36 +480,24 @@ function applyElementModelToCompositeValue(
 ): CompositeValue {
   let fields = composite.fields;
 
-  const labels = convertLocalizedStringsToFieldValues(model.label.values);
-  fields = fields.set(metadata.labelField.id, {
-    values: Immutable.List(labels),
-    errors: FieldError.noErrors,
-  });
-
-  const types = model.types.map(type => FieldValue.fromLabeled({value: Rdf.iri(type)}));
-  fields = fields.set(metadata.typeField.id, {
-    values: Immutable.List(types),
-    errors: FieldError.noErrors,
-  });
-
-  if (model.image && metadata.imageField) {
-    const value = FieldValue.fromLabeled({value: Rdf.iri(model.image)});
-    fields = fields.set(metadata.imageField.id, {
-      values: Immutable.List<FieldValue>().push(value),
+  metadata.fieldByIri.forEach((definition, fieldIri) => {
+    let values = [];
+    if (definition.id === metadata.labelField.id) {
+      values = convertLocalizedStringsToFieldValues(model.label.values);
+    } else if (definition.id === metadata.typeField.id) {
+      values = model.types.map(type => FieldValue.fromLabeled({value: Rdf.iri(type)}));
+    } else if (metadata.imageField && definition.id === metadata.imageField.id && model.image) {
+      values = [FieldValue.fromLabeled({value: Rdf.iri(model.image)})];
+    } else {
+      const property = model.properties[fieldIri];
+      if (property) {
+        values = convertPropertyToFieldValues(property);
+      }
+    }
+    fields = fields.set(definition.id, {
+      values: Immutable.List(values),
       errors: FieldError.noErrors,
     });
-  }
-
-  Object.keys(model.properties).forEach(propertyIri => {
-    const property = model.properties[propertyIri];
-    const definition = metadata.fieldByIri.get(propertyIri);
-    if (definition) {
-      const fieldValues = convertPropertyToFieldValues(property);
-      fields = fields.set(definition.id, {
-        values: Immutable.List(fieldValues),
-        errors: FieldError.noErrors,
-      });
-    }
   });
 
   return CompositeValue.set(composite, {fields});
@@ -524,8 +515,8 @@ function convertPropertyToFieldValues(property: Property): FieldValue[] {
 }
 
 function convertLocalizedStringsToFieldValues(property: ReadonlyArray<LocalizedString>) {
-  return property.map(({text, lang}) => {
-    const value = lang === '' ? Rdf.literal(text) : Rdf.langLiteral(text, lang);
+  return property.map(({text, lang, datatype}) => {
+    const value = lang === '' ? Rdf.literal(text, datatype ? Rdf.iri(datatype): undefined) : Rdf.langLiteral(text, lang);
     return FieldValue.fromLabeled({value});
   });
 }

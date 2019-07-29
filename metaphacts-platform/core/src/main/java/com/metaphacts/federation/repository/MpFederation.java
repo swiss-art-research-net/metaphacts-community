@@ -94,6 +94,7 @@ public class MpFederation extends Federation {
     protected boolean useAsyncParallelJoin = true;
     protected boolean useCompetingJoin = true;
     protected boolean useBoundJoin = true; 
+    protected boolean enableQueryHints = true;
 
     public MpFederation(String defaultRepositoryId, Map<IRI, String> repositoryIDMappings) {
         this.defaultRepositoryId = defaultRepositoryId;
@@ -254,6 +255,14 @@ public class MpFederation extends Federation {
 
     public void setUseBoundJoin(boolean useBoundJoin) {
         this.useBoundJoin = useBoundJoin;
+    }
+
+    public boolean isEnableQueryHints() {
+        return enableQueryHints;
+    }
+
+    public void setEnableQueryHints(boolean queryHintsEnabled) {
+        this.enableQueryHints = queryHintsEnabled;
     }
 
     @Override

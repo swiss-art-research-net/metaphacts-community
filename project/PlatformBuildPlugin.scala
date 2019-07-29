@@ -125,7 +125,7 @@ object PlatformBuildPlugin extends AutoPlugin {
         config.targetClasspath match {
           case Some(classpathLocation) => {
             props.setProperty(s"${prefix}.type", "classpath")
-            props.setProperty(s"${prefix}.root", classpathLocation)
+            props.setProperty(s"${prefix}.classpathLocation", classpathLocation)
           }
           case None => {
             props.setProperty(s"${prefix}.type", "nonVersionedFile")
@@ -202,8 +202,8 @@ object PlatformBuildPlugin extends AutoPlugin {
           "-DruntimeDirectory=" + baseDirectory.value + "/runtime",
           // sets the location to the config folder to a temporary location for development
           "-Dcom.metaphacts.config.baselocation=" + baseDirectory.value + "/runtime/config",
-          // enable local development mode for storage
-          "-DuseLocalDevelopmentStorage=true",
+          // make apps writable in local development mode
+          "-Dconfig.mutablePluginApps=true",
           // instruct the platfrom to load JS assets from webpack dev server
           "-Dconfig.environment.assetsLocation=http://localhost:3000/assets/",
           // You may change the log4j settings by switching to one of the predefined log4j2 config files,
@@ -319,13 +319,8 @@ object PlatformBuildPlugin extends AutoPlugin {
   }
 
   private def installNpmDependenciesFn(state: State, project: ResolvedProject) = {
-    def performFullInstall() = {
-      installNpmDepsForAllProjects(state, project)
-      installNpmDepsInFolder("build", new java.io.File(state.configuration.baseDirectory, "project/webpack"), state)
-    }
-    // we need to run yarn twice to avoid bug in yarn, when sometimes not all dependencies are fully installed
-    performFullInstall()
-    performFullInstall()
+    installNpmDepsForAllProjects(state, project)
+    installNpmDepsInFolder("build", new java.io.File(state.configuration.baseDirectory, "project/webpack"), state)
   }
 
   private def projectWebFolder(project: ProjectRef) = {
@@ -368,7 +363,10 @@ object PlatformBuildPlugin extends AutoPlugin {
     }
     val successfullyInstalled = runYarn()
     if (!successfullyInstalled) {
-      state.log.error("Not all client-side dependencies were installed for " + project + "! Please, check your package.json and npm configuration!")
+      val errorMessage = "Not all client-side dependencies were installed for " +
+        project + "! Please, check your package.json and npm configuration!"
+      state.log.error(errorMessage)
+      throw new IllegalStateException(errorMessage)
     } else {
       state.log.info("All client side dependencies were installed for " + project)
     }
@@ -527,7 +525,7 @@ object PlatformBuildPlugin extends AutoPlugin {
       println(x mkString "\n")
       x
     }
-    
+
 
     BuildConfig(
       s("log", "log4j2-debug"),
@@ -548,7 +546,7 @@ object PlatformBuildPlugin extends AutoPlugin {
           val appPath = projectPath.resolve("app")
           if (Files.isDirectory(appPath) && bundleAppsFrom.contains(projectName)) {
             val targetClasspath = if (configuration.buildEnv == "prod") {
-              Some("com/metaphacts/app/" + projectName + "/")
+              Some("com/metaphacts/app/" + projectName)
             } else {
               None
             }

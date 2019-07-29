@@ -141,7 +141,7 @@ export class SideBySideComparison extends Component<Props, State> {
               imageIri: imageInfo.imageIRI,
               imageServiceUri: serviceRequestUri,
               canvasSize: bounds,
-            }], repositories).map(manifest => ({manifest, imageInfo, annotations}))
+            }]).map(manifest => ({manifest, imageInfo, annotations}))
           )
         );
       }));

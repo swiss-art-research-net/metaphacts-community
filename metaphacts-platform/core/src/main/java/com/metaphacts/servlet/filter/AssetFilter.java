@@ -34,10 +34,7 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.PlatformStorage;
-import com.metaphacts.services.storage.api.SizedStream;
-import com.metaphacts.services.storage.api.PathMapping;
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -82,21 +79,22 @@ public class AssetFilter implements Filter {
             String prefixedPath = httpRequest.getRequestURI().substring(
                 httpRequest.getContextPath().length());
 
-            String objectPath;
+            String assetPath;
             if (prefixedPath.startsWith(ASSETS_PATH_PREFIX)) {
-                objectPath = prefixedPath.substring(ASSETS_PATH_PREFIX.length());
+                assetPath = prefixedPath.substring(ASSETS_PATH_PREFIX.length());
             } else if (prefixedPath.startsWith(IMAGES_PATH_PREFIX)) {
-                objectPath = "images/" + prefixedPath.substring(IMAGES_PATH_PREFIX.length());
+                assetPath = "images/" + prefixedPath.substring(IMAGES_PATH_PREFIX.length());
             } else {
-                objectPath = StringUtils.removeStart(prefixedPath, "/");
+                assetPath = StringUtils.removeStart(prefixedPath, "/");
             }
 
-            Optional<PlatformStorage.FindResult> found = platformStorage.findObject(ObjectKind.ASSET, objectPath);
+            StoragePath objectPath = ObjectKind.ASSET.resolve(assetPath);
+            Optional<PlatformStorage.FindResult> found = platformStorage.findObject(objectPath);
             if (found.isPresent()) {
                 PlatformStorage.FindResult result = found.get();
                 logger.trace("Serving asset file \"" + objectPath + "\" from app \"" + result.getAppId() + "\"");
 
-                String filename = PathMapping.nameWithExtension(objectPath);
+                String filename = objectPath.getLastComponent();
                 String contentType = request.getServletContext().getMimeType(filename);
                 if (contentType == null) {
                     contentType = MediaType.OCTET_STREAM.toString();

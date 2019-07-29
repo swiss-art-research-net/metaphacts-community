@@ -21,35 +21,40 @@ import { Component } from 'react';
 import { Cancellation } from 'platform/api/async';
 import { Event, listen, trigger } from 'platform/api/events';
 
-interface EventProxyProps {
-  /*
+interface EventProxyConfig {
+  /**
    * Used as a source id for re-triggered event
    */
   id: string;
 
-  /*
+  /**
    * Type of event to listen to.
    */
   onEventType?: string;
 
-  /*
+  /**
    * Source component that we listen for events.
    * When empty will listen for all events of a given type.
    */
   onEventSource?: string;
 
-  /*
+  /**
    * Type of the event that this component triggers when
    * receives event.
    */
   proxyEventType: string;
 
 
-  /*
+  /**
    * Ids of targets for triggered event.
    */
   proxyTargets?: string[];
+  /**
+   * Data that will be sent to all targets instead of the original event's data
+   */
+  data?: object;
 }
+type EventProxyProps = EventProxyConfig;
 
 /**
  * Components that listen to specified event, and when it happens triggers some other event.
@@ -86,7 +91,7 @@ export class EventProxy extends Component<EventProxyProps, void> {
       eventType: this.props.proxyEventType,
       source: this.props.id,
       targets: this.props.proxyTargets,
-      data: event.data,
+      data: this.props.data || event.data,
     });
   }
 

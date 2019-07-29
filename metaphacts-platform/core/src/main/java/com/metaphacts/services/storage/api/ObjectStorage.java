@@ -18,16 +18,8 @@
 
 package com.metaphacts.services.storage.api;
 
-import com.google.common.base.Charsets;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.ValueFactory;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-
 import javax.annotation.Nullable;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,37 +37,33 @@ public interface ObjectStorage {
     /**
      * Fetches an object record for specified kind, ID and (optionally) revision.
      *
-     * @param kind target object kind
-     * @param id target object ID
+     * @param path target object path
      * @param revision object revision to return or latest if {@code null}
      * @return object record with metadata and ability to retrieve the data
      * @throws StorageException if fetching operation failed
      */
     Optional<ObjectRecord> getObject(
-        ObjectKind kind,
-        String id,
+        StoragePath path,
         @Nullable String revision
     ) throws StorageException;
 
     /**
      * Fetches records for all revisions of objects with specified kind and ID.
      *
-     * @param kind kind target object kind
-     * @param id target object ID
+     * @param path kind target object path
      * @return object records with metadata and ability to retrieve the data
      * @throws StorageException if fetching operation failed
      */
-    List<ObjectRecord> getRevisions(ObjectKind kind, String id) throws StorageException;
+    List<ObjectRecord> getRevisions(StoragePath path) throws StorageException;
 
     /**
-     * Fetches records for objects with specified kind which matches specified ID prefix.
+     * Fetches records for objects with specified kind which matches specified path prefix.
      *
-     * @param kind target object kind
-     * @param idPrefix target prefix to match at start of full object ID
+     * @param prefix target prefix to match at start of full object path
      * @return object records with metadata and ability to retrieve the data
      * @throws StorageException if fetching operation failed
      */
-    List<ObjectRecord> getAllObjects(ObjectKind kind, String idPrefix) throws StorageException;
+    List<ObjectRecord> getAllObjects(StoragePath prefix) throws StorageException;
 
     /**
      * Either:
@@ -83,53 +71,32 @@ public interface ObjectStorage {
      *  - adds new revision to existing object;
      *  - replaces current object revision if storage doesn't support versioning.
      *
-     * @param kind target object kind
-     * @param id target object ID
+     * @param path target object path
      * @param metadata metadata of this revision of object
      * @param content new object revision content; automatically closed in
      *                either case of successful or failed operation
-     * @param contentLength should be {@code null} or precisely equal to content size in bytes
+     * @param contentLength must be equal to content size in bytes
      * @return new object revision metadata
      * @throws StorageException if appending operation failed
      */
     ObjectRecord appendObject(
-        ObjectKind kind,
-        String id,
+        StoragePath path,
         ObjectMetadata metadata,
         InputStream content,
-        @Nullable Integer contentLength
+        long contentLength
     ) throws StorageException;
 
     /**
      * Deletes the specified object from storage.
      * Should not throw an exception if object doesn't exists.
      *
+     * @param path target object path
+     * @param metadata metadata of (internal) deleted revision
+     *
      * @throws StorageException if object exists but deleting operation failed
      */
-    void deleteObject(ObjectKind kind, String id) throws StorageException;
-
-    /**
-     * @return canonical representation of specified IRI as object ID
-     */
-    static String objectIdFromIri(IRI iri) {
-        try {
-            return URLEncoder.encode(iri.stringValue(), Charsets.UTF_8.name());
-        } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    /**
-     * @return IRI represented by specified object ID
-     * @throws IllegalArgumentException when object ID is not a canonical representation of an IRI
-     */
-    static IRI iriFromObjectId(String objectId) {
-        try {
-            String decodedId = URLDecoder.decode(objectId, Charsets.UTF_8.name());
-            ValueFactory vf = SimpleValueFactory.getInstance();
-            return vf.createIRI(decodedId);
-        } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
+    void deleteObject(
+        StoragePath path,
+        ObjectMetadata metadata
+    ) throws StorageException;
 }

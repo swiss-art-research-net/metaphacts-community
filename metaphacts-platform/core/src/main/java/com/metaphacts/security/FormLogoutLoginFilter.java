@@ -70,9 +70,12 @@ public class FormLogoutLoginFilter extends AdviceFilter{
     }
     
     private void saveRequest(HttpServletRequest request, String referer) {
+        java.net.URI refererUri = java.net.URI.create(referer);
+        String refererHost = refererUri.getHost();
+        String redirectPath = refererHost.equals(request.getServerName()) ? refererUri.getPath() : "/";
         Subject subject = SecurityUtils.getSubject();
         Session session = subject.getSession();
-        SavedRequest savedRequest = new FakedSavedRequest(request,referer);
+        SavedRequest savedRequest = new FakedSavedRequest(request,redirectPath);
         session.setAttribute(WebUtils.SAVED_REQUEST_KEY, savedRequest);
     }
     

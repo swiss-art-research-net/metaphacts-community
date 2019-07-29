@@ -23,6 +23,8 @@ const makeDdefaults = require('./defaults');
  * Returns webpack config for chunk content testing.
  * Usage:
  *   yarn run inspect-chunks > ../../chunks.log
+ *
+ * @param {{ [key: string]: string }} env
  */
 module.exports = function (env) {
   const config = webpackDevConfig(makeDdefaults());

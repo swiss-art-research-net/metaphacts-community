@@ -51,13 +51,13 @@ public class PlatformStorageRule extends TemporaryFolder {
 
     public void mockPageLayoutTemplate(String name) {
         String content = "Test Page Layout Template: '" + name + "'.";
+        byte[] bytes = content.getBytes();
         try {
             getObjectStorage().appendObject(
-                ObjectKind.CONFIG,
                 ST.objectIdForTemplate(name),
                 getPlatformStorage().getDefaultMetadata(),
-                new ByteArrayInputStream(content.getBytes()),
-                null
+                new ByteArrayInputStream(bytes),
+                bytes.length
             );
         } catch (StorageException e) {
             throw new RuntimeException(e);

@@ -323,7 +323,7 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
         _.find(entries, entry => entry.subject.equals(this.props.target));
       const nestedValues =
         _.filter(entries, entry => !entry.subject.equals(this.props.target));
-      return LdpPersistence.default
+      return new LdpPersistence()
         .persistModelUpdates(nestedValues[0].subject, nestedValues)
         .map(() => topLevelFieldValue.inserted);
     } else {

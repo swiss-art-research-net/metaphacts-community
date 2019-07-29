@@ -693,6 +693,10 @@
             "description": "CSS classes for component holder element.",
             "type": "string"
         },
+        "dateFormat": {
+            "description": "Parsing format.\nBy default, the <code>Y-MM-DD</code> format is used.\nIf dates have type <code>xsd:dateTime</code>, the <code>Y-MM-DDTHH:mm:ss</code> format will be used.\nIf dates have type <code>xsd:time</code>, the <code>HH:mm:ss</code> format will be used.",
+            "type": "string"
+        },
         "defaultItemOptions": {
             "$ref": "#/definitions/TimelineItem",
             "description": "Default options of the items"
@@ -717,7 +721,7 @@
             "description": "Options that are used to customize the timeline."
         },
         "query": {
-            "description": "SPARQL select query. The required variables are <code>?start</code> and <code>?end</code>. The expected date format is <code>YYYY-MM-DD</code>.",
+            "description": "SPARQL select query. The required variables are <code>?start</code> and <code>?end</code>. The expected date formats are <code>YYYY-MM-DD</code>, <code>YYYY-MM-DDTHH:mm:ss</code> and <code>HH:mm:ss</code>.",
             "type": "string"
         },
         "style": {
@@ -747,7 +751,8 @@
         "options",
         "defaultItemOptions",
         "groups",
-        "className"
+        "className",
+        "dateFormat"
     ],
     "required": [
         "groups",

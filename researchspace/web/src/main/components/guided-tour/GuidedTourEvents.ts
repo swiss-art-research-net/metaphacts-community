@@ -16,13 +16,19 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { EventType } from 'platform/api/events';
+import { EventMaker } from 'platform/api/events';
 
-/**
- * Event which should be triggered when tour is run.
- */
-export const GuidedTourRunIfNotSeen: EventType<void> = 'GuidedTour.RunIfNotSeen';
-/**
- * Event which should be triggered when tour is started.
- */
-export const GuidedTourStart: EventType<void> = 'GuidedTour.Start';
+export interface GuidedTourEventData {
+  /**
+   * Event which should be triggered when tour is run.
+   */
+  'GuidedTour.RunIfNotSeen': void;
+  /**
+   * Event which should be triggered when tour is started.
+   */
+  'GuidedTour.Start': void;
+}
+const event: EventMaker<GuidedTourEventData> = EventMaker;
+
+export const GuidedTourRunIfNotSeen = event('GuidedTour.RunIfNotSeen');
+export const GuidedTourStart = event('GuidedTour.Start');

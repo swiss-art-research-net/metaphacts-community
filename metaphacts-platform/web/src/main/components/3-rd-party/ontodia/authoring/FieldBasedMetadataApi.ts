@@ -20,7 +20,7 @@ import * as SparqlJs from 'sparqljs';
 import * as Immutable from 'immutable';
 import {
   CancellationToken, ElementModel, ElementTypeIri, LinkTypeIri, MetadataApi, PropertyTypeIri,
-  LinkModel,
+  LinkModel, ElementIri, LinkDirection,
 } from 'ontodia';
 
 import { xsd } from 'platform/api/rdf/vocabularies';
@@ -55,12 +55,12 @@ export class FieldBasedMetadataApi implements MetadataApi {
 
   possibleLinkTypes(
     source: ElementModel, target: ElementModel, ct: CancellationToken
-  ): Promise<LinkTypeIri[]> {
+  ): Promise<Array<{ linkTypeIri: LinkTypeIri, direction: LinkDirection }>> {
     return Promise.resolve().then(() => {
       const metadata = getEntityMetadata(source, this.entityMetadata);
       if (!metadata) { return Promise.resolve([]); }
       const queryStr = `
-      select distinct ?field where {
+      select distinct ?field ?direction where {
         {
           ?sourceType rdfs:subClassOf* ?domain.
           FILTER (BOUND(?domain))
@@ -69,6 +69,7 @@ export class FieldBasedMetadataApi implements MetadataApi {
           ?targetType rdfs:subClassOf* ?range.
           FILTER (BOUND(?range))
         }
+        BIND("out" as ?direction)
       }`;
 
       let query: SparqlJs.SelectQuery = parseQuerySync<SparqlJs.SelectQuery>(queryStr);
@@ -78,7 +79,10 @@ export class FieldBasedMetadataApi implements MetadataApi {
       query = addTargetTypesValues(query, target.types);
 
       return select(query).map(res =>
-        res.results.bindings.map(row => row.field.value as LinkTypeIri)
+        res.results.bindings.map(row => ({
+          linkTypeIri: row.field.value as LinkTypeIri,
+          direction: row.direction.value as LinkDirection,
+        }))
       ).toPromise();
     });
   }
@@ -155,6 +159,15 @@ export class FieldBasedMetadataApi implements MetadataApi {
   ): Promise<boolean> {
     const metadata = getEntityMetadata(source, this.entityMetadata);
     return Promise.resolve(Boolean(metadata) && metadata.fieldByIri.has(link.linkTypeId));
+  }
+
+  async generateNewElementIri() {
+    function random32BitDigits() {
+      return Math.floor((1 + Math.random()) * 0x100000000).toString(16).substring(1);
+    }
+    // generate by half because of restricted numerical precision
+    const uuid = random32BitDigits() + random32BitDigits() + random32BitDigits() + random32BitDigits();
+    return `http://ontodia.org/newEntity_${uuid}` as ElementIri;
   }
 }
 

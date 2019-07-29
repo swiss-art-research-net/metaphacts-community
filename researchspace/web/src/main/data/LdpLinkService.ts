@@ -43,7 +43,7 @@ export class LdpLinkServiceClass extends LdpService {
       );
 
     const resourceGraph =
-      Rdf.graph(
+      Rdf.graph([
         Rdf.triple(
           linkIri, vocabularies.rdf.type, crmdig.D29_Annotation_Object
         ),
@@ -53,8 +53,8 @@ export class LdpLinkServiceClass extends LdpService {
         Rdf.triple(
           linkIri, rso.displayLabel, Rdf.literal(name)
         ),
-        ... linksGraph.toArray()
-      );
+        ...linksGraph.toArray(),
+      ]);
 
     return resourceGraph;
   }

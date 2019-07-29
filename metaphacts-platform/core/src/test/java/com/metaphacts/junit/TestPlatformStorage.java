@@ -19,6 +19,7 @@
 package com.metaphacts.junit;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.metaphacts.services.storage.api.*;
 import com.metaphacts.services.storage.file.InMemoryStorage;
 
@@ -57,10 +58,10 @@ public class TestPlatformStorage implements PlatformStorage {
     }
 
     @Override
-    public Optional<PlatformStorage.FindResult> findObject(ObjectKind kind, String objectId) throws StorageException {
+    public Optional<PlatformStorage.FindResult> findObject(StoragePath path) throws StorageException {
         for (String appId : searchOrder) {
             ObjectStorage storage = storages.get(appId);
-            Optional<ObjectRecord> record = storage.getObject(kind, objectId, null);
+            Optional<ObjectRecord> record = storage.getObject(path, null);
             if (record.isPresent()) {
                 return Optional.of(new PlatformStorage.FindResult(appId, record.get()));
             }
@@ -69,23 +70,23 @@ public class TestPlatformStorage implements PlatformStorage {
     }
 
     @Override
-    public Map<String, PlatformStorage.FindResult> findAll(ObjectKind kind, String idPrefix) throws StorageException {
-        Map<String, PlatformStorage.FindResult> results = new HashMap<>();
+    public Map<StoragePath, PlatformStorage.FindResult> findAll(StoragePath prefix) throws StorageException {
+        Map<StoragePath, PlatformStorage.FindResult> results = new HashMap<>();
         for (String appId : searchOrder) {
             ObjectStorage storage = storages.get(appId);
-            storage.getAllObjects(kind, idPrefix).forEach(record -> {
-                results.put(record.getId(), new PlatformStorage.FindResult(appId, record));
+            storage.getAllObjects(prefix).forEach(record -> {
+                results.put(record.getPath(), new PlatformStorage.FindResult(appId, record));
             });
         }
         return results;
     }
 
     @Override
-    public List<FindResult> findOverrides(ObjectKind kind, String objectId) throws StorageException {
+    public List<FindResult> findOverrides(StoragePath path) throws StorageException {
         List<FindResult> overrides = new ArrayList<>();
         for (String appId : searchOrder) {
             ObjectStorage storage = storages.get(appId);
-            storage.getObject(kind, objectId, null).ifPresent(record -> {
+            storage.getObject(path, null).ifPresent(record -> {
                 overrides.add(new PlatformStorage.FindResult(appId, record));
             });
         }
@@ -103,7 +104,12 @@ public class TestPlatformStorage implements PlatformStorage {
     }
 
     @Override
-    public List<PlatformStorage.StorageStatus> getStorageStatusFor(ObjectKind kind) {
+    public List<String> getOverrideOrder() {
+        return Lists.reverse(searchOrder);
+    }
+
+    @Override
+    public List<PlatformStorage.StorageStatus> getStorageStatusFor(StoragePath prefix) {
         return ImmutableList.of(
             new PlatformStorage.StorageStatus(STORAGE_ID, true)
         );

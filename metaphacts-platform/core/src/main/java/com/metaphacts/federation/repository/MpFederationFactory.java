@@ -33,7 +33,7 @@ public class MpFederationFactory implements SailFactory {
     public static final String SAIL_TYPE = "metaphacts:Federation";
 
     public MpFederationFactory() {
-        // TODO Auto-generated constructor stub
+
     }
 
     @Override
@@ -57,6 +57,7 @@ public class MpFederationFactory implements SailFactory {
         result.setUseAsyncParallelJoin(config.isUseAsyncParallelJoin());
         result.setUseBoundJoin(config.isUseBoundJoin());
         result.setUseCompetingJoin(config.isUseCompetingJoin());
+        result.setEnableQueryHints(config.isEnableQueryHints());
         return result;
     }
 

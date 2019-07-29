@@ -29,14 +29,13 @@ import org.eclipse.rdf4j.query.parser.QueryParserUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.metaphacts.federation.repository.optimizers.MpQueryMultiJoinOptimizer;
+import com.metaphacts.federation.repository.optimizers.MpQueryNaryJoinExtractor;
 import com.metaphacts.federation.sparql.rank.algebra.RankedNaryJoin;
 import com.metaphacts.federation.sparql.rank.optimizers.OrderOptimizer;
 
 public class OrderOptimizerTest {
 
     public OrderOptimizerTest() {
-        // TODO Auto-generated constructor stub
     }
 
     private String loadQuery(String queryId) throws Exception {
@@ -56,7 +55,7 @@ public class OrderOptimizerTest {
         String original = loadQuery("querySimpleOrder");
         ParsedTupleQuery tq = QueryParserUtil.parseTupleQuery(QueryLanguage.SPARQL, original,
                 "http://www.example.org/");
-        new MpQueryMultiJoinOptimizer().optimize(tq.getTupleExpr(), null, null);
+        new MpQueryNaryJoinExtractor().optimize(tq.getTupleExpr(), null, null);
         OrderOptimizer optimizer = new OrderOptimizer();
         optimizer.optimize(tq.getTupleExpr(), null, null);
 

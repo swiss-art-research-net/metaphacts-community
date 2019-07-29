@@ -166,6 +166,13 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
   }
 
   public render() {
+    const codeMirrorAddonOptions = {
+      foldGutter: this.state.activeSyntax !== Syntax.NONE,
+      textAreaClassName: ['form-control'],
+      matchTags: {bothTags: true},
+      matchBrackets: true,
+    };
+
     return D.div(
       {className: CLASS_NAME},
       D.div({className: 'page-breadcrumb'}),
@@ -218,12 +225,12 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
             value: this.state.pageSource.source,
             onChange: this.onPageContentChange,
             options: {
+              ...codeMirrorAddonOptions,
               mode: this.getSyntaxMode(this.state.activeSyntax),
               indentWithTabs: false, indentUnit: 2, tabSize: 2,
               viewportMargin: Infinity,
               lineNumbers: true,
               lineWrapping: true,
-              foldGutter: this.state.activeSyntax !== Syntax.NONE,
               gutters: this.state.activeSyntax !== Syntax.NONE ?
                 ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'] :
                 ['CodeMirror-linenumbers'],
@@ -231,9 +238,6 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
                 'Ctrl-S': () => this.onSave(),
                 'Cmd-S': () => this.onSave(),
               },
-              textAreaClassName: ['form-control'],
-              matchTags: {bothTags: true},
-              matchBrackets: true,
             },
           }),
           this.getSyntaxChoices(),

@@ -37,10 +37,9 @@ import org.eclipse.rdf4j.sail.config.AbstractSailImplConfig;
 import org.eclipse.rdf4j.sail.config.SailConfigException;
 import org.eclipse.rdf4j.sail.federation.config.FederationConfig;
 
+import com.google.common.collect.Lists;
 import com.metaphacts.repository.MpDelegatingImplConfig;
 import com.metaphacts.repository.MpRepositoryVocabulary;
-
-import com.google.common.collect.Lists;
 
 /**
  * Config for instances of {@link MpFederation}.
@@ -123,6 +122,7 @@ public class MpFederationConfig extends AbstractSailImplConfig implements MpDele
     private boolean useAsyncParallelJoin = true;
     private boolean useCompetingJoin = true;
     private boolean useBoundJoin = true;
+    private boolean enableQueryHints = true;
 
     
     public MpFederationConfig() {
@@ -193,6 +193,12 @@ public class MpFederationConfig extends AbstractSailImplConfig implements MpDele
                     MpRepositoryVocabulary.USE_COMPETING_JOIN, 
                     SimpleValueFactory.getInstance().createLiteral(this.isUseCompetingJoin()));
         }
+        if (!this.enableQueryHints) {
+            model.add(
+                    res, 
+                    MpRepositoryVocabulary.ENABLE_QUERY_HINTS, 
+                    SimpleValueFactory.getInstance().createLiteral(this.enableQueryHints));
+        }
         return res;
     }
 
@@ -219,6 +225,8 @@ public class MpFederationConfig extends AbstractSailImplConfig implements MpDele
         Models.objectLiteral(model.filter(
                 implNode, MpRepositoryVocabulary.USE_COMPETING_JOIN, null)).ifPresent(
                     lit -> setUseCompetingJoin(lit.booleanValue()));
+        Models.objectLiteral(model.filter(implNode, MpRepositoryVocabulary.ENABLE_QUERY_HINTS, null))
+                .ifPresent(lit -> setEnableQueryHints(lit.booleanValue()));
     }
     
     public Map<IRI, String> getRepositoryIDMappings() {
@@ -250,5 +258,13 @@ public class MpFederationConfig extends AbstractSailImplConfig implements MpDele
 
     public void setUseBoundJoin(boolean useBoundJoin) {
         this.useBoundJoin = useBoundJoin;
+    }
+
+    public boolean isEnableQueryHints() {
+        return enableQueryHints;
+    }
+
+    public void setEnableQueryHints(boolean enableQueryHints) {
+        this.enableQueryHints = enableQueryHints;
     }
 }

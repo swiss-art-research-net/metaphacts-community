@@ -68,7 +68,8 @@ import static java.util.stream.Collectors.toList;
  */
 @Singleton
 public class QueryCatalogRESTServiceRegistry {
-    protected static final String SERVICE_CONFIG_OBJECT_PREFIX = "qaas/";
+    protected static final StoragePath SERVICE_CONFIG_OBJECT_PREFIX =
+        ObjectKind.CONFIG.resolve("qaas");
     
     private static final Logger logger = LogManager.getLogger(QueryCatalogRESTServiceRegistry.class);
     
@@ -161,15 +162,15 @@ public class QueryCatalogRESTServiceRegistry {
         }
 
         @Override
-        public void invalidate(List<IRI> iris) {}
+        public void invalidate(Set<IRI> iris) {}
     }
     
     public void syncServices() throws IOException {
         synchronized (syncLock) {
             List<PlatformStorage.FindResult> propFiles = platformStorage
-                .findAll(ObjectKind.CONFIG, SERVICE_CONFIG_OBJECT_PREFIX)
+                .findAll(SERVICE_CONFIG_OBJECT_PREFIX)
                 .values().stream()
-                .filter(result -> result.getRecord().getId().endsWith(".prop"))
+                .filter(result -> result.getRecord().getPath().hasExtension(".prop"))
                 .collect(toList());
 
             Set<String> foundServices = new HashSet<>();
@@ -180,7 +181,7 @@ public class QueryCatalogRESTServiceRegistry {
                 } catch (ConfigurationException e) {
                     logger.error(
                         "Error while creation or updating a service instance from object \"{}\"",
-                        propFile.getRecord().getId()
+                        propFile.getRecord().getPath()
                     );
                 }
             }
@@ -207,7 +208,7 @@ public class QueryCatalogRESTServiceRegistry {
         PlatformStorage.FindResult propFile
     ) throws ConfigurationException {
         ObjectRecord record = propFile.getRecord();
-        String serviceId = PathMapping.nameWithoutExtension(record.getId());
+        String serviceId = StoragePath.removeAnyExtension(record.getPath().getLastComponent());
 
         synchronized (this) {
             ServiceEntry existingService = registry.get(serviceId);
@@ -287,7 +288,7 @@ public class QueryCatalogRESTServiceRegistry {
      */
     public void deleteService(String id, String targetAppId) throws ConfigurationException {
         ObjectStorage storage = platformStorage.getStorage(targetAppId);
-        String objectId = objectIdFromServiceId(id);
+        StoragePath objectId = objectIdFromServiceId(id);
 
         ServiceEntry existing;
         synchronized (this) {
@@ -296,10 +297,13 @@ public class QueryCatalogRESTServiceRegistry {
 
         if (existing != null) {
             try {
-                storage.deleteObject(ObjectKind.CONFIG, objectId);
+                storage.deleteObject(
+                    objectId,
+                    platformStorage.getDefaultMetadata()
+                );
 
                 Optional<PlatformStorage.FindResult> reloadedConfig =
-                    platformStorage.findObject(ObjectKind.CONFIG, objectId);
+                    platformStorage.findObject(objectId);
 
                 if (reloadedConfig.isPresent()) {
                     createOrUpdateServiceFromPropertiesFile(reloadedConfig.get());
@@ -327,7 +331,7 @@ public class QueryCatalogRESTServiceRegistry {
         String id, Map<QaasField, String> parameters, String targetAppId
     ) throws ConfigurationException {
         ObjectStorage storage = platformStorage.getStorage(targetAppId);
-        String objectId = objectIdFromServiceId(id);
+        StoragePath objectId = objectIdFromServiceId(id);
 
         ServiceEntry existing;
         synchronized (this) {
@@ -349,7 +353,6 @@ public class QueryCatalogRESTServiceRegistry {
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             handler.save(os);
             storage.appendObject(
-                ObjectKind.CONFIG,
                 objectId,
                 platformStorage.getDefaultMetadata(),
                 os.toInputStream(),
@@ -361,7 +364,7 @@ public class QueryCatalogRESTServiceRegistry {
 
         Optional<PlatformStorage.FindResult> reloadedConfig;
         try {
-            reloadedConfig = platformStorage.findObject(ObjectKind.CONFIG, objectId);
+            reloadedConfig = platformStorage.findObject(objectId);
         } catch (IOException e) {
             throw new ConfigurationException(e);
         }
@@ -384,7 +387,7 @@ public class QueryCatalogRESTServiceRegistry {
         }
     }
 
-    public static String objectIdFromServiceId(String serviceId) {
-        return SERVICE_CONFIG_OBJECT_PREFIX + serviceId + ".prop";
+    public static StoragePath objectIdFromServiceId(String serviceId) {
+        return SERVICE_CONFIG_OBJECT_PREFIX.resolve(serviceId).addExtension(".prop");
     }
 }

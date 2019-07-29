@@ -30,7 +30,7 @@ export * from './static';
 
 export * from './persistence/PersistenceUtils';
 export * from './persistence/TriplestorePersistence';
-import * as LdpPersistence from './persistence/LdpPersistence';
-import * as RawSparqlPersistence from './persistence/RawSparqlPersistence';
-
-export { LdpPersistence, RawSparqlPersistence };
+export { LdpPersistence, LdpPersistenceConfig } from './persistence/LdpPersistence';
+export {
+  RawSparqlPersistence, RawSparqlPersistenceConfig
+} from './persistence/RawSparqlPersistence';

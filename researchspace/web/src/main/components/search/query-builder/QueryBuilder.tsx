@@ -798,7 +798,7 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
         label: 'search relation selection',
         actions: {
           selectResource: relation => {
-            action(relation);
+            action(relation as Model.Relation);
             trigger({
               eventType: SearchEvents.CategoryOrRelationSelected,
               source: this.props.id,

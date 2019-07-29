@@ -23,7 +23,6 @@ import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
 import org.eclipse.rdf4j.query.parser.ParsedTupleQuery;
-import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.sail.SailTupleQuery;
 import org.eclipse.rdf4j.sail.SailException;
 import org.eclipse.rdf4j.sail.federation.MpFederationConnection;
@@ -41,10 +40,9 @@ public class MpFederationSailTupleQuery extends SailTupleQuery {
     public TupleQueryResult evaluate() throws QueryEvaluationException {
         TupleExpr tupleExpr = getParsedQuery().getTupleExpr();
         MpFederationConnection federationConnection = this.getConnection().getSailConnection();
-        MpFederation mpFederation = federationConnection.getFederation();
-        RepositoryConnection owner = FederationSparqlAlgebraUtils.getSingleOwner(tupleExpr,
-                mpFederation.getServiceMappings(), federationConnection.getDefaultMemberConnection());
-        if (owner != null && owner.equals(federationConnection.getDefaultMemberConnection())) {
+        if (FederationSparqlAlgebraUtils.executeOnSingleOwnerWithoutOptimization(tupleExpr,
+                federationConnection.getFederation(),
+                federationConnection.getDefaultMemberConnection())) {
             // Single owner query
             try {
                 TupleQuery proxyQuery = federationConnection.getDefaultMemberConnection()

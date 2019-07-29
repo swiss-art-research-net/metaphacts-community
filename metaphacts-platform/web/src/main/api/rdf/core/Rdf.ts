@@ -299,22 +299,13 @@ module Rdf {
     }
   }
 
-  export function graph(triples: Triple[]): Rdf.Graph;
-  export function graph(...triples: Triple[]): Rdf.Graph;
-  export function graph(triples: Immutable.Set<Triple>): Rdf.Graph;
-  export function graph(triples: any): Rdf.Graph {
-    if (triples instanceof Immutable.Set) {
-      return new Graph(triples);
-    } else if (_.isArray(triples)) {
-      return new Graph(Immutable.Set<Triple>(triples));
-    } else {
-      return new Graph(Immutable.Set<Triple>(arguments));
-    }
+  export function graph(triples: ReadonlyArray<Triple> | Immutable.Set<Triple>): Rdf.Graph {
+    return new Graph(Immutable.Set<Triple>(triples));
   }
 
   export function union(...graphs: Graph[]): Rdf.Graph {
     return graph(
-      <Immutable.Set<Triple>>Immutable.Set(graphs).map(g => g.triples).flatten()
+      Immutable.Set(graphs).map(g => g.triples).flatten() as Immutable.Set<Triple>
     );
   }
 

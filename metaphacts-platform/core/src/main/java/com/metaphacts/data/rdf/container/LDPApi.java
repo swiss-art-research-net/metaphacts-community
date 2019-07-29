@@ -19,6 +19,7 @@
 package com.metaphacts.data.rdf.container;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ import com.metaphacts.config.NamespaceRegistry;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.rdf4j.common.net.ParsedIRI;
 import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
@@ -53,7 +55,6 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
-import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.rio.RDFParseException;
@@ -65,7 +66,6 @@ import com.google.common.collect.Sets;
 import com.metaphacts.data.rdf.ModelUtils;
 import com.metaphacts.data.rdf.PointedGraph;
 import com.metaphacts.data.rdf.ReadConnection;
-import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.MpRepositoryProvider;
 import com.metaphacts.vocabulary.LDP;
 import com.metaphacts.vocabulary.PROV;
@@ -122,7 +122,7 @@ class LDPApi {
 
         permissionCheck.accept((LDPContainer) target);
 
-        IRI newResource = createResourceURI(slug, targetContainer, instanceBase);
+        IRI newResource = createResourceIRI(slug, targetContainer, instanceBase);
         PointedGraph resourceModelToCreate = createPointedGraph(stream, newResource);
         IRI createdResourceURI = ((LDPContainer) target).add(resourceModelToCreate);
         return getLDPResource(createdResourceURI);
@@ -211,7 +211,7 @@ class LDPApi {
     ) {
         LDPResource original = getLDPResource(uri, resourcePermissionCheck);
         IRI parentContainer = targetContainer.orElse(original.getParentContainer());
-        IRI newResource = createResourceURI(slug, parentContainer, instanceBase);
+        IRI newResource = createResourceIRI(slug, parentContainer, instanceBase);
 
         Model model = original.getModel();
         model = removeContainerItemMetadata(model, Lists.newArrayList(uri));
@@ -395,7 +395,7 @@ class LDPApi {
                     itemRenamed = item;
                 } else {
                     String slug = getImportSlugForResource(model, item);
-                    itemRenamed = createResourceURI(Optional.of(slug), insertIntoIRI, instanceBase);
+                    itemRenamed = createResourceIRI(Optional.of(slug), insertIntoIRI, instanceBase);
                 }
 
                 Model modelRenamed = changeContainerItemRoot(model, item, itemRenamed);
@@ -557,10 +557,12 @@ class LDPApi {
      * 1) If slug is valid IRI: if it is already in use as a resource IRI
      *    throw IllegalArgumentException otherwise use it as a new resource IRI.
      * 2) If slug is not an IRI, then use it as a local name of new IRI.
+     * 3) If slag contains illegal characters the new constructed IRI is not a valid IRI then
+     *    throw IllegalArgumentException
      */
-    protected IRI createResourceURI(Optional<String> slug, IRI targetContainer, String newInstanceBase) {
+    protected IRI createResourceIRI(Optional<String> slug, IRI targetContainer, String newInstanceBase) {
         String _slug = slug.orElse(generateRundomSlug()).replaceAll("\\s", "_");
-        if(URIUtil.isValidURIReference(_slug)) {
+        if (isValidIRIReference(_slug)) {
             if (resourceAlreadyExistsInContainer(vf.createIRI(_slug))) {
                 throw new IllegalArgumentException("Resource with the given IRI already exists in some LDP container: " + _slug);
             } else {
@@ -570,13 +572,27 @@ class LDPApi {
 
         String localName = _slug;
         String instanceBase = this.ns.getNamespace(NamespaceRegistry.RuntimeNamespace.LDP).orElse(newInstanceBase);
-        String host = instanceBase.endsWith("/") ? instanceBase : instanceBase+"/";
-        IRI uri = vf.createIRI(host+targetContainer.getLocalName()+"/"+localName); //TODO something better than default namespace e.g. physical server address
-        if(resourceAlreadyExistsInContainer(uri))
-                return createResourceURI(Optional.ofNullable(RandomStringUtils.randomAlphabetic(40).replaceAll("\\s", "_")), targetContainer,  newInstanceBase);
-        return uri;
+        String host = instanceBase.endsWith("/") ? instanceBase : instanceBase + "/";
+        IRI iri = vf.createIRI(host + targetContainer.getLocalName() + "/" + localName); //TODO something better than default namespace e.g. physical server address
+
+        try { // Check if iri is correct
+            new ParsedIRI(iri.stringValue());
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Provided slug contains illegal characters: " + _slug, e);
+        }
+
+        if(resourceAlreadyExistsInContainer(iri))
+                return createResourceIRI(Optional.ofNullable(RandomStringUtils.randomAlphabetic(40).replaceAll("\\s", "_")), targetContainer,  newInstanceBase);
+        return iri;
     }
 
+    private boolean isValidIRIReference(String stringIri) {
+        try {
+            return stringIri != null && new ParsedIRI(stringIri).isAbsolute();
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
 
     private PointedGraph deserialize(RDFStream stream, IRI newResourceUri) throws RDFParseException, UnsupportedRDFormatException {
         IRI _newResourceUri = newResourceUri;

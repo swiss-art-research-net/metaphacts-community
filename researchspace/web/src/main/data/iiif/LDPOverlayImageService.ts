@@ -43,7 +43,7 @@ export class LdpOverlayImageServiceClass extends LdpService {
     const param2 = Rdf.iri('http://www.metaphacts.com/param2');
 
     const resourceGraph =
-      Rdf.graph(
+      Rdf.graph([
         // common typing & labels
         Rdf.triple(
           overlayIri, vocabularies.rdf.type, rso.Thing
@@ -104,8 +104,8 @@ export class LdpOverlayImageServiceClass extends LdpService {
         ),
         Rdf.triple(
           param2, rso.OverlayOpacity, Rdf.literal('' + topOpacity)
-        )
-      );
+        ),
+      ]);
     return resourceGraph;
   }
 

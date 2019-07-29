@@ -35,6 +35,7 @@ import com.metaphacts.security.Permissions.APIUsageMode;
 import com.metaphacts.security.Permissions.CONFIGURATION;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
@@ -201,6 +202,11 @@ public class ConfigurationEndpoint {
             return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
         } catch (UnknownConfigurationException e) {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).type("text/plain").build();
+        } catch (Exception e) {
+            if(e.getCause() instanceof ConfigurationException) {
+                return Response.status(Response.Status.NOT_ACCEPTABLE).entity(e.getCause().getMessage()).build();
+            }
+            return Response.status(Response.Status.NOT_ACCEPTABLE).entity(e.getMessage()).build();
         }
     }
 
@@ -211,7 +217,7 @@ public class ConfigurationEndpoint {
         @PathParam("configGroup") String configGroup,
         @PathParam("configIdInGroup") String configIdInGroup,
         @QueryParam("targetAppId") String targetAppId
-    ) {
+    ) throws ConfigurationException {
         try {
             // prevent writing if user does not have permissions
             String requiredWritePermission = CONFIGURATION.getPermissionString(

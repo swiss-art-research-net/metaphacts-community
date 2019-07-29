@@ -59,7 +59,8 @@ import com.google.common.collect.Maps;
  *
  */
 public class RepositoryConfigUtils {
-    private static final String REPOSITORIES_OBJECT_PREFIX = "repositories/";
+    private static final StoragePath REPOSITORIES_OBJECT_PREFIX =
+        ObjectKind.CONFIG.resolve("repositories");
 
     private static final Logger logger = LogManager.getLogger(RepositoryConfigUtils.class);
 
@@ -119,7 +120,7 @@ public class RepositoryConfigUtils {
             readTurtleRepositoryConfigFile(configFile.get())
         );
 
-        String fileNameId = PathMapping.nameWithoutExtension(configFile.get().getId());
+        String fileNameId = getRepositoryIdFromPath(configFile.get().getPath());
         if (!fileNameId.equals(repConfig.getID())) {
             throw new RepositoryConfigException(String.format(
                 "Name of repository configuration file is \"%s\", but need to be equal to the repository id as specified in the configuration (repositoryID=\"%s\").",
@@ -137,7 +138,10 @@ public class RepositoryConfigUtils {
         if (found.isPresent()) {
             PlatformStorage.FindResult result = found.get();
             ObjectStorage storage = platformStorage.getStorage(result.getAppId());
-            storage.deleteObject(result.getRecord().getKind(), result.getRecord().getId());
+            storage.deleteObject(
+                result.getRecord().getPath(),
+                platformStorage.getDefaultMetadata()
+            );
         }
     }
 
@@ -156,12 +160,18 @@ public class RepositoryConfigUtils {
         if (StringUtils.isEmpty(repID)) {
             throw new IllegalArgumentException("Repository config id must not be null.");
         }
-        String objectId = getConfigObjectId(repID);
-        return platformStorage.findObject(ObjectKind.CONFIG, objectId);
+        StoragePath objectId = getConfigObjectPath(repID);
+        return platformStorage.findObject(objectId);
     }
 
-    public static String getConfigObjectId(String repID) {
-        return REPOSITORIES_OBJECT_PREFIX + normalizeRepositoryConfigId(repID) + ".ttl";
+    public static StoragePath getConfigObjectPath(String repID) {
+        return REPOSITORIES_OBJECT_PREFIX
+            .resolve(normalizeRepositoryConfigId(repID))
+            .addExtension(".ttl");
+    }
+
+    public static String getRepositoryIdFromPath(StoragePath path) {
+        return StoragePath.removeAnyExtension(path.getLastComponent());
     }
 
     /**
@@ -236,9 +246,9 @@ public class RepositoryConfigUtils {
     private static void writeModelAsPrettyTurtleToFile(
         ObjectStorage storage, ObjectMetadata metadata, String repID, Model model, boolean overwrite
     ) throws IOException {
-        String objectId = getConfigObjectId(repID);
+        StoragePath objectId = getConfigObjectPath(repID);
         if (!overwrite) {
-            Optional<ObjectRecord> existing = storage.getObject(ObjectKind.CONFIG, objectId, null);
+            Optional<ObjectRecord> existing = storage.getObject(objectId, null);
             if (existing.isPresent()) {
                 throw new IOException(String.format(
                     "Repository configuration for \"%s\" already exists, but is not supposed to be overwritten by the method which is calling this function.",
@@ -249,7 +259,7 @@ public class RepositoryConfigUtils {
         try (org.apache.commons.io.output.ByteArrayOutputStream os =
                  new org.apache.commons.io.output.ByteArrayOutputStream()) {
             writeModelAsPrettyTurtleOutputStream(os, model);
-            storage.appendObject(ObjectKind.CONFIG, objectId, metadata, os.toInputStream(), os.size());
+            storage.appendObject(objectId, metadata, os.toInputStream(), os.size());
         }
 
     }
@@ -289,14 +299,14 @@ public class RepositoryConfigUtils {
         Map<String, RepositoryConfig> map = Maps.newHashMap();
 
         List<ObjectRecord> turtleFiles = platformStorage
-            .findAll(ObjectKind.CONFIG, REPOSITORIES_OBJECT_PREFIX).values().stream()
+            .findAll(REPOSITORIES_OBJECT_PREFIX).values().stream()
             .map(result -> result.getRecord())
-            .filter(record -> record.getId().endsWith(".ttl"))
+            .filter(record -> record.getPath().hasExtension(".ttl"))
             .collect(Collectors.toList());
 
         for (ObjectRecord configFile: turtleFiles) {
             try {
-                String fileNameId = PathMapping.nameWithoutExtension(configFile.getId());
+                String fileNameId = getRepositoryIdFromPath(configFile.getPath());
                 Model model = readTurtleRepositoryConfigFile(configFile);
                 RepositoryConfig repConfig = createRepositoryConfig(model);
                 if( !normalizeRepositoryConfigId(fileNameId).equals(fileNameId)){

@@ -33,3 +33,5 @@ export { default as prov } from './prov';
 
 export { default as persist } from './persist';
 export { default as VocabPlatform } from './platform';
+
+export { default as workflow } from './workflow';

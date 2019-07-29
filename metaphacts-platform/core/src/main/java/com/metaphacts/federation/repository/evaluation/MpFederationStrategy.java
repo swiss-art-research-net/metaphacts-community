@@ -119,7 +119,7 @@ public class MpFederationStrategy extends FederationStrategy {
     public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(NaryJoin join,
             BindingSet bindings) throws QueryEvaluationException {
         assert join.getNumberOfArguments() > 0;
-        // Check if there is a case for the competing join
+        // Check if there is a case for the competing join (see paper)
         List<TupleExpr> seeds = getPotentialSeeds(join, bindings);
         if ((seeds.size() == 2) && useCompetingJoin) {
             List<TupleExpr> unsortedArgs = Lists.newArrayList(join.getArgs());
@@ -168,7 +168,6 @@ public class MpFederationStrategy extends FederationStrategy {
             result = new RemoteClosingExceptionConvertingIteration<BindingSet>(tmp);
             collectedBindingNames.addAll(rightArg.getBindingNames());
         } else if (useAsyncParallelJoin) { 
-            // result = evaluate((Service)rightArg, ((Service)rightArg).getServiceRef().getValue().stringValue(), leftIter);
             result = new ParallelAsyncJoinCursorWithCache(this, leftIter, rightArg);
             federation.execute((Runnable)result);
             collectedBindingNames.addAll(rightArg.getBindingNames());

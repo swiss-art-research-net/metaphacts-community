@@ -66,13 +66,6 @@ interface State {
  *     <span>Image not found!</span>
  *   </mp-resource-thumbnail-fallback>
  * </mp-resource-thumbnail>
- *
- * @example
- * <semantic-context repository="assets">
- *   <mp-resource-thumbnail title="(community contributed)" iri='http://example.com'
- *   no-image-uri='//no-image/available.png'
- *   style="max-width: 400px; max-height: 100px;" />
- * </semantic-context>
  */
 export class ResourceThumbnail extends Component<Props, State> {
   private subscription: Kefir.Subscription;
@@ -100,7 +93,7 @@ export class ResourceThumbnail extends Component<Props, State> {
 
   private fetchThumbnailUrl(resourceIri: Rdf.Iri) {
     this.subscription =
-      getThumbnail(resourceIri, this.context)
+      getThumbnail(resourceIri)
       .observe({
         value: imageUri => this.setState({imageUri}),
         error: error => this.setState({imageUri: undefined, error}),

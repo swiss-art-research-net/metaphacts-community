@@ -16,9 +16,17 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { EventType } from 'platform/api/events';
+import { EventMaker } from 'platform/api/events';
+
+export interface ChartEventData {
+  /**
+   * Event which should be triggered when a chart type is selected.
+   */
+  'Chart.TypeSelected': string;
+}
+const event: EventMaker<ChartEventData> = EventMaker;
 
 /**
  * Event which should be triggered when a chart type is selected.
  */
-export const ChartTypeSelected: EventType<string> = 'Chart.TypeSelected';
+export const ChartTypeSelected = event('Chart.TypeSelected');

@@ -20,8 +20,9 @@ import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 import { cloneDeep } from 'lodash';
 import * as SparqlJs from 'sparqljs';
-import * as request from 'platform/api/http';
 
+import { requestAsProperty } from 'platform/api/async';
+import * as request from 'platform/api/http';
 import { Rdf } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
@@ -29,7 +30,15 @@ import { FieldValue, CompositeValue, EmptyValue } from '../FieldValues';
 import { parseQueryStringAsUpdateOperation } from './PersistenceUtils';
 import { TriplestorePersistence, ModelDiffEntry, computeModelDiff } from './TriplestorePersistence';
 
+export interface LdpPersistenceConfig {
+  type?: 'ldp';
+  repository?: string;
+  containerIri?: string;
+}
+
 export class LdpPersistence implements TriplestorePersistence {
+  constructor(private config: LdpPersistenceConfig = {}) {}
+
   persist(
     initialModel: CompositeValue | EmptyValue,
     currentModel: CompositeValue | EmptyValue,
@@ -142,24 +151,35 @@ export class LdpPersistence implements TriplestorePersistence {
     const req = request
       .post('/form-persistence/ldp')
       .type('application/json')
-      .query({iri: subject.value})
+      .query({
+        iri: this.getTargetLdpResource(subject),
+        repository: this.getTargetRepository(),
+      })
       .send(stringQueries);
-    return Kefir.fromNodeCallback<void>(
-       (cb) => req.end((err, res) => cb(err, res.body))
-    ).toProperty();
+
+    return requestAsProperty(req).map(() => {});
   }
 
   private deleteSubjectContainer(subject: Rdf.Iri) {
     const req = request
       .delete('/form-persistence/ldp')
       .type('application/json')
-      .query({iri: subject.value})
+      .query({
+        iri: this.getTargetLdpResource(subject),
+        repository: this.getTargetRepository(),
+      })
       .send();
 
-    return Kefir.fromNodeCallback<void>(
-      (cb) => req.end((err, res) => cb(err, res.body))
-    ).toProperty();
+    return requestAsProperty(req).map(() => {});
+  }
+
+  private getTargetLdpResource(subject: Rdf.Iri) {
+    const {containerIri} = this.config;
+    return containerIri ? containerIri : `${subject.value}/container`;
+  }
+
+  private getTargetRepository() {
+    const {repository = 'default'} = this.config;
+    return repository;
   }
 }
-
-export default new LdpPersistence();

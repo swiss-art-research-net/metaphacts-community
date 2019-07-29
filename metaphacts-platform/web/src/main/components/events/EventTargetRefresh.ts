@@ -22,7 +22,7 @@ import * as D from 'react-dom-factories';
 import { BuiltInEvents, listen } from 'platform/api/events';
 import { Cancellation } from 'platform/api/async';
 
-interface EventTargetRefreshProps {
+interface EventTargetRefreshConfig {
   /**
    * Unique id of the component that can be used by event emitters as a target.
    */
@@ -34,6 +34,7 @@ interface EventTargetRefreshProps {
    */
   refreshInterval?: number;
 }
+type EventTargetRefreshProps = EventTargetRefreshConfig;
 
 interface EventTargetState {
   refresh: boolean;

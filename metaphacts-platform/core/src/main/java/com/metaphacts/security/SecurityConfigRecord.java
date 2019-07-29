@@ -18,10 +18,7 @@
 
 package com.metaphacts.security;
 
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectRecord;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.config.Ini;
 
@@ -99,7 +96,7 @@ public abstract class SecurityConfigRecord {
         SecurityConfigType type, PlatformStorage platformStorage, String storageId
     ) {
         ObjectStorage configStorage = platformStorage.getStorage(storageId);
-        String objectId = type.getFileName();
+        StoragePath objectId = ObjectKind.CONFIG.resolve(type.getFileName());
         return new SecurityConfigRecord(type) {
             @Override
             public String getLocationDescription() {
@@ -128,7 +125,6 @@ public abstract class SecurityConfigRecord {
             public void writeAll(String entireContent) throws IOException {
                 byte[] bytes = entireContent.getBytes();
                 configStorage.appendObject(
-                    ObjectKind.CONFIG,
                     objectId,
                     platformStorage.getDefaultMetadata(),
                     new ByteArrayInputStream(bytes),
@@ -137,7 +133,7 @@ public abstract class SecurityConfigRecord {
             }
 
             private Optional<ObjectRecord> fetchRecord() throws IOException {
-                return configStorage.getObject(ObjectKind.CONFIG, objectId, null);
+                return configStorage.getObject(objectId, null);
             }
         };
     }

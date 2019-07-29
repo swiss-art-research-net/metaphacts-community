@@ -147,6 +147,12 @@ public class MpFederationJoinOptimizer extends AbstractQueryModelVisitor<Reposit
             super.meetOther(node);
         }
     }
+    
+    
+    protected boolean shouldMergeForLocalJoin(TupleExpr arg, List<Owned<NaryJoin>> ows, RepositoryConnection owner) {
+        // The local join is possible if the previous join operand has the same target as this one
+        return (!ows.isEmpty()) && ows.get(ows.size() - 1).getOwner() == owner;
+    }
 
     protected void meetMultiJoin(NaryJoin node) throws RepositoryException {
         super.meetOther(node);
@@ -154,7 +160,10 @@ public class MpFederationJoinOptimizer extends AbstractQueryModelVisitor<Reposit
         List<LocalJoin> vars = new ArrayList<LocalJoin>();
         for (TupleExpr arg : node.getArgs()) {
             RepositoryConnection member = getSingleOwner(arg);
-            if ((!ows.isEmpty()) && ows.get(ows.size() - 1).getOwner() == member) {
+            // Check whether two consequent operands are executed at the same target ("owner")
+            // If yes, it does not make sense to send them separately and then join at the Ephedra side,
+            // but it makes sense to merge them and send them together in one query
+            if (shouldMergeForLocalJoin(arg, ows, member)) {
                 ows.get(ows.size() - 1).getOperation().addArg(arg.clone());
             } else {
                 ows.add(new Owned<NaryJoin>(member, new NaryJoin(arg.clone()))); // NOPMD
@@ -231,7 +240,7 @@ public class MpFederationJoinOptimizer extends AbstractQueryModelVisitor<Reposit
         }
     }
 
-    private static class Owned<O> {
+    protected static class Owned<O> {
 
         private final RepositoryConnection owner;
 
@@ -260,7 +269,7 @@ public class MpFederationJoinOptimizer extends AbstractQueryModelVisitor<Reposit
         }
     }
 
-    private static class LocalJoin {
+    protected static class LocalJoin {
 
         private final Var var;
 
@@ -285,7 +294,7 @@ public class MpFederationJoinOptimizer extends AbstractQueryModelVisitor<Reposit
         }
     }
 
-    private class OwnerScanner extends AbstractQueryModelVisitor<RepositoryException> {
+    protected class OwnerScanner extends AbstractQueryModelVisitor<RepositoryException> {
 
         private boolean shared;
 
@@ -450,7 +459,7 @@ public class MpFederationJoinOptimizer extends AbstractQueryModelVisitor<Reposit
      * If two basic graph patterns have the same subject and can be run on the same member, we can
      * change the order.
      */
-    private LocalJoin findLocalJoin(Var subj, List<LocalJoin> vars) {
+    protected LocalJoin findLocalJoin(Var subj, List<LocalJoin> vars) {
         LocalJoin result = null;
         if ((!vars.isEmpty()) && vars.get(vars.size() - 1).getVar() == subj) {
             result = vars.get(vars.size() - 1);
@@ -468,18 +477,18 @@ public class MpFederationJoinOptimizer extends AbstractQueryModelVisitor<Reposit
     /**
      * If the argument can be sent to a single member.
      */
-    private RepositoryConnection getSingleOwner(TupleExpr arg) throws RepositoryException {
+    protected RepositoryConnection getSingleOwner(TupleExpr arg) throws RepositoryException {
         return new OwnerScanner().getSingleOwner(arg);
     }
 
     /**
      * If the argument can be sent as a group to the members.
      */
-    private Var getLocalSubject(TupleExpr arg) throws RepositoryException {
+    protected Var getLocalSubject(TupleExpr arg) throws RepositoryException {
         return new LocalScanner().getLocalSubject(arg);
     }
 
-    private void addOwners(NaryJoin node, List<Owned<NaryJoin>> ows, List<LocalJoin> vars)
+    protected void addOwners(NaryJoin node, List<Owned<NaryJoin>> ows, List<LocalJoin> vars)
             throws RepositoryException {
         boolean local = isLocal(vars);
         if (ows.size() == 1) {

@@ -18,31 +18,29 @@
 
 package com.metaphacts.services.storage.file;
 
-import com.metaphacts.services.storage.api.AbstractStorageFactory;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.StorageConfig;
-import com.metaphacts.services.storage.api.StorageConfigException;
-import com.metaphacts.services.storage.api.StorageCreationParams;
+import com.metaphacts.services.storage.api.*;
+import org.apache.commons.configuration2.Configuration;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
  *
  */
-public class ClassPathStorageFactory extends AbstractStorageFactory{
-    public final static String STORAGE_TYPE="classpath";
+public class ClassPathStorageFactory implements StorageFactory {
     @Override
     public String getStorageType() {
-        return ClassPathStorageFactory.STORAGE_TYPE;
+        return ClassPathStorage.STORAGE_TYPE;
     }
 
     @Override
-    public ObjectStorage getStorage(StorageConfig config, StorageCreationParams creationParams) throws StorageConfigException {
-        return config.createStorage(creationParams);
+    public StorageConfig parseStorageConfig(
+        String storageType,
+        Configuration properties
+    ) throws StorageConfigException {
+        ClassPathStorage.Config config = new ClassPathStorage.Config();
+        StorageConfig.readBaseProperties(config, properties);
+        if (properties.containsKey("classpathLocation")) {
+            config.setClasspathLocation(properties.getString("classpathLocation"));
+        }
+        return config;
     }
-
-    @Override
-    public StorageConfig getConfig(String storageId) {
-        return new ClassPathStorage.Config(storageId, STORAGE_TYPE);
-    }
-
 }

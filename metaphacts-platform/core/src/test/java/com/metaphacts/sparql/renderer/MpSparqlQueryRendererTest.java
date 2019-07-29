@@ -41,6 +41,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
+import com.metaphacts.sparql.SparqlTestUtils;
 
 /**
  * @author Andriy Nikolov <an@metaphacts.com>
@@ -51,29 +52,13 @@ public class MpSparqlQueryRendererTest {
     private Pattern patternDescribeId = Pattern.compile("(_describe_[a-z0-9_]+)");
     
     private String loadQuery(String queryId) throws Exception {
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(MpSparqlQueryRendererTest.class
-                    .getResourceAsStream(queryId + ".sq"), "UTF-8"));
-        StringBuilder textBuilder = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            textBuilder.append(line + "\n");
-        }
-        return textBuilder.toString().trim();
+        return SparqlTestUtils.loadClasspathResourceAsUtf8String(MpSparqlQueryRendererTest.class,
+                queryId + ".sq");
     }
     
     private String loadSparqlJsQuery(String queryId) throws Exception {
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(MpSparqlQueryRendererTest.class
-                    .getResourceAsStream("sparqljs/" + queryId + ".sparql"), "UTF-8"));
-        StringBuilder textBuilder = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            textBuilder.append(line + "\n");
-        }
-        return textBuilder.toString().trim();
+        return SparqlTestUtils.loadClasspathResourceAsUtf8String(MpSparqlQueryRendererTest.class,
+                "sparqljs/" + queryId + ".sparql");
     }
     
     @Test

@@ -54,13 +54,18 @@
   "mp-event-trigger": "platform/components/events/EventTrigger.ts",
   "mp-event-proxy": "platform/components/events/EventProxy.ts",
   "mp-event-target-refresh": "platform/components/events/EventTargetRefresh.ts",
+  "mp-event-target-template-render": "platform/components/events/EventTargetTemplateRender.tsx",
 
   "field-editor": "platform/components/forms/field-editor/FieldEditorComponent.ts",
   "mp-field-editor": "platform/components/forms/field-editor/FieldEditorComponent.ts",
   "semantic-form": "platform/components/forms/ResourceEditorForm.ts",
+  "semantic-form-switch": "platform/components/forms/inputs/FormSwitch.tsx",
+  "semantic-form-switch-case": "platform/components/forms/inputs/FormSwitchCase.tsx",
   "semantic-form-text-input": "platform/components/forms/inputs/PlainTextInput.ts",
   "semantic-form-hidden-input": "platform/components/forms/inputs/HiddenInput.ts",
   "semantic-form-select-input": "platform/components/forms/inputs/SelectInput.ts",
+  "semantic-form-checklist-input": "platform/components/forms/inputs/ChecklistInput.tsx",
+  "semantic-form-checkbox-input": "platform/components/forms/inputs/CheckBoxInput.tsx",
   "semantic-form-autocomplete-input": "platform/components/forms/inputs/AutocompleteInput.tsx",
   "semantic-form-datetime-input": "platform/components/forms/inputs/DatePickerInput.ts",
   "semantic-form-recover-notification": "platform/components/forms/static/RecoverNotification.ts",
@@ -179,6 +184,7 @@
 
   "mp-selection-toggle": "platform/components/ui/selection/SelectionToggleComponent.tsx",
   "mp-selection-action-choice": "platform/components/ui/selection/SelectionActionChoiceComponent.tsx",
+  "mp-selection-group": "platform/components/ui/selection/SelectionGroupComponent.tsx",
 
   "mp-vowl" : "platform/components/Vowl.ts",
 
@@ -195,6 +201,9 @@
 
   "mp-json-renderer": "platform/components/ui/json/json-renderer.tsx",
   "mp-file-download" : "platform/components/ui/file-download.tsx",
+
+  "mp-workflow-manager" : "platform/components/workflow/WorkflowManagerComponent.tsx",
+  "mp-workflow-selection-action" : "platform/components/workflow/WorkflowSelectionAction.tsx",
 
   "bs-row": "react-bootstrap/es/Row.js",
   "bs-col": "react-bootstrap/es/Col.js",

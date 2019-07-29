@@ -731,7 +731,7 @@ export class Ontodia extends Component<OntodiaProps, State> {
     model.elements.forEach(element => elements.set(element.iri, element.data));
 
     return new Promise(resolve => persistAuthoringState({
-      persistence: LdpPersistence.default,
+      persistence: new LdpPersistence(),
       allMetadata: this.entityMetadata,
       state,
       existingModels: elements,
@@ -947,6 +947,7 @@ export class Ontodia extends Component<OntodiaProps, State> {
           const editedModel = convertCompositeValueToElementModel(newData, metadata);
           options.onSubmit(editedModel);
         },
+        onCancel: () => options.onCancel && options.onCancel(),
       };
       return createElement(EntityForm, props, metadata.formChildren);
     } else {

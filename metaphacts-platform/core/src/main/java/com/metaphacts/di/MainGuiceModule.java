@@ -27,8 +27,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.ServletContext;
 
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
 import org.apache.shiro.authc.credential.DefaultPasswordService;
 import org.apache.shiro.authc.credential.PasswordMatcher;
@@ -36,7 +34,7 @@ import org.apache.shiro.authc.credential.PasswordService;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Throwables;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -44,7 +42,6 @@ import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
-import com.metaphacts.cache.CacheManager;
 import com.metaphacts.cache.LabelCache;
 import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.cache.TemplateIncludeCache;
@@ -94,7 +91,6 @@ public class MainGuiceModule extends AbstractModule {
         bind(MpSparqlServiceRegistry.class).in(Singleton.class);
 
         bind(RepositoryManager.class).in(Singleton.class);
-        bind(CacheManager.class).in(Singleton.class);
         bind(LDPApiInternalRegistry.class).in(Singleton.class);
         bind(PermissionsAwareLDPApiRegistry.class).in(Singleton.class);
         bind(QueryTemplateCache.class).in(Singleton.class);

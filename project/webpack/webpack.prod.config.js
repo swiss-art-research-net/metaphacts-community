@@ -16,14 +16,13 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-var path = require('path'),
-    glob = require('glob'),
-    _ = require('lodash'),
-    webpack = require('webpack'),
-    UglifyJsPlugin = require('uglifyjs-webpack-plugin'),
-    defaultsFn = require('./defaults'),
-    utils = require('./utils');
+const webpack = require('webpack');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const defaultsFn = require('./defaults');
 
+/**
+ * @param {{ [key: string]: string }} env
+ */
 module.exports = function (env) {
     const defaults = defaultsFn();
     var config = require('./webpack.config.js')(defaults);

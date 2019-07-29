@@ -22,7 +22,6 @@ package com.metaphacts.data.rdf.container;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -34,10 +33,10 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.metaphacts.services.storage.api.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
@@ -63,13 +62,7 @@ import com.metaphacts.data.rdf.PointedGraph;
 import com.metaphacts.data.rdf.ReadConnection;
 import com.metaphacts.repository.MpRepositoryProvider;
 import com.metaphacts.services.storage.StorageUtils;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectMetadata;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PathMapping;
-import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.services.storage.api.PlatformStorage.FindResult;
-import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.vocabulary.LDP;
 import com.metaphacts.vocabulary.PLATFORM;
 import com.metaphacts.vocabulary.PROV;
@@ -181,14 +174,15 @@ public abstract class AbstractLDPResource implements LDPResource {
         }
         
         if (isSavedToStorage()) {
-            String objectId = this.repositoryProvider.getRepositoryId() + PathMapping.SEPARATOR
-                    + ObjectStorage.objectIdFromIri(this.resourceIRI) + ".trig";
+            StoragePath objectId = ObjectKind.LDP
+                .resolve(this.repositoryProvider.getRepositoryId())
+                .resolve(StoragePath.encodeIri(this.resourceIRI))
+                .addExtension(".trig");
             try {
                 platformStorage.getStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY)
-                        .deleteObject(ObjectKind.LDP, objectId);
+                        .deleteObject(objectId, platformStorage.getDefaultMetadata());
                 // Check if the object still exists in some app (usually immutable)
-                Optional<FindResult> optObject = platformStorage.findObject(ObjectKind.LDP,
-                        objectId);
+                Optional<FindResult> optObject = platformStorage.findObject(objectId);
                 if (optObject.isPresent()) {
                     // We need to shadow the object to prevent loading from the app, so we save an
                     // empty
@@ -301,8 +295,11 @@ public abstract class AbstractLDPResource implements LDPResource {
     }
 
     protected void saveToStorage(PointedGraph pg, IRI contextUri) throws StorageException {
-        String objectId = this.repositoryProvider.getRepositoryId() + PathMapping.SEPARATOR
-                + ObjectStorage.objectIdFromIri(pg.getPointer()) + ".trig";
+        StoragePath objectId = ObjectKind.LDP
+            .resolve(this.repositoryProvider.getRepositoryId())
+            .resolve(StoragePath.encodeIri(pg.getPointer()))
+            .addExtension(".trig");
+
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         
         List<Statement> toWrite = pg
@@ -322,7 +319,7 @@ public abstract class AbstractLDPResource implements LDPResource {
         
         ByteArrayInputStream content = new ByteArrayInputStream(bytes);
         platformStorage.getStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY).appendObject(
-                ObjectKind.LDP, objectId,
+                objectId,
                 new ObjectMetadata(author.orElse(null), Instant.now()), 
                 content,
                 bytes.length);

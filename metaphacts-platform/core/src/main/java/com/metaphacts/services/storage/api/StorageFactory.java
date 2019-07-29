@@ -29,32 +29,26 @@ public interface StorageFactory {
      * Unique key to identify the type of a storage, which can be instantiated via the factory. The
      * service loader will populate the {@link StorageRegistry} with all types and respective
      * factories.
-     * 
-     * @return
      */
-    public String getStorageType();
+    String getStorageType();
 
     /**
      * Creates a {@link StorageConfig} from a Apache Commons {@link Configuration} object, i.e. any
      * abstraction over configurations.
-     * 
-     * @param storageId
-     * @param properties
-     * @return
-     * @throws StorageConfigException
      */
-    public StorageConfig getStorageConfigFromProperties(String storageId, String storageType,
-            Configuration properties) throws StorageConfigException;
+    StorageConfig parseStorageConfig(
+        String storageType,
+        Configuration properties
+    ) throws StorageConfigException;
 
     /**
      * Instantiates a storage with the respective {@link StorageConfig} and
      * {@link StorageCreationParams}.
-     * 
-     * @param config
-     * @param creationParams
-     * @return
-     * @throws StorageConfigException
      */
-    public ObjectStorage getStorage(StorageConfig config, StorageCreationParams creationParams)
-            throws StorageConfigException;
+    default ObjectStorage makeStorage(
+        StorageConfig config,
+        StorageCreationParams creationParams
+    ) throws StorageException {
+        return config.createStorage(creationParams);
+    }
 }

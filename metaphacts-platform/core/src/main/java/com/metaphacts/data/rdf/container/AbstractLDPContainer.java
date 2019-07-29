@@ -122,7 +122,7 @@ public abstract class AbstractLDPContainer extends AbstractLDPResource implement
             add(pointedGraph, connection);
             connection.commit();
         }
-        cacheManager.invalidateResources(Collections.singletonList(pointedGraph.getPointer()));
+        cacheManager.invalidateResources(Collections.singleton(pointedGraph.getPointer()));
     }
 
     /**

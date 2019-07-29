@@ -41,6 +41,7 @@ import com.metaphacts.data.rdf.container.UserMetadataContainer;
 import com.metaphacts.repository.MpRepositoryProvider;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.FromStorageLoader;
 import com.metaphacts.vocabulary.LDP;
 
@@ -111,8 +112,8 @@ public class SecurityService {
         Template userMetadataTemplate = new Handlebars()
             .with(new FromStorageLoader(platformStorage) {
                 @Override
-                protected ResolvedObject resolveLocation(String location) {
-                    return new ResolvedObject(ObjectKind.CONFIG, location + ".hbs");
+                protected StoragePath resolveLocation(String location) {
+                    return ObjectKind.CONFIG.resolve(location).addExtension(".hbs");
                 }
             })
             .compile("userMetadata");

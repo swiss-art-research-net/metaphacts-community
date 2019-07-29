@@ -55,26 +55,25 @@ export class TurtleEditorComponent extends Component<Props, {source: string}> {
 }
 
   public render() {
+    const codeMirrorAddonOptions = {
+      foldGutter: false,
+      textAreaClassName: ['form-control'],
+      matchTags: {bothTags: true},
+      matchBrackets: true,
+    };
     return CodeMirror({
       ref: 'editor',
       className: 'turtle-editor',
       value: this.state.source,
       onChange: this.onChangeTurtle,
       options: {
+        ...codeMirrorAddonOptions,
         mode: 'text/turtle',
         indentWithTabs: false, indentUnit: 2, tabSize: 2,
         viewportMargin: Infinity,
         lineNumbers: true,
         lineWrapping: true,
-        foldGutter: false,
         gutters: ['CodeMirror-linenumbers'],
-        // extraKeys: {
-        //   'Ctrl-S': () => this.onSave(),
-        //   'Cmd-S': () => this.onSave(),
-        // },
-        textAreaClassName: ['form-control'],
-        matchTags: {bothTags: true},
-        matchBrackets: true,
       },
     });
   }

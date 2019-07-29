@@ -30,6 +30,8 @@ public final class ObjectMetadata {
     @Nullable
     private Instant creationDate;
 
+    public ObjectMetadata() {}
+
     public ObjectMetadata(
         @Nullable String author,
         @Nullable Instant creationDate

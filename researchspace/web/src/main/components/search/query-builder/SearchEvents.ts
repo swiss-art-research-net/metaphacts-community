@@ -16,45 +16,60 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { EventType } from 'platform/api/events';
+import { EventMaker } from 'platform/api/events';
 
-/**
- * Event which should be triggered when domain or range or predicate is selected.
- */
-export const CategoryOrRelationSelected: EventType<string> = 'Search.CategoryOrRelationSelected';
-/**
- * Event which should be triggered when tree selector selection is submitted.
- */
-export const SearchTreeInputSelected: EventType<string> = 'Search.TreeInputSelected';
-/**
- * Event which should be triggered when AND conjunction is clicked.
- */
-export const SearchAndConjunctSelected: EventType<void> = 'Search.AndConjunctSelected';
-/**
- * Event which should be triggered when AND conjunction is clicked.
- */
-export const SearchOrDisjunctSelected: EventType<void> = 'Search.OrDisjunctSelected';
-/**
- * Event which should be triggered when date format dropdown is selected.
- */
-export const SearchSelectDateFormatOpened: EventType<void> = 'Search.SelectDateFormatOpened';
-/**
- * Event which should be triggered when date format is selected.
- */
-export const SearchDateFormatSelected: EventType<string> = 'Search.DateFormatSelected';
-/**
- * Event which should be triggered when date format is submitted.
- */
-export const SearchDateFormatSubmitted: EventType<void> = 'Search.DateFormatSubmitted';
-/**
- * Event which should be triggered when facets are toggled.
- */
-export const SearchFilterToggled: EventType<void> = 'Search.FilterToggled';
-/**
- * Event which should be triggered when a facet category is selected.
- */
-export const SearchFacetCategorySelected: EventType<string> = 'Search.FacetCategorySelected';
-/**
- * Event which should be triggered when a facet property is selected.
- */
-export const SearchFacetPropertySelected: EventType<string> = 'Search.FacetPropertySelected';
+export interface SearchEventData {
+  /**
+   * Event which should be triggered when domain or range or predicate is selected.
+   */
+  'Search.CategoryOrRelationSelected': string;
+  /**
+   * Event which should be triggered when tree selector selection is submitted.
+   */
+  'Search.TreeInputSelected': string;
+  /**
+   * Event which should be triggered when AND conjunction is clicked.
+   */
+  'Search.AndConjunctSelected': void;
+  /**
+   * Event which should be triggered when AND conjunction is clicked.
+   */
+  'Search.OrDisjunctSelected': void;
+  /**
+   * Event which should be triggered when date format dropdown is selected.
+   */
+  'Search.SelectDateFormatOpened': void;
+  /**
+   * Event which should be triggered when date format is selected.
+   */
+  'Search.DateFormatSelected': string;
+  /**
+   * Event which should be triggered when date format is submitted.
+   */
+  'Search.DateFormatSubmitted': void;
+  /**
+   * Event which should be triggered when facets are toggled.
+   */
+  'Search.FilterToggled': void;
+  /**
+   * Event which should be triggered when a facet category is selected.
+   */
+  'Search.FacetCategorySelected': string;
+  /**
+   * Event which should be triggered when a facet property is selected.
+   */
+  'Search.FacetPropertySelected': string;
+}
+const event: EventMaker<SearchEventData> = EventMaker;
+
+
+export const CategoryOrRelationSelected = event('Search.CategoryOrRelationSelected');
+export const SearchTreeInputSelected = event('Search.TreeInputSelected');
+export const SearchAndConjunctSelected = event('Search.AndConjunctSelected');
+export const SearchOrDisjunctSelected = event('Search.OrDisjunctSelected');
+export const SearchSelectDateFormatOpened = event('Search.SelectDateFormatOpened');
+export const SearchDateFormatSelected = event('Search.DateFormatSelected');
+export const SearchDateFormatSubmitted = event('Search.DateFormatSubmitted');
+export const SearchFilterToggled = event('Search.FilterToggled');
+export const SearchFacetCategorySelected = event('Search.FacetCategorySelected');
+export const SearchFacetPropertySelected = event('Search.FacetPropertySelected');
