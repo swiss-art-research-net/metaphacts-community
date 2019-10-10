@@ -14,6 +14,7 @@
     "src/main/components/admin/config-manager",
     "src/main/components/admin/namespace-manager",
     "src/main/components/admin/repositories",
+    "src/main/components/admin/log-browser",
     "src/main/components/3-rd-party/ontodia",
     "src/main/components/dnd",
     "src/main/components/documentation",
@@ -29,6 +30,7 @@
     "src/main/components/workflow"
   ],
   "generatedJsonSchemas": [
+    "SemanticConfigProps",
     "ChartTooltipData",
     "FileInputConfig",
     "OntodiaConfig",

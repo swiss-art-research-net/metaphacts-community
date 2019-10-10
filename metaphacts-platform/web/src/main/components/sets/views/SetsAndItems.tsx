@@ -19,7 +19,7 @@
 import * as React from 'react';
 import { HTMLAttributes } from 'react';
 import { findDOMNode } from 'react-dom';
-import * as ReactCSSTransitionGroup from 'react-addons-css-transition-group';
+import { TransitionGroup, CSSTransition } from 'react-transition-group';
 
 import { Rdf } from 'platform/api/rdf';
 import { ReorderableList, Ordering } from 'platform/components/ui/reorderable-list';
@@ -113,7 +113,8 @@ export class SetWithItems extends React.Component<SetWithItemsProps, {}> {
 
   private handleOnClick = (e: React.MouseEvent<any>) => {
     // we ignore the click if it happened somewhere in set actions element
-    const actionHolder = findDOMNode(this).querySelector('.set-management__item-actions');
+    const actionHolder = (findDOMNode(this) as Element)
+      .querySelector('.set-management__item-actions');
     if (!(actionHolder && actionHolder.contains(e.target as HTMLElement))) {
       this.props.onOpen(this.props.set.iri);
     }
@@ -264,13 +265,16 @@ export class ItemsView extends React.Component<ItemsViewProps, {}> {
               onOrderChanged={onOrderChanged}>
               {renderedItems}
             </ReorderableList>
-          : <ReactCSSTransitionGroup key='items' component='ul'
-              className={`${this.props.baseClass}__set-items`}
-              transitionName='set-items-animation'
-              transitionEnterTimeout={800}
-              transitionLeaveTimeout={500}>
-              {renderedItems}
-            </ReactCSSTransitionGroup>
+          : <TransitionGroup key='items' component='ul'
+              className={`${this.props.baseClass}__set-items`}>
+              {renderedItems.map(item => (
+                <CSSTransition key={item.key}
+                  classNames='set-items-animation'
+                  timeout={{enter: 800, exit: 500}}>
+                  {item}
+                </CSSTransition>
+              ))}
+            </TransitionGroup>
       ) : null,
     ];
   }

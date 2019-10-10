@@ -5,6 +5,7 @@
 
 	field:insertPattern [ sp:text
 """INSERT {
+  # insert field 2
   $subject a skos:ConceptScheme .
   $subject rdfs:label $value .
 }
@@ -12,6 +13,7 @@ WHERE {}""" ];
 
 	field:selectPattern [ sp:text
 """SELECT $value WHERE {
+  # select field 2
   $subject a skos:ConceptScheme .
   $subject rdfs:label $value .
 }""" ];
@@ -31,6 +33,12 @@ WHERE {}""" ];
 """DELETE { $subject rdfs:label $value. } WHERE {}""" 
 ];
 	field:askPattern [ sp:text """ASK { ?a ?b ?c }""" ];
+
+	field:domain <http://example.com/Domain1>;
+	field:domain <http://example.com/Domain2>;
+
+	field:range <http://example.com/Range1>;
+	field:range <http://example.com/Range2>;
 
   field:defaultValue "first default label" ;
   field:defaultValue "second default label" ;

@@ -16,7 +16,7 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { Props as ReactProps } from 'react';
+import * as React from 'react';
 import * as D from 'react-dom-factories';
 import * as _ from 'lodash';
 import * as Kefir from 'kefir';
@@ -29,7 +29,7 @@ import { Cancellation } from 'platform/api/async';
 import {
   getCurrentUrl,
 } from 'platform/api/navigation';
-import { Component, ComponentChildContext } from 'platform/api/components';
+import { Component } from 'platform/api/components';
 import { trigger, BuiltInEvents } from 'platform/api/events';
 import { addNotification } from 'platform/components/ui/notification';
 
@@ -41,16 +41,12 @@ import {
 } from '../data/search/Serialization';
 import * as FacetModel from '../data/facet/Model';
 import { Dataset, Alignment } from '../data/datasets/Model';
-import {
-  InitialQueryContextTypes, ResultContextTypes, SemanticSearchContext, FacetContextTypes,
-  ResultOperation, ExtendedSearchValue, ConfigurationContextTypes,
-  GraphScopeContextTypes,
-} from './SemanticSearchApi';
+import { SemanticSearchContext, ResultOperation, ExtendedSearchValue } from './SemanticSearchApi';
 import {
   SearchProfileStore, createSearchProfileStore,
 } from '../data/profiles/SearchProfileStore';
 
-export interface Props extends ReactProps<SemanticSearch>, SemanticSearchConfig {}
+export interface Props extends React.Props<SemanticSearch>, SemanticSearchConfig {}
 interface State {
   domain?: Data.Maybe<Model.Category>
   availableDomains?: Data.Maybe<Model.AvailableDomains>
@@ -123,16 +119,8 @@ export class SemanticSearch extends Component<Props, State> {
     };
   }
 
-  static childContextTypes = {
-    ...Component.childContextTypes,
-    ...InitialQueryContextTypes,
-    ...ResultContextTypes,
-    ...FacetContextTypes,
-    ...ConfigurationContextTypes,
-    ...GraphScopeContextTypes,
-  };
-  getChildContext(): ComponentChildContext & SemanticSearchContext {
-    const context: SemanticSearchContext = {
+  private makeSearchContext(): SemanticSearchContext {
+    return {
       baseQuery: this.state.baseQuery,
       useInExtendedFcFrSearch: this.useInExtendedFcFrSearch,
       extendedSearch: this.state.extendedSearch,
@@ -170,7 +158,6 @@ export class SemanticSearch extends Component<Props, State> {
       graphScopeResults: this.state.graphScopeResults,
       setGraphScopeResults: this.setGraphScopeResults,
     };
-    return {...super.getChildContext(), ...context};
   }
 
   componentDidMount() {
@@ -354,7 +341,11 @@ export class SemanticSearch extends Component<Props, State> {
   }
 
   render() {
-    return D.div({}, this.props.children);
+    return React.createElement(
+      SemanticSearchContext.Provider,
+      {value: this.makeSearchContext()},
+      D.div({}, this.props.children)
+    );
   }
 
   private getStateFromHistory = (
@@ -445,7 +436,7 @@ export class SemanticSearch extends Component<Props, State> {
         [componentId]: {...resultState[componentId], ...stateChange} as object,
       },
     }), () => this.saveStateIntoHistory({
-      search: this.state.baseQueryStructure.get(),
+      search: this.state.baseQueryStructure.getOrElse(undefined),
       facet: this.state.facetStructure,
       result: this.state.resultState,
       datasets: this.state.selectedDatasets,

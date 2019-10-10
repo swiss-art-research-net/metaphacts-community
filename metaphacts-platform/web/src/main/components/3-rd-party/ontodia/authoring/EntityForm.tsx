@@ -17,14 +17,14 @@
  */
 
 import * as React from 'react';
-import { ReactElement, Children, ReactNode, cloneElement } from 'react';
+import { Children, ReactNode, cloneElement } from 'react';
 
 import { Component } from 'platform/api/components';
 
 import {
-  ResourceEditorFormProps, CompositeValue, FieldDefinition, SemanticForm,
+  CompositeValue, FieldDefinition, SemanticForm,
 } from 'platform/components/forms';
-import { universalChildren } from 'platform/components/utils';
+import { isValidChild, universalChildren } from 'platform/components/utils';
 
 import * as styles from './EntityForm.scss';
 
@@ -57,7 +57,7 @@ export class EntityForm extends Component<EntityFormProps, State> {
 
   private mapChildren(children: ReactNode): ReactNode {
     return Children.map(children, child => {
-      if (typeof child === 'object') {
+      if (isValidChild(child)) {
         if (child.type === 'button') {
           if (child.props.name === 'reset') {
             return cloneElement(child, {onClick: this.onReset});
@@ -67,7 +67,7 @@ export class EntityForm extends Component<EntityFormProps, State> {
             return cloneElement(child, {onClick: () => this.props.onCancel()});
           }
         }
-        if ('children' in child.props) {
+        if (child.props.children) {
           return cloneElement(child, {}, universalChildren(
             this.mapChildren(child.props.children)));
         }

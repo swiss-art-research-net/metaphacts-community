@@ -16,26 +16,43 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { ReactElement, ReactNode, Children } from 'react';
+import { ReactElement, ReactNode, ComponentClass } from 'react';
 
 /**
  * Check if react component is a valid ReactElement element.
  * in latest html-to-react invalid node can be 'false' or 'null'.
  */
-export function isValidChild(child: any): child is ReactElement<any> {
-  return typeof child === 'object' && child !== null;
+export function isValidChild(child: ReactNode): child is ReactElement<any> {
+  return typeof child === 'object'
+    && child !== null
+    && !Array.isArray(child)
+    && Boolean((child as any).type);
+}
+
+export function componentHasType<P = any>(
+  child: ReactNode, type: ComponentClass<P, any>
+): child is ReactElement<P> {
+  return isValidChild(child) && type
+    && typeof child.type === 'function'
+    && typeof type === 'function'
+    && hasBaseDerivedRelationship(type, child.type);
 }
 
 /**
  * Returns a human-readable name for a React child component.
  */
-export function componentDisplayName(child: ReactElement<any> | string | number) {
+export function componentDisplayName(child: ReactNode) {
   if (typeof child === 'string' || typeof child === 'number') {
     return child.toString();
-  } else if (typeof child.type === 'string') {
-    return child.type;
+  } else if (isValidChild(child)) {
+    if (typeof child.type === 'string') {
+      return child.type;
+    } else {
+      type HasDisplayName = { displayName?: string; name?: string };
+      return (child.type as HasDisplayName).displayName || (child.type as HasDisplayName).name;
+    }
   } else {
-    return child.type.displayName || child.type['name'];
+    return undefined;
   }
 }
 
@@ -67,10 +84,4 @@ export function universalChildren(children: ReactNode): ReactNode {
  return (Array.isArray(children) && children.length === 1)
    ? children[0]
    : children;
-}
-
-export function extractComponentElements<P>(children: ReactNode): Array<ReactElement<any>> {
-  const array = Children.toArray(children);
-  const items: Array<any> = array.filter(item => typeof item === 'object');
-  return items;
 }

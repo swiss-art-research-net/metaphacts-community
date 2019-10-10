@@ -159,7 +159,7 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
   }
 
   componentDidMount() {
-    const element = findDOMNode(this.resultHolder);
+    const element = findDOMNode(this.resultHolder) as Element;
     delete YASR.plugins['table'];
     delete YASR.plugins['pivot'];
     delete YASR.plugins['gChart'];

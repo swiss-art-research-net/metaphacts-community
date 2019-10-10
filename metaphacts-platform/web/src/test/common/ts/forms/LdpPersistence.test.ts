@@ -23,7 +23,7 @@ import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil } from 'platform/api/sparql';
 import { LdpPersistence } from 'platform/components/forms';
 
-import mockRequest from '../../../xhrTestUtils';
+import { mockRequest } from 'platform-tests/mocks';
 
 const LDP_PERSISTENCE = new LdpPersistence();
 

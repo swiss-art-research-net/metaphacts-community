@@ -90,7 +90,7 @@ function cloneContextData(data: HandlebarsDataStack) {
   const clone: HandlebarsDataStack = {};
   for (const key of CAPTURED_DATA_KEYS) {
     if (key in data) {
-      clone[key] = data[key];
+      (clone as any)[key] = data[key];
     }
   }
   if ('_parent' in data) {

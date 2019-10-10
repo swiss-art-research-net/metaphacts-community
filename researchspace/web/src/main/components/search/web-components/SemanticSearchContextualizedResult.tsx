@@ -33,22 +33,19 @@ import {
   RESULT_VARIABLES, SEMANTIC_SEARCH_VARIABLES,
 } from 'platform/components/semantic/search/config/SearchConfig';
 import {
-  ResultContext, ResultContextTypes,
+  SemanticSearchContext, ResultContext,
 } from 'platform/components/semantic/search/web-components/SemanticSearchApi';
-import SearchProfileStore from 'platform/components/semantic/search/data/profiles/SearchProfileStore';
+import {
+  SearchProfileStore
+} from 'platform/components/semantic/search/data/profiles/SearchProfileStore';
 import * as Model from 'platform/components/semantic/search/data/search/Model';
 import * as styles from './SemanticSearchContextualizedResult.scss';
 
 const RelationSelector: React.ComponentClass<ReactSelectProps<Model.Relation>> = ReactSelect;
 
-interface Props extends React.Props<SemanticSearchContextualizedResult> {
+interface SemanticSearchContextualizedResultProps {
   ranges: string [];
   tupleTemplate?: string;
-}
-
-interface State {
-  relation?: Data.Maybe<Model.Relation>
-  relations?: Array<Model.Relation>
 }
 
 /**
@@ -56,11 +53,32 @@ interface State {
  * In case of virtual FRs one cane use `FILTER(?__contextRelationPattern__)` placeholder that
  * will be replaced with the corresponding FR pattern.
  */
-class SemanticSearchContextualizedResult extends React.Component<Props, State> {
-  static contextTypes = ResultContextTypes;
-  static childContextTypes = ResultContextTypes;
-  context: ResultContext;
+class SemanticSearchContextualizedResult
+  extends React.Component<SemanticSearchContextualizedResultProps> {
 
+  render() {
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => (
+          <SemanticSearchContextualizedResultInner {...this.props}
+            context={context}
+          />
+        )}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
+
+interface InnerProps extends SemanticSearchContextualizedResultProps {
+  context: ResultContext;
+}
+
+interface State {
+  relation?: Data.Maybe<Model.Relation>
+  relations?: Array<Model.Relation>
+}
+
+class SemanticSearchContextualizedResultInner extends React.Component<InnerProps, State> {
   static defaultProps = {
     tupleTemplate:
       `
@@ -76,10 +94,10 @@ class SemanticSearchContextualizedResult extends React.Component<Props, State> {
     `,
   };
 
-  constructor(props: Props, context: ResultContext) {
-    super(props, context);
+  constructor(props: InnerProps) {
+    super(props);
     const initialState =
-      context.searchProfileStore.map(
+      this.props.context.searchProfileStore.map(
         profileStore => this.initialState(profileStore, props.ranges.map(Rdf.iri))
       ).getOrElse({
         relation: Maybe.Nothing<Model.Relation>(),
@@ -105,14 +123,14 @@ class SemanticSearchContextualizedResult extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    this.context.setVisualizationContext(this.state.relation);
+    this.props.context.setVisualizationContext(this.state.relation);
   }
 
   render() {
     return <div className={styles.holder}>
       <FormGroup className={styles.selectorGroup}>
         <ControlLabel>Visualization Context</ControlLabel>
-        {this.context.searchProfileStore.map(this.contextSelector).getOrElse(<span />)}
+        {this.props.context.searchProfileStore.map(this.contextSelector).getOrElse(<span />)}
       </FormGroup>
       {React.Children.only(this.props.children)}
     </div>;
@@ -140,7 +158,7 @@ class SemanticSearchContextualizedResult extends React.Component<Props, State> {
       profileStore.categories.get(range)
     );
     return profileStore.relationsFor({
-      domain: this.context.domain,
+      domain: this.props.context.domain,
       range: rangeCategory,
     }).valueSeq().toJS();
   }
@@ -162,7 +180,7 @@ class SemanticSearchContextualizedResult extends React.Component<Props, State> {
 
   private selectRelation = (option: {value: Model.Relation}) => {
     const relation = Maybe.Just(option.value);
-    this.context.setVisualizationContext(relation);
+    this.props.context.setVisualizationContext(relation);
     this.setState({relation});
   }
 

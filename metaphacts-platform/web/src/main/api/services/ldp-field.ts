@@ -71,13 +71,13 @@ function deserialize(fieldIri: Rdf.Iri, graph: Rdf.Graph): FieldDefinitionProp {
           .getOrElse(undefined)
     );
 
-  const label = Rdf.getValuesFromPropertyPath([rdfs.label], pg).map((v: Rdf.LangLiteral) => v);
+  const label = Rdf.getValuesFromPropertyPath([rdfs.label], pg).map(v => v as Rdf.Literal);
   const domain = Rdf.getValuesFromPropertyPath([field.domain], pg).map(v => v.value);
   const range = Rdf.getValuesFromPropertyPath([field.range], pg).map(v => v.value);
   const defaultValues = Rdf.getValuesFromPropertyPath([field.default_value], pg).map(v => v.value);
   const categories = Rdf.getValuesFromPropertyPath<Rdf.Iri>([field.category], pg);
   const treePatterns = Rdf.getValueFromPropertyPath([field.tree_patterns], pg).chain(config => {
-    if (!(config.isLiteral() && config.dataType.equals(VocabPlatform.SyntheticJsonDatatype))) {
+    if (!(config.isLiteral() && config.datatype.equals(VocabPlatform.SyntheticJsonDatatype))) {
       return Nothing();
     }
     try {

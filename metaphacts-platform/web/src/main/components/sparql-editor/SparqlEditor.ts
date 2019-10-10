@@ -117,7 +117,7 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
     }
 
     this.yasqe = YASQE(
-      findDOMNode(this), {
+      findDOMNode(this) as Element, {
         backdrop: 0,
         value: this.props.query,
         persistent: this.props.persistent ? this.props.persistent  : null,

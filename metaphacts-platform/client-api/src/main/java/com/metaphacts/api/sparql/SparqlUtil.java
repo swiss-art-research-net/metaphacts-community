@@ -29,14 +29,6 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
 
-import com.google.common.collect.Sets;
-import com.metaphacts.api.dto.querytemplate.AskQueryTemplate;
-import com.metaphacts.api.dto.querytemplate.ConstructQueryTemplate;
-import com.metaphacts.api.dto.querytemplate.QueryTemplate;
-import com.metaphacts.api.dto.querytemplate.SelectQueryTemplate;
-import com.metaphacts.api.dto.querytemplate.UpdateQueryTemplate;
-import com.metaphacts.api.sparql.SparqlUtil.SparqlOperation;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.rdf4j.common.lang.FileFormat;
 import org.eclipse.rdf4j.common.lang.service.FileFormatServiceRegistry;
@@ -51,7 +43,6 @@ import org.eclipse.rdf4j.query.resultio.BooleanQueryResultFormat;
 import org.eclipse.rdf4j.query.resultio.BooleanQueryResultWriter;
 import org.eclipse.rdf4j.query.resultio.BooleanQueryResultWriterFactory;
 import org.eclipse.rdf4j.query.resultio.BooleanQueryResultWriterRegistry;
-import org.eclipse.rdf4j.query.resultio.QueryResultFormat;
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultFormat;
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriter;
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory;
@@ -60,6 +51,13 @@ import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.RDFWriterFactory;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
+
+import com.google.common.collect.Sets;
+import com.metaphacts.api.dto.querytemplate.AskQueryTemplate;
+import com.metaphacts.api.dto.querytemplate.ConstructQueryTemplate;
+import com.metaphacts.api.dto.querytemplate.QueryTemplate;
+import com.metaphacts.api.dto.querytemplate.SelectQueryTemplate;
+import com.metaphacts.api.dto.querytemplate.UpdateQueryTemplate;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -127,6 +125,11 @@ public class SparqlUtil {
         
     }
 
+    // matches case-insensitive and multi-line groups that
+    // start with prefix, one to infinite whitespace, followed by any or none character,
+    // followed by a ":", followed zero to infinite whitespace, followed by any character enclosed by "<" and ">"
+    static final Pattern PREFIX_PATTERN = Pattern.compile("prefix\\s+([a-z]*)[:]{0,}\\s*[\\<]{1}[^\\<]*[\\>]{1}",
+            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
     /**
      * Extracts a set of prefixes from a SPARQL operation string using regex.
      * @param operationString
@@ -134,11 +137,7 @@ public class SparqlUtil {
      */
     public static Set<String> extractPrefixes(String operationString){
         Set<String> prefixes = Sets.newHashSet();
-        // matches case-insensitive and multi-line groups that
-        // start with prefix, one to infinite whitespace, followed by any or none character,
-        // followed by a ":", followed zero to infinite whitespace, followed by any character enclosed by "<" and ">"
-        Matcher prefixMatcher = Pattern.compile("prefix\\s+([a-z]*)[:]{0,}\\s*[\\<]{1}[^\\<]*[\\>]{1}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE)
-                .matcher(operationString);
+        Matcher prefixMatcher = PREFIX_PATTERN.matcher(operationString);
         while (prefixMatcher.find()) {
             prefixes.add(prefixMatcher.group(1));
         }

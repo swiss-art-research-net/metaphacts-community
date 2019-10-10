@@ -25,6 +25,7 @@ import * as D from 'react-dom-factories';
 
 import { Component } from 'platform/api/components';
 import { ErrorNotification } from 'platform/components/ui/notification';
+import { componentHasType } from 'platform/components/utils';
 import { ComponentToolbarActionsComponent } from 'platform/components/persistence/ComponentToolbarActions';
 import { ComponentToolbarComponentComponent } from 'platform/components/persistence/ComponentToolbarComponent';
 import { ComponentToolbarContextTypes } from './ComponentToolbarApi';
@@ -91,10 +92,11 @@ export class ComponentToolbarComponent extends Component<Props, State> {
   private checkTree(props) {
     if (
       props.children.length !== 2 ||
-      !_.find(props.children, child => isValidElement(child) && child.type === ComponentToolbarActionsComponent) ||
-      !_.find(props.children, child => isValidElement(child) && child.type === ComponentToolbarComponentComponent)
+      !_.find(props.children, child => componentHasType(child, ComponentToolbarActionsComponent)) ||
+      !_.find(props.children, child => componentHasType(child, ComponentToolbarComponentComponent))
     ) {
-      return 'mp-component-toolbar should contain exactly 2 children: mp-component-toolbar-actions and mp-component-toolbar-component';
+      return `mp-component-toolbar should contain exactly 2 children: ` +
+        `mp-component-toolbar-actions and mp-component-toolbar-component`;
     }
     return null;
   }
@@ -105,13 +107,15 @@ export class ComponentToolbarComponent extends Component<Props, State> {
     }
     const children = Children.toArray(this.props.children);
     const actionsParent = _.find(children, child =>
-      isValidElement(child) && child.type === ComponentToolbarActionsComponent
+      componentHasType(child, ComponentToolbarActionsComponent)
     ) as ReactElement<any>;
     const componentParent = _.find(children, child =>
-      isValidElement(child) && child.type === ComponentToolbarComponentComponent
+      componentHasType(child, ComponentToolbarComponentComponent)
     ) as ReactElement<any>;
     const component = Children.only(componentParent.props.children);
-    const updatedComponent = cloneElement(component, Object.assign({}, component.props, this.state.propsOverride));
+    const updatedComponent = cloneElement(
+      component, Object.assign({}, component.props, this.state.propsOverride)
+    );
     const actions = actionsParent.props.children as ReactElement<any>;
     return D.div({className: this.props.className, style: this.props.style},
       D.div(

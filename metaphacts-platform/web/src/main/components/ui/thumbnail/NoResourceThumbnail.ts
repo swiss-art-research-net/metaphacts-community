@@ -16,11 +16,14 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { Component, Children, cloneElement } from 'react';
+import * as React from 'react';
 
-export class NoResourceThumbnail extends Component<{}, {}> {
+export class NoResourceThumbnail extends React.Component<{}, {}> {
   render() {
-    return cloneElement(Children.only(this.props.children), this.props);
+    return React.cloneElement(
+      React.Children.only(this.props.children) as React.ReactElement<any>,
+      this.props
+    );
   }
 }
 export default NoResourceThumbnail;

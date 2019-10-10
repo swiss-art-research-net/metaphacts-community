@@ -17,7 +17,7 @@
  */
 
 import {
-  createElement, CSSProperties, ReactElement, ReactChild, ComponentClass, Children,
+  createElement, CSSProperties, ReactElement, ReactNode, ComponentClass, Children,
 } from 'react';
 import * as D from 'react-dom-factories';
 import * as Kefir from 'kefir';
@@ -138,7 +138,7 @@ export class ResourceThumbnail extends Component<Props, State> {
   }
 
   private findComponent =
-    (children: Array<ReactChild>, component: ComponentClass<any>): ReactElement<any> => {
+    (children: Array<ReactNode>, component: ComponentClass<any>): ReactElement<any> => {
       const element =
         _.find(
           children, child => (child as React.ReactElement<any>).type === component

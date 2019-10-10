@@ -171,30 +171,34 @@ export class InferenceMakingComponent extends React.Component<InferenceMakingCom
     />;
   }
 
-  private onTitleChange = (event: React.ChangeEvent<any>) =>
+  private onTitleChange = (event: React.ChangeEvent<any>) => {
     this.setState({title: event.target.value});
+  }
 
-  private onNoteChange = (event: React.ChangeEvent<any>) =>
+  private onNoteChange = (event: React.ChangeEvent<any>) => {
     this.setState({note: event.target.value});
+  }
 
-  private onLogicChange = (selected: Option<Rdf.Iri>) =>
+  private onLogicChange = (selected: Option<Rdf.Iri>) => {
     this.setState({logicType: selected.value});
+  }
 
-  private savePremise = (beliefs: Array<ArgumentsBelief>) =>
+  private savePremise = (beliefs: Array<ArgumentsBelief>) => {
     this.setState(
       state => ({
         premises: state.premises.concat(beliefs),
-        addingNewPremise: false,
       })
     );
+  }
 
-  private removePremise = (premise: ArgumentsBelief) =>
+  private removePremise = (premise: ArgumentsBelief) => {
     this.setState(
       state => {
         _.remove(state.premises, p => p === premise);
         return {premises: state.premises};
       }
     );
+  }
 
   private saveArgument = () => {
     this.props.onSave({

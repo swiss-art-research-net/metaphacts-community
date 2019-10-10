@@ -55,13 +55,13 @@ interface Props {
  * @see Props
  * @example
  *  <mp-json-renderer 
- *      getUrl='/rest/data/rdf/namespace/getRegisteredPrefixes'
+ *      get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'
  *      template='<ul>{{#each this as |e|}}<li>{{@index}} : {{e}}</li> {{/each}}</ul>'
  *  ></mp-json-renderer>
  * 
  *  With default table rendering:
  *  <mp-json-renderer 
- *      getUrl='/rest/data/rdf/namespace/getRegisteredPrefixes'
+ *      get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'
  *  ></mp-json-renderer>
  */
 export class GenericJsonRenderer<T> extends Component<Props, State> {

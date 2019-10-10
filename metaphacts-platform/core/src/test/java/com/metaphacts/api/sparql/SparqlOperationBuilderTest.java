@@ -23,13 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.jukito.JukitoRunner;
-import org.jukito.UseModules;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -50,6 +43,14 @@ import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.query.Update;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
+import org.jukito.JukitoRunner;
+import org.jukito.UseModules;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -188,6 +189,39 @@ public class SparqlOperationBuilderTest {
             BooleanQuery op = builder.resolveUser((IRI) metaphactsURI).build(con);
             assertTrue(op instanceof BooleanQuery);
             assertTrue(op.evaluate());
+        }
+    }
+    
+    @Test
+    public void testValidate() throws Exception {
+        
+        String[] validQueries = new String[] {
+                "SELECT * WHERE { ?s ?p ?o } LIMIT 10",
+                "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }",
+                "ASK { ?s ?p ?o }",
+                "INSERT DATA { :s :p :o }",
+                "PREFIX test: <http://example.org/test/> SELECT * WHERE { test:s a ?type }",
+                "SELECT * WHERE { ?x rdfs:label ?label }"
+        };
+        
+        String[] invalidQueries = new String[] {
+                "SELE * WHERE { ?s ?p o }",
+                "PREFIX test: <http://example.org/test>\nPREFIX test: <http://example.org/test>\nSELECT * WHERE { test:s a ?type }",
+                "SELECT * WHERE { undeclaredPrefix:s a ?type }"
+
+        };
+          
+        for (String query : validQueries) {
+            SparqlOperationBuilder.create(query).validate();
+        }
+        
+        for (String query : invalidQueries) {
+            try {
+                SparqlOperationBuilder.create(query).validate();
+                Assert.fail("Expected malformed query exception for " + query);
+            } catch (MalformedQueryException e) {
+                // expected
+            }
         }
     }
 

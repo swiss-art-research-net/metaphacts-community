@@ -37,7 +37,9 @@ if (!fs.existsSync(path.join(projectRoot, projectName))) {
   process.exit(2);
 }
 
-const targetExecutable = path.normalize('project/webpack/node_modules/typescript-json-schema');
+const targetExecutable = path.normalize(
+  'project/webpack/node_modules/typescript-json-schema/bin/typescript-json-schema'
+);
 const args = [
   targetExecutable,
   'tsconfig.json',

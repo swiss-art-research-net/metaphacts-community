@@ -22,8 +22,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.metaphacts.config.UnknownConfigurationException;
-import com.metaphacts.junit.TestPlatformStorage;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.hamcrest.core.IsInstanceOf;
@@ -31,7 +29,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.metaphacts.config.ConfigurationUtil;
+import com.metaphacts.config.UnknownConfigurationException;
 import com.metaphacts.junit.AbstractRepositoryBackedIntegrationTest;
+import com.metaphacts.junit.TestPlatformStorage;
 
 /**
  * Test cases for configuration class functionality.
@@ -194,4 +194,13 @@ public class ConfigurationTest extends AbstractRepositoryBackedIntegrationTest {
         Assert.assertEquals("Artem, Johannes", values.get(2));
     }
     
+    @Test
+    public void testTemplateInclude_WithComma() throws Exception {
+        String dummyQuery = "SELECT ?type WHERE { ?x rdf:type ?type . FILTER(?type IN (<urn:Person>, <urn:Organization>)) } ORDER BY ?type";
+
+        config.getUiConfig().setParameter("templateIncludeQuery", Collections.singletonList(dummyQuery),
+                TestPlatformStorage.STORAGE_ID);
+        Assert.assertEquals(dummyQuery, config.getUiConfig().getTemplateIncludeQuery());
+    }
+
 }

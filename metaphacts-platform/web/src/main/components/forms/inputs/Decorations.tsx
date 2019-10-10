@@ -23,8 +23,8 @@ import * as classnames from 'classnames';
 import { Component } from 'platform/api/components';
 
 import { Spinner } from 'platform/components/ui/spinner';
-import { getPreferredLabel } from 'platform/components/utils';
 
+import { getPreferredLabel } from '../FieldDefinition';
 import { DataState, FieldError } from '../FieldValues';
 import { MultipleValuesProps } from './MultipleValuesInput';
 

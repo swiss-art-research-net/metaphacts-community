@@ -26,10 +26,28 @@
       If no explicit storage is defined for an <semantic-link title="Apps" uri='[[resolvePrefix "Help:Apps"]]'>app</semantic-link>, the platform creates a standard, non-versioned file storage
       within the root directory of the respective app.
     </p>
-    
+ 
     <hr/>
 		<mp-json-renderer get-url='/rest/admin/apps'></mp-json-renderer>
-    
+    <br>
+    <mp-overlay-dialog title="Upload & Deploy App" type="modal" bs-size="large">
+      <mp-overlay-dialog-trigger><button type="button" class="btn btn-primary">Upload & Deploy App</button></mp-overlay-dialog-trigger>
+      <mp-overlay-dialog-content>
+        <div>
+           <p>
+             <strong>Please note</strong> that apps need a platform restart in order to be installed properly. 
+          </p>
+          <p>
+             Please refer to the <semantic-link title="App Deployment" uri='[[resolvePrefix "Help:AppDeployment"]]'>app deployment</semantic-link> help for further details.
+          </p>
+          [[#if (hasPermission "app:upload")]]
+          	<mp-app-upload></mp-app-upload>
+          [[else]]
+          	<span style="color:red">You do not have the required permission to upload apps.</span>
+          [[/if]]
+        </div>
+      </mp-overlay-dialog-content>
+    </mp-overlay-dialog>
     <h2>Connected Storages</h2>
     Storages in ascending order of priority (c.f. <semantic-link title="Apps" uri='[[resolvePrefix "Help:Storage"]]'>Storage Help</semantic-link>):
 		<hr/>

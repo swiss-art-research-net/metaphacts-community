@@ -25,9 +25,8 @@ import { Cancellation } from 'platform/api/async/Cancellation';
 import { Rdf } from 'platform/api/rdf';
 
 import { TemplateItem } from 'platform/components/ui/template';
-import { getPreferredLabel } from 'platform/components/utils';
 
-import { FieldDefinition } from '../FieldDefinition';
+import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import {
   FieldValue, AtomicValue, EmptyValue, SparqlBindingValue, ErrorKind, DataState,
 } from '../FieldValues';

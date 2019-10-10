@@ -18,9 +18,15 @@
 
 import { createElement } from 'react';
 import { expect } from 'chai';
-import { shallow } from 'enzyme';
+
 import { Description, StaticFieldProps, normalizeFieldDefinition } from 'platform/components/forms';
+
+import { shallow } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
+
 import { FIELD_DEFINITION } from '../fixturies/FieldDefinition';
+
+mockLanguagePreferences();
 
 const PROPS: StaticFieldProps = {
   for: 'test',

@@ -71,6 +71,8 @@ object LicenseAggregator {
   val BSD_2_LICENSE_LINK = "http://opensource.org/licenses/BSD-2-Clause"
 
   val WTFPL_LICENSE_LINK = "http://www.wtfpl.net/txt/copying/"
+
+  val MPL_2_LICENSE_LINK = "http://opensource.org/licenses/MPL-2.0"
   
   /**
    * Statically defined licensed (incorporated directly)
@@ -203,6 +205,9 @@ object LicenseAggregator {
         } else if (licenseName == "https://sputniq.space/license") {
           licenseName = SPUTNIQ_LICENSE
           licenseLink = SPUTNIQ_LICENSE_LINK
+        } else if (licenseName == "MPL-2.0") {
+          licenseName = "MPL-2.0"
+          licenseLink = MPL_2_LICENSE_LINK
         } else if (licenseName == "n/a") {
           if (libraryName == "typeahead.js" && libraryVersion == "0.10.5") {
             licenseName = "MIT"

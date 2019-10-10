@@ -1,29 +1,23 @@
 <semantic-search categories='{
-							    "<http://www.w3.org/2001/XMLSchema#Decimal>": [{
-							      "kind": "numeric-range",
-							      "queryPattern": "{
-							        $subject ?__relation__ ?literal .
-							        FILTER(?literal >= ?__numericRangeBeginValue__) .
-							        FILTER(?literal <= ?__numericRangeEndValue__) .
-							      }"
-							    }],
-							    "<http://www.w3.org/2000/01/rdf-schema#Literal>": [{
-							      "kind": "literal",
-							      "queryPattern": "{
-							        $subject ?__relation__ ?__literal__ .
-							      }"
-							    }],
-							    "<http://www.w3.org/2001/XMLSchema#date>": [{
-							       "kind": "date-range",
-                     "datatype": "http://www.w3.org/2001/XMLSchema#date",
-							       "queryPattern": "
-							         {
-							           $subject ?__relation__ ?date .
-							           FILTER(?date <= ?__dateEndValue__) .
-							           FILTER(?date >= ?__dateBeginValue__) .
-							         }"
-							      }]
-							 }' 
+                    "<http://www.w3.org/2001/XMLSchema#Decimal>": [{
+                      "kind": "numeric-range",
+                      "queryPattern": "{
+                        $subject ?__relation__ ?literal .
+                        FILTER(?literal >= ?__numericRangeBeginValue__) .
+                        FILTER(?literal <= ?__numericRangeEndValue__) .
+                      }"
+                    }],
+                    "<http://www.w3.org/2001/XMLSchema#date>": [{
+                       "kind": "date-range",
+                       "datatype": "http://www.w3.org/2001/XMLSchema#date",
+                       "queryPattern": "
+                         {
+                           $subject ?__relation__ ?date .
+                           FILTER(?date <= ?__dateEndValue__) .
+                           FILTER(?date >= ?__dateBeginValue__) .
+                         }"
+                      }]
+                 }'         
   relations = '{
                  "<http://www.metaphacts.com/ontology/sample/fan_of>": [
                    {
@@ -136,7 +130,7 @@
                       <img src="{{thumbnail.value}}" style="height:120px;max-width:150px;" class="img-rounded">
                     </div>
                     <div class="panel-footer" style="position: relative">
-                      <semantic-link class="grid-resource-link" uri="{{subject.value}}"></semantic-link>
+                      <semantic-link class="grid-resource-link" iri="{{subject.value}}"></semantic-link>
                     </div>
                   </div>
                 </template>
@@ -179,7 +173,7 @@
                       <img src="{{thumbnail.value}}" style="max-height:260px; margin: 0 auto;" class="img-rounded">
                     </div>
                     <div class="panel-footer" style="position: relative;  border: none;">
-                      <semantic-link class="grid-resource-link" uri="{{subject.value}}"></semantic-link>
+                      <semantic-link class="grid-resource-link" iri="{{subject.value}}"></semantic-link>
                     </div>
                   </div>
                 </template>

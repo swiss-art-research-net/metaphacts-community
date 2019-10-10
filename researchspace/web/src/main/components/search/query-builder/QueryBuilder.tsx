@@ -16,14 +16,6 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-/**
- * @author Artem Kozlov <ak@metaphacts.com>
- * @author Andrey Nikolov an@metaphacts.com
- * @author Alexey Morozov
- * @author Denis Ostapenko
- */
-
-import { createElement } from 'react';
 import * as React from 'react';
 import * as D from 'react-dom-factories';
 import * as Maybe from 'data.maybe';
@@ -37,9 +29,10 @@ import { trigger } from 'platform/api/events';
 import { Rdf, vocabularies } from 'platform/api/rdf';
 import { QueryService } from 'platform/api/services/ldp-query';
 import { SparqlUtil, SparqlClient, PatternBinder, VariableRenameBinder } from 'platform/api/sparql';
-import { Component, ComponentContext } from 'platform/api/components';
+import { Component } from 'platform/api/components';
 import { getOverlaySystem, OverlayDialog } from 'platform/components/ui/overlay';
 import { AutoCompletionInput, AutoCompletionInputProps } from 'platform/components/ui/inputs';
+import { isValidChild } from 'platform/components/utils';
 import {
   TreeSelection, SemanticTreeInput, Node as TreeNode, createDefaultTreeQueries,
   LightwightTreePatterns, SemanticTreeInputProps,
@@ -67,7 +60,7 @@ import {
   TermType,
 } from './SearchStore';
 import {
-  InitialQueryContext, InitialQueryContextTypes,
+  SemanticSearchContext, InitialQueryContext,
 } from 'platform/components/semantic/search/web-components/SemanticSearchApi';
 import * as SearchEvents from 'researchspace/components/search/query-builder/SearchEvents';
 import DateFormatSelector from '../date/DateFormatSelector';
@@ -76,14 +69,8 @@ import SearchSummary from './SearchSummary';
 import MapSelectionOverlay from './MapSelectionOverlay';
 import {SelectType, SelectedArea} from './OLMapSelection';
 
-interface State {
-  store?: SearchStore
-  searchState?: SearchState
-  search?: Data.Maybe<Model.Search>
-  isSearchCollapsed?: boolean
-}
-
-const DEFAULT_TEXT_HELP_PAGE = Rdf.iri("http://help.metaphacts.com/resource/SolrFullTextSearchSyntax")
+const DEFAULT_TEXT_HELP_PAGE =
+  Rdf.iri('http://help.metaphacts.com/resource/SolrFullTextSearchSyntax');
 
 /**
  * Assign unique id to search clause holders to facilitate integration testing.
@@ -95,11 +82,34 @@ function SearchClause(
   return <div id={generatedId} className={styles.searchClause}>{children}</div>;
 }
 
+/**
+ * @author Artem Kozlov <ak@metaphacts.com>
+ * @author Andrey Nikolov an@metaphacts.com
+ * @author Alexey Morozov
+ * @author Denis Ostapenko
+ */
+class QueryBuilder extends Component<SemanticQueryBuilderConfig, {}> {
+  render() {
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => <QueryBuilderInner {...this.props} context={context} />}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
 
-class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
-  static contextTypes = InitialQueryContextTypes;
-  context: InitialQueryContext & ComponentContext;
+interface InnerProps extends SemanticQueryBuilderConfig {
+  context: InitialQueryContext;
+}
 
+interface State {
+  store?: SearchStore;
+  searchState?: SearchState;
+  search?: Data.Maybe<Model.Search>;
+  isSearchCollapsed?: boolean;
+}
+
+class QueryBuilderInner extends React.Component<InnerProps, State> {
   static defaultProps = {
     categoryViewTemplate: SearchDefaults.CategoryViewTemplate,
     relationViewTemplate: SearchDefaults.RelationViewTemplate,
@@ -113,8 +123,8 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
     treeSelectorCategories: [],
   };
 
-  constructor(props: SemanticQueryBuilderConfig, context) {
-    super(props, context);
+  constructor(props: InnerProps) {
+    super(props);
     this.state = {
       store: null,
       searchState: null,
@@ -124,24 +134,25 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
   }
 
   componentDidMount() {
-    if (this.context.searchProfileStore.isJust) {
-      this.initSearch(this.props, this.context);
+    if (this.props.context.searchProfileStore.isJust) {
+      this.initSearch(this.props, this.props.context);
     }
   }
 
-  componentWillReceiveProps(props: SemanticQueryBuilderConfig, context: InitialQueryContext) {
-    if (!_.isEqual(context, this.context)) {
-      this.initSearch(props, context);
+  componentWillReceiveProps(nextProps: InnerProps) {
+    const {context: nextContext} = nextProps;
+    if (!_.isEqual(nextContext, this.props.context)) {
+      this.initSearch(nextProps, nextContext);
     }
   }
 
-  private initSearch(props: SemanticQueryBuilderConfig, context: InitialQueryContext) {
+  private initSearch(props: InnerProps, context: InitialQueryContext) {
     context.searchProfileStore.map(
       profileStore => {
         let searchStore = this.state.store;
         const isExtendedSearch =
           context.extendedSearch.map(
-            esNew => this.context.extendedSearch.map(
+            esNew => this.props.context.extendedSearch.map(
               esOld => !_.isEqual(esOld, esNew)
             ).getOrElse(true)
           ).getOrElse(false);
@@ -160,15 +171,15 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
             currentSearch => {
               this.setState({search: currentSearch});
               if (currentSearch.isJust) {
-                this.context.setDomain(
+                this.props.context.setDomain(
                   currentSearch.get().domain
                 );
               }
-              this.context.setBaseQueryStructure(currentSearch);
+              this.props.context.setBaseQueryStructure(currentSearch);
             }
           );
           searchStore.currentSearchQuery.onValue(
-            this.context.setBaseQuery
+            this.props.context.setBaseQuery
           );
         }
       }
@@ -179,6 +190,9 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
     const {children} = this.props;
     if (!children) { return null; }
     const child = React.Children.only(children);
+    if (!isValidChild(child)) {
+      throw new Error('Expected a single component as a child');
+    }
     const className = classnames(child.props.className, {
       'invisible': !(this.state.searchState && this.state.searchState.kind === 'domain-selection'),
     });
@@ -194,9 +208,9 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
   }
 
   private renderSearchArea() {
-    if (this.state.search.isJust && this.context.searchProfileStore.isJust) {
+    if (this.state.search.isJust && this.props.context.searchProfileStore.isJust) {
       return this.renderSearch(this.state.search.get(), this.state.searchState);
-    } else if (this.state.searchState && this.context.searchProfileStore.isJust) {
+    } else if (this.state.searchState && this.props.context.searchProfileStore.isJust) {
       return <div className={styles.searchArea}>
           {this.renderSearchState(this.state.searchState)}
       </div>;
@@ -294,7 +308,7 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
   private renderRelationClause =
     (domain: Model.Category, clause: Model.RelationConjunct, searchState: SearchState) =>
     <div>
-      <SearchClause id={this.context.baseConfig.id} clause={clause}>
+      <SearchClause id={this.props.context.baseConfig.id} clause={clause}>
           {this.renderDomain(domain)}
           {this.renderRelation(clause.relation, clause)}
           {this.renderRange(clause.range, clause)}
@@ -308,7 +322,7 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
 
   private renderTextClause = (domain: Model.Category, clause: Model.TextConjunct) =>
     <div>
-      <SearchClause id={this.context.baseConfig.id} clause={clause}>
+      <SearchClause id={this.props.context.baseConfig.id} clause={clause}>
         {this.renderDomain(domain)}
         {this.textSearchRelationPlaceholder()}
         {this.renderSimpleTerms(clause)}
@@ -534,7 +548,9 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
 
   private textDisjunctSelector = (searchState: TextTermSelection) => {
     const sCategoryIri = searchState.range.iri.toString();
-    const patternConfig = getConfigPatternForCategory(this.context.baseConfig, searchState.range.iri) as PatternText;
+    const patternConfig = getConfigPatternForCategory(
+      this.props.context.baseConfig, searchState.range.iri
+    ) as PatternText;
     const helpPageIRI = (patternConfig && patternConfig.helpPage)
                         ? Rdf.fullIri(patternConfig.helpPage)
                         : (patternConfig && (patternConfig.escapeLuceneSyntax===false))
@@ -682,8 +698,8 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
     return SparqlUtil.serializeQuery(
       generateQueryForMultipleDatasets(
         this.setClauseBindingsParsed(searchState, query),
-        this.context.selectedDatasets,
-        this.context.baseConfig.datasetsConfig
+        this.props.context.selectedDatasets,
+        this.props.context.baseConfig.datasetsConfig
       )
     );
   }
@@ -745,7 +761,7 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
 
     // try to extract pattern from relation or category range
     const resourcePatternConfig = tryGetRelationPatterns(
-      this.context.baseConfig, searchState.relation,
+      this.props.context.baseConfig, searchState.relation,
     ).find(p => p.kind === 'resource') as PatternResource;
 
     // parametrize query with found pattern or fallback to default one,
@@ -772,7 +788,7 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
       [SEMANTIC_SEARCH_VARIABLES.RANGE_VAR]: searchState.range.iri,
     }, {
       [SEMANTIC_SEARCH_VARIABLES.SELECTED_ALIGNMENT]:
-        this.context.selectedAlignment.map(a => a.iri).getOrElse(undefined),
+        this.props.context.selectedAlignment.map(a => a.iri).getOrElse(undefined),
     });
 
     return SparqlClient.setBindings(parsedQuery, bindings);
@@ -788,15 +804,14 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
   private relationSelector(
     relations: Model.Relations, action: (relation: Model.Relation) => void
   ) {
-    return createElement(
-      ItemSelector,
-      {
-        mode: this.context.baseConfig.selectorMode,
-        tupleTemplate: this.props.relationViewTemplate,
-        resources: relations.mapKeys(key => key.value.iri).toOrderedMap(),
-        className: styles.relationSelector,
-        label: 'search relation selection',
-        actions: {
+    return (
+      <ItemSelector
+        mode={this.props.context.baseConfig.selectorMode}
+        tupleTemplate={this.props.relationViewTemplate}
+        resources={relations.mapKeys(key => key.value.iri).toOrderedMap()}
+        className={styles.relationSelector}
+        label='search relation selection'
+        actions={{
           selectResource: relation => {
             action(relation as Model.Relation);
             trigger({
@@ -805,8 +820,8 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
               data: relation.iri.value,
             });
           },
-        },
-      }
+        }}
+      />
     );
   }
 
@@ -817,7 +832,7 @@ class QueryBuilder extends Component<SemanticQueryBuilderConfig, State> {
     categories: Model.Categories, className: string, action: (category: Model.Category) => void,
     label: string
   ) => <ItemSelector
-         mode={this.context.baseConfig.selectorMode}
+         mode={this.props.context.baseConfig.selectorMode}
          tupleTemplate={this.props.categoryViewTemplate}
          resources={categories}
          className={className}

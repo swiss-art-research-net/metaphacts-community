@@ -73,18 +73,11 @@ enum LoadingStatus { Loading = 1, Success, Error }
 type State = { type: LoadingStatus.Loading } | SuccessState | ErrorState;
 
 interface SuccessState extends ToolState {
-  type: LoadingStatus.Success;
+  readonly type: LoadingStatus.Success;
 }
 
 interface ErrorState {
-  type: LoadingStatus.Error;
-}
-
-interface ParsedQueries {
-  rootsQuery: SparqlJs.SelectQuery;
-  childrenQuery: SparqlJs.SelectQuery;
-  parentsQuery: SparqlJs.SelectQuery;
-  searchQuery: SparqlJs.SelectQuery;
+  readonly type: LoadingStatus.Error;
 }
 
 export class AlignmentTool extends Component<AlignmentToolProps, State> {
@@ -105,7 +98,7 @@ export class AlignmentTool extends Component<AlignmentToolProps, State> {
       cancellation: this.cancellation,
       updateState: (change, callback) => {
         this.setState(
-          state => change(assertLoaded(state)),
+          state => change(assertLoaded(state)) as SuccessState,
           () => callback(assertLoaded(this.state))
         );
       },

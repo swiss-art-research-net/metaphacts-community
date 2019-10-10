@@ -41,7 +41,7 @@ interface State {
 export class NavigateToIRI extends React.Component<NavigateToIRIProps, State> {
 
   constructor(props, context) {
-    super(context);
+    super(props, context);
     this.state = {
       value: '',
     };

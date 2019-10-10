@@ -33,6 +33,7 @@ import {
 import { navigateToResource, refresh } from 'platform/api/navigation';
 import { DropArea } from 'platform/components/dnd/DropArea';
 import { ResourceLinkComponent } from 'platform/api/navigation/components';
+import { getPreferredLabel } from 'platform/components/forms';
 import { addNotification } from 'platform/components/ui/notification';
 
 import {
@@ -115,7 +116,9 @@ export class BaseArgumentsComponent extends Component<ArgumentsProps, BaseArgume
           <ResourceLinkComponent uri='http://www.researchspace.org/resource/Field'
                                  urlqueryparamSubject={this.state.target.value}
                                  urlqueryparamField={field.iri}>
-            <span className='field-type-title'>{field.label}</span>
+            <span className='field-type-title'>
+              {getPreferredLabel(field.label)}
+            </span>
           </ResourceLinkComponent>
         </SemanticContextProvider> of <ResourceLinkComponent uri={this.state.target.value}
                                                              guessRepository={true} />

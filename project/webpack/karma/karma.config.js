@@ -39,6 +39,10 @@ module.exports = function (defaults) {
 
     // add test dependencies to webpack module resolution path
     webpackConfig.resolve.modules.push(path.join(__dirname, '../node_modules'));
+
+    // add alias for test directory from metaphacts-platform web project
+    webpackConfig.resolve.alias['platform-tests'] = defaults.METAPHACTORY_DIRS.test;
+
     // exclude Highcharts from tests
     webpackConfig.plugins.push(
         new webpack.DefinePlugin({

@@ -37,7 +37,7 @@ import Editor, { Editable, createEmptyState } from 'ory-editor-core';
 import { layoutMode, editMode } from 'ory-editor-core/lib/actions/display';
 import { HTMLRenderer } from 'ory-editor-renderer';
 import Trash from './Trash';
-require('react-tap-event-plugin')();
+
 import slate from 'ory-editor-plugins-slate';
 import image from 'ory-editor-plugins-image';
 import video from 'ory-editor-plugins-video';

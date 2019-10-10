@@ -65,7 +65,6 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
-import com.metaphacts.services.storage.api.*;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -92,6 +91,12 @@ import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.security.PermissionUtil;
 import com.metaphacts.security.Permissions.PAGES;
 import com.metaphacts.services.storage.StorageUtils;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.ObjectMetadata;
+import com.metaphacts.services.storage.api.ObjectRecord;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.HandlebarsHelperRegistry;
 import com.metaphacts.templates.MetaphactsHandlebars;
 import com.metaphacts.templates.TemplateByIriLoader;
@@ -241,7 +246,7 @@ public class TemplateEndpoint extends ResourceConfig {
     ) throws IOException {
         // by default the context equals the requested IRI, however, clients may overwrite it
         IRI templateContextIri = context.orElse(iri);
-        logger.info("Requesting page for resource \"{}\"", iri.stringValue());
+        logger.trace("Requesting page for resource \"{}\"", iri.stringValue());
         
         if (!PermissionUtil.hasTemplateActionPermission(iri, PAGES.Action.VIEW)) {
             return Response.status(Status.FORBIDDEN).entity(

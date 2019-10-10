@@ -20,8 +20,6 @@ import * as _ from 'lodash';
 
 import { SparqlClient } from 'platform/api/sparql';
 import { Rdf } from 'platform/api/rdf';
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import { getPreferredUserLanguage } from 'platform/api/services/language';
 
 /**
  * Transform sparql results to make sure that there are values in the bindings
@@ -37,48 +35,6 @@ export function prepareResultData(data: SparqlClient.SparqlSelectResult) {
   );
 }
 
-/**
- * Returns the label with the user preferred language, otherwise returns the label based on
- * the order of the preferredLanguages. In case the label is missing, returns the label with
- * empty language. If no label exists, returns undefined.
- *
- * This client-side logic is only to be used in exceptional cases (i.e. if physical triples might
- * no be present in the triple store) and otherwise the global/backend label service should be used.
- */
-export function getPreferredLabel(
-  label: string | ReadonlyArray<Rdf.LangLiteral> | undefined
-): string | undefined {
-  if (label !== undefined) {
-    if (typeof label === 'string') {
-      return label;
-    }
-    if (label.length > 0) {
-      const userPreferredLanguage = getPreferredUserLanguage();
-      let preferredLabel = label.find(({lang}) => lang === userPreferredLanguage);
-      if (preferredLabel) {
-        return preferredLabel.value;
-      }
-
-      const {preferredLanguages} = ConfigHolder.getUIConfig();
-      for (const preferredLanguage of preferredLanguages) {
-        preferredLabel = label.find(({lang}) => lang === preferredLanguage);
-        if (preferredLabel) {
-          return preferredLabel.value;
-        }
-      }
-
-      preferredLabel = label.find(({lang}) => lang === '');
-      if (preferredLabel) {
-        return preferredLabel.value;
-      }
-
-      return label[0].value;
-    }
-  }
-  return undefined;
-}
-
-export * from './KefirComponent';
 export * from './LoadingBackdrop';
 export * from './ComponentUtils';
 export * from './Action';

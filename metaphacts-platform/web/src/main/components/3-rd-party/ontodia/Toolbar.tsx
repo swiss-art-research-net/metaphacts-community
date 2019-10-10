@@ -160,20 +160,6 @@ export class Toolbar<P extends ToolbarProps = ToolbarProps, S = {}> extends Comp
             </Button>
           </ButtonGroup>
           {this.renderLanguages()}
-          {this.props.hidePanels ? null : (
-            <ButtonGroup bsSize='small' className={styles.group}>
-              <Button className={`ontodia-toolbar__toggle ontodia-toolbar__toggle-left`}
-                active={this.props.isLeftPanelOpen}
-                onClick={this.props.onLeftPanelToggle}
-                title='Toggle classes panel'
-              />
-              <Button className={`ontodia-toolbar__toggle ontodia-toolbar__toggle-right`}
-                active={this.props.isRightPanelOpen}
-                onClick={this.props.onRightPanelToggle}
-                title='Toggle connections panel'
-              />
-            </ButtonGroup>
-          )}
       </div>
     );
   }

@@ -41,12 +41,6 @@ import xsd from 'platform/api/rdf/vocabularies/xsd';
 const ENDPOINT_URL = getBaseUrl() ? getBaseUrl() + '/sparql' : '/sparql';
 export const RDF_DATA_PROVIDER_NAME = 'rdf';
 
-export interface OntodiaConfig {
-  getDataProvider(
-    options: SparqlDataProviderOptions, repositories: string[], createRDFStorage?: boolean
-  ): SparqlDataProvider | CompositeDataProvider;
-}
-
 /**
  * data provider defaults based on platform's UI configuration properties
  */

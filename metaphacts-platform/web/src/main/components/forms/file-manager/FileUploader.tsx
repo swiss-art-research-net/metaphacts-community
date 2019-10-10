@@ -19,10 +19,10 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import * as ReactBootstrap from 'react-bootstrap';
-import * as ReactDropzone from 'react-dropzone';
 
 import { Component } from 'platform/api/components';
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
+import { Dropzone } from 'platform/components/ui/dropzone';
 import { FileManager } from 'platform/api/services/file-manager';
 
 import * as styles from './FileManager.scss';
@@ -203,17 +203,16 @@ export class FileUploader extends Component<FileUploaderProps, FileUploaderState
         now={this.state.progress}
         label={this.state.progressText}>
       </ReactBootstrap.ProgressBar> : null}
-      <ReactDropzone
+      <Dropzone
         accept={this.props.acceptPattern}
         onDropAccepted={this.onDropAccepted.bind(this)}
         onDropRejected={this.onDropRejected.bind(this)}
-        disableClick={Boolean(this.state.progress)}
-        >
-          <div className={`${styles.mpDropZonePlaceHolder}`}>{
-            this.props.children ||
-            <div className = {styles.mpDropZonePlaceHolder}>{this.props.placeholder || 'Please drag&drop your file here.'}</div>
-          }</div>
-      </ReactDropzone>
+        noClick={Boolean(this.state.progress)}>
+        <div className={`${styles.mpDropZonePlaceHolder}`}>{
+          this.props.children ||
+          <div className = {styles.mpDropZonePlaceHolder}>{this.props.placeholder || 'Please drag&drop your file here.'}</div>
+        }</div>
+      </Dropzone>
       {alert ? <div className={styles.alertComponent}>{alert}</div> : null}
     </div>;
   }

@@ -120,14 +120,13 @@ function registerGraphParser() {
     ));
     function getTerm(term: Rdf.Node): JsonLd.Term {
       if (term.isLiteral()) {
-        const lang = (term instanceof Rdf.LangLiteral) ? term.lang : '';
         return {
           termType: 'Literal',
           value: term.value,
-          language: lang,
+          language: term.language,
           datatype: {
             termType: 'NamedNode',
-            value: term.dataType.value,
+            value: term.datatype.value,
           },
         };
       } else if (term.isBnode()) {

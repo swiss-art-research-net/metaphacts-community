@@ -17,13 +17,13 @@
  */
 
 import { createElement, ReactNode } from 'react';
-import { mount } from 'enzyme';
 
 import { Rdf } from 'platform/api/rdf';
-
 import {
   SemanticForm, SemanticFormProps, DataState, FieldValue, CompositeValue, FieldDefinitionProp,
 } from 'platform/components/forms';
+
+import { mount } from 'platform-tests/configuredEnzyme';
 
 export class AsyncForm {
   /** enzyme wrapper */

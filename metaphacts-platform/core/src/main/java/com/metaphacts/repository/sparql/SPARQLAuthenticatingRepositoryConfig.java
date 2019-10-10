@@ -19,7 +19,6 @@
 package com.metaphacts.repository.sparql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -27,7 +26,6 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.ModelException;
 import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
-import org.eclipse.rdf4j.repository.sparql.config.SPARQLRepositoryConfig;
 
 import com.metaphacts.repository.MpRepositoryVocabulary;
 
@@ -35,7 +33,7 @@ import com.metaphacts.repository.MpRepositoryVocabulary;
  * @author Johannes Trame <jt@metaphacts.com>
  *
  */
-abstract class SPARQLAuthenticatingRepositoryConfig extends MpSPARQLRepositoryConfig {
+public abstract class SPARQLAuthenticatingRepositoryConfig extends MpSPARQLRepositoryConfig {
 
     protected static final ValueFactory vf = SimpleValueFactory.getInstance();
 

@@ -31,6 +31,8 @@
          The steps below describe how such simple apps can be bundled and deployed on the file system or docker eco-system. 
          
         </p> 
+        
+        <p>See also <semantic-link title="App Deployment" uri="http://help.metaphacts.com/resource/AppDeployment">here</semantic-link> for details on the deployment of apps.</p>
     
           <bs-alert bs-style="info"> 
             <strong>Info!</strong><br/>
@@ -192,29 +194,8 @@ plugin.version=1.0.0
      <p>The <semantic-link iri="[[resolvePrefix "Help:RepositoryManager"]]">repository manager</semantic-link> gets initialized only after reading all configs, so the repositories defined in all apps will appear in the <semantic-link iri="[[resolvePrefix "Admin:Repositories"]]">repository manager interface</semantic-link>. A user with appropriate security permission is able to edit any config, including those defined in apps. However, such edited configurations will NOT be replaced within corresponding app storages (which will remain immutable). Instead, the edited version of the config will be saved with the same name in the runtime storage, thus shadowing the original one defined in the app.</p>
    <p>If any of the app storages or the runtime storage defines the default repository config in the <code>default.ttl</code> file, this configuration will be applied to initialize the default platform repository. If no <code>default.ttl</code> file is present, the SPARQL endpoint defined in the environment properties will be used.  </p>
     
-   <h3>Custom Java implementations</h3>
+   <h3 id='custom-java-implementations'>Custom Java implementations</h3>
    An app may contain custom Java artefacts (e.g., custom Ephedra services, repositories, necessary external JDBC drivers). These artefacts must be maintained as <code>.jar</code> files in the app file storage (where the <code>plugin.properties</code> file is located) in the <code>/lib</code> subdirectory: they can not be loaded to the classpath from an arbitrary storage.
     
-   <h2>Bundling and Deployment</h2>
-    The following <code>.Dockerfile</code> can be used to bundle an app, i.e. it mainly copies all artefacts into one folder and declares this folder a volume:
-  <pre>
-<code>  
-FROM alpine:3.4
-MAINTAINER metaphacts support@metaphacts.com
-
-# Create apps folder
-RUN mkdir /apps
-
-ADD ./* /apps/my-app
-
-RUN chown -R 100:101 /apps/
-
-VOLUME /apps/my-app
-
-CMD ["/bin/sh"]
-</code>
-  </pre>
-    To <a href="" target="_blank">build the docker image</a>, you can use <code>docker build -t myimagetag:version .</code>.
-    The platform container can then mount the app volume from the app container to the main platform container using the <code>--volume-from</code> command.
 </div>
 </div>

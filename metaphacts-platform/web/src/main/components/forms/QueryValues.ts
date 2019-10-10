@@ -118,10 +118,8 @@ export function restoreLabel<T extends LabeledValue>(value: T): Kefir.Property<T
 }
 
 function normalizeValueDatatype(node: Rdf.Node): Rdf.Node {
-  if (node instanceof Rdf.Literal &&
-    !(node instanceof Rdf.LangLiteral)
-  ) {
-    return Rdf.literal(node.value, XsdDataTypeValidation.replaceDatatypeAliases(node.dataType));
+  if (node instanceof Rdf.Literal && !node.language) {
+    return Rdf.literal(node.value, XsdDataTypeValidation.replaceDatatypeAliases(node.datatype));
   } else {
     return node;
   }

@@ -21,17 +21,18 @@ package com.metaphacts.di;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.inject.Injector;
-import com.metaphacts.services.storage.api.PlatformStorage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.inject.Injector;
 import com.google.inject.servlet.ServletModule;
+import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.servlet.MProxyServlet;
 import com.metaphacts.servlet.ProxyConfigs;
 import com.metaphacts.servlet.SparqlServlet;
 import com.metaphacts.servlet.filter.AssetFilter;
 import com.metaphacts.servlet.filter.CorsFilter;
+import com.metaphacts.servlet.filter.ErrorLoggingFilter;
 import com.metaphacts.servlet.filter.HomePageFilter;
 import com.metaphacts.servlet.filter.MDCFilter;
 import com.metaphacts.servlet.filter.RewriteFilter;
@@ -63,6 +64,7 @@ public class PlatformGuiceModule extends ServletModule {
 
         filter("*").through(RewriteFilter.class);
         filter("*").through(CorsFilter.class);
+        filter("/rest/*").through(ErrorLoggingFilter.class);
 
         //register servlets
         serve("/sparql").with(SparqlServlet.class);

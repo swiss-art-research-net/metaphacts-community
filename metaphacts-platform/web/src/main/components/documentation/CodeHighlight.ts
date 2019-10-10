@@ -75,7 +75,7 @@ export class CodeHighlightComponent extends Component<CodeHighlightProps, {}> {
   };
 
   componentDidMount() {
-    const codeNode = findDOMNode<HTMLElement>(this);
+    const codeNode = findDOMNode(this) as HTMLElement;
     const options = {tabSize: 2};
     CodeMirror.runMode(this.props.codeText, this.props.mode, codeNode, options);
   }

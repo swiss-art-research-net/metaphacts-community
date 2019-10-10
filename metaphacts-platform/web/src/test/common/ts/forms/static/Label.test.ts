@@ -18,20 +18,15 @@
 
 import { createElement } from 'react';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { shallow } from 'enzyme';
+
 import { Label, StaticFieldProps, normalizeFieldDefinition } from 'platform/components/forms';
+
+import { shallow } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
+
 import { FIELD_DEFINITION } from '../fixturies/FieldDefinition';
 
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import * as LanguageService from 'platform/api/services/language';
-
-sinon.stub(ConfigHolder, 'getUIConfig', function() {
-  return {preferredLanguages: []};
-});
-sinon.stub(LanguageService, 'getPreferredUserLanguage', function() {
-  return undefined;
-});
+mockLanguagePreferences();
 
 const PROPS: StaticFieldProps = {
   for: 'test',

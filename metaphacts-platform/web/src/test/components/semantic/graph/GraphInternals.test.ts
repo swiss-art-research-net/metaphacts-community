@@ -19,7 +19,7 @@
 import { assert } from 'chai';
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
-import * as GraphInternals from '../../../../main/components/semantic/graph/GraphInternals';
+import * as GraphInternals from 'platform/components/semantic/graph/GraphInternals';
 import { foaf, person } from './TestData';
 
 const SPARQL_CONSTRUCT_RESPONSE = [

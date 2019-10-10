@@ -24,7 +24,6 @@ import * as maybe from 'data.maybe';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 import * as ReactBootstrap from 'react-bootstrap';
-import * as ReactDropzone from 'react-dropzone';
 
 import { Rdf } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
@@ -36,9 +35,9 @@ import {
 } from 'platform/components/forms';
 
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
+import { Dropzone } from 'platform/components/ui/dropzone';
 import { FileUploadService } from 'platform/api/services/file-upload';
 
-const Dropzone = React.createFactory(ReactDropzone);
 const ProgressBar = React.createFactory(ReactBootstrap.ProgressBar);
 
 import '../scss/image-upload-widget.scss';
@@ -280,17 +279,17 @@ class ImageUploadWidget extends Component<Props, State> {
     return D.div({className: 'iiif-upload__holder'},
                  this.state.alertState ? createElement(Alert, this.state.alertState) : null,
                  progress.map(progress => ProgressBar({ active: true, min: 0, max: 100, now: progress })).getOrElse(null),
-                 Dropzone(
-                   {
-                     className: 'iiif-upload__dropzone',
-                     onDrop: this.onDrop.bind(this),
-                     multiple: false,
-                   },
-                   D.div({className: 'iiif-upload__description'}, D.p({}, description)),
-                   D.button({
-                     className: 'iiif-upload__dropzone-button btn btn-sm btn-default',
-                   }, 'Browse')
-                 ),
+      createElement(Dropzone,
+        {
+          className: 'iiif-upload__dropzone',
+          onDrop: this.onDrop.bind(this),
+          multiple: false,
+        },
+        D.div({className: 'iiif-upload__description'}, D.p({}, description)),
+        D.button({
+          className: 'iiif-upload__dropzone-button btn btn-sm btn-default',
+        }, 'Browse')
+      ),
       this.state.files.map(file => D.h4({key: file.name}, 'Selected file: ' + file.name)),
       createElement(ResourceEditorForm,
         {

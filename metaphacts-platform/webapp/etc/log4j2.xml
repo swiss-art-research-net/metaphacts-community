@@ -22,7 +22,7 @@
 
   <Loggers>
 
-    <Logger name="com.metaphacts" level="warn" additivity="false">
+    <Logger name="com.metaphacts" level="info" additivity="false">
       <AppenderRef ref="LOGFILE"/>
       <AppenderRef ref="STDOUT"/>
     </Logger>

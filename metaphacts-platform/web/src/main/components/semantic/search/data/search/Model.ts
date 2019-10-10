@@ -397,5 +397,27 @@ export interface GraphScopeSearch {
 
 export interface GraphScopeResults {
   relations: Array<{ domain: string; range: string; relation: { iri: string; label: string } }>;
-  columns: Array<{ id: string; tgConcept: { label: string; color: string } }>;
+  columns: ReadonlyArray<GraphScopeColumn>;
+  /** variableName looks like this: ?v0 (0...n) */
+  cardinality: ReadonlyArray<{ [variableName: string]: number }>;
+}
+
+export type GraphScopeColumn = GraphScopeConceptColumn | GraphScopeValueColumn;
+interface GraphScopeColumnBase {
+  id: string;
+  tgConcept: { iri: string, label: string; color: string };
+}
+export interface GraphScopeConceptColumn extends GraphScopeColumnBase {
+  type: 'var-concept';
+  attributes: ReadonlyArray<GraphScopeValueColumn>;
+}
+export interface GraphScopeValueColumn extends GraphScopeColumnBase {
+  type: 'var-value';
+  attribute: {
+    /** Datatype IRIs in <>, e.g. <http://example.com/foo> */
+    iri: string;
+    label: string;
+    matched: boolean;
+  }
+  datatype: string;
 }

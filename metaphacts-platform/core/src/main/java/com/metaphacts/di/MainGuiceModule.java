@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.servlet.ServletContext;
 
+import com.metaphacts.services.fields.FieldDefinitionManager;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
 import org.apache.shiro.authc.credential.DefaultPasswordService;
 import org.apache.shiro.authc.credential.PasswordMatcher;
@@ -101,6 +102,7 @@ public class MainGuiceModule extends AbstractModule {
         bind(MProxyServlet.class).in(Singleton.class);
         bind(ThumbnailServiceRegistry.class).in(Singleton.class);
         bind(DefaultThumbnailService.class).asEagerSingleton();
+        bind(FieldDefinitionManager.class).in(Singleton.class);
         bind(FieldsBasedSearch.class).in(Singleton.class);
 
         bind(LDPImplManager.class).in(Singleton.class);

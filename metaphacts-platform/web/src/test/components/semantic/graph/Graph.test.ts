@@ -18,12 +18,16 @@
 
 import { createElement } from 'react';
 import { expect } from 'chai';
-import { mount } from 'enzyme';
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
+import { Graph, GraphProps, GraphState } from 'platform/components/semantic/graph';
+
+import { mount } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
+
 import { foaf, person } from './TestData';
 
-import { Graph, GraphProps, GraphState } from 'platform/components/semantic/graph';
+mockLanguagePreferences();
 
 const GRAPH_DATA: Cy.ElementDefinition[] =
   [

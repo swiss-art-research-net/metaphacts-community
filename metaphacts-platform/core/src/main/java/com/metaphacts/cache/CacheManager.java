@@ -18,16 +18,20 @@
 
 package com.metaphacts.cache;
 
-import java.util.*;
+import static java.util.stream.Collectors.toList;
 
-import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.common.collect.Lists;
 import org.eclipse.rdf4j.model.IRI;
 
-import static java.util.stream.Collectors.toList;
+import com.google.common.collect.Lists;
+import com.google.inject.Singleton;
 
 /**
  * @author Michael Schmidt <ms@metaphacts.com>
@@ -59,7 +63,9 @@ public class CacheManager {
      * @return a list of IDs of caches that have been invalidated
      */
     public List<String> invalidateAll() {
-        logger.info("Invalidating the following caches: {}", instances);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Invalidating the following caches: {}", instances);
+        }
         ArrayList<String> l = Lists.newArrayList();
         for (PlatformCache cache : instances.values()) {
             cache.invalidate();
@@ -73,8 +79,8 @@ public class CacheManager {
      * @param resources List of resources to purge from all caches
      */
     public void invalidateResources(Set<IRI> resources) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Invalidating the following resources: {}", String.join(
+        if (logger.isDebugEnabled()) {
+            logger.debug("Invalidating the following resources: {}", String.join(
                 ", ", resources.stream().map(IRI::toString).collect(toList())));
         }
         for (PlatformCache cache : instances.values()) {

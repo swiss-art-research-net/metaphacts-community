@@ -25,7 +25,7 @@ import { FieldDefinitionProp } from '../FieldDefinition';
 import {
   SingleValueInput, SingleValueInputProps, CompositeInput, CompositeInputProps
 } from '../inputs';
-import { hasBaseDerivedRelationship } from 'platform/components/utils';
+import { componentHasType, componentDisplayName } from 'platform/components/utils';
 import FormSwitchCase, {FormSwitchCaseProps} from './FormSwitchCase';
 import {
   FieldValue, DataState, CompositeValue, EmptyValue, ErrorKind
@@ -267,7 +267,7 @@ export class FormSwitch extends SingleValueInput<ComponentProps, {}> {
               value={typeItem.type.value}>
                 {typeItem.label}
               </option>;
-          })}
+          }).toArray()}
         </select>
       </div>
     );
@@ -331,17 +331,11 @@ export class FormSwitch extends SingleValueInput<ComponentProps, {}> {
   }
 }
 
-function isComponentType(component: React.ReactChild, reactClass: any) {
-  return typeof component === 'object' &&
-    typeof component.type !== 'string' &&
-    hasBaseDerivedRelationship(component.type, reactClass);
-}
-
 function getCheckedComposite(
   props: ComponentProps, child: React.ReactElement<FormSwitchCaseProps>
 ): React.ReactElement<CompositeInputProps>  {
-  if (!isComponentType(child, FormSwitchCase)) {
-    throw new Error(`Invalid type of component: ${child.type}`);
+  if (!componentHasType(child, FormSwitchCase)) {
+    throw new Error(`Invalid type of component: ${componentDisplayName(child)}`);
   }
   if (React.Children.count(child.props.children) !== 1) {
     const errorMessage = `Expected single input for ` +
@@ -350,10 +344,10 @@ function getCheckedComposite(
     throw new Error(errorMessage);
   }
   const switchCaseChild = React.Children.only(child.props.children);
-  const isCorrectComposite = isComponentType(switchCaseChild, CompositeInput) &&
-    switchCaseChild.props.for === props.for;
-  if (!isCorrectComposite) {
-    throw new Error(`Invalid type of the component "${switchCaseChild.type}"`);
+  if (!(componentHasType(switchCaseChild, CompositeInput)
+    && switchCaseChild.props.for === props.for
+  )) {
+    throw new Error(`Invalid type of the component "${componentDisplayName(switchCaseChild)}"`);
   }
   return switchCaseChild;
 }
@@ -362,10 +356,9 @@ function getCheckedHiddenChildren(
   props: ComponentProps, compositeChildren: React.ReactElement<any>[]
 ): React.ReactElement<HiddenInputProps> {
   const hiddenInputs = compositeChildren.filter((compositeChild: React.ReactElement<any>) => {
-    const isHiddenInput = isComponentType(compositeChild, HiddenInput);
-    const isCorrectHidden = (compositeChild.props.for === props.switchOnField) &&
-      compositeChild.props.defaultValue;
-    return isHiddenInput ? isCorrectHidden : false;
+    return componentHasType(compositeChild, HiddenInput)
+      && compositeChild.props.for === props.switchOnField
+      && compositeChild.props.defaultValue;
   });
   if (hiddenInputs.length !== 1) {
     const errorMessage = `Expected single input for ` +

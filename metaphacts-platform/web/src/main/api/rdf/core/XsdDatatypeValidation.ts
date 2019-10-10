@@ -243,31 +243,31 @@ export function datatypeToString(datatype: Rdf.Iri): string {
 }
 
 export function validate(literal: Rdf.Literal, params?: Param[]): ValidationResult {
-  const datatype = parseXsdDatatype(literal.dataType);
+  const datatype = parseXsdDatatype(literal.datatype);
   if (!datatype) {
     return failure(
-      `Unknown XSD datatype ${datatypeToString(literal.dataType)}`,
-      {iri: literal.dataType, localName: '', prefix: ''}, '');
+      `Unknown XSD datatype ${datatypeToString(literal.datatype)}`,
+      {iri: literal.datatype, localName: '', prefix: ''}, '');
   }
   if (!params) { params = []; }
   return datatypeAllows(datatype, literal.value, params);
 }
 
 export function equal(first: Rdf.Literal, second: Rdf.Literal): ValidationResult {
-  const type1 = parseXsdDatatype(first.dataType);
-  const type2 = parseXsdDatatype(second.dataType);
+  const type1 = parseXsdDatatype(first.datatype);
+  const type2 = parseXsdDatatype(second.datatype);
   if (!type1) {
     return failure(
-      `Unknown XSD datatype ${datatypeToString(first.dataType)}`,
-      {iri: first.dataType, localName: '', prefix: ''}, '');
+      `Unknown XSD datatype ${datatypeToString(first.datatype)}`,
+      {iri: first.datatype, localName: '', prefix: ''}, '');
   } else if (!type2) {
     return failure(
-      `Unknown XSD datatype ${datatypeToString(second.dataType)}`,
-      {iri: first.dataType, localName: '', prefix: ''}, '');
+      `Unknown XSD datatype ${datatypeToString(second.datatype)}`,
+      {iri: first.datatype, localName: '', prefix: ''}, '');
   } else if (type1.localName !== type2.localName || type1.prefix !== type2.prefix) {
     return failure(
-      `Datatypes are not equal: ${datatypeToString(first.dataType)} != ` +
-      `${datatypeToString(second.dataType)}`, type1, '');
+      `Datatypes are not equal: ${datatypeToString(first.datatype)} != ` +
+      `${datatypeToString(second.datatype)}`, type1, '');
   }
   return datatypeEqual(type1, first.value, second.value);
 }

@@ -441,7 +441,7 @@ $background-color-set-management-sets: #E5E5E5;
   @include highlight-animation();
 }
 
-.set-items-animation-leave.set-items-animation-leave-active {
+.set-items-animation-exit.set-items-animation-exit-active {
   visibility: hidden;
   opacity: 0;
   transition: visibility 0s 0.3s, opacity 0.3s linear;

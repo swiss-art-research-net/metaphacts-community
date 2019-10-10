@@ -19,14 +19,10 @@
 import { assert } from 'chai';
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
-import {
-  ChartType, DataSetMappings,
-} from '../../../../main/components/semantic/chart/ChartingCommons';
-import {
-  SemanticChartProps, buildData,
-} from '../../../../main/components/semantic/chart/SemanticChart';
+import { ChartType, DataSetMappings } from 'platform/components/semantic/chart/ChartingCommons';
+import { SemanticChartProps, buildData } from 'platform/components/semantic/chart/SemanticChart';
 
-const { literal, iri} = Rdf;
+const { literal, iri } = Rdf;
 const { xsd } = vocabularies;
 
 const NON_PIVOTING_DATASETS = {

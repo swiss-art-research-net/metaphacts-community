@@ -236,6 +236,12 @@ public class LDAPRealm extends JndiLdapRealm implements UserMetadataProvider {
              LdapUtils.closeContext(ldapContext);
          }
 
+        if (roleNames.isEmpty()) {
+            logger.debug("User {} could not be authorized: user's groups could not be mapped to any platform role.");
+        } else {
+            logger.debug("User {} successfully authorized. Roles: {}", username, roleNames);
+        }
+
          SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo(roleNames);
          ShiroTextRealm shiroTextRealm = ((MetaphactsSecurityManager) SecurityUtils.getSecurityManager()).getShiroTextRealm();
          Map<String, SimpleRole> roles = shiroTextRealm.getRoles();
@@ -268,11 +274,11 @@ public class LDAPRealm extends JndiLdapRealm implements UserMetadataProvider {
         // use this only for logger
         // SHIRO-115 - prevent potential code injection:
         String searchFilterString = String.format("(%1$s=%2$s)", searchArguments);
-        logger.debug("Searching for groups DN of user [{}], with filter: {}", userDnOrUserUid, searchFilterString);
+        logger.trace("Searching for groups DN of user [{}], with filter: {}", userDnOrUserUid, searchFilterString);
 
         NamingEnumeration<SearchResult> searchResults = ldapContext.search(this.getGroupSearchBase(), searchFilter, searchArguments, cons);
         if(!searchResults.hasMoreElements()){
-            logger.warn("LDAP query did not return any groups for user [{}]", userDnOrUserUid);
+            logger.debug("LDAP query did not return any groups for user [{}]", userDnOrUserUid);
         }
         return searchResults;
     }
@@ -325,7 +331,7 @@ public class LDAPRealm extends JndiLdapRealm implements UserMetadataProvider {
          while (searchResults.hasMoreElements()) {
              SearchResult sr = (SearchResult) searchResults.next();
 
-             logger.debug("Retrieving group names for user [{}]", sr.getName());
+            logger.trace("Retrieving group names for user [{}]", sr.getName());
 
              Attributes attrs = sr.getAttributes();
 
@@ -340,8 +346,8 @@ public class LDAPRealm extends JndiLdapRealm implements UserMetadataProvider {
                          // TODO by now we adding both the full qualified group name as well as the UDI as determined by the groupIdentifierAttribute
                          groupNames.add(sr.getNameInNamespace());
 
-                         if (logger.isDebugEnabled()) {
-                             logger.debug("Groups found for user [{}]: {}", username, groupNames);
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Groups found for user [{}]: {}", username, groupNames);
                          }
 
                          Collection<String> rolesForGroups = 
@@ -389,7 +395,7 @@ public class LDAPRealm extends JndiLdapRealm implements UserMetadataProvider {
         // use this only for logger
         // SHIRO-115 - prevent potential code injection:
         String searchFilterString = String.format("(&(objectclass=%1$s)(%2$s=%3$s))", searchArguments);
-        logger.debug("Searching for user DN, with filter: {}", searchFilterString);
+        logger.trace("Searching for user DN, with filter: {}", searchFilterString);
 
         NamingEnumeration<SearchResult> searchResultEnum = null;
         LdapContext context = null;
@@ -399,10 +405,10 @@ public class LDAPRealm extends JndiLdapRealm implements UserMetadataProvider {
             if (searchResultEnum.hasMore()) {
                 SearchResult searchResult = searchResultEnum.next();
                 String dn = searchResult.getNameInNamespace();
-                logger.debug("Found DN for the user: {}", dn);
+                logger.trace("Found DN for the user: {}", dn);
                 return Optional.of(dn);
             } else {
-                logger.warn("User {} was not found in LDAP directory.", principal);
+                logger.debug("User {} was not found in LDAP directory.", principal);
                 return Optional.empty();
             }
 

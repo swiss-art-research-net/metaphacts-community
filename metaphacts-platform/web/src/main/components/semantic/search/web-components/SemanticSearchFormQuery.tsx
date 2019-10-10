@@ -31,7 +31,7 @@ import {
   FieldDefinition, normalizeFieldDefinition, FieldError, ErrorKind,
 } from 'platform/components/forms';
 
-import { InitialQueryContext, InitialQueryContextTypes } from './SemanticSearchApi';
+import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 import { setSearchDomain } from '../commons/Utils';
 
 export interface SemanticFormBasedQueryConfig {
@@ -95,12 +95,6 @@ export interface QueryTemplateArgument {
   optional?: boolean;
 }
 
-interface State {
-  readonly definitions?: ReadonlyArray<FieldDefinition>;
-  readonly model?: CompositeValue;
-  readonly modelState?: DataState;
-}
-
 /**
  * Virtual subject for search form to make sure that it sends `selectPattern` queries to
  * simulate default values for fields. Currently the form assumes as an optimization
@@ -141,13 +135,30 @@ const PLACEHOLDER_SUBJECT = Rdf.iri(vocabularies.VocabPlatform._NAMESPACE + 'For
  *      <button type='button' name='submit' className='btn btn-default'>Search</button>
  *  </semantic-search-form-query>
  */
-export class FormQuery extends React.Component<SemanticFormBasedQueryConfig, State> {
-  static readonly contextTypes = InitialQueryContextTypes;
-  context: InitialQueryContext;
+export class FormQuery extends React.Component<SemanticFormBasedQueryConfig> {
+  render() {
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => <FormQueryInner {...this.props} context={context} />}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
 
+interface InnerProps extends SemanticFormBasedQueryConfig {
+  context: InitialQueryContext;
+}
+
+interface State {
+  readonly definitions?: ReadonlyArray<FieldDefinition>;
+  readonly model?: CompositeValue;
+  readonly modelState?: DataState;
+}
+
+class FormQueryInner extends React.Component<InnerProps, State> {
   private form: SemanticForm;
 
-  constructor(props: SemanticFormBasedQueryConfig) {
+  constructor(props: InnerProps) {
     super(props);
     this.state = {
       definitions: adjustDefinitionsToTemplate({
@@ -158,7 +169,8 @@ export class FormQuery extends React.Component<SemanticFormBasedQueryConfig, Sta
     };
   }
 
-  componentWillReceiveProps(props: SemanticFormBasedQueryConfig, context: InitialQueryContext) {
+  componentWillReceiveProps(props: InnerProps) {
+    const {context} = props;
     if (context.searchProfileStore.isJust && context.domain.isNothing) {
       setSearchDomain(props.domain, context);
     }
@@ -245,7 +257,7 @@ export class FormQuery extends React.Component<SemanticFormBasedQueryConfig, Sta
       setSearchDomain(
         '<' + FieldValue.asRdfNode(
           model.fields.get(this.props.domainField).values.first()
-        ).value + '>', this.context
+        ).value + '>', this.props.context
       );
     }
 
@@ -253,7 +265,7 @@ export class FormQuery extends React.Component<SemanticFormBasedQueryConfig, Sta
       this.props.queryTemplate, model
     );
 
-    return this.context.setBaseQuery(Just(parametrized));
+    return this.props.context.setBaseQuery(Just(parametrized));
   }
 
   private canSubmit(model: CompositeValue) {

@@ -21,8 +21,21 @@ package com.metaphacts.rest;
 import javax.inject.Inject;
 import javax.ws.rs.ApplicationPath;
 
-import com.metaphacts.rest.endpoint.*;
 import org.glassfish.hk2.api.ServiceLocator;
+
+import com.metaphacts.rest.endpoint.AppAdminEndpoint;
+import com.metaphacts.rest.endpoint.CacheEndpoint;
+import com.metaphacts.rest.endpoint.ConfigurationEndpoint;
+import com.metaphacts.rest.endpoint.LogAdminEndpoint;
+import com.metaphacts.rest.endpoint.OntologyManagerEndpoint;
+import com.metaphacts.rest.endpoint.RdfNamespaceEndpoint;
+import com.metaphacts.rest.endpoint.RepositoryManagerEndpoint;
+import com.metaphacts.rest.endpoint.ResourceUtilsEndpoint;
+import com.metaphacts.rest.endpoint.SecurityEndpoint;
+import com.metaphacts.rest.endpoint.SetManagementEndpoint;
+import com.metaphacts.rest.endpoint.SystemAdminEndpoint;
+import com.metaphacts.rest.endpoint.TemplateEndpoint;
+import com.metaphacts.rest.endpoint.URLMinifierEndpoint;
 
 /**
  * Main REST application with explicit /rest URL pattern.
@@ -95,6 +108,10 @@ public class RestApplication extends AbstractPlatformApplication {
         register(ForbiddenExceptionMapper.class);
 
         register(AppAdminEndpoint.class);
+        
+        register(SystemAdminEndpoint.class);
+
+        register(LogAdminEndpoint.class);
     }
 
 }

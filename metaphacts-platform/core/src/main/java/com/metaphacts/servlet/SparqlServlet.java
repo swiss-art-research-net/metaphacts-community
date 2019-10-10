@@ -18,12 +18,6 @@
 
 package com.metaphacts.servlet;
 
-import org.eclipse.rdf4j.common.io.IOUtil;
-import org.eclipse.rdf4j.common.lang.FileFormat;
-import org.eclipse.rdf4j.http.protocol.Protocol;
-import org.eclipse.rdf4j.model.ValueFactory;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Optional;
@@ -38,6 +32,11 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.rdf4j.common.io.IOUtil;
+import org.eclipse.rdf4j.common.lang.FileFormat;
+import org.eclipse.rdf4j.http.protocol.Protocol;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.query.BooleanQuery;
 import org.eclipse.rdf4j.query.Dataset;
 import org.eclipse.rdf4j.query.GraphQuery;
@@ -56,7 +55,6 @@ import org.eclipse.rdf4j.query.resultio.TupleQueryResultFormat;
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriter;
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterFactory;
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultWriterRegistry;
-import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFHandler;
@@ -262,11 +260,15 @@ public class SparqlServlet extends HttpServlet {
             resp.sendError(Status.BAD_REQUEST.getStatusCode(), "Parameter \"query\" must not be empty.");
         }
         final String queryString = query.get();
-        logger.debug("Received the following query string for execution:\n {} \n Hash Code: \"{}\" ", queryString, queryString.hashCode() );
+        if (logger.isTraceEnabled()) {
+            logger.trace("Received the following query string for execution:\n {} \n Hash Code: \"{}\" ", queryString, queryString.hashCode() );
+        }
         
         final String preferredMimeTypeString = preferredMimeType.orElse("");
-        logger.trace("Detected mimetype \"{} \" for query with hash \"{}\".", preferredMimeTypeString, queryString.hashCode());
-
+        if (logger.isTraceEnabled()) {
+            logger.trace("Detected mimetype \"{} \" for query with hash \"{}\".", preferredMimeTypeString, queryString.hashCode());
+        }
+        
         String repId = getRepositoryIdFromRequest(req);
         
         try (RepositoryConnection con = repositoryManager.getRepository(repId).getConnection()) {
@@ -275,7 +277,9 @@ public class SparqlServlet extends HttpServlet {
                       setDataset(getDatasetForTheRequest(req)).
                       resolveUser(nsRegistry.getUserIRI()).build(con);
             SparqlOperation operationType = SparqlUtil.getOperationType(sparqlOperation);
-            logger.trace("Query with hash \"{}\" is of type \"{}\"",queryString.hashCode(), operationType);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Query with hash \"{}\" is of type \"{}\"",queryString.hashCode(), operationType);
+            }
 
             /*
              * permission check
@@ -297,7 +301,7 @@ public class SparqlServlet extends HttpServlet {
                     Optional<TupleQueryResultWriterFactory> writerFactory = resultWriterRegistry.get((QueryResultFormat) rdfFormat);
                     TupleQueryResultWriter writer = writerFactory.get().getWriter(resp.getOutputStream());
                     addNamespaces(writer);
-                    logger.debug("Evaluating query with hash \"{}\" as TupleQuery using \"{}\"", queryString.hashCode(), writer.getClass() );
+                    logger.trace("Evaluating query with hash \"{}\" as TupleQuery using \"{}\"", queryString.hashCode(), writer.getClass());
                     setContentType(resp,rdfFormat);
                     ((TupleQuery) sparqlOperation).evaluate(writer);
                     return;
@@ -311,7 +315,7 @@ public class SparqlServlet extends HttpServlet {
                     Optional<RDFWriterFactory> writerFactory = resultWriterRegistry.get((RDFFormat) rdfFormat);
                     RDFWriter writer = writerFactory.get().getWriter(resp.getOutputStream());
                     addNamespaces(writer);
-                    logger.debug("Evaluating query with hash \"{}\" as GraphQuery using \"{}\"", queryString.hashCode(), writer.getClass() );
+                    logger.trace("Evaluating query with hash \"{}\" as GraphQuery using \"{}\"", queryString.hashCode(), writer.getClass());
                     setContentType(resp,rdfFormat);
                     writer.startRDF();
                     try(GraphQueryResult result = ((GraphQuery) sparqlOperation).evaluate()){
@@ -330,14 +334,14 @@ public class SparqlServlet extends HttpServlet {
                     Optional<BooleanQueryResultWriterFactory> writerFactory = resultWriterRegistry.get((QueryResultFormat) rdfFormat);
                     BooleanQueryResultWriter writer = writerFactory.get().getWriter(resp.getOutputStream());
                     addNamespaces(writer);
-                    logger.debug("Evaluating query with hash \"{}\" as BooleanQuery using \"{}\"", queryString.hashCode(), writer.getClass() );
+                    logger.trace("Evaluating query with hash \"{}\" as BooleanQuery using \"{}\"", queryString.hashCode(), writer.getClass());
                     boolean result = ((BooleanQuery) sparqlOperation).evaluate();
                     setContentType(resp,rdfFormat);
                     writer.handleBoolean(result);
                     return;
                 }
                 case UPDATE:{
-                    logger.debug("Evaluating query with hash \"{}\" as UPDATE operation.", queryString.hashCode());
+                    logger.trace("Evaluating query with hash \"{}\" as UPDATE operation.", queryString.hashCode());
                     ((Update) sparqlOperation).execute();
                     resp.setStatus(Status.OK.getStatusCode());
                     return;

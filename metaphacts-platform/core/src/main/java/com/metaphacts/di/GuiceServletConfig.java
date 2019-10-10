@@ -26,9 +26,11 @@ import javax.servlet.ServletContextEvent;
 import org.apache.log4j.Logger;
 import org.apache.shiro.guice.web.ShiroWebModule;
 
+import com.google.inject.CreationException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.servlet.GuiceServletContextListener;
+import com.google.inject.spi.Message;
 import com.metaphacts.data.rdf.container.LDPAssetsLoader;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.ShiroGuiceModule;
@@ -38,7 +40,6 @@ import com.metaphacts.security.ShiroGuiceModule;
  */
 public class GuiceServletConfig extends GuiceServletContextListener {
 
-    @SuppressWarnings("unused")
     private static final Logger logger = Logger
             .getLogger(GuiceServletConfig.class.getName());
 
@@ -56,8 +57,22 @@ public class GuiceServletConfig extends GuiceServletContextListener {
          */
         propagateContextProperties(this.servletContext);
 
-        super.contextInitialized(event);
+        try {
+            super.contextInitialized(event);
+        } catch (CreationException e) {
+            logger.error("Failed to initialize web application");
+            for (Message message : e.getErrorMessages()) {
+                logger.error(message.getMessage());
+                logger.debug("Details: ", message.getCause());
+            }
+            throw new IllegalStateException("Failed to initialize webapp context. See error log for details.");
+        } catch (Throwable e) {
+            logger.error("Failed to initialize web application: " + e.getMessage());
+            logger.debug("Details: ", e);
+            throw new IllegalStateException("Failed to initialize webapp context. See error log for details.");
+        }
         
+        logger.info("Main platform servlet context initialized.");
         System.out.println("\n"
                 + "*************************************************************************************\n"
                 + "* Main platform servlet context initialized. Press CTRL+C to terminate the process. *\n"
@@ -76,6 +91,17 @@ public class GuiceServletConfig extends GuiceServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
+        logger.info("Main platform servlet context in process of shutting down.");
+        System.out.println("\n"
+                + "*************************************************************************************\n"
+                + "* Main platform servlet context in process of shutting down.                        *\n"
+                + "*************************************************************************************\n"
+        );
+        
+        logger.info("Shutting down repositories.");
+        injector.getInstance(RepositoryManager.class).shutdown();
+        
+        super.contextDestroyed(sce);
     }
 
     @Override

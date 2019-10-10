@@ -40,6 +40,8 @@ interface Props {
   repositoryTemplates?: string []
   showRestartPrompt?: boolean
   preselectedTemplate?: string
+  reloadPageOnSuccess?: boolean
+  initializerMode?: boolean     // true if editor is used from RepositoryConfigInitializer
 }
 
 
@@ -63,6 +65,8 @@ export class RepositoryConfigEditor extends Component<Props, State> {
     repositoryTemplates: [],
     showRestartPrompt: false,
     preselectedTemplate: undefined,
+    reloadPageOnSuccess: false,
+    initializerMode: false,
   };
   constructor(props: Props, context: any) {
     super(props, context);
@@ -111,7 +115,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
 
   render() {
     const {source, loadingError, responseError, submittedSuccessfully} = this.state;
-    const {showRestartPrompt} = this.props;
+    const {showRestartPrompt, reloadPageOnSuccess, initializerMode} = this.props;
 
     if (loadingError) {
         return <Alert bsStyle='info'> {loadingError} </Alert>;
@@ -169,7 +173,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
               onClick={this.onSubmitConfig}>
                 {this.isEditMode() ? 'Update Config' : 'Create Config' }
             </Button>
-            { this.isEditMode() && <Button
+            { this.isEditMode() && !initializerMode && <Button
               bsStyle='danger'
               className={styles.ActionButton}
               onClick={() => this.onDeleteRepository(this.props.id)}
@@ -177,6 +181,9 @@ export class RepositoryConfigEditor extends Component<Props, State> {
             }
             {responseError &&
                 <Alert bsStyle='danger'> {responseError} </Alert>
+            }
+            { reloadPageOnSuccess && submittedSuccessfully && 
+                window.location.reload()
             }
             { showRestartPrompt && submittedSuccessfully &&
                 <Alert bsStyle='success'> {SUCCESS_MESSAGE} </Alert>

@@ -19,6 +19,7 @@
 package com.metaphacts.servlet;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.Base64;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +32,8 @@ import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.DefaultHttpResponseFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.permission.WildcardPermission;
 import org.mitre.dsmiley.httpproxy.ProxyServlet;
@@ -71,6 +74,8 @@ import com.metaphacts.security.Permissions;
 public class MProxyServlet extends ProxyServlet {
     private static final long serialVersionUID = 6066609865661758364L;
 
+    private static final Logger logger = LogManager.getLogger(MProxyServlet.class);
+
     private final String key;
 
     @Inject
@@ -78,6 +83,7 @@ public class MProxyServlet extends ProxyServlet {
         this.key = key;
     }
 
+    @Override
     protected HttpResponse doExecute(HttpServletRequest servletRequest,
             HttpServletResponse servletResponse, HttpRequest proxyRequest) throws IOException {
 
@@ -88,11 +94,8 @@ public class MProxyServlet extends ProxyServlet {
         String encodedAuth = null;
 
         if (!SecurityUtils.getSubject().isPermitted(new WildcardPermission(permission))) {
-            HttpResponse forbidden = new DefaultHttpResponseFactory()
-                    .newHttpResponse(HttpVersion.HTTP_1_1, HttpStatus.SC_FORBIDDEN, null);
-            forbidden.setEntity(new StringEntity(
-                    "You do not have required permissions to access this resource"));
-            return forbidden;
+            return createHttpError("You do not have required permissions to access this resource",
+                    HttpStatus.SC_FORBIDDEN);
         }
 
         if (!StringUtils.isEmpty(loginName) && !StringUtils.isEmpty(loginPassword)) {
@@ -109,11 +112,28 @@ public class MProxyServlet extends ProxyServlet {
             proxyRequest.addHeader("Authorization", "Basic " + encodedAuth);
         }
 
-        if (doLog) {
-            log("proxy " + servletRequest.getMethod() + " uri: " + servletRequest.getRequestURI()
+        if (logger.isTraceEnabled()) {
+            logger.trace("proxy " + servletRequest.getMethod() + " uri: " + servletRequest.getRequestURI()
                     + " -- " + proxyRequest.getRequestLine().getUri());
         }
 
-        return getProxyClient().execute(getTargetHost(servletRequest), proxyRequest);
+        try {
+            return getProxyClient().execute(getTargetHost(servletRequest), proxyRequest);
+        } catch (ConnectException e) {
+            logger.debug("Connection to target system could not be established: ", e);
+            return createHttpError("Connection to target system could not be established: " + e.getMessage(),
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (Throwable t) {
+            logger.debug("Unexpected error while proxying request: ", t);
+            return createHttpError("Internal error while proxying request: " + t.getMessage(),
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    protected HttpResponse createHttpError(String message, int statusCode) throws IOException {
+        HttpResponse response = new DefaultHttpResponseFactory()
+                .newHttpResponse(HttpVersion.HTTP_1_1, statusCode, null);
+        response.setEntity(new StringEntity(message));
+        return response;
     }
 }

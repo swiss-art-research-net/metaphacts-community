@@ -18,15 +18,18 @@
 
 package com.metaphacts.cache;
 
-import com.google.common.base.Throwables;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.metaphacts.api.sparql.SparqlOperationBuilder;
-import com.metaphacts.config.PropertyPattern;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
@@ -37,11 +40,15 @@ import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import com.google.common.base.Throwables;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.metaphacts.api.sparql.SparqlOperationBuilder;
+import com.metaphacts.config.PropertyPattern;
 
 /**
  * Cache with extraction logic for batched access to some property of a resource.
@@ -85,7 +92,7 @@ public abstract class ResourcePropertyCache<Key, Property> implements PlatformCa
     private void initializeCache(Repository repository) {
         if (repositoryMap.containsKey(repository)) { return; }
 
-        logger.info("Initializing cache for repository: {}", repository);
+        logger.debug("Initializing cache for repository: {}", repository);
         repositoryMap.put(repository,
             CacheBuilder.newBuilder()
             .maximumSize(1000)

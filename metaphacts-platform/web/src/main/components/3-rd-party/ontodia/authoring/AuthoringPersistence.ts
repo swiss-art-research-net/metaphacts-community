@@ -24,7 +24,7 @@ import {
   isIriProperty, isLiteralProperty,
 } from 'ontodia';
 
-import { Rdf } from 'platform/api/rdf';
+import { Rdf, vocabularies } from 'platform/api/rdf';
 
 import {
   CompositeValue, EmptyValue, FieldDefinition, TriplestorePersistence, FieldState, FieldValue,
@@ -32,7 +32,7 @@ import {
   computeValuePatch,
 } from 'platform/components/forms';
 
-import { EntityMetadata, EntityParent } from './OntodiaEntityMetadata';
+import { EntityMetadata, EntityParent, isObjectProperty } from './OntodiaEntityMetadata';
 
 export function persistAuthoringState(params: {
   persistence: TriplestorePersistence;
@@ -310,7 +310,7 @@ export function convertCompositeValueToElementModel(
     } else if (definition.iri === metadata.labelField.iri) {
       labels = field.values.map(v => {
         if (FieldValue.isAtomic(v) && v.value.isLiteral()) {
-          const {value: text, lang = ''} = FieldValue.asRdfNode(v) as Rdf.LangLiteral;
+          const {value: text, language: lang} = FieldValue.asRdfNode(v) as Rdf.Literal;
           return {text, lang};
         }
       }).toArray();
@@ -318,7 +318,7 @@ export function convertCompositeValueToElementModel(
       field.values.forEach(v => {
         if (!FieldValue.isAtomic(v)) { return; }
         if (v.value.isLiteral()) {
-          const {value: text, lang = ''} = FieldValue.asRdfNode(v) as Rdf.LangLiteral;
+          const {value: text, language: lang} = FieldValue.asRdfNode(v) as Rdf.Literal;
           const property = properties[definition.iri] || {type: 'string', values: []};
           if (isLiteralProperty(property)) {
             property.values = [...property.values, {
@@ -481,6 +481,7 @@ function applyElementModelToCompositeValue(
   let fields = composite.fields;
 
   metadata.fieldByIri.forEach((definition, fieldIri) => {
+    if (isObjectProperty(definition, metadata)) { return; }
     let values = [];
     if (definition.id === metadata.labelField.id) {
       values = convertLocalizedStringsToFieldValues(model.label.values);

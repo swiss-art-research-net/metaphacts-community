@@ -46,9 +46,9 @@ On Windows the use of [Chocolatey](https://chocolatey.org/) is highly recommende
 
 For most developments (i.e. for starting-up the platform properly) you will need to have a RDF database in place. The database does not necessarily need to run on your local machine as long as it is accessible over a standard conform SPARQL endpoint interface. For your convenience, we recommend to run, for example, Blazegraph as a container on your local docker daemon so you can easily run serveral databases in parallel and switch between them:
 
-1. Login into Metaphacts docker registry: `docker login docker.metaphacts.com`
-2. Pull latest blazegraph image: `docker pull docker.metaphacts.com/snapshot/blazegraph:2.2.0-20160908.003514-6`
-3. Run Blazegraph container with local storage mounted as data volume: `docker run --name blazegraph -d --restart=always -p 10080:8080 --env JAVA_OPTS="" -v /home/user/path-to-blazegraph-journal:/blazegraph-data docker.metaphacts.com/snapshot/blazegraph:2.2.0-20160908.003514-6`
+1. Login into DockerHub: `docker login`
+2. Pull latest blazegraph image: `docker pull metaphacts/blazegraph-basic:2.2.0-20160908.003514-6`
+3. Run Blazegraph container with local storage mounted as data volume: `docker run --name blazegraph -d --restart=always -p 10080:8080 --env JAVA_OPTS="" -v /home/user/path-to-blazegraph-journal:/blazegraph-data metaphacts/blazegraph-basic:2.2.0-20160908.003514-6`
 
 Where `/home/user/path-to-blazegraph-journal-folder` is the folder on the host system where blazegraph journal will be stored.
 
@@ -112,7 +112,7 @@ to the sbt console. The `log4j2-trace` and `log4j2-trace2` profile produce a lot
 
 ## Codestyle & Linting
 
-###Java
+### Java
 
 You will find a readymade Java checkstyle file in `project/checkstyle.xml`. We recommend to use the [eclipse-cs](https://github.com/checkstyle/eclipse-cs) plugin. You can install the plugin if you drag&drop the following link into your eclipse: [Install](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=150) . Afterwards  you should create a new global check configuration and import the checkstyle file: Preferences -> Checkstyle -> New… -> Name "metaphacts-platform" -> Import … (Select from `project/checkstyle.xml`) -> Set as Default (optional).
 
@@ -126,7 +126,11 @@ Running `test` command in the SBT console will execute all backend tests (Java J
 ## Packaging
 Run `build.sh -DbuildEnv=prod` and then `package`. The compiled war file will be copied to `/target/platform-*.war` and can be deployed using common servlet containers such as Jetty or Tomcat.
 
+## Generate JSON Schema from JSDoc
 
+To generate generate JSON schema from any TypeScript interface to use in the documentation with `mp-documentation`, add interface name to `platform-web-build.json` under `generatedJsonSchemas` property and execute the following command at `project/webpack` directory:
+
+`yarn run generate-schema <project-name> <interface-name>`
 
 ## Troubleshooting
 

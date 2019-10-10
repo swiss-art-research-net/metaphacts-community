@@ -83,9 +83,9 @@ export class Draggable extends Component<DraggableProps, State> {
     }
   }
 
-  private setHandlers = source => {
+  private setHandlers = (source: any) => {
     if (source) {
-      this.source = findDOMNode(source);
+      this.source = findDOMNode(source) as Element;
 
       this.source.addEventListener('dragstart', this.onDragStart);
       this.source.addEventListener('dragend', this.onDragEnd);
@@ -135,8 +135,14 @@ export class Draggable extends Component<DraggableProps, State> {
       'mp-draggable-dragged': isDragged,
     });
 
-    return cloneElement(child,
-      {ref: this.setHandlers, className: className, style: style, draggable: true});
+    return cloneElement(child, {
+      ref: this.setHandlers,
+      className: className,
+      style: style,
+      draggable: true,
+      onMouseDown: e =>
+        e.stopPropagation(),
+    });
   }
 }
 

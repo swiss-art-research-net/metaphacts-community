@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Application;
 
+import com.metaphacts.services.fields.FieldDefinitionManager;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.rdf4j.model.IRI;
@@ -135,6 +136,7 @@ public class MetaphactsHandlebarsTest  extends JerseyTest {
         RepositoryManager repositoryManager = repositoryRule.getRepositoryManager();
         handlebars = new MetaphactsHandlebars(null, new HandlebarsHelperRegistry(
             repositoryManager,
+            new FieldDefinitionManager(repositoryManager, cacheManager),
             new FieldsBasedSearch(ns, repositoryManager, labelCache),
             queryTemplateCache,
             labelCache
@@ -613,7 +615,8 @@ public class MetaphactsHandlebarsTest  extends JerseyTest {
         String actualDefinition2 = StringEscapeUtils.unescapeJson(StringEscapeUtils.unescapeHtml4(
             handlebars.compileInline(
                 "[[fieldDefinitions alias1=\"" + field1Res.getResourceIRI().stringValue() + "\" " +
-                "alias2=\""+field2Res.getResourceIRI().stringValue()+"\"]]"
+                "alias2=\""+field2Res.getResourceIRI().stringValue()+"\" " +
+                "aliasMissing=\"http://example.com/missingField\"]]"
             ).apply(context(vf.createIRI(thisIriString)))
         ));
         JSONAssert.assertEquals("field definition 2:", expectedDefinition2, actualDefinition2, JSONCompareMode.STRICT);

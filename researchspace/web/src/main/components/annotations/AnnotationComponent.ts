@@ -106,16 +106,16 @@ export class AnnotationComponentClass extends Component<Props, State> {
   componentWillMount() {
     if (this.props.annotationTarget && this.props.annotationToEdit) {
       this.setState(state => {
-        state.initalizationError = maybe.Just(
+        const initalizationError = maybe.Just(
           `Wrong configuration: Only annotationTarget or
             annotationToEdit can be set at the same time.`
         );
-        return state;
+        return {initalizationError};
       });
     } else if (this.props.annotationTarget) {
       this.setState(state => {
-        state.target = maybe.Just(Rdf.iri(this.props.annotationTarget.replace(/<|>/g, '')));
-        return state;
+        const target = maybe.Just(Rdf.iri(this.props.annotationTarget.replace(/<|>/g, '')));
+        return {target};
       });
     } else if (this.props.annotationToEdit) {
       new LdpAnnotationServiceClass(
@@ -124,10 +124,10 @@ export class AnnotationComponentClass extends Component<Props, State> {
         Rdf.iri(this.props.annotationToEdit.replace(/<|>/g, ''))
       ).onValue((annotation: Annotation) => {
         this.setState(state => {
-          state.target = maybe.fromNullable(annotation.target);
-          state.label = annotation.label;
-          state.initText = annotation.html;
-          return state;
+          const target = maybe.fromNullable(annotation.target);
+          const label = annotation.label;
+          const initText = annotation.html;
+          return {target, label, initText};
         });
       });
     }
@@ -147,7 +147,7 @@ export class AnnotationComponentClass extends Component<Props, State> {
           placeholder: 'Title',
           onChange: (e) => {
             const newValue = (e.target as any).value;
-            this.setState(state => { state.label = newValue; return state; });
+            this.setState(state => { return {label: newValue}; });
           },
           value: this.state.label ? this.state.label : '',
         }),
@@ -197,8 +197,8 @@ export class AnnotationComponentClass extends Component<Props, State> {
     }
     if (messages.length) {
       this.setState(state => {
-        state.alert = maybe.Just({ alert: AlertType.DANGER, message: messages.join('. ') });
-        return state;
+        const alert = maybe.Just({ alert: AlertType.DANGER, message: messages.join('. ') });
+        return {alert};
       });
       return;
     }
@@ -222,8 +222,8 @@ export class AnnotationComponentClass extends Component<Props, State> {
         refresh()
       ).onError(err => {
         this.setState(state => {
-          state.alert = maybe.Just({ alert: AlertType.DANGER, message: err.response.text });
-          return state;
+          const alert = maybe.Just({ alert: AlertType.DANGER, message: err.response.text });
+          return {alert};
         });
       });
     } else {
@@ -233,8 +233,8 @@ export class AnnotationComponentClass extends Component<Props, State> {
         this.isNavigateToNew() ? navigateToResource(annotationUri).onValue(v => v) : refresh()
       ).onError(err => {
         this.setState(state => {
-          state.alert = maybe.Just({ alert: AlertType.DANGER, message: err.response.text });
-          return state;
+          const alert = maybe.Just({ alert: AlertType.DANGER, message: err.response.text });
+          return {alert};
         });
       });
     }

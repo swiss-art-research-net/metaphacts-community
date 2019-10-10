@@ -20,7 +20,7 @@ import * as D from 'react-dom-factories';
 import { StaticComponent, StaticFieldProps } from './StaticComponent';
 import * as classnames from 'classnames';
 
-import { getPreferredLabel } from 'platform/components/utils';
+import { getPreferredLabel } from '../FieldDefinition';
 
 const CLASSNAME = 'field-label';
 

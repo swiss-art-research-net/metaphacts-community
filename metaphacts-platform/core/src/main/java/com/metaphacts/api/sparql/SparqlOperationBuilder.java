@@ -33,6 +33,7 @@ import org.eclipse.rdf4j.query.Dataset;
 import org.eclipse.rdf4j.query.MalformedQueryException;
 import org.eclipse.rdf4j.query.Operation;
 import org.eclipse.rdf4j.query.QueryLanguage;
+import org.eclipse.rdf4j.query.parser.QueryParserUtil;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 
@@ -47,7 +48,7 @@ import com.metaphacts.api.sparql.SparqlUtil.SparqlOperation;
  */
 public class SparqlOperationBuilder<T extends Operation> {
     
-    private static final Logger logger = LogManager.getLogger(SparqlOperationBuilder.class);
+    protected static final Logger logger = LogManager.getLogger(SparqlOperationBuilder.class);
     
     private Class<? extends Operation>clazz;
     private String queryString;
@@ -197,13 +198,28 @@ public class SparqlOperationBuilder<T extends Operation> {
        }
     }
     
+    /**
+     * Validates the syntactical correctness of the qiven query.
+     * 
+     * @return the {@link SparqlOperationBuilder}
+     * @throws MalformedQueryException if the query is malformed
+     */
+    public SparqlOperationBuilder<T> validate() throws MalformedQueryException {
+        this.replaceLegacyParameters();
+        addNamespaces();
+
+        QueryParserUtil.parseOperation(QueryLanguage.SPARQL, this.queryString, this.baseURI);
+
+        return this;
+    }
+
     public T build(RepositoryConnection con) throws RepositoryException, MalformedQueryException, IllegalArgumentException{
         
         this.replaceLegacyParameters();
         SparqlOperation type = SparqlUtil.getOperationType(this.queryString);
         QueryLanguage ql = QueryLanguage.SPARQL;
         
-        addNamespaces(con);
+        addNamespaces();
         
         Operation op = null;
         switch (type) {
@@ -247,17 +263,10 @@ public class SparqlOperationBuilder<T extends Operation> {
         return cast(op,this.clazz, type);
     }
     
-    private void addNamespaces(RepositoryConnection con) {
-        // TODO only HTTPRepositoryConnection allows to set namespaces directly on the connection, however,
-        // the class is currently package private (which I believe is not by design)
-//        if(con instanceof HTTPRepositoryConnection){
-//            for(Map.Entry<String,String>e : this.namespaces.entrySet()){
-//                con.setNamespace(e.getKey(),e.getValue());
-//            }
-//        }else{
-            this.queryString=SparqlUtil.prependPrefixes(this.queryString, this.namespaces);
-//        }
+    private void addNamespaces() {
+        this.queryString = SparqlUtil.prependPrefixes(this.queryString, this.namespaces);
     }
+
     @SuppressWarnings("unchecked")
     private T cast(Operation o, Class<? extends Operation> clazz, SparqlOperation type) {
         try {

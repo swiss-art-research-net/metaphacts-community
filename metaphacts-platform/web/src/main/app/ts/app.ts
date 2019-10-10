@@ -308,7 +308,7 @@ export class MainAppComponent extends Component<{}, {
       // when header is loading, in the beginning it is one null element. But after loading
       // we have two header elements, because number of elements changes react can't properly
       // unify components and fully recreate route component.
-      createElement(this.state.route as any, {key: 'page-holder'}),
+      createElement(this.state.route, {key: 'page-holder'}),
       this.state.footerHTML.isNothing ? null : this.state.footerHTML.get()
     );
   }

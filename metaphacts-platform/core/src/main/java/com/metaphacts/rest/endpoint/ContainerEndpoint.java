@@ -19,7 +19,6 @@
 package com.metaphacts.rest.endpoint;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -108,6 +107,7 @@ public class ContainerEndpoint {
     @Context
     private Request req;
 
+    @SuppressWarnings("unused")
     @Inject
     private RepositoryManager repositoryManager;
 
@@ -266,7 +266,8 @@ public class ContainerEndpoint {
                 try {
                     resource = rioUtils.parse(in, "", ExportImportFormat);
                 } catch (Exception e) {
-                    throw Throwables.propagate(e);
+                    Throwables.throwIfUnchecked(e);
+                    throw new RuntimeException(e);
                 }
             }
 
@@ -476,7 +477,7 @@ public class ContainerEndpoint {
             } else if (e instanceof LDPResourceNotFoundException) {
                 return Response.status(Status.NOT_FOUND).entity(e.getMessage()).build();
             } else {
-                String error = "Something went wrong." + errorMessage + ". Resource" + resource + ". Error: " + e.getMessage();
+                String error = "Something went wrong. " + errorMessage + ". Resource: " + resource + ". Error: " + e.getMessage();
                 logger.error(error);
                 logger.debug("Details:", e);
                 return Response.serverError().entity(error).build();
@@ -488,7 +489,8 @@ public class ContainerEndpoint {
         try {
             return cache.api(repositoryID);
         } catch (ExecutionException e) {
-            throw Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
 }

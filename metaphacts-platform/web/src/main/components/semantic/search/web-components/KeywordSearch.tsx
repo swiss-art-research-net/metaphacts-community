@@ -16,7 +16,6 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { Props as ReactProps, FormEvent, CSSProperties } from 'react';
 import * as React from 'react';
 import * as Maybe from 'data.maybe';
 import * as Kefir from 'kefir';
@@ -26,14 +25,12 @@ import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil, SparqlClient } from 'platform/api/sparql';
-import { Component, ComponentContext } from 'platform/api/components';
+import { Component } from 'platform/api/components';
 import { Action } from 'platform/components/utils';
 
 import { setSearchDomain } from '../commons/Utils';
 import { SemanticSimpleSearchBaseConfig } from '../../simple-search/Config';
-import {
-  InitialQueryContext, InitialQueryContextTypes,
-} from './SemanticSearchApi';
+import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 
 export interface BaseConfig<T> extends SemanticSimpleSearchBaseConfig {
   /**
@@ -47,7 +44,8 @@ export interface BaseConfig<T> extends SemanticSimpleSearchBaseConfig {
   className?: string
 
   /**
-   * Specify search domain category IRI (full IRI enclosed in <>). Required, if component is used together with facets.
+   * Specify search domain category IRI (full IRI enclosed in <>).
+   * Required, if component is used together with facets.
    */
   domain?: string
 
@@ -60,39 +58,52 @@ export interface BaseConfig<T> extends SemanticSimpleSearchBaseConfig {
 }
 
 export interface SemanticSearchKeywordConfig extends BaseConfig<string> {}
-interface Config extends BaseConfig<CSSProperties> {}
-interface Props extends ReactProps<KeywordSearch>, Config {}
 
-interface State {
-  value: string
+interface KeywordSearchProps extends BaseConfig<React.CSSProperties> {}
+
+class KeywordSearch extends Component<KeywordSearchProps, {}> {
+  render() {
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => <KeywordSearchInner {...this.props} context={context} />}
+      </SemanticSearchContext.Consumer>
+    );
+  }
 }
 
-class KeywordSearch extends Component<Props, State> {
-  static contextTypes = {...Component.contextTypes, ...InitialQueryContextTypes};
-  static defaultProps: Partial<Props> = {
+interface InnerProps extends KeywordSearchProps {
+  context: InitialQueryContext;
+}
+
+interface State {
+  value: string;
+}
+
+class KeywordSearchInner extends React.Component<InnerProps, State> {
+  static defaultProps: Partial<KeywordSearchProps> = {
     placeholder: 'type to search, minimum 3 symbols ...',
     searchTermVariable: '__token__',
     minSearchTermLength: 3,
     debounce: 300,
     escapeLuceneSyntax: true,
   };
-  context: ComponentContext & InitialQueryContext;
 
   private keys = Action<string>();
 
-  constructor(props: Props, context: any) {
-    super(props, context);
+  constructor(props: InnerProps) {
+    super(props);
     this.state = {
       value: undefined,
     };
   }
 
   componentDidMount() {
-    setSearchDomain(this.props.domain, this.context);
+    setSearchDomain(this.props.domain, this.props.context);
     this.initialize(this.props);
   }
 
-  componentWillReceiveProps(props: Props, context: InitialQueryContext) {
+  componentWillReceiveProps(props: InnerProps) {
+    const {context} = props;
     if (context.searchProfileStore.isJust && context.domain.isNothing) {
       setSearchDomain(props.domain, context);
     }
@@ -111,7 +122,7 @@ class KeywordSearch extends Component<Props, State> {
     </FormGroup>;
   }
 
-  private initialize = (props: Props) => {
+  private initialize = (props: InnerProps) => {
     const query = SparqlUtil.parseQuerySync<SparqlJs.SelectQuery>(props.query);
     const defaultQuery =
       props.defaultQuery ?
@@ -143,11 +154,11 @@ class KeywordSearch extends Component<Props, State> {
 
     Kefir.merge(initializers)
       .onValue(
-        q => this.context.setBaseQuery(Maybe.Just(q))
+        q => this.props.context.setBaseQuery(Maybe.Just(q))
       );
   }
 
-  private onKeyPress = (event: FormEvent<FormControl>) =>
+  private onKeyPress = (event: React.FormEvent<FormControl>) =>
     this.keys((event.target as any).value)
 
   private buildQuery =

@@ -50,11 +50,11 @@ public class ShiroRealmUtils {
                 String strRoleNames = groupRolesMap.get(groupName);
                 if (strRoleNames != null) {
                     for (String roleName : strRoleNames.split(ROLE_NAMES_DELIMETER)) {
-                        logger.debug("User is member of group [{}] so adding role [{}]", groupName, roleName);
+                        logger.trace("User is member of group [{}] so adding role [{}]", groupName, roleName);
                         roleNames.add(roleName);
                     }
                 } else {
-                    logger.warn("Did not find any group to role mappings for groupName: {}", groupName);
+                    logger.trace("Did not find any group to role mappings for groupName: {}", groupName);
                 }
             }
         }

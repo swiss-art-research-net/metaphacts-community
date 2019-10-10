@@ -17,13 +17,10 @@
  */
 
 import * as React from 'react';
-import { Props as ReactProps, CSSProperties } from 'react';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
-import {
-    InitialQueryContext, InitialQueryContextTypes,
-  } from './SemanticSearchApi';
+import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 
-import { Component, ComponentContext, ContextTypes } from 'platform/api/components';
+import { Component, SemanticContext } from 'platform/api/components';
 import {ketcherui, smiles, molfile} from 'ketcher/dist/ketcher';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
@@ -35,7 +32,7 @@ import {
     Row, Col, InputGroup, FormGroup, Button, ButtonGroup, FormControl, Radio, Alert
  } from 'react-bootstrap';
 import { getOverlaySystem, OverlayDialog} from 'platform/components/ui/overlay';
-import * as Slider from 'rc-slider';
+import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import 'ketcher/dist/ketcher.css';
 import 'ketcher/dist/raphael.min.js';
@@ -43,7 +40,7 @@ import {SmilesCodeDrawer} from 'platform/components/3-rd-party/SmilesCodeDrawer'
 import { Cancellation } from 'platform/api/async';
 import * as SparqlJs from 'sparqljs';
 
-interface Props {
+export interface ChemicalDrawingSearchProps {
     /**
      * SPARQL Select query string, which will be provided to the search framework as base query.
      * The query stringwill be parameterized through the values as selected by the user from
@@ -114,19 +111,6 @@ interface Props {
     domain?: string
 }
 
-enum Modes { SIMILARITY = 'similarity', EXACT = 'exact', SUBSTRUCTURE = 'substructure' }
-
-
-interface State {
-    isLoading?: boolean,
-    showModal?: boolean,
-    isNoResult?: boolean,
-    smilesCode?: string,
-    moleString?: string,
-    mode?: Modes,
-    errorMessage: string,
-    similarityThreshold: number
-}
 /**
  * @example
  <semantic-search>
@@ -142,10 +126,42 @@ interface State {
   </semantic-search-result-holder>
 </semantic-search>
  */
-class ChemicalDrawingSearch extends Component<Props, State> {
+export class ChemicalDrawingSearch extends Component<ChemicalDrawingSearchProps, {}> {
+  render() {
+    const {semanticContext} = this.context;
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => (
+          <ChemicalDrawingSearchInner {...this.props}
+            context={{...context, semanticContext}}
+          />
+        )}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
+
+interface InnerProps extends ChemicalDrawingSearchProps {
+  context: InitialQueryContext & SemanticContext;
+}
+
+enum Modes { SIMILARITY = 'similarity', EXACT = 'exact', SUBSTRUCTURE = 'substructure' }
+
+interface State {
+  isLoading?: boolean,
+  showModal?: boolean,
+  isNoResult?: boolean,
+  smilesCode?: string,
+  moleString?: string,
+  mode?: Modes,
+  errorMessage: string,
+  similarityThreshold: number
+}
+
+class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
     private readonly cancellation = new Cancellation();
     private readonly OVERLAY_ID = 'drawing-overlay';
-    static contextTypes = {...ContextTypes, ...InitialQueryContextTypes};
+
     static defaultProps = {
         query: `
             SELECT * WHERE {
@@ -157,10 +173,8 @@ class ChemicalDrawingSearch extends Component<Props, State> {
         projectionBindings: ['compound', 'similarity'],
     };
 
-    context: ComponentContext & InitialQueryContext;
-
-    constructor(props: Props, context: ComponentContext) {
-        super(props, context);
+    constructor(props: InnerProps) {
+        super(props);
         this.state = {
             isLoading: false,
             isNoResult: false,
@@ -173,14 +187,15 @@ class ChemicalDrawingSearch extends Component<Props, State> {
     }
 
     componentDidMount() {
-        setSearchDomain(this.props.domain, this.context);
+        setSearchDomain(this.props.domain, this.props.context);
     }
 
-    componentWillReceiveProps(props: Props, context: InitialQueryContext) {
-        if (context.searchProfileStore.isJust && context.domain.isNothing) {
-          setSearchDomain(props.domain, context);
-        }
+    componentWillReceiveProps(props: InnerProps) {
+      const {context} = props;
+      if (context.searchProfileStore.isJust && context.domain.isNothing) {
+        setSearchDomain(props.domain, context);
       }
+    }
 
     renderKetcher = (element: Element ) => {
         if (!element) {
@@ -215,7 +230,7 @@ class ChemicalDrawingSearch extends Component<Props, State> {
 
        // reset search if selection is emtpy e.g. after removal of initial selections
         if (!this.state.smilesCode)     {
-            return this.context.setBaseQuery(Maybe.Nothing());
+            return this.props.context.setBaseQuery(Maybe.Nothing());
         }
 
         const parsedQuery: SparqlJs.SelectQuery = SparqlUtil.parseQuerySync<SparqlJs.SelectQuery>(
@@ -234,7 +249,7 @@ class ChemicalDrawingSearch extends Component<Props, State> {
         );
         // execute the search query, i.e. to find exact, substructure or similar results
         this.cancellation.map(
-            SparqlClient.select(query, {context: this.context.semanticContext})
+            SparqlClient.select(query, {context: this.props.context.semanticContext})
           ).observe({
             value: selectResult => this.handleResult(selectResult),
             error: (error: Error) => {
@@ -265,7 +280,7 @@ class ChemicalDrawingSearch extends Component<Props, State> {
         const parsedMainQuery = SparqlUtil.parseQuerySync<SparqlJs.SelectQuery>(
             this.props.query
         );
-        this.context.setBaseQuery(
+        this.props.context.setBaseQuery(
             Maybe.Just<SparqlJs.SelectQuery>(
                 SparqlClient.prepareParsedQuery(values)(parsedMainQuery)
             )
@@ -278,14 +293,14 @@ class ChemicalDrawingSearch extends Component<Props, State> {
         window['_ui_editor'] = null;
     }
 
-    public componentDidUpdate (prevProps: Props, prevState: State) {
+    componentDidUpdate(prevProps: InnerProps, prevState: State) {
         const {errorMessage, isNoResult} = this.state;
         if (
             (errorMessage !== prevState.errorMessage
             || prevState.isNoResult !== isNoResult)
             && (errorMessage || isNoResult)
         ) {
-            this.context.setBaseQuery(Maybe.Nothing());
+            this.props.context.setBaseQuery(Maybe.Nothing());
         }
     }
 
@@ -306,7 +321,7 @@ class ChemicalDrawingSearch extends Component<Props, State> {
         return (
             <div>
                 {this.state.isLoading ? <LoadingBackdrop/> : null}
-                <Row style={{'display': 'flex', 'align-items': 'center'}}>
+                <Row style={{'display': 'flex', alignItems: 'center'}}>
                     <Col sm={4} className='text-center'>
                     {   this.state.smilesCode && renderSmilesCode
                             ? <SmilesCodeDrawer
@@ -327,7 +342,7 @@ class ChemicalDrawingSearch extends Component<Props, State> {
                                             disabled={true}/>
                                         <InputGroup.Addon
                                             style={{
-                                                'border-radius': '4px',
+                                                borderRadius: '4px',
                                                 borderTopLeftRadius: 0,
                                                 borderBottomLeftRadius: 0,
                                             }}
@@ -396,13 +411,10 @@ class ChemicalDrawingSearch extends Component<Props, State> {
                         <Row>
                                 <Col sm={3} smOffset={4}>
                                     { this.state.mode === 'similarity' ?
-                                        <Slider
-                                            allowCross={false} range={false} min={0} max={100}
-                                            value={[this.state.similarityThreshold]}
-                                            onChange={
-                                                (val) => this.setSimilarity(val)
-                                            }
-                                    /> : null
+                                        <Slider min={0} max={100}
+                                            value={this.state.similarityThreshold}
+                                            onChange={val => this.setSimilarity(val)}
+                                        /> : null
                                     }
                                 </Col>
                         </Row>

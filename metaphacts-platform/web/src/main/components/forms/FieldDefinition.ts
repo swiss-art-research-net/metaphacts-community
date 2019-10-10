@@ -21,6 +21,8 @@ import * as _ from 'lodash';
 import { Rdf, XsdDataTypeValidation } from 'platform/api/rdf';
 import { xsd } from 'platform/api/rdf/vocabularies/vocabularies';
 
+import { selectPreferredLabel } from 'platform/api/services/language';
+
 import {
   ComplexTreePatterns, LightwightTreePatterns,
 } from 'platform/components/semantic/lazy-tree';
@@ -41,7 +43,7 @@ export interface FieldDefinition {
    * Label used for refering to field on form (e.g. {@link FormErrors}) and
    * rendering the field, for example as an HTML input label before the input element.
    */
-  label?: ReadonlyArray<Rdf.LangLiteral>;
+  label?: ReadonlyArray<Rdf.Literal>;
   /**
    * Description of a field, might be rendered e.g. onHover or
    * as an info icon next to the field.
@@ -125,7 +127,7 @@ export interface FieldDefinition {
   /**
    * SparQL SELECT query to generate a dynamic suggestion list based on
    * textindex or regex search.
-   * 
+   *
    * Query bindings:
    *   $token refers to text token the user is typing.
    * Exposed projection variables:
@@ -150,7 +152,7 @@ export interface FieldDefinition {
 /** @see FieldDefinition */
 export interface FieldDefinitionProp {
   id: string;
-  label?: string | ReadonlyArray<Rdf.LangLiteral>;
+  label?: string | ReadonlyArray<Rdf.Literal>;
   description?: string;
   categories?: ReadonlyArray<string | Rdf.Iri>;
   domain?: string | Rdf.Iri | ReadonlyArray<string | Rdf.Iri>;
@@ -277,4 +279,15 @@ function compileTimeAssertDefinitionAssignableToProp(): FieldDefinitionProp {
   // Checks `FieldDefinition` -> `FieldDefinitionProp` assignment compatibility.
   // (It should be possible to pass "normalized" definition to another component.)
   return definition;
+}
+
+
+export function getPreferredLabel(
+  label: string | ReadonlyArray<Rdf.Literal> | undefined
+): string | undefined {
+  if (typeof label === 'undefined' || typeof label === 'string') {
+    return label;
+  }
+  const selected = selectPreferredLabel(label);
+  return selected ? selected.value : undefined;
 }

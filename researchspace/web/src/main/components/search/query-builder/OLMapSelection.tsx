@@ -125,7 +125,7 @@ export class OLMapSelection extends React.Component<OLMapSelectionProps, OLMapSe
       });
 
     this.map = new Map({
-      target: findDOMNode(this.refs[MAP_REF]),
+      target: findDOMNode(this.refs[MAP_REF]) as Element,
       layers: [
         new TileLayer({
           source: new OSM(),

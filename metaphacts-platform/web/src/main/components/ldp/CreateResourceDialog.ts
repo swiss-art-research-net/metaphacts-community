@@ -190,6 +190,6 @@ export class CreateResourceDialog extends
   }
 
   private getInputElement() {
-    return findDOMNode<HTMLInputElement>(this.refs[REF_LDP_RESOURCE_NAME]);
+    return findDOMNode(this.refs[REF_LDP_RESOURCE_NAME]) as HTMLInputElement;
   }
 }

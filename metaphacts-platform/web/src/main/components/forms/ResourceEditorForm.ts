@@ -30,7 +30,9 @@ import { navigateToResource, refresh, getCurrentResource } from 'platform/api/na
 import { Rdf } from 'platform/api/rdf';
 import { addNotification } from 'platform/components/ui/notification';
 import { addToDefaultSet } from 'platform/api/services/ldp-set';
-import { BrowserPersistence, isValidChild, universalChildren } from 'platform/components/utils';
+import {
+  BrowserPersistence, isValidChild, componentHasType, universalChildren
+} from 'platform/components/utils';
 import { ErrorNotification } from 'platform/components/ui/notification';
 
 import { FieldDefinitionProp } from './FieldDefinition';
@@ -229,10 +231,10 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
     let invalidFields: FieldDefinitionProp[] = [];
     Children.forEach(children, element => {
       if (!isValidChild(element)) { return; }
-      if (element.type === CompositeInput) {
+      if (componentHasType(element, CompositeInput)) {
         invalidFields = invalidFields.concat(getInvalidFields(element.props.fields));
       }
-      if ('children' in element.props) {
+      if (element.props.children) {
         const invalidNestedFormsFields = this.validateNestedFormsFields(element.props.children);
         invalidFields = invalidFields.concat(invalidNestedFormsFields);
       }
@@ -298,7 +300,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
     return Children.map(children, element => {
       if (!isValidChild(element)) { return element; }
 
-      if (element.type === ResourceEditorForm) {
+      if (componentHasType(element, ResourceEditorForm)) {
         // pass nested editor as is to support independent nested record creation
         return element;
       }
@@ -335,7 +337,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
         return element;
       }
 
-      if (element.type === RecoverNotification) {
+      if (componentHasType(element, RecoverNotification)) {
         return cloneElement(element, {
           recoveredFromStorage: this.state.recoveredFromStorage,
           discardRecoveredData: () => this.resetFormData(),
@@ -344,7 +346,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
 
       // need to map recursively through all children to find also deep nested
       // buttons (i.e. in tabs) or editors
-      if ('children' in element.props) {
+      if (element.props.children) {
         return cloneElement(element, {}, universalChildren(
           this.mapChildren(element.props.children)));
       }

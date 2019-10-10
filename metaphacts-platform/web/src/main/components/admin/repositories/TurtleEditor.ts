@@ -16,6 +16,8 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
+import * as React from 'react';
+
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/mode/turtle/turtle';
 
@@ -25,22 +27,14 @@ import 'codemirror/addon/fold/indent-fold';
 import 'codemirror/addon/edit/matchtags';
 import 'codemirror/addon/edit/matchbrackets';
 
-import {
-  Component, createFactory,
-} from 'react';
-
-import * as ReactCodeMirror from 'react-codemirror';
-
-
-
-const CodeMirror = createFactory(ReactCodeMirror);
+import { Controlled as ReactCodeMirror } from 'react-codemirror2';
 
 interface Props {
  turtleString: string;
  onChange?: (turtle: string) => void;
 }
 
-export class TurtleEditorComponent extends Component<Props, {source: string}> {
+export class TurtleEditorComponent extends React.Component<Props, {source: string}> {
   constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
@@ -61,11 +55,10 @@ export class TurtleEditorComponent extends Component<Props, {source: string}> {
       matchTags: {bothTags: true},
       matchBrackets: true,
     };
-    return CodeMirror({
-      ref: 'editor',
+    return React.createElement(ReactCodeMirror, {
       className: 'turtle-editor',
       value: this.state.source,
-      onChange: this.onChangeTurtle,
+      onBeforeChange: this.onChangeTurtle,
       options: {
         ...codeMirrorAddonOptions,
         mode: 'text/turtle',
@@ -78,7 +71,7 @@ export class TurtleEditorComponent extends Component<Props, {source: string}> {
     });
   }
 
-  onChangeTurtle = (source: string) => {
+  onChangeTurtle = (editor: {}, editorChange: {}, source: string) => {
     if (this.props.onChange) {
       this.props.onChange(source);
     } else {

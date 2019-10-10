@@ -188,6 +188,6 @@ export class HeadlessSaveSetDialog extends Component<HeadlessSaveSetDialogProps,
   }
 
   private getInputElement() {
-    return findDOMNode<HTMLInputElement>(this.refs['setName']);
+    return findDOMNode(this.refs['setName']) as HTMLInputElement;
   }
 }

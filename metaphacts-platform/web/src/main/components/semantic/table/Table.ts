@@ -30,7 +30,6 @@ import {
   RdfValueDisplay as RdfValue,
 } from 'platform/components/utils/RdfValueDisplay';
 
-import { Rdf } from 'platform/api/rdf';
 import { SparqlClient } from 'platform/api/sparql';
 
 import { TemplateItem } from 'platform/components/ui/template';
@@ -97,6 +96,7 @@ export interface TableConfig {
   onPageChange?: (page: number) => void;
   showLiteralDatatype?: boolean;
   linkParams?: {};
+  showCopyToClipboardButton?: boolean;
 }
 
 export type TableProps = TableConfig & Props<Table>;
@@ -241,12 +241,12 @@ export class Table extends Component<TableProps, {}> {
       binding => {
         _.forEach(
           data.head.vars, bindingVar =>
-            binding[bindingVar] = binding[bindingVar] ? binding[bindingVar] : Rdf.literal('')
+            binding[bindingVar] = binding[bindingVar]
         );
         _.forEach(
           additionalColumns,
           c => {
-            binding[c.displayName] = Rdf.literal('');
+            binding[c.displayName] = undefined;
           }
         );
         return binding;
@@ -311,7 +311,7 @@ export class Table extends Component<TableProps, {}> {
   private cellTemplateClass = (
     template?: string, showLabel?: boolean
   ): ComponentClass<any> => {
-    const {showLiteralDatatype, linkParams} = this.props;
+    const {showLiteralDatatype, linkParams, showCopyToClipboardButton} = this.props;
     const templateSource = _.isString(template) ? String(template) : undefined;
     return class extends Component<CellRendererProps, {}> {
       render(): ReactElement<any> {
@@ -331,6 +331,7 @@ export class Table extends Component<TableProps, {}> {
               showLabel: showLabel,
               showLiteralDatatype,
               linkParams,
+              showCopyToClipboardButton,
             }
           );
         }

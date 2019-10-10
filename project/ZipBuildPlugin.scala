@@ -122,6 +122,7 @@ object ZipBuildPlugin extends AutoPlugin {
     val jettyUrl = "http://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/"+jettyVersion+"/jetty-distribution-"+jettyVersion+".zip"
 
     val jettyFile = new File(System.getProperty("java.io.tmpdir"),"jetty"+jettyVersion+".zip");
+    log.info("Trying to find jetty in " + jettyFile);
     if(java.nio.file.Files.notExists(jettyFile.toPath())) {
       log.info("Jetty zip distribution file does not exist, downloading from: " +jettyUrl);
       IO.download(new URL(jettyUrl), jettyFile);
@@ -155,6 +156,7 @@ object ZipBuildPlugin extends AutoPlugin {
     val path = config.blazegraphUrl.split("/");
     val blazegraphVersion = path(path.length - 1);
     val blazegraphWar = new File(System.getProperty("java.io.tmpdir"), blazegraphVersion)
+    log.info("Trying to find blazegraph in " + blazegraphWar);
     if(java.nio.file.Files.notExists(blazegraphWar.toPath())) {
       log.info("Downloading blazegraph: " + config.blazegraphUrl + " to "+blazegraphWar.getAbsolutePath);
       IO.download(new URL(config.blazegraphUrl), blazegraphWar);

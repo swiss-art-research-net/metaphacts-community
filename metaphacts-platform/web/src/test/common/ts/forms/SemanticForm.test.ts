@@ -21,24 +21,17 @@ import * as D from 'react-dom-factories';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import * as LanguageService from 'platform/api/services/language';
-
-sinon.stub(ConfigHolder, 'getUIConfig', function() {
-  return {preferredLanguages: []};
-});
-sinon.stub(LanguageService, 'getPreferredUserLanguage', function() {
-  return undefined;
-});
-
 import { __unsafe__setCurrentResource } from 'platform/api/navigation';
 import { Rdf, vocabularies } from 'platform/api/rdf';
 import { FieldValue, PlainTextInput, FieldDefinitionProp } from 'platform/components/forms';
 
-__unsafe__setCurrentResource(Rdf.iri('test'));
+import { mockLanguagePreferences } from 'platform-tests/mocks';
 
 import { AsyncForm } from './fixturies/AsyncForm';
 import { FIELD_DEFINITION } from './fixturies/FieldDefinition';
+
+mockLanguagePreferences();
+__unsafe__setCurrentResource(Rdf.iri('test'));
 
 const ADD_BUTTON_SELECTOR = '.cardinality-support__add-value';
 const REMOVE_BUTTON_SELECTOR = '.cardinality-support__remove-value';
@@ -88,7 +81,7 @@ describe('SemanticForm', () => {
         'should have field with correct value after change');
       expect(formRdfValue.isLiteral(),
         'should have field of type literal after change').to.be.true;
-      expect((formRdfValue as Rdf.Literal).dataType.value).to.equal(
+      expect((formRdfValue as Rdf.Literal).datatype.value).to.equal(
         vocabularies.xsd._string.value,
         'should have field of data type xsd:string after change');
     });

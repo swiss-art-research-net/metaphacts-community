@@ -27,13 +27,46 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
  */
 public class FIELDS {
     
-    public static final String NAMESPACE = "http://www.metaphacts.com/ontologies/platform#";
-    
-    public static final IRI FIELD;
+    public static final String NAMESPACE = "http://www.metaphacts.com/ontology/fields#";
+
+    /**
+     * Types
+     */
+    public static final IRI FIELD_TYPE;
+
+    /**
+     * Predicates
+     */
+    public static final IRI MIN_OCCURS;
+    public static final IRI MAX_OCCURS;
+    public static final IRI XSD_DATATYPE;
+    public static final IRI DOMAIN;
+    public static final IRI RANGE;
+    public static final IRI DEFAULT_VALUE;
+    public static final IRI SELECT_PATTERN;
+    public static final IRI INSERT_PATTERN;
+    public static final IRI DELETE_PATTERN;
+    public static final IRI ASK_PATTERN;
+    public static final IRI AUTOSUGGESTION_PATTERN;
+    public static final IRI VALUE_SET_PATTERN;
+    public static final IRI TREE_PATTERNS;
     
     static {
-        ValueFactory f = SimpleValueFactory.getInstance(); 
-        FIELD = f.createIRI(NAMESPACE, "Field");
+        ValueFactory vf = SimpleValueFactory.getInstance();
+        FIELD_TYPE = vf.createIRI(NAMESPACE, "Field");
+        MIN_OCCURS = vf.createIRI(NAMESPACE, "minOccurs");
+        MAX_OCCURS = vf.createIRI(NAMESPACE, "maxOccurs");
+        XSD_DATATYPE = vf.createIRI(NAMESPACE, "xsdDatatype");
+        DOMAIN = vf.createIRI(NAMESPACE, "domain");
+        RANGE = vf.createIRI(NAMESPACE, "range");
+        DEFAULT_VALUE = vf.createIRI(NAMESPACE, "defaultValue");
+        SELECT_PATTERN = vf.createIRI(NAMESPACE, "selectPattern");
+        INSERT_PATTERN = vf.createIRI(NAMESPACE, "insertPattern");
+        DELETE_PATTERN = vf.createIRI(NAMESPACE, "deletePattern");
+        ASK_PATTERN = vf.createIRI(NAMESPACE, "askPattern");
+        AUTOSUGGESTION_PATTERN = vf.createIRI(NAMESPACE, "autosuggestionPattern");
+        VALUE_SET_PATTERN = vf.createIRI(NAMESPACE, "valueSetPattern");
+        TREE_PATTERNS = vf.createIRI(NAMESPACE, "treePatterns");
     }
 
 }

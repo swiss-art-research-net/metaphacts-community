@@ -29,7 +29,7 @@ import org.eclipse.rdf4j.repository.RepositoryException;
 import com.google.common.base.Throwables;
 import com.metaphacts.data.rdf.PointedGraph;
 import com.metaphacts.repository.MpRepositoryProvider;
-import com.metaphacts.vocabulary.FIELDS;
+import com.metaphacts.vocabulary.PLATFORM;
 import com.metaphacts.vocabulary.LDP;
 
 
@@ -51,7 +51,7 @@ public class FieldDefinitionContainer extends DefaultLDPContainer {
 
     @Override
     public IRI getResourceType() {
-        return FIELDS.FIELD;
+        return PLATFORM.FIELD;
     }
 
     public void initialize() {

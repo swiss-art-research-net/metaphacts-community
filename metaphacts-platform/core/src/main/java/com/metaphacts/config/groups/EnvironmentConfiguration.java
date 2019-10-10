@@ -169,7 +169,7 @@ public class EnvironmentConfiguration extends ConfigurationGroupBase {
      * Use local users from shiro.ini even if sso/ldap is in use.
      */
     @ConfigurationParameter
-    public Boolean enableLocalUsers() {
+    public Boolean isEnableLocalUsers() {
         return getBoolean("enableLocalUsers", false);
     }
 

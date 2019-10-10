@@ -33,15 +33,26 @@ import java.util.Optional;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 
-import com.metaphacts.services.storage.api.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.plugin.PlatformPlugin;
 import com.metaphacts.plugin.PlatformPluginManager;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.ObjectMetadata;
+import com.metaphacts.services.storage.api.ObjectRecord;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PathMapping;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StorageConfig;
+import com.metaphacts.services.storage.api.StorageConfigException;
+import com.metaphacts.services.storage.api.StorageConfigLoader;
+import com.metaphacts.services.storage.api.StorageCreationParams;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StoragePath;
+import com.metaphacts.services.storage.api.StorageRegistry;
 import com.metaphacts.services.storage.file.NonVersionedFileStorage;
 
 /**
@@ -76,8 +87,9 @@ public class MainPlatformStorage implements PlatformStorage {
         try {
             initialize(pluginManager, storageRegistry);
         } catch (StorageConfigException | StorageException ex) {
-            logger.error("Failed to initialize platform storage system", ex);
-            throw new StorageConfigException("Failed to initialize platform storage system");
+            logger.error("Failed to initialize platform storage system: " + ex.getMessage());
+            logger.debug("Details: ", ex);
+            throw new StorageConfigException("Failed to initialize platform storage system", ex);
         }
     }
 

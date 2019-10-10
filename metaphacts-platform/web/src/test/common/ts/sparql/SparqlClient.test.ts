@@ -23,14 +23,14 @@ import * as chaiString from 'chai-string';
 use(chaiString);
 
 import * as NamespaceService from 'platform/api/services/namespace';
-sinon.stub(NamespaceService, 'getRegisteredPrefixes', function() {
+sinon.stub(NamespaceService, 'getRegisteredPrefixes').callsFake(function() {
   return Kefir.constant({});
 });
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
-import mockRequest from '../../../xhrTestUtils';
+import { mockRequest } from 'platform-tests/mocks';
 
 describe('SparqlClient', function() {
   mockRequest();

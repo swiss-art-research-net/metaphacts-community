@@ -71,6 +71,10 @@ function wrapComponent<F extends Function>(original: F): F {
     }
     comp[WRAPPED_BY_CATCHER] = true;
 
+    if (!comp.prototype.componentDidCatch) {
+      comp.prototype.componentDidCatch = defaultComponentDidCatch;
+    }
+
     const unsafeRender = comp.prototype.render;
     // Default unstable_handleError (without override) set state item
     // that leads to error message rendering
@@ -111,6 +115,16 @@ function wrapComponent<F extends Function>(original: F): F {
 
     return original.apply(this, arguments);
   } as any;
+}
+
+function defaultComponentDidCatch(
+  this: React.Component<any, any>,
+  error: any,
+  info: { componentStack: string }
+) {
+  console.error(error);
+  console.error(info.componentStack);
+  this.setState({[ERROR]: error});
 }
 
 function getError(componentInstance: any) {

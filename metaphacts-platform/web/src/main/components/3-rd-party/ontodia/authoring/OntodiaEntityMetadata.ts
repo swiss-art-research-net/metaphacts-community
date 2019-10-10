@@ -33,7 +33,7 @@ import {
   SemanticForm, FieldDefinition, normalizeFieldDefinition, validateFieldConfiguration,
   FieldMapping, mapChildToComponent,
 } from 'platform/components/forms';
-import { hasBaseDerivedRelationship, universalChildren } from 'platform/components/utils';
+import { isValidChild, componentHasType, universalChildren } from 'platform/components/utils';
 
 export interface OntodiaEntityMetadataProps {
   entityTypeIri: string;
@@ -93,7 +93,7 @@ export function extractAuthoringMetadata(
 ): Map<ElementTypeIri, EntityMetadata> {
   const metadata = new Map<ElementTypeIri, EntityMetadata>();
   for (const child of markup) {
-    if (hasBaseDerivedRelationship(ResourceEditorForm, child.type)) {
+    if (componentHasType(child, ResourceEditorForm)) {
       collectMetadataFromFormOrComposite(child, undefined, metadata);
     }
   }
@@ -103,7 +103,7 @@ export function extractAuthoringMetadata(
 function collectMetadataFromFormOrComposite(
   formOrComposite: ReactElement<ResourceEditorFormProps | CompositeInputProps>,
   parent: EntityParent | undefined,
-  collectedMetadata: Map<ElementTypeIri, EntityMetadata>,
+  collectedMetadata: Map<ElementTypeIri, EntityMetadata>
 ) {
   const {form, metadataElement} = extractEntityFormAndMetadata(formOrComposite);
   const {entityTypeIri, labelIri, typeIri, imageIri, forceIris} = metadataElement.props;
@@ -170,12 +170,7 @@ function validateFormFieldsDatatype(children: ReactNode | undefined, metadata: E
     if (!mapping || FieldMapping.isComposite(mapping)) { return; }
     if (FieldMapping.isInput(mapping)) {
       const field = metadata.fieldById.get(mapping.props.for);
-      const isImageField = metadata.imageField && metadata.imageField.iri === field.iri;
-      const isForceField = metadata.forceFields.has(field.iri);
-      if (
-        !isImageField && !isForceField &&
-        (!field.xsdDatatype || xsd.anyURI.equals(field.xsdDatatype))
-      ) {
+      if (isObjectProperty(field, metadata)) {
         throw new Error(`XSD Datatype of the field <${field.iri}> isn't literal`);
       }
     } else if (FieldMapping.isOtherElement(mapping)) {
@@ -187,12 +182,12 @@ function validateFormFieldsDatatype(children: ReactNode | undefined, metadata: E
 function collectMetadataFromMarkup(
   children: ReactNode | undefined,
   parentType: ElementTypeIri,
-  collectedMetadata: Map<ElementTypeIri, EntityMetadata>,
+  collectedMetadata: Map<ElementTypeIri, EntityMetadata>
 ) {
   if (!children) { return; }
   React.Children.forEach(children, child => {
-    if (typeof child === 'object') {
-      if (hasBaseDerivedRelationship(CompositeInput, child.type)) {
+    if (isValidChild(child)) {
+      if (componentHasType(child, CompositeInput)) {
         const parent: EntityParent = {
           type: parentType,
           fieldIri: (child.props as CompositeInputProps).for,
@@ -214,9 +209,9 @@ function extractEntityFormAndMetadata(
   entityForm: ReactElement<ResourceEditorFormProps | CompositeInputProps>
 ): EntityFormAndMetadata {
   const children = Children.toArray(entityForm.props.children);
-  const metadataElement = children.find(child => {
-    return typeof child === 'object' && hasBaseDerivedRelationship(OntodiaEntityMetadata, child.type)
-  }) as ReactElement<OntodiaEntityMetadataProps> | undefined;
+  const metadataElement = children.find(
+    child => componentHasType(child, OntodiaEntityMetadata)
+  ) as ReactElement<OntodiaEntityMetadataProps> | undefined;
   if (!metadataElement) {
     throw new Error(`Entity form should have a single semantic-entity-metadata as direct child`);
   }
@@ -227,7 +222,7 @@ function extractEntityFormAndMetadata(
 
 function augmentPatternWithEntityType(
   field: FieldDefinition,
-  entityTypeIri: string,
+  entityTypeIri: string
 ): FieldDefinition {
   const query = SparqlUtil.parseQuery(field.selectPattern);
   if (query.type !== 'query') {
@@ -243,6 +238,13 @@ function augmentPatternWithEntityType(
   });
   const selectPattern = SparqlUtil.serializeQuery(query);
   return {...field, selectPattern};
+}
+
+export function isObjectProperty(field: FieldDefinition, metadata: EntityMetadata) {
+  const isImageField = metadata.imageField && metadata.imageField.iri === field.iri;
+  const isForceField = metadata.forceFields.has(field.iri);
+  return !isImageField && !isForceField &&
+    (!field.xsdDatatype || xsd.anyURI.equals(field.xsdDatatype));
 }
 
 export default OntodiaEntityMetadata;

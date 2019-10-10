@@ -18,7 +18,6 @@
 
 package com.metaphacts.templates;
 
-import com.metaphacts.templates.helper.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,6 +28,7 @@ import com.github.jknack.handlebars.Options;
 import com.github.jknack.handlebars.cache.ConcurrentMapTemplateCache;
 import com.github.jknack.handlebars.io.TemplateLoader;
 import com.google.inject.Singleton;
+import com.metaphacts.templates.helper.DocumentationHelper;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -67,9 +67,9 @@ public class MetaphactsHandlebars extends Handlebars{
         with(EscapingStrategy.NOOP);
         registerMetaphactsHelper(helperRegistry);
         if(templateLoader!=null){
-            logger.info("Initialized backend handlebars engine with template loader:  " + templateLoader.getClass());
+            logger.debug("Initialized backend handlebars engine with template loader:  " + templateLoader.getClass());
         }else{
-            logger.error("Initialized backend handlebars engine with no template loader. Default (classpath) template loader will be used.");
+            logger.debug("Initialized backend handlebars engine with no template loader. Default (classpath) template loader will be used.");
         }
 
     }
@@ -80,6 +80,8 @@ public class MetaphactsHandlebars extends Handlebars{
         // register DocumentationHelper
         registerHelper("documentation", new DocumentationHelper());
 
-        logger.info("Registered the following handlebars template helper: \n"+this.helpers());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Registered the following handlebars template helper: \n" + this.helpers());
+        }
     }
 }

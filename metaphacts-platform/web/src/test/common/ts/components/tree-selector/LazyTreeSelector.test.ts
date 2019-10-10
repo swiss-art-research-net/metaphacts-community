@@ -20,8 +20,9 @@ import { ReactElement, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import { expect, assert } from 'chai';
 import * as sinon from 'sinon';
-import { shallow, mount } from 'enzyme';
 import { assign } from 'lodash';
+
+import { mount } from 'platform-tests/configuredEnzyme';
 
 import {
   SingleFullSubtree, LazyTreeSelector, LazyTreeSelectorProps,

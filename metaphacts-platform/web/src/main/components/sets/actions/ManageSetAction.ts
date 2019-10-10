@@ -17,7 +17,7 @@
  */
 
 import * as Maybe from 'data.maybe';
-import { Children, cloneElement } from 'react';
+import * as React from 'react';
 
 import { Component, ComponentContext } from 'platform/api/components';
 
@@ -50,8 +50,8 @@ export class ManageSetAction extends Component<{}, void> {
   }
 
   public render() {
-    const child = Children.only(this.props.children);
-    return cloneElement(child, {onClick: this.onClick});
+    const child = React.Children.only(this.props.children) as React.ReactElement<any>;
+    return React.cloneElement(child, {onClick: this.onClick});
   }
 }
 

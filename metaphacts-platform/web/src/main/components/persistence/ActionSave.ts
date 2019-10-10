@@ -31,6 +31,7 @@ import { ldpc } from 'platform/api/services/ldp';
 import { addToDefaultSet } from 'platform/api/services/ldp-set';
 
 import { Spinner } from 'platform/components/ui/spinner/Spinner';
+import { isValidChild } from 'platform/components/utils';
 import {
   ResourceLinkComponent
 } from 'platform/api/navigation/components/ResourceLinkComponent';
@@ -165,7 +166,7 @@ export class ActionSaveComponent extends Component<Props, State> {
   }
 
   render() {
-    if (Children.count(this.props.children) === 1) {
+    if (isValidChild(this.props.children)) {
       const child = Children.only(this.props.children);
       return cloneElement(
         child, {...child.props, onClick: this.onClick}, ...child.props.children, this.renderModal()

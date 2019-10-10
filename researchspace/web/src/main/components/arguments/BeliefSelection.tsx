@@ -113,7 +113,8 @@ export class BeliefSelection extends React.Component<BeliefSelectionProps, State
               multiSelection={multiSelection}
               record={belief.record} types={belief.types}
               placeholder={messages.fieldSelectionPlaceholder}
-              onCancel={this.onCancelBelief} onSave={this.onFieldSelection}
+              onCancel={this.onCancelBelief}
+              onSave={this.onFieldSelection}
             />
           </Col>
         </FormGroup>
@@ -159,8 +160,8 @@ export class BeliefSelection extends React.Component<BeliefSelectionProps, State
       }
     );
 
-  private onFieldSelection = (selected: Array<ArgumentsFieldDefinition> | Rdf.Iri) => {
-    const normalizedSelected = this.props.multiSelection ? selected : [selected];
+  private onFieldSelection = (selected: Array<ArgumentsFieldDefinition> | ArgumentsFieldDefinition) => {
+    const normalizedSelected = Array.isArray(selected) ? selected : [selected];
     this.setState((state: State) => ({
       belief: state.belief.map(belief => ({...belief, selectedFields: normalizedSelected})),
     }));

@@ -18,15 +18,13 @@
 
 package com.metaphacts.servlet;
 
+import static com.metaphacts.config.ConfigurationUtil.createEmptyConfig;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.PlatformStorage;
-import com.metaphacts.services.storage.api.StoragePath;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
@@ -41,8 +39,10 @@ import org.mitre.dsmiley.httpproxy.ProxyServlet;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
-import static com.metaphacts.config.ConfigurationUtil.createEmptyConfig;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.PlatformStorage.FindResult;
+import com.metaphacts.services.storage.api.StoragePath;
 
 public class ProxyConfigs {
     private static final StoragePath PROXY_CONFIG_OBJECT_ID = ObjectKind.CONFIG.resolve("proxy.prop");
@@ -136,11 +136,7 @@ public class ProxyConfigs {
             CompositeConfiguration config = new CompositeConfiguration();
             config.addConfiguration(new SystemConfiguration());
 
-            Optional<PlatformStorage.FindResult> found =
-                platformStorage.findObject(PROXY_CONFIG_OBJECT_ID);
-
-            if (found.isPresent()) {
-                PlatformStorage.FindResult findResult = found.get();
+            for (FindResult findResult : platformStorage.findOverrides(PROXY_CONFIG_OBJECT_ID)) {
                 logger.info("Loading proxy configuration from storage '{}' at path: {}",
                     findResult.getAppId(), findResult.getRecord().getPath());
 

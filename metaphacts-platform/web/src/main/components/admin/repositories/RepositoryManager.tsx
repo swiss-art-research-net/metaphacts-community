@@ -114,7 +114,7 @@ export class RepositoryManager extends Component<{}, State> {
             <span className={classNames(statusCls)}></span>
           </td>
         </tr>;
-    });
+    }).toArray();
 
     return <table className='table table-striped'>
       <thead>

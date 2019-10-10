@@ -19,24 +19,17 @@
 import { createElement } from 'react';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { mount, shallow } from 'enzyme';
-import * as Immutable from 'immutable';
 import ReactSelect from 'react-select';
-
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import * as LanguageService from 'platform/api/services/language';
-
-sinon.stub(ConfigHolder, 'getUIConfig', function() {
-  return {preferredLanguages: []};
-});
-sinon.stub(LanguageService, 'getPreferredUserLanguage', function() {
-  return undefined;
-});
 
 import { Rdf } from 'platform/api/rdf';
 import {
-  SelectInput, SelectInputProps, SparqlBindingValue, FieldValue, normalizeFieldDefinition,
+  SelectInput, SelectInputProps, FieldValue, normalizeFieldDefinition,
 } from 'platform/components/forms';
+
+import { shallow, mount } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
+
+mockLanguagePreferences();
 
 const DATATYPE = Rdf.iri('http://www.w3.org/2001/XMLSchema-datatypes#string');
 

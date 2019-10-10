@@ -212,6 +212,14 @@
       </mp-copy-to-clipboard>
     </mp-code-example>
     
+    <h2>Has Permission Component</h2>
+    The <code><mp-has-permission></mp-has-permission></code> component displays child component if user has the required permission, otherwise displays nothing.
+    <mp-code-example>
+      <mp-has-permission permission='sparql:update'>
+        <div>This will be rendered if the currently logged-in user has the permission "sparql:update"</div>
+      </mp-has-permission>
+    </mp-code-example>
+    
     <h2><semantic-link iri="http://help.metaphacts.com/resource/MPSplitPaneComponent">Split Pane Component</semantic-link></h2>
   </div>
 </div>

@@ -115,7 +115,7 @@ export function validateType(
     if (selected.value.isLiteral()) {
       const literal = selected.value as Rdf.Literal;
       return withInputError(selected,
-        `Selected value is ${XsdDataTypeValidation.datatypeToString(literal.dataType)} ` +
+        `Selected value is ${XsdDataTypeValidation.datatypeToString(literal.datatype)} ` +
         `where IRI expected`);
     } else {
       const validation: XsdDataTypeValidation.ValidationResult = XsdDataTypeValidation.validate(
@@ -142,7 +142,7 @@ export function validateType(
       } else {
         return withInputError(selected,
           `XSD datatype of selected value is ` +
-          `${XsdDataTypeValidation.datatypeToString(literal.dataType)} where ` +
+          `${XsdDataTypeValidation.datatypeToString(literal.datatype)} where ` +
           `${XsdDataTypeValidation.datatypeToString(datatype)} expected`);
       }
     } else {
@@ -153,14 +153,14 @@ export function validateType(
 }
 
 function coerceTo(datatype: Rdf.Iri, value: Rdf.Literal): Rdf.Literal {
-  if (XsdDataTypeValidation.sameXsdDatatype(datatype, value.dataType)) {
+  if (XsdDataTypeValidation.sameXsdDatatype(datatype, value.datatype)) {
     return value;
   } else if (XsdDataTypeValidation.sameXsdDatatype(datatype, vocabularies.xsd._string)
-    && XsdDataTypeValidation.sameXsdDatatype(value.dataType, vocabularies.rdf.langString)) {
+    && XsdDataTypeValidation.sameXsdDatatype(value.datatype, vocabularies.rdf.langString)) {
     // langString -> string
     return Rdf.literal(value.value, datatype);
   } else if (XsdDataTypeValidation.sameXsdDatatype(datatype, vocabularies.rdf.langString)
-    && XsdDataTypeValidation.sameXsdDatatype(value.dataType, vocabularies.xsd._string)) {
+    && XsdDataTypeValidation.sameXsdDatatype(value.datatype, vocabularies.xsd._string)) {
     // string -> langString
     return value;
   } else {

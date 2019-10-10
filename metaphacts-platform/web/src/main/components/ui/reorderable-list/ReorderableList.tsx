@@ -17,8 +17,10 @@
  */
 
 import * as React from 'react';
-import { Component, CSSProperties, ReactChild } from 'react';
+import { Component, CSSProperties } from 'react';
 import * as classnames from 'classnames';
+
+import { isValidChild } from 'platform/components/utils';
 
 import { Ordering } from './Ordering';
 
@@ -72,7 +74,7 @@ export class ReorderableList extends Component<Props, State> {
     );
   }
 
-  renderItem(item: ReactChild, index: number) {
+  renderItem(item: React.ReactNode, index: number) {
     const {dragByHandle, itemClass, itemBodyClass} = this.props;
     const {draggingIndex} = this.state;
     return (
@@ -152,8 +154,14 @@ export class ReorderableList extends Component<Props, State> {
   }
 }
 
-function getChildKey(child: ReactChild): string | number {
-  return typeof child === 'object' ? child.key : child;
+function getChildKey(child: React.ReactNode): string | number {
+  if (typeof child === 'string' || typeof child === 'number') {
+    return child;
+  } else if (isValidChild(child)) {
+    return child.key;
+  } else {
+    throw new Error('Unexpected child type for ReorderableList');
+  }
 }
 
 export default ReorderableList;

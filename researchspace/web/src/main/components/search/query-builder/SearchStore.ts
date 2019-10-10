@@ -475,9 +475,12 @@ export class SearchStore {
         state, this.selectTextDisjunctState(deepestActiveState, range)
       );
     } else {
-      return this.updateNestedState(
-        state, this.selectRelationState(deepestActiveState, range)
-      );
+      let newState: SearchState = this.selectRelationState(deepestActiveState, range);
+      if (newState.relations.size === 1) {
+        const relation = newState.relations.first();
+        newState = this.selectTermState(newState, relation)
+      }
+      return this.updateNestedState(state, newState);
     }
   }
 

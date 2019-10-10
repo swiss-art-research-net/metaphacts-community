@@ -20,22 +20,22 @@ package com.metaphacts.repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
-import com.metaphacts.services.storage.api.ObjectMetadata;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PlatformStorage;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.rdf4j.common.iteration.Iterations;
 import org.eclipse.rdf4j.http.client.HttpClientDependent;
 import org.eclipse.rdf4j.http.client.SessionManagerDependent;
 import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.repository.DelegatingRepository;
 import org.eclipse.rdf4j.repository.Repository;
@@ -66,8 +66,11 @@ import com.metaphacts.data.rdf.container.LDPApiInternalRegistry;
 import com.metaphacts.repository.memory.MpMemoryRepository;
 import com.metaphacts.repository.memory.MpMemoryRepositoryImplConfig;
 import com.metaphacts.repository.sparql.DefaultMpSPARQLRepositoryFactory;
-import com.metaphacts.repository.sparql.MpSharedHttpClientSessionManager;
 import com.metaphacts.repository.sparql.MpSPARQLRepositoryConfig;
+import com.metaphacts.repository.sparql.MpSharedHttpClientSessionManager;
+import com.metaphacts.services.storage.api.ObjectMetadata;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PlatformStorage;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -92,6 +95,7 @@ public class RepositoryManager implements RepositoryManagerInterface {
     public static final String TEST_REPOSITORY_ID = "tests";
 
     private final MpSharedHttpClientSessionManager client;
+    private final WeakReference<Thread> hookReference;
 
     // Removed the common serviceResolver as some repositories might have their own specific resolvers:
     // e.g., to make some repositories accessible via a SERVICE clause and some other ones hidden.
@@ -132,12 +136,12 @@ public class RepositoryManager implements RepositoryManagerInterface {
         this.platformStorage = platformStorage;
         this.ldpCache = ldpCache;
 
-        File baseDataFolder = new File(config.getRuntimeDirectory(), "data");
+        File baseDataFolder = new File(Configuration.getRuntimeDirectory(), "data");
         this.repositoryDataFolder = new File(baseDataFolder, "repositories");
         this.client = new MpSharedHttpClientSessionManager(config);
 
         init();
-        addShutdownHook(this);
+        this.hookReference = new WeakReference<>(addShutdownHook(this));
     }
 
     private void init() throws IOException {
@@ -175,13 +179,32 @@ public class RepositoryManager implements RepositoryManagerInterface {
         }
     }
 
-    private void addShutdownHook(final RepositoryManager repositoryManager) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
+    private Thread addShutdownHook(final RepositoryManager repositoryManager) {
+        Thread hook = new Thread() {
             public void run() {
                 logger.info("Trying to shutdown repository manager.");
-                repositoryManager.shutdown();
+                repositoryManager.shutdown(false);
             }
-        });
+        };
+        logger.debug("Registering RepositoryManager shutdown hook");
+        Runtime.getRuntime().addShutdownHook(hook);
+        return hook;
+    }
+    
+    private void removeShutdownHook(Thread hook) {
+        try {
+            if (hook != null) {
+                logger.debug("Unregistering RepositoryManager shutdown hook");
+                // note that this will fail when it is actually called from the shutdown  
+                // hook as in that state the hook cannot be unregistered any more
+                Runtime.getRuntime().removeShutdownHook(hook);
+            }
+        }
+        catch (Throwable t) {
+            // the exception is expected when called from within the shutdown hook
+            logger.warn("Failed to unregister RepositoryManager shutdown hook: {}", t.getMessage());
+            logger.debug("Details:", t);
+        }
     }
 
     public Repository getDefault(){
@@ -323,7 +346,7 @@ public class RepositoryManager implements RepositoryManagerInterface {
         // this is mainly relevant for native repository
         repository.setDataDir(new File(getRepositoryDataFolder(),repConfig.getID()));
 
-        repository.initialize();
+        repository.init();
         
         if (initializedRepositories.containsKey(repConfig.getID())) {
             initializedRepositories.get(repConfig.getID()).shutDown();
@@ -333,6 +356,37 @@ public class RepositoryManager implements RepositoryManagerInterface {
         logger.info("Repository with id \"{}\" successfully initialized",repConfig.getID());
 
         return repository;
+    }
+
+    /**
+     * Validate the given {@link RepositoryImplConfig} by opening a
+     * {@link RepositoryConnection} and send a dummy query.
+     * 
+     * @param repImplConfig
+     * @param repId
+     */
+    public void validate(RepositoryImplConfig repImplConfig, String repId) {
+
+        Repository repo = createRepositoryStack(repImplConfig);
+        // set the data dir to /data/repositories/{repositoryID}
+        // this is mainly relevant for native repository
+        repo.setDataDir(new File(getRepositoryDataFolder(), repId));
+
+        repo.init();
+        try {
+
+            try (RepositoryConnection conn = repo.getConnection()) {
+                TupleQuery tq = conn.prepareTupleQuery("SELECT * WHERE { }");
+                try (TupleQueryResult tqr = tq.evaluate()) {
+                    // just consume the result
+                    Iterations.asList(tqr);
+                }
+            }
+
+        } finally {
+            repo.shutDown();
+        }
+
     }
 
     protected synchronized Repository createRepositoryStack(RepositoryImplConfig repImplConfig) {
@@ -378,7 +432,11 @@ public class RepositoryManager implements RepositoryManagerInterface {
         return repository;
     }
 
-    public synchronized void shutdown(){
+    public void shutdown(){
+        shutdown(true);
+    }
+    
+    private synchronized void shutdown(boolean unregisterShutdownHook) {
         for(Entry<String, Repository> entry : initializedRepositories.entrySet()){
            try{
                if(isProtected(entry.getKey())){
@@ -396,6 +454,11 @@ public class RepositoryManager implements RepositoryManagerInterface {
         getDefault().shutDown();
         getAssetRepository().shutDown();
         initializedRepositories.clear();
+        
+        if (unregisterShutdownHook) {
+            // unregister shutdown hook as everything is done
+            removeShutdownHook(hookReference.get());
+        }
     }
 
     public synchronized void shutdownRepository(final String repID) throws RepositoryException, IllegalArgumentException{

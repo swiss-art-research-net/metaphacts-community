@@ -56,7 +56,7 @@ export class Panel extends Component<PanelProps, {}> {
   }
 
   private findComponent =
-    (children: Array<ReactChild>, component: ComponentClass<any>): ReactElement<any> => {
+    (children: Array<React.ReactNode>, component: ComponentClass<any>): ReactElement<any> => {
       const element =
         _.find(
           children, child => (child as React.ReactElement<any>).type === component

@@ -16,16 +16,13 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import * as classnames from 'classnames';
 import * as Kefir from 'kefir';
 import * as React from 'react';
-import { KeyboardEvent, MouseEvent, Component } from 'react';
+import { Component } from 'react';
 import * as maybe from 'data.maybe';
 import * as _ from 'lodash';
-import { Button, ButtonToolbar, FormControl } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import * as Either from 'data.either';
-import ReactSelect from 'react-select';
-import TextareaAutosize from 'react-textarea-autosize';
 
 import { SparqlClient } from 'platform/api/sparql';
 import * as ConfigService from 'platform/api/services/config';
@@ -36,7 +33,6 @@ import { ErrorNotification, ErrorPresenter } from 'platform/components/ui/notifi
 import { Alert, AlertType } from 'platform/components/ui/alert';
 import { RemovableBadge } from 'platform/components/ui/inputs';
 import { Spinner } from 'platform/components/ui/spinner';
-import { refresh } from 'platform/api/navigation';
 
 import { InlineValuesEditor, ConfigRecord } from './InlineValuesEditor';
 
@@ -52,7 +48,7 @@ interface State {
   apps?: ReadonlyArray<ConfigService.ConfigStorageStatus>;
   data?: ReadonlyArray<ConfigRecord>;
   loadingError?: any;
-  alertError?: any;
+  alertError?: { originalError: any, propertyName: string };
   alertType?: AlertType;
   editedProperty?: string;
   savingProperty?: boolean;
@@ -80,11 +76,6 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
     }
     return <div className={styles.component}>
       {this.getTable()}
-      {this.state.alertError ? (
-        <Alert alert={this.state.alertType} message={''}>
-          <ErrorPresenter error={this.state.alertError} />
-        </Alert>
-      ) : null}
       {this.props.editable ? null : (
         <i>{capitalizeFirstLetter(this.props.group)}
           &nbsp;configuration group is not editable during runtime.</i>
@@ -105,10 +96,15 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
 
   private getTable() {
     const {editable} = this.props;
-    const {apps, editedProperty, savingProperty} = this.state;
+    const {apps, editedProperty, savingProperty, alertError, alertType} = this.state;
 
     const setEditedProperty = (propertyName: string | undefined) => {
-      this.setState({editedProperty: propertyName});
+      const hideError = alertError && propertyName === alertError.propertyName;
+      this.setState({
+        editedProperty: propertyName,
+        alertError: hideError ? undefined : alertError,
+        alertType: hideError ? AlertType.NONE : alertType,
+      });
     };
     const submitProperty = (values: ReadonlyArray<string>, targetApp: string) => {
       this.onSetConfig(editedProperty, values, targetApp);
@@ -137,24 +133,32 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
             onSave={submitProperty}
             onCancel={() => setEditedProperty(undefined)}
           />;
-        } else if (record.values.length === 0) {
-          return <div className={styles.noValue}>(no value)</div>;
         } else {
-          return (
-            <div className={styles.propertyValuesCell}>
-              <div className={styles.propertyValues}>
-                {record.values.map((value, index) =>
-                  <div key={index} className={styles.propertyValue}>{value}</div>
-                )}
-              </div>
-              <Button className={styles.editValue}
-                bsSize='xs'
-                disabled={!editable || savingProperty}
-                onClick={() => setEditedProperty(record.name)}>
-                <span className='fa fa-pencil' /> Edit
-              </Button>
-            </div>
-          );
+          const hasRelatedError = alertError && record.name === alertError.propertyName;
+          return <div>
+            {record.values.length === 0 ?
+              <div className={styles.noValue}>(no value)</div> : (
+                <div className={styles.propertyValuesCell}>
+                  <div className={styles.propertyValues}>
+                    {record.values.map((value, index) =>
+                      <div key={index} className={styles.propertyValue}>{value}</div>
+                    )}
+                  </div>
+                  <Button className={styles.editValue}
+                    bsSize='xs'
+                    disabled={!editable || savingProperty}
+                    onClick={() => setEditedProperty(record.name)}>
+                    <span className='fa fa-pencil' /> Edit
+                  </Button>
+                </div>
+              )
+            }
+            {hasRelatedError ? 
+              <Alert alert={alertType} message={''}>
+                <ErrorPresenter error={alertError.originalError} />
+              </Alert> : ''
+            }
+          </div>;
         }
       }
     };
@@ -256,7 +260,7 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
         this.setState({
           editedProperty: undefined,
           savingProperty: false,
-          alertError: err,
+          alertError: { propertyName, originalError: err },
           alertType: AlertType.DANGER,
         });
       },
@@ -280,7 +284,7 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
         this.setState({
           editedProperty: undefined,
           savingProperty: false,
-          alertError: err,
+          alertError: { propertyName, originalError: err },
           alertType: AlertType.DANGER,
         })
       },

@@ -20,17 +20,12 @@ package com.metaphacts.templates.helper;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.*;
-import com.metaphacts.services.fields.FieldsBasedSearch;
-import com.metaphacts.services.fields.SearchConfigMerger;
-import com.metaphacts.services.fields.SearchRelation;
+import com.metaphacts.services.fields.*;
 import com.metaphacts.templates.TemplateContext;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
@@ -39,16 +34,15 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.query.BindingSet;
-import org.eclipse.rdf4j.queryrender.RenderUtils;
 
-import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.Options;
 import com.metaphacts.cache.LabelCache;
 import com.metaphacts.data.json.JsonUtil;
-import com.metaphacts.data.rdf.container.FieldDefinitionContainer;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.templates.helper.HelperUtil.QueryResult;
 import org.eclipse.rdf4j.rio.ntriples.NTriplesUtil;
+
+import javax.annotation.Nullable;
 
 import static java.util.stream.Collectors.toList;
 
@@ -66,16 +60,19 @@ public class FieldDefinitionSource {
     private static final Logger logger = LogManager.getLogger(FieldDefinitionSource.class);
 
     private final RepositoryManager repositoryManager;
+    private final FieldDefinitionManager fieldDefinitionManager;
     private final FieldsBasedSearch fieldsBasedSearch;
 
     private final LabelCache labelCache;
 
     public FieldDefinitionSource(
         RepositoryManager repositoryManager,
+        FieldDefinitionManager fieldDefinitionManager,
         FieldsBasedSearch fieldsBasedSearch,
         LabelCache labelCache
     ) {
         this.repositoryManager = repositoryManager;
+        this.fieldDefinitionManager = fieldDefinitionManager;
         this.fieldsBasedSearch = fieldsBasedSearch;
         this.labelCache = labelCache;
     }
@@ -95,7 +92,12 @@ public class FieldDefinitionSource {
      * </code></pre>
      */
     public String fieldDefinitions(Options options) {
-        return this.generateFieldDefinitons(options.hash, options);
+        ValueFactory vf = SimpleValueFactory.getInstance();
+        LinkedHashMap<String, IRI> aliasMap = new LinkedHashMap<>();
+        options.hash.forEach((alias, iri) -> {
+            aliasMap.put(alias, vf.createIRI((String)iri));
+        });
+        return this.generateFieldDefinitions(aliasMap.isEmpty() ? null : aliasMap, options);
     }
 
     /**
@@ -116,72 +118,58 @@ public class FieldDefinitionSource {
             throw new IllegalArgumentException("Binding variable " + FIELD_BINDING_VARIABLE + " does not exist in query result.");
         }
 
-        Map<String, Object> aliasMap = new LinkedHashMap<>();
+        LinkedHashMap<String, IRI> aliasMap = new LinkedHashMap<>();
         for (BindingSet b: result.bindings) {
-            String field = b.getBinding(FIELD_BINDING_VARIABLE).getValue().stringValue();
+            Value field = b.getBinding(FIELD_BINDING_VARIABLE).getValue();
+            if (!(field instanceof IRI)) {
+                continue;
+            }
             String alias = b.hasBinding(FIELD_ALIAS_BINDING_VARIABLE)
-                ? b.getBinding(FIELD_ALIAS_BINDING_VARIABLE).getValue().stringValue() : field;
-            aliasMap.put(alias, field);
+                ? b.getBinding(FIELD_ALIAS_BINDING_VARIABLE).getValue().stringValue()
+                : field.stringValue();
+            aliasMap.put(alias, (IRI)field);
         }
 
         if (aliasMap.isEmpty()) {
             return "[]";
         } else {
-            return this.generateFieldDefinitons(aliasMap, options);
+            return this.generateFieldDefinitions(aliasMap, options);
         }
     }
 
-    private String generateFieldDefinitons(Map<String, Object> aliasMap, Options options) {
-        String valuesClause = "";
-        if (!aliasMap.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("VALUES (?field ?alias ?order){");
-            int i = 0;
-            for (Entry<String, Object> e: aliasMap.entrySet()) {
-                if (e.getValue() instanceof String) {
-                    sb.append("(<");
-                    sb.append(e.getValue());
-                    sb.append(">");
-                    sb.append(" \"");
-                    sb.append(e.getKey());
-                    sb.append("\" ");
-                    sb.append(i);
-                    sb.append(")");
-                }
-                i++;
-            }
-            sb.append("}");
-            valuesClause = sb.toString();
+    private String generateFieldDefinitions(@Nullable LinkedHashMap<String, IRI> aliasMap, Options options) {
+        Map<IRI, FieldDefinition> fields;
+        LinkedHashMap<String, IRI> order;
+        if (aliasMap == null) {
+            fields = fieldDefinitionManager.queryAllFieldDefinitions();
+            order = new LinkedHashMap<>();
+            fields.values().stream()
+                .sorted(Comparator.comparing(field -> field.getIri().stringValue()))
+                .forEach(field -> order.put(field.getIri().stringValue(), field.getIri()));
+        } else {
+            fields = fieldDefinitionManager.queryFieldDefinitions(aliasMap.values());
+            order = aliasMap;
         }
 
-        String queryString = makeFieldDefinitionQuery(valuesClause);
-        logger.trace("Query for reading field definitions: {}", queryString);
+        List<Object> jsonDefinitions = new ArrayList<>();
+        for (Map.Entry<String, IRI> entry : order.entrySet()) {
+            FieldDefinition field = fields.get(entry.getValue());
+            if (field == null) {
+                continue;
+            }
 
-        List<Object> result = new ArrayList<>();
-        JsonFromSparqlSelectSource.enumerateQueryTuples(queryString, options, Optional.of(repositoryManager.getAssetRepository()), (tuple, last) -> {
-            Map<String, Object> values = new HashMap<>();
-            values.putAll(Maps.transformValues(tuple, v -> {
-                if (v instanceof Literal) {
-                    Literal literal = (Literal)v;
-                    IRI datatype = literal.getDatatype();
-                    if (datatype.stringValue().equals(JsonFromSparqlSelectSource.SYNTHETIC_JSON_DATATYPE)) {
-                        ObjectMapper mapper = JsonUtil.getDefaultObjectMapper();
-                        try {
-                            return mapper.readTree(literal.stringValue());
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    }
-                }
-                return v.stringValue();
-            }));
+            Map<String, Object> json = fieldDefinitionManager.jsonFromField(field);
+            json.put("id", entry.getKey());
+            if (aliasMap != null) {
+                json.put("order", jsonDefinitions.size());
+            }
 
-            String label = this.getFieldDefinitionLabel(values.get("iri").toString(), options);
-            values.put("label", label);
+            String fieldLabel = this.getFieldDefinitionLabel(field.getIri().stringValue(), options);
+            json.put("label", fieldLabel);
+            jsonDefinitions.add(json);
+        }
 
-            result.add(values);
-        });
-        String resultJson = JsonUtil.prettyPrintJson(result);
+        String resultJson = JsonUtil.prettyPrintJson(jsonDefinitions);
         return HelperUtil.escapeIfRequested(resultJson, options);
     }
 
@@ -235,27 +223,22 @@ public class FieldDefinitionSource {
      * Handlebars helper function that generates semantic-search config based on field definitions.
      * Expects varargs list of field IRIs.
      */
-    private String generateSearchConfigForFields(List<String> fields, Options options) {
-        String queryString = makeQueryForFieldDefinitions(fields);
+    private String generateSearchConfigForFields(List<String> iris, Options options) {
+        ValueFactory vf = SimpleValueFactory.getInstance();
+        List<IRI> fieldIris = iris.stream().map(vf::createIRI).collect(toList());
+
+        Map<IRI, FieldDefinition> fields = fieldDefinitionManager.queryFieldDefinitions(fieldIris);
 
         Map<String, SearchRelation> relations = new LinkedHashMap<>();
-        JsonFromSparqlSelectSource.enumerateQueryTuples(queryString, options, Optional.of(repositoryManager.getAssetRepository()), (tuple, last) -> {
-            Map<String, String> values = new HashMap<>();
-            values.putAll(Maps.transformValues(tuple, v -> v.stringValue()));
-            if (values.get("id") == null) {
-                return;
-            }
-
-            String label = this.getFieldDefinitionLabel(values.get("iri"), options);
-            values.put("label", label);
-
-            SearchRelation relation = this.fieldsBasedSearch.relationFromJsonTuple(values);
+        for (FieldDefinition field : fields.values()) {
+            String fieldLabel = this.getFieldDefinitionLabel(field.getIri().stringValue(), options);
+            SearchRelation relation = this.fieldsBasedSearch.relationFromField(field, fieldLabel);
             if (!relation.domain.isEmpty() && !relation.range.isEmpty()) {
                 relations.put(NTriplesUtil.toNTriplesString(relation.id), relation);
             } else {
                 throw new RuntimeException("Domain or Range is unknown for the field - " + relation.id);
             }
-        });
+        }
 
         TemplateContext context = TemplateContext.fromHandlebars(options.context);
         Map<String, Object> result = this.fieldsBasedSearch.generateSearchConfig(relations, context);
@@ -290,111 +273,6 @@ public class FieldDefinitionSource {
         }
         String configJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(config);
         return HelperUtil.escapeIfRequested(configJson, options);
-    }
-
-    private String makeFieldDefinitionQuery(String valuesClause) {
-        String jsonDatatype = JsonFromSparqlSelectSource.SYNTHETIC_JSON_DATATYPE;
-        return String.join("\n",
-            "PREFIX field: <http://www.metaphacts.com/ontology/fields#> ",
-            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>",
-            "PREFIX sp: <http://spinrdf.org/sp#>",
-            "SELECT DISTINCT ?id",
-            "(SAMPLE(?description) AS ?description)",
-            "(SAMPLE(?minOccurs) AS ?minOccurs)",
-            "(SAMPLE(?maxOccurs) AS ?maxOccurs)",
-            "(STRDT(",
-            "  IF(COUNT(?defaultValue) > 0,",
-            "    CONCAT(\"[\\\"\",",
-            "      GROUP_CONCAT(?defaultValue; separator=\"\\\", \\\"\"),",
-            "      \"\\\"]\"",
-            "    ),",
-            "    \"[]\"",
-            "  ),",
-            "  <" + jsonDatatype + ">",
-            ") AS ?defaultValues)",
-            "(STRDT(",
-            "  IF(COUNT(?domain) > 0,",
-            "    CONCAT(\"[\\\"\",",
-            "      GROUP_CONCAT(?domain; separator=\"\\\", \\\"\"),",
-            "      \"\\\"]\"",
-            "    ),",
-            "    \"[]\"",
-            "  ),",
-            "  <" + jsonDatatype + ">",
-            ") AS ?domain)",
-            "(SAMPLE(?xsdDatatype) AS ?xsdDatatype)",
-            "(STRDT(",
-            "  IF(COUNT(?range) > 0,",
-            "    CONCAT(\"[\\\"\",",
-            "      GROUP_CONCAT(?range; separator=\"\\\", \\\"\"),",
-            "      \"\\\"]\"",
-            "    ),",
-            "    \"[]\"",
-            "  ),",
-            "  <" + jsonDatatype + ">",
-            ") AS ?range)",
-            "(SAMPLE(?insertPattern) AS ?insertPattern)",
-            "(SAMPLE(?deletePattern) AS ?deletePattern)",
-            "(SAMPLE(?selectPattern) AS ?selectPattern)",
-            "(SAMPLE(?askPattern) AS ?askPattern)",
-            "(SAMPLE(?autosuggestionPattern) AS ?autosuggestionPattern)",
-            "(SAMPLE(?valueSetPattern) AS ?valueSetPattern)",
-            "(SAMPLE(?treePatterns) AS ?treePatterns)",
-            "(SAMPLE(?order) as ?order)",
-            "(SAMPLE(?iri) as ?iri)",
-            "WHERE {",
-            "<" + FieldDefinitionContainer.IRI_STRING + "> <http://www.w3.org/ns/ldp#contains> ?field.",
-            "?field a field:Field.",
-            "?field field:insertPattern [ sp:text ?insertPattern].",
-            "OPTIONAL{?field field:selectPattern [ sp:text ?selectPattern]}.",
-            "OPTIONAL{?field field:deletePattern [ sp:text ?deletePattern]}.",
-            "OPTIONAL{?field field:valueSetPattern [ sp:text ?valueSetPattern]}.",
-            "OPTIONAL{?field field:autosuggestionPattern [ sp:text ?autosuggestionPattern]}.",
-            "OPTIONAL{?field field:minOccurs ?minOccurs.}.",
-            "OPTIONAL{?field field:domain ?domain.}.",
-            "OPTIONAL{?field field:xsdDatatype ?xsdDatatype.}.",
-            "OPTIONAL{?field field:range ?range.}.",
-            "OPTIONAL{?field field:maxOccurs ?maxOccurs.}.",
-            "OPTIONAL { ?field field:defaultValue ?defaultValue . } .",
-            "OPTIONAL{?field rdfs:comment ?description.}.",
-            "OPTIONAL{?field field:askPattern [ sp:text ?askPattern]}.",
-            "OPTIONAL { ?field field:treePatterns ?treePatterns }",
-            valuesClause,
-            "BIND(COALESCE(?alias, ?field) as ?id)",
-            "BIND(?field as ?iri)",
-            "}",
-            "GROUP BY ?id",
-            "ORDER BY ?order ?id"
-        );
-    }
-
-    private String makeQueryForFieldDefinitions(List<String> definitionIds) {
-        ValueFactory vf = SimpleValueFactory.getInstance();
-        String valuesClause = definitionIds.size() > 0 ? renderValuesClause(
-            "?field", definitionIds,
-            param -> ImmutableList.of(vf.createIRI(param))
-        ) : "";
-        String query = makeFieldDefinitionQuery(valuesClause);
-        logger.trace("Query for reading field definitions: {}", query);
-        return query;
-    }
-
-    private static <T> String renderValuesClause(
-        String rowSpecification,
-        Collection<T> values,
-        Function<T, List<Value>> rowMapper
-    ) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("VALUES (").append(rowSpecification).append(") {\n");
-        for (T value : values) {
-            builder.append("(");
-            for (Value item : rowMapper.apply(value)) {
-                RenderUtils.toSPARQL(item, builder).append(" ");
-            }
-            builder.append(")");
-        }
-        builder.append("}");
-        return builder.toString();
     }
 
     private String getFieldDefinitionLabel(String fieldIriValue, Options options) {

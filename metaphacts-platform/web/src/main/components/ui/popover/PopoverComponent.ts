@@ -16,9 +16,11 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import { Component, createFactory, Children, ReactElement, cloneElement , ReactChild} from 'react';
+import { Component, createFactory, Children, ReactElement, cloneElement } from 'react';
 import * as ReactBootstrap from 'react-bootstrap';
 import * as _ from 'lodash';
+
+import { componentHasType } from 'platform/components/utils';
 
 import { PopoverContentComponent } from './PopoverContentComponent';
 import { PopoverTriggerComponent } from './PopoverTriggerComponent';
@@ -48,18 +50,18 @@ export class PopoverComponentClass extends Component<Props, {}> {
     const {title} = this.props;
 
     const children = Children.toArray(this.props.children);
-    const triggerComponent: ReactChild =
-      _.find(children, child => (child as ReactElement<any>).type === PopoverTriggerComponent);
-    const contentComponent: ReactChild =
-      _.find(children, child => (child as ReactElement<any>).type === PopoverContentComponent);
+    const triggerComponent =
+      _.find(children, child => componentHasType(child, PopoverTriggerComponent));
+    const contentComponent =
+      _.find(children, child => componentHasType(child, PopoverContentComponent));
 
-    const triggerChildren = Children.only(triggerComponent).props.children;
-    const contentChildren = Children.only(contentComponent).props.children;
+    const triggerChildren = (Children.only(triggerComponent) as ReactElement<any>).props.children;
+    const contentChildren = (Children.only(contentComponent)  as ReactElement<any>).props.children;
 
     const popover = Popover({id: 'mp-popover', title: title}, contentChildren);
-    const trigger = Children.only(triggerComponent).props.trigger;
-    const placement = Children.only(triggerComponent).props.placement;
-    const rootClose = Children.only(triggerComponent).props.rootClose;
+    const trigger = (Children.only(triggerComponent) as ReactElement<any>).props.trigger;
+    const placement = (Children.only(triggerComponent) as ReactElement<any>).props.placement;
+    const rootClose = (Children.only(triggerComponent) as ReactElement<any>).props.rootClose;
     return OverlayTrigger({
         overlay: popover,
         trigger: trigger || ['click'],

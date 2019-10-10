@@ -47,18 +47,17 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
-import org.eclipse.rdf4j.query.algebra.evaluation.util.ValueComparator;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
 import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.Rio;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.metaphacts.config.Configuration;
-import com.metaphacts.data.rdf.container.LDPAssetsLoader.LDPModelComparator.StatementKey;
 import com.metaphacts.repository.MpRepositoryProvider;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.services.storage.api.ObjectKind;
@@ -173,6 +172,9 @@ public class LDPAssetsLoader {
             try (InputStream in = record.getLocation().readContent()) {
                 Model model = Rio.parse(in, "", format);
                 loadedAssetsModel.addAll(model);
+            } catch (IOException | RDFParseException e) {
+                logger.error("Failed to parse LDP asset: " + record.getLocation() + ". Details: " + e.getMessage());
+                throw e; // just propagate
             }
         }
         logger.info("Read " + mapResults.size() + " assets. Loading into the repository...");

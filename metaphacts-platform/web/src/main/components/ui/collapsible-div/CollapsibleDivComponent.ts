@@ -16,12 +16,11 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import {
-  Component, Children, ReactElement, ReactChild, createElement, cloneElement,
-} from 'react';
+import { Component, Children, createElement, cloneElement } from 'react';
 import * as D from 'react-dom-factories';
-import * as ReactBootstrap from 'react-bootstrap';
 import * as _ from 'lodash';
+
+import { componentHasType } from 'platform/components/utils';
 
 import { CollapsibleDivTriggerComponent } from './CollapsibleDivTriggerComponent';
 import { CollapsibleDivContentComponent } from './CollapsibleDivContentComponent';
@@ -62,29 +61,30 @@ export class CollapsibleDivComponent extends Component<Props, State> {
     const {expanded} = this.state;
 
     const children = Children.toArray(this.props.children);
-    const triggerComponent: ReactChild =
+    const triggerComponent =
       _.find(children,
-        child => (child as ReactElement<any>).type === CollapsibleDivTriggerComponent);
-    const contentComponent: ReactChild =
+        child => componentHasType(child, CollapsibleDivTriggerComponent));
+    const contentComponent =
       _.find(children,
-        child => (child as ReactElement<any>).type === CollapsibleDivContentComponent);
+        child => componentHasType(child, CollapsibleDivContentComponent));
 
-    const triggerChildren = Children.only(triggerComponent).props.children;
-    const contentChildren = Children.only(contentComponent).props.children;
+    const triggerChildren =
+      (Children.only(triggerComponent) as React.ReactElement<any>).props.children;
+    const contentChildren =
+      (Children.only(contentComponent) as React.ReactElement<any>).props.children;
 
-    const {expandedClass, collapsedClass} = Children.only(triggerComponent).props;
+    const {expandedClass, collapsedClass} =
+      (Children.only(triggerComponent) as React.ReactElement<any>).props;
     return D.div({},
-      [
-        createElement(CollapsibleDivTriggerComponent, {
-          expandedClass,
-          collapsedClass,
-          expanded: expanded,
-          onClick: () => this.setState({expanded: !expanded}),
-        }, cloneElement(triggerChildren, {})),
-        createElement(CollapsibleDivContentComponent,
-          {expanded: expanded}, cloneElement(contentChildren, {})
-        ),
-      ]
+      createElement(CollapsibleDivTriggerComponent, {
+        expandedClass,
+        collapsedClass,
+        expanded: expanded,
+        onClick: () => this.setState({expanded: !expanded}),
+      }, cloneElement(triggerChildren, {})),
+      createElement(CollapsibleDivContentComponent,
+        {expanded: expanded}, cloneElement(contentChildren, {})
+      )
     );
   }
 }

@@ -5,6 +5,7 @@
 
 	field:insertPattern [ sp:text
 """INSERT {
+  # insert field 1
   $subject a skos:ConceptScheme .
   $subject rdfs:label $value .
 }
@@ -12,6 +13,7 @@ WHERE {}""" ];
 
 	field:selectPattern [ sp:text
 """SELECT $value WHERE {
+  # select field 1
   $subject a skos:ConceptScheme .
   $subject rdfs:label $value .
 }""" ];
@@ -29,7 +31,11 @@ WHERE {}""" ];
 
 	field:deletePattern [ sp:text 
 """DELETE { $subject rdfs:label $value. } WHERE {}""" ];
+
 	field:askPattern [ sp:text """ASK { ?a ?b ?c }""" ];
+
+	field:treePatterns
+"""{ "type": "simple", "schemePattern": "?item a <http://example.com/treeItem>" }""";
 
 	field:maxOccurs "2" ;
 	field:minOccurs "1" ;

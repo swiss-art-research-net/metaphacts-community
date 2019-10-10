@@ -73,7 +73,7 @@ public class SSOSecurityFilter implements Filter {
             throws IOException, ServletException {
         // if local users realm is enabled, then we need to forward to
         // sso provider only if user is not authenticated
-        if (config.getEnvironmentConfig().enableLocalUsers()) {
+        if (config.getEnvironmentConfig().isEnableLocalUsers()) {
             Subject subject = SecurityUtils.getSubject();
 
             // if CORS is enabled we can't request authentication for OPTIONS requests

@@ -24,9 +24,9 @@ import { Cancellation } from 'platform/api/async';
 import { Rdf } from 'platform/api/rdf';
 import { getLabel } from 'platform/api/services/resource-label';
 
-import { getPreferredLabel } from 'platform/components/utils';
+import { componentHasType } from 'platform/components/utils';
 
-import { FieldDefinition } from '../FieldDefinition';
+import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import { FieldValue, AtomicValue } from '../FieldValues';
 import { ResourceEditorForm, ResourceEditorFormProps } from '../ResourceEditorForm';
 
@@ -77,6 +77,5 @@ export function tryExtractNestedForm(
     return undefined;
   }
   const child = Children.only(children);
-  const isForm = typeof child.type === 'function' && child.type === ResourceEditorForm;
-  return isForm ? child : undefined;
+  return componentHasType(child, ResourceEditorForm) ? child : undefined;
 }

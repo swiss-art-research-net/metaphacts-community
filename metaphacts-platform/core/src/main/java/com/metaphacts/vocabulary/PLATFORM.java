@@ -30,6 +30,11 @@ public class PLATFORM {
     public static String NAMESPACE = "http://www.metaphacts.com/ontologies/platform#";
 
     /**
+     * Types
+     */
+    public static final IRI FIELD;
+
+    /**
      * Individuals
      */
     public static final IRI ANONYMOUS_USER_INDIVIDUAL;
@@ -40,6 +45,7 @@ public class PLATFORM {
     
     static {
         ValueFactory f = SimpleValueFactory.getInstance();
+        FIELD = f.createIRI(NAMESPACE, "Field");
         ANONYMOUS_USER_INDIVIDUAL = f.createIRI(NAMESPACE, "anonymousUser");
         SYSTEM_USER_INDIVIDUAL = f.createIRI(NAMESPACE, "systemUser");
         SET_TYPE = f.createIRI(NAMESPACE, "Set");

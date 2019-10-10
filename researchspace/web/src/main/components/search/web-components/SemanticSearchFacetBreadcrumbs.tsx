@@ -18,20 +18,30 @@
 
 import * as React from 'react';
 
-import { Component, ComponentContext, ContextTypes } from 'platform/api/components';
+import { Component } from 'platform/api/components';
 import {
-  FacetContext, FacetContextTypes,
+  SemanticSearchContext, FacetContext,
 } from 'platform/components/semantic/search/web-components/SemanticSearchApi';
 import { FacetBreadcrumbsComponent } from '../facet/breadcrumbs/FacetBreadcrumbs';
 
-
-class SemanticSearchFacetBreadcrumbs extends Component<{}, void> {
-  static contextTypes = { ...FacetContextTypes, ...ContextTypes};
-  context: FacetContext & ComponentContext;
-
+class SemanticSearchFacetBreadcrumbs extends Component<{}, {}> {
   render() {
-    const ast = this.context.facetStructure.getOrElse(undefined);
-    const actions = this.context.facetActions.getOrElse(undefined);
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => <SemanticSearchFacetBreadcrumbsInner {...this.props} context={context} />}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
+
+interface InnerProps {
+  context: FacetContext;
+}
+
+class SemanticSearchFacetBreadcrumbsInner extends React.Component<InnerProps> {
+  render() {
+    const ast = this.props.context.facetStructure.getOrElse(undefined);
+    const actions = this.props.context.facetActions.getOrElse(undefined);
 
     if (ast && actions) {
       return <FacetBreadcrumbsComponent ast={ast} actions={actions} />;

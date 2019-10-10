@@ -18,7 +18,7 @@
 
 import { Component, createElement } from 'react';
 import * as D from 'react-dom-factories';
-import { render } from 'react-dom';
+import * as ReactDOM from 'react-dom';
 import * as Either from 'data.either';
 import * as maybe from 'data.maybe';
 import * as bindingsToCsv from 'yasgui-yasr/src/bindingsToCsv.js';
@@ -83,10 +83,11 @@ function table(jsonResult) {
           }
         ),
         showLiteralDatatype: true,
+        showCopyToClipboardButton: true,
       });
       const buttonLabel = this.state.showLabels ? 'Fetch Labels: ON' : 'Fetch Labels: OFF';
       const className = this.state.showLabels ? 'btn-success' : 'btn-danger';
-      return D.div({}, [
+      return D.div({},
           D.button({
               key: 'sparql-endpoint-label-toogle-button',
               className: classnames('pull-right btn', className),
@@ -110,7 +111,6 @@ function table(jsonResult) {
             style: {width: 70, marginRight: 10},
           }),
           table,
-        ]
       );
     }
 
@@ -129,6 +129,7 @@ function table(jsonResult) {
 export function  MetaphactsYASRTable(yasr: YasrObject) {
   let showLabels = false;
   let resultsPerPage = 10;
+  let drawnContainer: HTMLElement | undefined;
 
   return {
     name: 'Table',
@@ -140,9 +141,18 @@ export function  MetaphactsYASRTable(yasr: YasrObject) {
         onChangeShowLabels: value => showLabels = value,
         onChangeResultsPerPage: value => resultsPerPage = value,
       };
-      render(
+      const parentContainer: HTMLElement = yasr['resultsContainer'][0];
+      if (drawnContainer) {
+        ReactDOM.unmountComponentAtNode(drawnContainer);
+        if (drawnContainer.parentElement === parentContainer) {
+          parentContainer.removeChild(drawnContainer);
+        }
+      }
+      drawnContainer = document.createElement('div');
+      parentContainer.appendChild(drawnContainer);
+      ReactDOM.render(
        createElement(table(yasr.results.getAsJson()), props),
-       yasr['resultsContainer'][0]
+       drawnContainer
       );
     },
 

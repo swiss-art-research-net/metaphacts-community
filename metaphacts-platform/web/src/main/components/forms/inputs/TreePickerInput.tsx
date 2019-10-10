@@ -26,9 +26,8 @@ import {
   SemanticTreeInput, Node as TreeNode, SelectionNode, TreeSelection, ComplexTreePatterns,
   createDefaultTreeQueries,
 } from 'platform/components/semantic/lazy-tree';
-import { getPreferredLabel } from 'platform/components/utils';
 
-import { FieldDefinition } from '../FieldDefinition';
+import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import { FieldValue, AtomicValue, ErrorKind } from '../FieldValues';
 import {
   MultipleValuesInput, MultipleValuesProps, checkCardinalityAndDuplicates,

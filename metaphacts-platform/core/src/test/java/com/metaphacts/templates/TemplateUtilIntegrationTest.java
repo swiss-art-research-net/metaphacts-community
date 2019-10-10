@@ -36,6 +36,7 @@ import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.UnknownConfigurationException;
 import com.metaphacts.junit.*;
 import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.services.fields.FieldDefinitionManager;
 import com.metaphacts.services.fields.FieldsBasedSearch;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectStorage;
@@ -107,6 +108,7 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
             loader,
             new HandlebarsHelperRegistry(
                 repositoryManager,
+                new FieldDefinitionManager(repositoryManager, cacheManager),
                 new FieldsBasedSearch(ns, repositoryManager, labelCache),
                 queryTemplateCache,
                 labelCache

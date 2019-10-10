@@ -19,7 +19,6 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import * as ReactBootstrap from 'react-bootstrap';
-import * as ReactDropzone from 'react-dropzone';
 import ReactSelect from 'react-select';
 
 import { Cancellation } from 'platform/api/async';
@@ -28,6 +27,7 @@ import { getStorageStatus, ConfigStorageStatus } from 'platform/api/services/con
 import { FileManager, FileResource } from 'platform/api/services/file-manager';
 
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
+import { Dropzone } from 'platform/components/ui/dropzone';
 import { addNotification } from 'platform/components/ui/notification';
 
 import { getFileIcon } from './FileVisualizer';
@@ -285,21 +285,22 @@ export class DirectFileUploader extends Component<DirectFileUploaderProps, Direc
             now={this.state.progress}
             label={this.state.progressText}>
           </ReactBootstrap.ProgressBar> : null}
-          <ReactDropzone
+          <Dropzone
             accept={this.props.acceptPattern}
             onDropAccepted={this.onDropAccepted.bind(this)}
             onDropRejected={this.onDropRejected.bind(this)}
-            disableClick={Boolean(this.state.progress || !storages)}
-            >
-              {fileNotSelected ?
-                <div className={styles.mpDropZonePlaceHolder}>{
-                  this.props.children ||
-                  <div className = {styles.mpDropZonePlaceHolder}>{this.props.placeholder || 'Select file to upload.'}</div>
-                }</div>
-              : <div className={styles.fileIcon}>
+            noClick={Boolean(this.state.progress || !storages)}>
+            {fileNotSelected ? (
+              <div className={styles.mpDropZonePlaceHolder}>{
+                this.props.children ||
+                <div className = {styles.mpDropZonePlaceHolder}>{this.props.placeholder || 'Select file to upload.'}</div>
+              }</div>
+            ) : (
+              <div className={styles.fileIcon}>
                 <i className={getFileIcon(file.type)} aria-hidden='true'></i>
-              </div>}
-          </ReactDropzone>
+              </div>
+            )}
+          </Dropzone>
         </div>
         <div className={styles.rightInputBar}>
           <label>Target Storage</label>
@@ -384,4 +385,5 @@ export class DirectFileUploader extends Component<DirectFileUploaderProps, Direc
     </div>
   }
 }
+
 export default DirectFileUploader;

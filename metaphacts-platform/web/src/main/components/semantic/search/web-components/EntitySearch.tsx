@@ -18,18 +18,17 @@
 
 import * as Maybe from 'data.maybe';
 import * as React from 'react';
-import { Props as ReactProps, FormEvent, CSSProperties } from 'react';
 import * as SparqlJs from 'sparqljs';
 
-import { Component, ComponentContext, ContextTypes } from 'platform/api/components';
+import { Component } from 'platform/api/components';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
 import { SimpleSearch, SimpleSearchProps } from '../../simple-search/SimpleSearch';
 import { setSearchDomain } from '../commons/Utils';
 import { BaseConfig } from './KeywordSearch';
-import { InitialQueryContext, InitialQueryContextTypes } from './SemanticSearchApi';
+import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 
-export interface SemanticEntitySearchConfig<T> extends BaseConfig<string>, SimpleSearchProps {
+export interface SemanticEntitySearchConfig extends BaseConfig<string>, SimpleSearchProps {
 
     /**
      * SPARQL Select query string, which will be provided to the search framework as base query.
@@ -79,8 +78,7 @@ export interface SemanticEntitySearchConfig<T> extends BaseConfig<string>, Simpl
     resourceBindingName?: string
 }
 
-interface Config extends SemanticEntitySearchConfig<CSSProperties> {}
-interface Props extends ReactProps<EntitySearch>, Config {}
+interface EntitySearchProps extends SemanticEntitySearchConfig {}
 
 /**
  * @example
@@ -103,8 +101,21 @@ interface Props extends ReactProps<EntitySearch>, Config {}
   </semantic-search-result-holder>
 </semantic-search>
  */
-class EntitySearch extends Component<Props, {}> {
-    static contextTypes = {...ContextTypes, ...InitialQueryContextTypes};
+class EntitySearch extends Component<EntitySearchProps, {}> {
+  render() {
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => <EntitySearchInner {...this.props} context={context} />}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
+
+interface InnerProps extends EntitySearchProps {
+  context: InitialQueryContext;
+}
+
+class EntitySearchInner extends React.Component<InnerProps, {}> {
     static defaultProps = {
         searchQuery: `PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
             PREFIX bds: <http://www.bigdata.com/rdf/search#>
@@ -120,21 +131,16 @@ class EntitySearch extends Component<Props, {}> {
         resourceBindingName: 'resource',
     };
 
-    context: ComponentContext & InitialQueryContext;
-
-    constructor(props: Props, context: ComponentContext) {
-        super(props, context);
-      }
-
     componentDidMount() {
-        setSearchDomain(this.props.domain, this.context);
+        setSearchDomain(this.props.domain, this.props.context);
     }
 
-    componentWillReceiveProps(props: Props, context: InitialQueryContext) {
-        if (context.searchProfileStore.isJust && context.domain.isNothing) {
-          setSearchDomain(props.domain, context);
-        }
+    componentWillReceiveProps(props: InnerProps) {
+      const {context} = props;
+      if (context.searchProfileStore.isJust && context.domain.isNothing) {
+        setSearchDomain(props.domain, context);
       }
+    }
 
     render() {
         if (!this.props.query) {
@@ -161,7 +167,7 @@ class EntitySearch extends Component<Props, {}> {
     onSelected = (binding: SparqlClient.Binding & SparqlClient.Binding[]) => {
         // reset search if selection is emtpy e.g. after removal of initial selections
         if (this.isEmptySelection(binding)) {
-            return this.context.setBaseQuery(Maybe.Nothing());
+            return this.props.context.setBaseQuery(Maybe.Nothing());
         }
         const variableName = this.props.resourceBindingName;
         const parsedQuery = SparqlUtil.parseQuerySync<SparqlJs.SelectQuery>(
@@ -180,7 +186,7 @@ class EntitySearch extends Component<Props, {}> {
             );
         }
 
-        this.context.setBaseQuery(Maybe.Just(query));
+        this.props.context.setBaseQuery(Maybe.Just(query));
     }
 
     isEmptySelection(binding: SparqlClient.Binding & SparqlClient.Binding[]) {

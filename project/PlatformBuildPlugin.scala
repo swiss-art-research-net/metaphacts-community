@@ -210,8 +210,7 @@ object PlatformBuildPlugin extends AutoPlugin {
           // see /src/main/webapp/etc for options (descriptions of log behavior is given in the files).
           // - Development log files: log4j2-debug.xml, log4j2-trace.xml, log4j2-trace2.xml
           // - Production log files: log4j2.xml, log4j2-debug.xml
-          "-Dlog4j.configurationFile=file://" + baseDirectory.value + "/metaphacts-platform/webapp/etc/" + logProfile + ".xml" +
-            ",file://" + baseDirectory.value + "/metaphacts-platform/webapp/etc/log4j2-usage-logs.xml",
+          "-Dlog4j.configurationFile=file://" + baseDirectory.value + "/metaphacts-platform/webapp/etc/" + logProfile + ".xml",
           "-Dconfig.environment.shiroConfig="+baseDirectory.value.toPath().resolve(defaultShiroIniFolder).resolve("shiro.ini").toFile.getAbsolutePath,
           // disable logs from jetty AnnotationsParser, see ID-772
           "-Dorg.eclipse.jetty.annotations.LEVEL=OFF"
@@ -519,9 +518,9 @@ object PlatformBuildPlugin extends AutoPlugin {
     }
 
     def getPlatformOpts(default: Seq[String]):  Seq[String] = {
-      val properties = System.getProperties().filterKeys( _.startsWith("config."))
+      val properties = System.getProperties().filterKeys( x => (x.startsWith("config.") || x.startsWith("appsDirectory") ) )
       val x = default ++ properties.toList.map({ case (a,b) => "-D" + a.toString +"="+ b.toString })
-      println("The following environment variables will be passed to the platform:")
+      println("The following system properties will be passed to the platform:")
       println(x mkString "\n")
       x
     }

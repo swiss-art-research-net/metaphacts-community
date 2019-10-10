@@ -149,7 +149,7 @@ export class SetManagement extends Component<Props, ViewState> {
     }
   }
 
-  private renderDropArea(children: Array<React.ReactChild>, className: string) {
+  private renderDropArea(children: ReadonlyArray<React.ReactNode>, className: string) {
     const displayedSetIri = ViewState.displayedSetIri(this.state);
     return (
       <DropArea className={className}

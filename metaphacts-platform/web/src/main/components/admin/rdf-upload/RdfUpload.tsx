@@ -23,7 +23,6 @@ import { ProgressBar, FormControl, Button, Panel, Checkbox, Tab, Tabs } from 're
 import * as maybe from 'data.maybe';
 import * as moment from 'moment';
 import * as Kefir from 'kefir';
-import * as ReactDropzone from 'react-dropzone';
 import * as SparqlJs from 'sparqljs';
 import * as classnames from 'classnames';
 
@@ -37,12 +36,11 @@ import { RDFGraphStoreService } from 'platform/api/services/rdf-graph-store';
 import {
   getRepositoryInfo, RepositoryType, NeptuneRepositoryType
 } from 'platform/api/services/repository';
-import { Permissions } from 'platform/api/services/security';
 
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
+import { Dropzone } from 'platform/components/ui/dropzone';
 import { ErrorPresenter } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
-import { HasPermission } from 'platform/components/security/HasPermission';
 
 import { RdfUploadExtension } from './extensions';
 
@@ -201,11 +199,11 @@ export class RdfUpload extends Component<Props, State> {
               RDF files can be uploaded using the drag&amp;drop field below.
               Clicking into the field will open the browser's default file selector.
             </div>
-            <ReactDropzone onDrop={this.onDrop}>
+            <Dropzone onDrop={this.onDrop}>
               <div className={`${CLASS_NAME}__rdf-dropzone-content`}>
                 Please drag&amp;drop your RDF file(s) here.
               </div>
-            </ReactDropzone>
+            </Dropzone>
             {messages}
           </Tab>
           {/* load by URL doesn't make any sense for Neptune repository */}

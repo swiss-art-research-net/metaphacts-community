@@ -91,10 +91,10 @@ export module serialize {
    * @see https://github.com/RubenVerborgh/N3.js#triple-representation
    */
   export function literalToN3(literal: Rdf.Literal): string {
-    if (literal instanceof Rdf.LangLiteral) {
-      return `"${literal.value}"@${literal.lang}`;
+    if (literal.language) {
+      return `"${literal.value}"@${literal.language}`;
     } else {
-      return `"${literal.value}"^^${literal.dataType.value}`;
+      return `"${literal.value}"^^${literal.datatype.value}`;
     }
   }
 }

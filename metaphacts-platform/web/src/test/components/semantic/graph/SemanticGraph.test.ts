@@ -17,25 +17,29 @@
  */
 
 import { expect, assert } from 'chai';
-import { mount } from 'enzyme';
 import { createElement } from 'react';
-import * as enzyme from 'enzyme';
 import * as sinon from 'sinon';
 import * as Kefir from 'kefir';
 
+import { Rdf, vocabularies } from 'platform/api/rdf';
 import * as NamespaceService from 'platform/api/services/namespace';
-sinon.stub(NamespaceService, 'getRegisteredPrefixes', function() {
-  return Kefir.constant({});
-});
-
 import {
   SemanticGraph, SemanticGraphProps, SemanticGraphState, Graph,
 } from 'platform/components/semantic/graph';
-import { Rdf, vocabularies } from 'platform/api/rdf';
+
+import { mount, ReactWrapper } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
+import { mockLabelsService } from 'platform-tests/mocks/LabelService';
+import { mockConstructQuery } from 'platform-tests/mocks/SparqlClient';
+import { mockThumbnailService } from 'platform-tests/mocks/ThumbnailService';
+
 import { foaf, person } from './TestData';
-import { mockLabelsService } from '../../../test-utils/mocks/LabelService';
-import { mockConstructQuery } from '../../../test-utils/mocks/SparqlClient';
-import { mockThumbnailService } from '../../../test-utils/mocks/ThumbnailService';
+
+mockLanguagePreferences();
+
+sinon.stub(NamespaceService, 'getRegisteredPrefixes').callsFake(function() {
+  return Kefir.constant({});
+});
 
 const QUERY =
   `
@@ -135,7 +139,7 @@ describe('graph-widget', () => {
 
 
   describe('rendering with default graph-widget configuration', () => {
-    let graphWidget: enzyme.ReactWrapper<SemanticGraphProps, SemanticGraphState>;
+    let graphWidget: ReactWrapper<SemanticGraphProps, SemanticGraphState>;
 
     before(
       function(done: MochaDone) {

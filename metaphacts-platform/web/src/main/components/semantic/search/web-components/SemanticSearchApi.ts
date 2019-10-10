@@ -16,7 +16,7 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-import * as PropTypes from 'prop-types';
+import * as React from 'react';
 import * as Kefir from 'kefir';
 import * as SparqlJs from 'sparqljs';
 
@@ -27,133 +27,72 @@ import * as FacetModel from '../data/facet/Model';
 import { Dataset, Alignment } from '../data/datasets/Model';
 import { SemanticSearchConfig } from '../config/SearchConfig';
 
-export type ExtendedSearchValue = Model.Resource | {label: string; query: SparqlJs.SelectQuery}
+export type ExtendedSearchValue = Model.Resource | { label: string; query: SparqlJs.SelectQuery };
 
 export type SemanticSearchContext =
   InitialQueryContext & ResultContext & FacetContext & ConfigurationContext & GraphScopeContext;
 
-export interface BaseSearchContext {
-  domain: Data.Maybe<Model.Category>
-  availableDomains: Data.Maybe<Model.AvailableDomains>
-  baseConfig: SemanticSearchConfig
-  searchProfileStore: Data.Maybe<SearchProfileStore>
-  availableDatasets: Array<Dataset>
-  selectedDatasets: Array<Dataset>
-  selectedAlignment: Data.Maybe<Alignment>
-  isConfigurationEditable: boolean
-  visualizationContext: Data.Maybe<Model.Relation>
-}
+export const SemanticSearchContext = React.createContext<SemanticSearchContext>(undefined);
 
-export const BaseSearchContextTypes: Record<keyof BaseSearchContext, any> = {
-  domain: PropTypes.any.isRequired,
-  availableDomains: PropTypes.any.isRequired,
-  baseConfig: PropTypes.any.isRequired,
-  searchProfileStore: PropTypes.any.isRequired,
-  availableDatasets: PropTypes.any.isRequired,
-  selectedDatasets: PropTypes.any.isRequired,
-  selectedAlignment: PropTypes.any.isRequired,
-  isConfigurationEditable: PropTypes.bool.isRequired,
-  visualizationContext: PropTypes.any.isRequired,
-};
+export interface BaseSearchContext {
+  readonly domain: Data.Maybe<Model.Category>;
+  readonly availableDomains: Data.Maybe<Model.AvailableDomains>;
+  readonly baseConfig: SemanticSearchConfig;
+  readonly searchProfileStore: Data.Maybe<SearchProfileStore>;
+  readonly availableDatasets: Array<Dataset>;
+  readonly selectedDatasets: Array<Dataset>;
+  readonly selectedAlignment: Data.Maybe<Alignment>;
+  readonly isConfigurationEditable: boolean;
+  readonly visualizationContext: Data.Maybe<Model.Relation>;
+}
 
 export interface ConfigurationContext extends BaseSearchContext {
-  setSelectedDatasets(datasets: Array<Dataset>)
-  setSelectedAlignment(alignment: Data.Maybe<Alignment>)
+  setSelectedDatasets(datasets: Array<Dataset>): void;
+  setSelectedAlignment(alignment: Data.Maybe<Alignment>): void;
 }
-
-export const ConfigurationContextTypes: Record<keyof ConfigurationContext, any> = {
-  ...BaseSearchContextTypes,
-  setSelectedDatasets: PropTypes.func.isRequired,
-  setSelectedAlignment: PropTypes.func.isRequired,
-};
-
 
 export interface InitialQueryContext extends BaseSearchContext {
-  extendedSearch: Data.Maybe<{value: ExtendedSearchValue, range: Model.Category}>
-  baseQueryStructure: Data.Maybe<Model.Search>
-  setDomain(domain: Model.Category)
-  setAvailableDomains(availableDomains: Model.AvailableDomains)
-  setBaseQuery(query: Data.Maybe<SparqlJs.SelectQuery>)
-  setBaseQueryStructure(queryStructure: Data.Maybe<Model.Search>)
-  setSearchProfileStore(profileStore: SearchProfileStore);
+  readonly extendedSearch: Data.Maybe<{ value: ExtendedSearchValue; range: Model.Category }>;
+  readonly baseQueryStructure: Data.Maybe<Model.Search>;
+  setDomain(domain: Model.Category): void;
+  setAvailableDomains(availableDomains: Model.AvailableDomains): void;
+  setBaseQuery(query: Data.Maybe<SparqlJs.SelectQuery>): void;
+  setBaseQueryStructure(queryStructure: Data.Maybe<Model.Search>): void;
+  setSearchProfileStore(profileStore: SearchProfileStore): void;
 }
-
-export const InitialQueryContextTypes: Record<keyof InitialQueryContext, any> = {
-  ...BaseSearchContextTypes,
-  extendedSearch: PropTypes.any.isRequired,
-  baseQueryStructure: PropTypes.any.isRequired,
-  setDomain: PropTypes.func.isRequired,
-  setAvailableDomains: PropTypes.func.isRequired,
-  setBaseQuery: PropTypes.func.isRequired,
-  setBaseQueryStructure: PropTypes.func.isRequired,
-  setSearchProfileStore: PropTypes.func.isRequired,
-};
 
 export interface FacetContext extends BaseSearchContext {
-  baseQuery: Data.Maybe<SparqlJs.SelectQuery>
-  baseQueryStructure: Data.Maybe<Model.Search>
-  resultsStatus: { loaded: boolean; count: number | undefined; }
-  facetStructure: Data.Maybe<FacetModel.Ast>
-  facetActions: Data.Maybe<FacetModel.Actions>
-  setFacetStructure(structure: FacetModel.Ast)
-  setFacetedQuery(query: SparqlJs.SparqlQuery)
-  setFacetActions(actions: FacetModel.Actions)
+  readonly baseQuery: Data.Maybe<SparqlJs.SelectQuery>;
+  readonly baseQueryStructure: Data.Maybe<Model.Search>;
+  readonly resultsStatus: { loaded: boolean; count: number | undefined };
+  readonly facetStructure: Data.Maybe<FacetModel.Ast>;
+  readonly facetActions: Data.Maybe<FacetModel.Actions>;
+  setFacetStructure(structure: FacetModel.Ast): void;
+  setFacetedQuery(query: SparqlJs.SparqlQuery): void;
+  setFacetActions(actions: FacetModel.Actions): void;
 }
-
-export const FacetContextTypes: Record<keyof FacetContext, any> = {
-  ...BaseSearchContextTypes,
-  baseQuery: PropTypes.any.isRequired,
-  baseQueryStructure: PropTypes.any.isRequired,
-  resultsStatus: PropTypes.object.isRequired,
-  facetStructure: PropTypes.any.isRequired,
-  facetActions: PropTypes.any.isRequired,
-  setFacetStructure: PropTypes.func.isRequired,
-  setFacetedQuery: PropTypes.func.isRequired,
-  setFacetActions: PropTypes.func.isRequired,
-};
 
 export type ResultOperation =
   { type: 'count'; task: Kefir.Property<number> } |
   { type: 'other'; task: Kefir.Property<void> };
 
 export interface ResultContext extends BaseSearchContext {
-  resultQuery: Data.Maybe<SparqlJs.SelectQuery>
-  baseQueryStructure: Data.Maybe<Model.Search>
-  facetStructure: Data.Maybe<FacetModel.Ast>
+  readonly resultQuery: Data.Maybe<SparqlJs.SelectQuery>;
+  readonly baseQueryStructure: Data.Maybe<Model.Search>;
+  readonly facetStructure: Data.Maybe<FacetModel.Ast>;
   useInExtendedFcFrSearch(
-    item: {value: ExtendedSearchValue, range: Model.Category}
-  )
-  bindings: {[variable: string]: Rdf.Node}
-  notifyResultLoading(operation: ResultOperation)
-  resultState: { [componentId: string]: object }
-  updateResultState(componentId: string, stateChange: object)
-  setVisualizationContext(relation: Data.Maybe<Model.Relation>)
+    item: { value: ExtendedSearchValue; range: Model.Category }
+  ): void;
+  readonly bindings: { [variable: string]: Rdf.Node };
+  notifyResultLoading(operation: ResultOperation): void;
+  readonly resultState: { [componentId: string]: object };
+  updateResultState(componentId: string, stateChange: object): void;
+  setVisualizationContext(relation: Data.Maybe<Model.Relation>): void;
 }
-
-export const ResultContextTypes: Record<keyof ResultContext, any> = {
-  ...BaseSearchContextTypes,
-  resultQuery: PropTypes.any.isRequired,
-  baseQueryStructure: PropTypes.any.isRequired,
-  facetStructure: PropTypes.any.isRequired,
-  useInExtendedFcFrSearch: PropTypes.any.isRequired,
-  bindings: PropTypes.any.isRequired,
-  notifyResultLoading: PropTypes.func.isRequired,
-  resultState: PropTypes.object.isRequired,
-  updateResultState: PropTypes.func.isRequired,
-  setVisualizationContext: PropTypes.func.isRequired,
-};
 
 export interface GraphScopeContext extends BaseSearchContext {
-  graphScopeStructure: Data.Maybe<Model.GraphScopeSearch>;
-  graphScopeResults: Data.Maybe<Model.GraphScopeResults>;
-  setGraphScopeStructure(graphScopeStructure: Data.Maybe<Model.GraphScopeSearch>);
-  setGraphScopeResults(graphScopeResults: Data.Maybe<Model.GraphScopeResults>);
-}
-
-export const GraphScopeContextTypes: Record<keyof GraphScopeContext, any> = {
-  ...BaseSearchContextTypes,
-  graphScopeStructure: PropTypes.any.isRequired,
-  graphScopeResults: PropTypes.any.isRequired,
-  setGraphScopeStructure: PropTypes.func.isRequired,
-  setGraphScopeResults: PropTypes.func.isRequired,
+  readonly graphScopeStructure: Data.Maybe<Model.GraphScopeSearch>;
+  readonly graphScopeResults: Data.Maybe<Model.GraphScopeResults>;
+  setGraphScopeStructure(graphScopeStructure: Data.Maybe<Model.GraphScopeSearch>): void;
+  setGraphScopeResults(graphScopeResults: Data.Maybe<Model.GraphScopeResults>): void;
 }

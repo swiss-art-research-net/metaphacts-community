@@ -41,6 +41,7 @@ import { chooseMiradorLayout } from './SideBySideComparison';
 import { renderMirador, removeMirador, scrollToRegions } from './mirador/Mirador';
 
 export interface ImageRegionEditorProps {
+  id?: string;
   imageOrRegion: string | { [iri: string]: Array<string> };
   imageIdPattern: string;
   iiifServerUrl: string;
@@ -66,6 +67,10 @@ interface ImageRegionEditorState {
  */
 export class ImageRegionEditorComponentMirador
   extends Component<ImageRegionEditorProps, ImageRegionEditorState> {
+  static defaultProps: Partial<ImageRegionEditorProps> = {
+    id: 'mirador',
+  };
+
   private readonly cancellation = new Cancellation();
   private infoQueryingCancellation = this.cancellation.derive();
   private manifestQueryingCancellation = this.cancellation.derive();
@@ -234,7 +239,7 @@ export class ImageRegionEditorComponentMirador
   ): Mirador.Options {
     const imagesInfo = this.state.info as Map<string, ImageOrRegionInfo>;
     return {
-      id: 'mirador', // The CSS ID selector for the containing element.
+      id: this.props.id, // The CSS ID selector for the containing element.
       layout: chooseMiradorLayout(manifests.length),
       saveSession: false,
       data: manifests.map(manifest => ({
@@ -290,7 +295,7 @@ export class ImageRegionEditorComponentMirador
             this.miradorElement = element;
             this.renderMirador(element);
           },
-          id: 'mirador',
+          id: this.props.id,
           className: 'mirador',
           style: {width: '100%', height: '100%', position: 'relative'},
         })

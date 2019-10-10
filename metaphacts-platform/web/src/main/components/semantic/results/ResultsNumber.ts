@@ -158,7 +158,6 @@ export class ResultsNumberComponent extends Component<Props, State> {
   render() {
     if (this.state.number.isJust && !this.state.isLoading) {
       return createElement(TemplateItem, {
-        componentProps: this.props,
         template: {
           source: this.props.template,
           options: {

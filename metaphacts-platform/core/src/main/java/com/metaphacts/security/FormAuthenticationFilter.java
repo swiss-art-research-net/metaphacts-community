@@ -87,7 +87,7 @@ public class FormAuthenticationFilter extends org.apache.shiro.web.filter.authc.
          * Even though we have the global {@link MDCFilter}, we need to call and inject the
          * MDC statically, since the FormAuthenticationFilter will be invoked before.
          */
-        MDCFilter.wrapIntoMDC(() -> logger.info("User \"{}\" authenticated successfully.",
+        MDCFilter.wrapIntoMDC(() -> logger.debug("User \"{}\" authenticated successfully.",
                 subject.getPrincipal()), (HttpServletRequest) request);
         return super.onLoginSuccess(token, subject, request, response);
     }   

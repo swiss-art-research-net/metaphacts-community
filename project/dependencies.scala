@@ -20,10 +20,10 @@ import sbt._
 object dependencies {
   //dependencies
   //main libs versions
-  val RDF4J_VERSION = "2.4.3"
-  val LOG4J_VERSION = "2.8.2"
+  val RDF4J_VERSION = "2.5.4"
+  val LOG4J_VERSION = "2.12.1"
   val JERSEY_VERSION = "2.22.2"
-  val JACKSON_VERSION = "2.9.6"
+  val JACKSON_VERSION = "2.9.9"
   val GUICE_VERSION = "4.0"
 
   //Sesame related
@@ -102,6 +102,10 @@ object dependencies {
     "org.apache.lucene" -> "lucene-spatial-extras",
     "org.apache.lucene" -> "lucene-queries",
     "org.apache.lucene" -> "lucene-spatial3d",
+    // dependencies from rdf4j-storage
+    // not needed and CVE issues
+    "org.apache.zookeeper"  -> "zookeeper",
+    "org.apache.solr" -> "solr-solrj",
     // Libraries to work with geospatial data, needed for rdf4-storage GeoSPARQL support
     "org.locationtech.jts" -> "jts-core",
     "org.locationtech.spatial4j" -> "spatial4j",
@@ -141,7 +145,7 @@ object dependencies {
 
   val misc = Seq(
     //guava
-    "com.google.guava" % "guava" % "18.0",
+    "com.google.guava" % "guava" % "23.6-jre",
 
     //web-app
     "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",

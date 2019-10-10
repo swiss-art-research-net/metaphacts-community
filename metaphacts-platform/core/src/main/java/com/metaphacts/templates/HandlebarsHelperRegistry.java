@@ -23,6 +23,7 @@ import com.google.inject.Singleton;
 import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.cache.LabelCache;
 import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.services.fields.FieldDefinitionManager;
 import com.metaphacts.services.fields.FieldsBasedSearch;
 import com.metaphacts.templates.helper.*;
 
@@ -36,6 +37,7 @@ public class HandlebarsHelperRegistry {
     @Inject
     public HandlebarsHelperRegistry(
         RepositoryManager repositoryManager,
+        FieldDefinitionManager fieldDefinitionManager,
         FieldsBasedSearch fieldsBasedSearch,
         QueryTemplateCache queryTemplateCache,
         LabelCache labelCache
@@ -47,7 +49,7 @@ public class HandlebarsHelperRegistry {
             new SingleValueFromSelectSource(),
             new SparqlHelperSource(queryTemplateCache),
             new JsonFromSparqlSelectSource(),
-            new FieldDefinitionSource(repositoryManager, fieldsBasedSearch, labelCache),
+            new FieldDefinitionSource(repositoryManager, fieldDefinitionManager, fieldsBasedSearch, labelCache),
             new PrefixResolverHelperSource(),
             new SetManagementHelperSource(),
             new IsRepositoryTypeHelperSource(repositoryManager),

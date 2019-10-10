@@ -18,21 +18,32 @@
 
 import * as React from 'react';
 
-import { universalChildren, isValidChild } from 'platform/components/utils';
-import { SemanticTable } from 'platform/components/semantic/table';
+import { universalChildren, isValidChild, componentHasType } from 'platform/components/utils';
+import { SemanticTable, SemanticTableConfig } from 'platform/components/semantic/table';
 
-import { ResultContext, ResultContextTypes } from './SemanticSearchApi';
+import { SemanticSearchContext, ResultContext } from './SemanticSearchApi';
 
-export interface State {
+export class SemanticSearchTableResult extends React.Component {
+  render() {
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => <SemanticSearchTableResultInner {...this.props} context={context} />}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
+
+interface InnerProps {
+  context: ResultContext;
+}
+
+interface State {
   columnConfiguration?: any[];
 }
 
-export class SemanticSearchTableResult extends React.Component<{}, State> {
-  static contextTypes = ResultContextTypes;
-  context: ResultContext;
-
-  constructor(props: {}, context: any) {
-    super(props, context);
+export class SemanticSearchTableResultInner extends React.Component<InnerProps, State> {
+  constructor(props: InnerProps) {
+    super(props);
     this.state = {columnConfiguration: []};
   }
 
@@ -40,8 +51,9 @@ export class SemanticSearchTableResult extends React.Component<{}, State> {
     this.prepareColumnConfiguration();
   }
 
-  componentDidUpdate(prevProps: {}, prevState: State, prevContext: ResultContext) {
-    const {searchProfileStore, availableDomains} = this.context;
+  componentDidUpdate(prevProps: InnerProps) {
+    const {context: prevContext} = prevProps;
+    const {searchProfileStore, availableDomains} = this.props.context;
     if (!prevContext.searchProfileStore.isEqual(searchProfileStore) ||
       !prevContext.availableDomains.isEqual(availableDomains)) {
       this.prepareColumnConfiguration();
@@ -49,13 +61,16 @@ export class SemanticSearchTableResult extends React.Component<{}, State> {
   }
 
   private prepareColumnConfiguration() {
-    const {searchProfileStore, availableDomains} = this.context;
+    const {searchProfileStore, availableDomains} = this.props.context;
     const columnConfiguration: any[] = [];
     searchProfileStore.map(store =>
       availableDomains.map(domains =>
         domains.forEach((domain, iri) => {
           const variableName = domain.replace(/^\?/, '');
-          columnConfiguration.push({variableName, displayName: store.categories.get(iri).label});
+          columnConfiguration.push({
+            variableName,
+            displayName: store.categories.has(iri) ? store.categories.get(iri).label : variableName,
+          });
         })
       )
     );
@@ -69,8 +84,10 @@ export class SemanticSearchTableResult extends React.Component<{}, State> {
         if (!isValidChild(child)) {
           return child;
         }
-        if (child.type === SemanticTable) {
-          return React.cloneElement(child, {...child.props, columnConfiguration});
+        if (componentHasType(child, SemanticTable)) {
+          return React.cloneElement(
+            child, {...child.props, columnConfiguration} as SemanticTableConfig
+          );
         } else {
           return React.cloneElement(
             child, child.props,

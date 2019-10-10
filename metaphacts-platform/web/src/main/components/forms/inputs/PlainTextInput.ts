@@ -29,9 +29,7 @@ const ReactSelect = createFactory(ReactSelectComponent);
 
 import { Rdf, vocabularies, XsdDataTypeValidation } from 'platform/api/rdf';
 
-import { getPreferredLabel } from 'platform/components/utils';
-
-import { FieldDefinition } from '../FieldDefinition';
+import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import { FieldValue, AtomicValue, EmptyValue, FieldError, DataState } from '../FieldValues';
 import { AtomicValueInput, AtomicValueInputProps } from './SingleValueInput';
 import { ValidationMessages } from './Decorations';
@@ -237,10 +235,9 @@ export class PlainTextInput extends AtomicValueInput<PlainTextInputProps, State>
   }
 }
 
-function getLanguageFromNode(node: Rdf.Node): string {
-  if (!node || !(node instanceof Rdf.LangLiteral)) { return undefined; }
-  const literal = node as Rdf.LangLiteral;
-  return literal.lang;
+function getLanguageFromNode(node: Rdf.Node): string | undefined {
+  if (!(node && node.isLiteral())) { return undefined; }
+  return node.language ? node.language : undefined;
 }
 
 function getTextAreaStyle(style: ValidationStyle): CSSProperties {

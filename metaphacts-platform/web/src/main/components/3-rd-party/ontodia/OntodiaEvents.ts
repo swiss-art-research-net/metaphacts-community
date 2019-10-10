@@ -16,14 +16,30 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
+import { DiagramModel, AuthoringState, TemporaryState } from 'ontodia';
+
 import { EventMaker } from 'platform/api/events';
 
 export interface OntodiaEventData {
   /**
    * Event which should be triggered when diagram has been saved.
    */
-  'Ontodia.DiagramSaved': void;
+  'Ontodia.DiagramSaved': { resourceIri: string };
+  /**
+   * Event which should be triggered when diagram has been changed.
+   */
+  'Ontodia.DiagramChanged': {
+    model: DiagramModel;
+    authoringState: AuthoringState;
+    temporaryState: TemporaryState;
+  };
+  /**
+   * Event which should be triggered when diagram has been changed.
+   */
+  'Ontodia.DiagramIsDirty': { hasChanges: boolean };
 }
 const event: EventMaker<OntodiaEventData> = EventMaker;
 
 export const DiagramSaved = event('Ontodia.DiagramSaved');
+export const DiagramChanged = event('Ontodia.DiagramChanged');
+export const DiagramIsDirty = event('Ontodia.DiagramIsDirty');

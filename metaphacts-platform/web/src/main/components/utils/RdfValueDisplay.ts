@@ -25,6 +25,8 @@ import { ResourceLink } from 'platform/api/navigation/components';
 import * as LabelsService from 'platform/api/services/resource-label';
 import { compactIriUsingPrefix } from 'platform/api/sparql/SparqlUtil';
 
+import { CopyToClipboardComponent } from 'platform/components/copy-to-clipboard';
+
 export interface RdfValueDisplayProps extends ReactProps<RdfValueDisplay> {
     data: Rdf.Node;
     className?: string;
@@ -37,6 +39,7 @@ export interface RdfValueDisplayProps extends ReactProps<RdfValueDisplay> {
     showLabel?: boolean;
     showLiteralDatatype?: boolean;
     linkParams?: {};
+    showCopyToClipboardButton?: boolean;
 }
 
 export class RdfValueDisplay extends Component<RdfValueDisplayProps, {label: string}> {
@@ -67,16 +70,29 @@ export class RdfValueDisplay extends Component<RdfValueDisplayProps, {label: str
 
     render() {
         const displayValue = this.props.data.cata<any>(
-          iri => createElement(ResourceLink, {
-                className: this.props.className,
-                'data-rdfa-about': iri.value,
-                resource: iri,
-                title: this.state.label,
-                params: this.props.linkParams,
-            } as any, this.state.label),
+          iri => {
+            const resourceLink = createElement(ResourceLink, {
+              className: this.props.className,
+              'data-rdfa-about': iri.value,
+              resource: iri,
+              title: this.state.label,
+              params: this.props.linkParams,
+            } as any, this.state.label);
+            if (!this.props.showCopyToClipboardButton) {
+              return resourceLink;
+            }
+            return D.span({},
+              resourceLink,
+              createElement(CopyToClipboardComponent, {text: iri.value},
+                D.button({className: 'btn btn-link btn-xs', title: 'Copy IRI'},
+                  D.i({className: 'fa fa-clipboard text-muted'})
+                )
+              )
+            )
+          },
             literal => {
               const dataType = this.props.showLiteralDatatype ?
-                D.i({}, ` (${compactIriUsingPrefix(literal.dataType)})`) : undefined;
+                D.i({}, ` (${compactIriUsingPrefix(literal.datatype)})`) : undefined;
               return D.span({}, literal.value, dataType);
             },
             bnode => bnode.value

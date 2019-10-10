@@ -21,7 +21,7 @@ import * as React from 'react';
 import { Component, ComponentProps } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
 import * as Forms from 'platform/components/forms';
-import { hasBaseDerivedRelationship } from 'platform/components/utils';
+import { componentHasType } from 'platform/components/utils';
 
 import { AnnotationBodyType } from '../model/ComponentModel';
 
@@ -70,9 +70,9 @@ export class TextAnnotationType extends Component<TextAnnotationTypeProps, {}> {
 
 export default TextAnnotationType;
 
-export function extractAnnotationType(child: React.ReactChild): AnnotationBodyType {
+export function extractAnnotationType(child: React.ReactNode): AnnotationBodyType {
   const COMPONENT_TAG = '<rs-text-annotation-type>';
-  if (!(typeof child === 'object' && child.type === TextAnnotationType)) {
+  if (!componentHasType(child, TextAnnotationType)) {
     throw new Error(
       `<rs-text-annotation-workspace> should contain only ${COMPONENT_TAG} children`
     );
@@ -102,7 +102,7 @@ export function extractAnnotationType(child: React.ReactChild): AnnotationBodyTy
   }
 
   if (!(typeof props.children === 'object' &&
-    hasBaseDerivedRelationship(Forms.CompositeInput, props.children.type)
+    componentHasType(props.children, Forms.CompositeInput)
   )) {
     throw new Error(
       `${COMPONENT_TAG} must have a single <semantic-form-composite-input> as child`

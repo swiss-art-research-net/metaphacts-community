@@ -25,7 +25,7 @@ import * as moment from 'moment';
 import { createFactory, Props, Component } from 'react';
 import * as React from 'react';
 import {FormControl} from 'react-bootstrap';
-import * as Slider from 'rc-slider';
+import { Range as Slider } from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
 import {
@@ -214,9 +214,9 @@ export class FacetSliderComponent extends Component<FacetSliderProps, FacetSlide
           </div>
         }
         <Slider
-          allowCross={false} range={true} min={min} max={max} className={styles.slider}
+          allowCross={false} min={min} max={max} className={styles.slider}
           value={[value.begin, value.end]}
-          handle={<CustomHandle toStringFn={toStringFn} />}
+          handle={props => <CustomHandle {...props} toStringFn={toStringFn} />}
           onChange={this.onSliderValueChange}
         />
         {this.props.kind === 'numeric-range' ?
@@ -248,7 +248,7 @@ export class FacetSliderComponent extends Component<FacetSliderProps, FacetSlide
 
   private onSliderValueChange = (value: number[]) => {
     const newRange = {begin: value[0], end: value[1]};
-    this.setState(prevState => { prevState.value = newRange; return prevState; });
+    this.setState({value: newRange});
     this.onNewRange(newRange);
   }
 
@@ -258,7 +258,7 @@ export class FacetSliderComponent extends Component<FacetSliderProps, FacetSlide
         begin: converter.fromInputValue(newValue),
         end: this.state.value ? this.state.value.end : null,
       };
-      this.setState(prevState => { prevState.value = newRange; return prevState; });
+      this.setState({value: newRange});
       this.onNewRange(newRange);
     });
   }
@@ -268,7 +268,7 @@ export class FacetSliderComponent extends Component<FacetSliderProps, FacetSlide
         begin: this.state.value ? this.state.value.begin : null,
         end: converter.fromInputValue(newValue),
       };
-      this.setState((prevState) => { prevState.value = newRange; return prevState; });
+      this.setState({value: newRange});
       this.onNewRange(newRange);
     });
   }

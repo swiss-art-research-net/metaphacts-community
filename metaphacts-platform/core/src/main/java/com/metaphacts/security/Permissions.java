@@ -419,9 +419,20 @@ public class Permissions {
         public static final String PREFIX_VIEW = "ephedra-service-config:view:";
         public static final String CREATE = "ephedra-service-config:create";
     }
+    
+    @PermissionsDocGroup(desc = "Permissions for managing the base system.")
+    public static class SYSTEM {
+        @PermissionsDocField(desc = "Grants permission to restart the system, e.g. after installing an app.")
+        public static final String RESTART = "system:restart";
+    }
 
+    @PermissionsDocGroup(desc = "Permissions for managing apps.")
     public static class APP {
     	public static final String PREFIX_CONFIG_VIEW = "app:view-config:";
+        @PermissionsDocField(desc = "Grants permission to upload app ZIP artefacts."
+                + "This is a global permission, i.e. there is no distinction between different apps."
+        )
+    	public static final String UPLOAD = "app:upload";
     }
 
     @PermissionsDocGroup(desc = "Permissions for managing storages.")
@@ -463,6 +474,23 @@ public class Permissions {
             example="/com/metaphacts/security/aclhelp/file_write.html"
         )
         public static final String PREFIX_WRITE = "file:write:";
+    }
+    
+    @PermissionsDocGroup(desc = "Permissions for managing logs.")
+    public static class LOGS {
+        @PermissionsDocField(
+            desc="Permissions for displaying log files.",
+            pattern="logs:read:*",
+            example="/com/metaphacts/security/aclhelp/logs_read.html"
+        )
+        public static final String PREFIX_READ = "logs:read:";
+        
+        @PermissionsDocField(
+                desc="Permissions for configuring the logging system (e.g. the logging profile).",
+                pattern="logs:configure:*",
+                example="/com/metaphacts/security/aclhelp/logs_configure.html"
+            )
+            public static final String PREFIX_CONFIGURE = "logs:configure:";
     }
 
     @PermissionsDocGroup(desc = "Permissions for managing data quality jobs.")

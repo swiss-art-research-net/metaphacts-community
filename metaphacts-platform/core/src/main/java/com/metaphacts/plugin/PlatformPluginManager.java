@@ -18,27 +18,36 @@
 
 package com.metaphacts.plugin;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ro.fortsoft.pf4j.DefaultPluginManager;
-import ro.fortsoft.pf4j.PluginDescriptor;
-import ro.fortsoft.pf4j.PluginDescriptorFinder;
-import ro.fortsoft.pf4j.PluginException;
-import ro.fortsoft.pf4j.PluginWrapper;
-
 import com.github.zafarkhaja.semver.Version;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.plugin.extension.ConfigurationExtension;
 import com.metaphacts.plugin.extension.RestExtension;
 import com.metaphacts.sail.rest.sql.MpJDBCDriverManager;
+
+import ro.fortsoft.pf4j.DefaultPluginManager;
+import ro.fortsoft.pf4j.PluginDescriptor;
+import ro.fortsoft.pf4j.PluginDescriptorFinder;
+import ro.fortsoft.pf4j.PluginException;
+import ro.fortsoft.pf4j.PluginRepository;
+import ro.fortsoft.pf4j.PluginWrapper;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -170,6 +179,44 @@ public class PlatformPluginManager extends DefaultPluginManager {
         } catch (Exception e) {
             logger.error("Failed to load Plugins: ", e.getMessage());
             logger.debug("Details:", e);
+        }
+    }
+    
+    @Override
+    protected PluginRepository createPluginRepository() {
+        return new PlatformPluginRepository(getPluginsRoot(), isDevelopment());
+    }
+    
+    @Override
+    protected PluginWrapper loadPluginFromPath(Path pluginPath) throws PluginException {
+        
+        // First unzip any ZIP files
+        try {
+            pluginPath = PluginZipUtils.expandAndDeleteIfValidZipApp(pluginPath);
+            checkAppStructureLogWarning(pluginPath.toFile());
+        } catch (Exception e) {
+            logger.error("Failed to unzip {} . Error: {} " ,pluginPath, e.getMessage() );
+            logger.debug("Details: {}", e);
+            return null;
+        }
+        return super.loadPluginFromPath(pluginPath);
+    }
+    
+    private void checkAppStructureLogWarning(File appFolder) {
+        // TODO expand checks to files in the future
+        final ArrayList<String> supportedFolders = Lists.newArrayList("data", "data/templates",
+                "plugin.properties", "assets", "ldp", "ldp/assets", "ldp/default", "config", "config/repositories",
+                "config/services", "config/page-layout", "lib");
+        for (File f : FileUtils.listFiles(appFolder, TrueFileFilter.INSTANCE,
+                TrueFileFilter.INSTANCE)) {
+            // relativize returns without leading /
+            String relativePath = appFolder.toURI().relativize(f.toURI()).getPath();
+            if (supportedFolders.contains(relativePath) || supportedFolders.stream().anyMatch(supported -> relativePath.startsWith(supported) )) {
+               continue;
+            }
+            logger.warn(
+                    "App \"{}\" contains a folder \"{}\"  which doesn't seem to be a supported app artefact or is packaged into the wrong directory structure.",
+                    appFolder.getName(), relativePath);
         }
     }
 

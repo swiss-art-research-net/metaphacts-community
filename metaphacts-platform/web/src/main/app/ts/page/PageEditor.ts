@@ -40,8 +40,8 @@ import { ReactElement, Component, createFactory, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import { RadioGroup, Radio } from 'react-radio-group';
 import * as ReactBootstrap from 'react-bootstrap';
-import * as ReactCodeMirror from 'react-codemirror';
-import ReactSelect, { ReactSelectProps, Option } from 'react-select';
+import { Controlled as CodeMirror } from 'react-codemirror2';
+import * as codemirror from 'codemirror';
 
 import {
   navigateToResource, navigationConfirmation,
@@ -56,12 +56,7 @@ import { BrowserPersistence } from 'platform/components/utils';
 
 import '../../scss/page-editor.scss';
 
-const CodeMirror = createFactory(ReactCodeMirror);
-
 const Button = createFactory(ReactBootstrap.Button);
-const Grid = createFactory(ReactBootstrap.Grid);
-const Row = createFactory(ReactBootstrap.Row);
-const Col = createFactory(ReactBootstrap.Col);
 const ButtonToolbar = createFactory(ReactBootstrap.ButtonToolbar);
 const ButtonGroup = createFactory(ReactBootstrap.ButtonGroup);
 
@@ -95,8 +90,11 @@ interface RadioGroupEntry {
 const CLASS_NAME = 'page-editor';
 
 class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
+  private editor: codemirror.Editor | undefined;
+
   private navigationListenerUnsubscribe?: () => void;
   private radioGroupEntries: RadioGroupEntry[];
+
   constructor(props: PageEditorProps, context: any) {
     super(props, context);
     const localStorageSyntax = LocalStorageState.get(PLATFORM_TEMPLATE_EDITOR).activeSyntax;
@@ -158,10 +156,14 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
     if (!_.isEqual(this.props, nextProps)) {
       return true;
     } else {
-      return nextState.saving !== this.state.saving ||
-        nextState.activeSyntax !== this.state.activeSyntax ||
-        nextState.loading !== this.state.loading ||
-        nextState.targetApp !== this.state.targetApp;
+      return !(
+        nextState.pageSource === this.state.pageSource &&
+        nextState.storageStatus === this.state.storageStatus &&
+        nextState.saving === this.state.saving &&
+        nextState.activeSyntax === this.state.activeSyntax &&
+        nextState.loading === this.state.loading &&
+        nextState.targetApp === this.state.targetApp
+      );
     }
   }
 
@@ -219,11 +221,11 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
             : null
           ),
           this.renderAppSelector(),
-          CodeMirror({
-            ref: 'editor',
+          createElement(CodeMirror, {
             className: 'template-editor',
+            editorDidMount: this.onEditorDidMount,
             value: this.state.pageSource.source,
-            onChange: this.onPageContentChange,
+            onBeforeChange: this.onPageContentChange,
             options: {
               ...codeMirrorAddonOptions,
               mode: this.getSyntaxMode(this.state.activeSyntax),
@@ -265,7 +267,11 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
         )
       )
     );
-  };
+  }
+
+  private onEditorDidMount = (editor: codemirror.Editor) => {
+    this.editor = editor;
+  }
 
   private isTemplateApplied(iri: Rdf.Iri, pageSource: TemplateContent) {
     return (
@@ -301,21 +307,21 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
       value: ({pageSource, storageStatus}) => {
         const targetApp = chooseDefaultTargetApp(storageStatus, pageSource.appId);
         this.setState({pageSource, storageStatus, targetApp, saving: false, loading: false}, () => {
-          (this.refs['editor'] as any).focus();
+          this.editor.focus();
         });
       }
     });
   }
 
-  private onPageContentChange = (content) => {
+  private onPageContentChange = (
+    editor: codemirror.Editor, data: codemirror.EditorChange, value: string
+  ) => {
     if (!this.navigationListenerUnsubscribe) {
       this.navigationListenerUnsubscribe =
         navigationConfirmation('Changes you made to the page will not be saved.');
     }
     this.setState(state => {
-      state.pageSource.source = content;
-      state.saving = false;
-      return state;
+      return {pageSource: {...state.pageSource, source: value},  saving: false};
     });
   }
 
@@ -325,7 +331,7 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
     }
 
     const {pageSource, targetApp} = this.state;
-    this.setState({pageSource, saving: true});
+    this.setState({saving: true});
 
     PageService.save({
       iri: this.props.iri.value,
@@ -334,7 +340,7 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
       sourceRevision: typeof pageSource.revision === 'string' ? pageSource.revision : undefined,
       rawContent: pageSource.source,
     }).onValue(v => {
-       this.setState({pageSource: this.state.pageSource, saving: false});
+       this.setState({saving: false});
        navigateToResource(this.props.iri, queryParams).onValue(x => x);
     }).onError( error => {
       const dialogRef = `page-saving-error`;
@@ -408,7 +414,7 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
   }
 
   private onSyntaxChange  = (value: Syntax) => {
-    (this.refs['editor'] as any).codeMirror.setOption('mode', this.getSyntaxMode(value));
+    this.editor.setOption('mode', this.getSyntaxMode(value));
     LocalStorageState.update(PLATFORM_TEMPLATE_EDITOR, {activeSyntax: value});
     this.setState({
       activeSyntax: value,

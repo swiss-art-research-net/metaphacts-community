@@ -20,22 +20,20 @@ package com.metaphacts.data.rdf.container;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import javax.inject.Inject;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.ClassInfoList;
-import io.github.classgraph.ScanResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.eclipse.rdf4j.repository.Repository;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
@@ -43,6 +41,11 @@ import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import com.metaphacts.repository.MpRepositoryProvider;
 import com.metaphacts.vocabulary.LDP;
+
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ClassInfoList;
+import io.github.classgraph.ScanResult;
 
 /**
  * 
@@ -80,7 +83,8 @@ public class LDPImplManager {
         } catch (InstantiationException | IllegalAccessException
                 | IllegalArgumentException | InvocationTargetException
                 | NoSuchMethodException | SecurityException e) {
-            throw Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
     
@@ -123,7 +127,7 @@ public class LDPImplManager {
              LDPR a = cl.getAnnotation(LDPR.class);
              known.put(vf.createIRI(a.iri()), (Class<? extends LDPResource>) cl);
          }
-         logger.debug("Found the following LDP resource implementations: " + known);
+         logger.trace("Found the following LDP resource implementations: " + known);
          return known;
      }
 
@@ -138,7 +142,7 @@ public class LDPImplManager {
             LDPR a = cl.getAnnotation(LDPR.class);
             known.put(vf.createIRI(a.iri()), (Class<? extends LDPContainer>) cl);
          }
-         logger.debug("Found the following LDP container implementations: " + known);
+         logger.trace("Found the following LDP container implementations: " + known);
          return known;
      }
      

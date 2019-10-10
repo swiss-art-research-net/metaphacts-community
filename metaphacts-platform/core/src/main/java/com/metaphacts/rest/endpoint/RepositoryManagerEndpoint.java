@@ -38,12 +38,12 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
-import com.metaphacts.services.storage.api.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,6 +73,10 @@ import com.metaphacts.repository.memory.MpMemoryRepository;
 import com.metaphacts.repository.memory.MpMemoryRepositoryFactory;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.security.Permissions.REPOSITORY_CONFIG;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StoragePath;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -262,7 +266,8 @@ public class RepositoryManagerEndpoint {
     @RequiresAuthentication
     public Response addRepositoryTTLConfig(
         @NotNull @PathParam("repositoryId") String repID,
-        InputStream stream
+        InputStream stream,
+        @QueryParam("validate") boolean validate
     ) {
         Optional<Repository> optRepo = repositoryManager.getRepository(Optional.of(repID));
         if (!checkPermission(optRepo.isPresent() ? REPOSITORY_CONFIG.PREFIX_UPDATE + repID
@@ -316,6 +321,17 @@ public class RepositoryManagerEndpoint {
                     + " is invalid: " + e.getMessage();
             logger.error(msg);
             return Response.status(Status.BAD_REQUEST).entity(msg).build();
+        }
+
+        // validate repository if desired, always validate "default" repository changes
+        if (validate || "default".equals(repID)) {
+            try {
+                repositoryManager.validate(config.getRepositoryImplConfig(), repID);
+            } catch (Exception e) {
+                String message = "Validation of repository config failed: " + e.getMessage();
+                logger.debug(message, e);
+                return Response.status(Status.BAD_REQUEST).entity(message).build();
+            }
         }
 
         try {

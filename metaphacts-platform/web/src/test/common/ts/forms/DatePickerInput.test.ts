@@ -18,20 +18,12 @@
 
 import { createElement } from 'react';
 import { DatetimepickerProps } from 'react-datetime';
+import { clone } from 'lodash';
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { mount, shallow } from 'enzyme';
 
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import * as LanguageService from 'platform/api/services/language';
-
-sinon.stub(ConfigHolder, 'getUIConfig', function() {
-  return {preferredLanguages: []};
-});
-sinon.stub(LanguageService, 'getPreferredUserLanguage', function() {
-  return undefined;
-});
+import { Rdf, vocabularies } from 'platform/api/rdf';
 
 import {
   AtomicValue,
@@ -45,8 +37,10 @@ import {
   normalizeFieldDefinition,
 } from 'platform/components/forms';
 
-import { Rdf, vocabularies } from 'platform/api/rdf';
-import { clone } from 'lodash';
+import { shallow, mount } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
+
+mockLanguagePreferences();
 
 const DATE_TIME = 'http://www.w3.org/2001/XMLSchema-datatypes#dateTime';
 const DATE = 'http://www.w3.org/2001/XMLSchema-datatypes#date';
@@ -115,7 +109,7 @@ describe('DatePickerInput Component', () => {
         wrapper.find('input').simulate('change', {'target': {'value': '05/11/22'}});
         const reducer: (previous: FieldValue) => AtomicValue = callback.args[0][0];
         const newValue = reducer(clonedProps.value).value;
-        expect(newValue.isLiteral() && newValue.dataType.value).to.be.equal(Rdf.iri(DATE).value);
+        expect(newValue.isLiteral() && newValue.datatype.value).to.be.equal(Rdf.iri(DATE).value);
       });
     });
 

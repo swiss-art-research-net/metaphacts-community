@@ -27,9 +27,7 @@ import Moment = moment.Moment;
 
 import { Rdf, vocabularies, XsdDataTypeValidation } from 'platform/api/rdf';
 
-import { getPreferredLabel } from 'platform/components/utils';
-
-import { FieldDefinition } from '../FieldDefinition';
+import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import { FieldValue, AtomicValue, EmptyValue } from '../FieldValues';
 import { AtomicValueInput, AtomicValueInputProps } from './SingleValueInput';
 import { ValidationMessages } from './Decorations';
@@ -147,7 +145,7 @@ function dateLiteralFromRdfNode(node: Rdf.Node | undefined): Rdf.Literal | undef
 
 export function utcMomentFromRdfLiteral(literal: Rdf.Literal | undefined): Moment | undefined {
   if (!literal) { return undefined; }
-  const mode = getModeFromDatatype(literal.dataType);
+  const mode = getModeFromDatatype(literal.datatype);
   const parsedMoment = (
     mode === 'date' ? moment.utc(literal.value, INPUT_XSD_DATE_FORMAT) :
     mode === 'time' ? moment.utc(literal.value, INPUT_XSD_TIME_FORMAT) :

@@ -163,7 +163,7 @@ class DropdownSelector extends Component<Props, {}> {
 
   private onSelectMounted = (select: any) => {
     if (select) {
-      const node = findDOMNode(select);
+      const node = findDOMNode(select) as Element;
       node.setAttribute('aria-label', this.props.label);
     }
   }

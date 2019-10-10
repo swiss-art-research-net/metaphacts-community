@@ -36,7 +36,7 @@ import { ResourceLabel } from 'platform/components/ui/resource-label';
 
 import {
   ResourceEditorForm, FieldValue, CompositeValue, LdpPersistence, normalizeFieldDefinition,
-  computeModelDiff,
+  computeModelDiff, getPreferredLabel,
 } from 'platform/components/forms';
 import {
   FieldBasedVisualization, FieldDefinitionWithData,
@@ -135,7 +135,7 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
                   ${valueTemplate}
                 </div>
                 <div data-flex-self='right'>
-                  <rs-argument-simple-belief-selector for-value='{{value.value}}' is-canonical='{{#if ../../isNotCanonical}}false{{else}}true{{/if}}'>
+                  <rs-argument-simple-belief-selector for-value='{{value.value.value}}' is-canonical='{{#if ../../isNotCanonical}}false{{else}}true{{/if}}'>
                   </rs-argument-simple-belief-selector>
                 </div>
               </div>
@@ -145,7 +145,7 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
 `;
 
     const fieldClone = _.cloneDeep(field) as any;
-    fieldClone.values = this.state.newValues;
+    fieldClone.values = this.state.newValues.map(value => ({value}));
     fieldClone.minOccurs = 1;
     fieldClone.maxOccurs = 1;
 
@@ -215,7 +215,7 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
         <ResourceLabel iri={subject.value} />
       </div>
       <div className={styles.field}>
-        {field.label}
+        {getPreferredLabel(field.label)}
       </div>
     </div>
 

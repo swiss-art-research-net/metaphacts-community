@@ -10,6 +10,7 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
 @prefix mps: <http://www.metaphacts.com/ontologies/platform/service#> .
+@prefix ephedra: <http://www.metaphacts.com/ontologies/platform/ephedra#> .
 
 [] a rep:Repository ;
    rep:repositoryID "wikidata-text" ; 
@@ -18,6 +19,6 @@
       rep:repositoryType "openrdf:SailRepository" ;
       sr:sailImpl [
          sail:sailType "metaphacts:WikidataTextSearch" ; 
-         mps:implementsService mps:WikidataTextSearch 
+         ephedra:implementsService mps:WikidataTextSearch 
       ]
    ] .

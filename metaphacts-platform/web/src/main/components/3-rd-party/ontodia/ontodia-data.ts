@@ -162,6 +162,7 @@ const diagramFrame = {
     'elements': {
       '@type': 'Element',
       '@embed': '@always',
+      'ontodia:resource': {'@embed': '@never'},
     },
     'links': {
       '@type': 'Link',

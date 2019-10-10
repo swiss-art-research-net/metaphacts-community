@@ -18,22 +18,24 @@
 
 import { createElement} from 'react';
 import { expect } from 'chai';
-import { mount } from 'enzyme';
 import * as sinon from 'sinon';
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
 import { __unsafe__setCurrentResource } from 'platform/api/navigation';
 
 import {
-  ResourceEditorForm, PlainTextInput, DataState, FieldValue, FieldDefinitionProp,
-  normalizeFieldDefinition,
+  PlainTextInput, DataState, FieldValue, FieldDefinitionProp, normalizeFieldDefinition,
 } from 'platform/components/forms';
+
+import { mockLanguagePreferences } from 'platform-tests/mocks';
 
 import { AsyncForm } from './fixturies/AsyncForm';
 
+mockLanguagePreferences();
 __unsafe__setCurrentResource(Rdf.iri('http://test'));
 
 const fieldProps = {
+  key: 'testKey',
   definition: normalizeFieldDefinition({
     id: '',       // these will be overwritten bz the field definition in the test
     label: '',    // these will be overwritten bz the field definition in the test

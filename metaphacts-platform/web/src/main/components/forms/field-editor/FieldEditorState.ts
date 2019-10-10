@@ -154,7 +154,7 @@ export namespace ValidatedTreeConfig {
  */
 export function createFieldDefinitionGraph(properties: {
   id: string;
-  label: ReadonlyArray<Rdf.LangLiteral>;
+  label: ReadonlyArray<Rdf.Literal>;
   description: string | undefined;
   categories: ReadonlyArray<Rdf.Iri>;
   domain: ReadonlyArray<string>;
@@ -282,8 +282,8 @@ export function getFieldDefitionState(fieldIri: Rdf.Iri): Kefir.Property<State> 
         if (typeof fieldDef.label === 'string') {
           label.push({value: createValue(fieldDef.label), lang: ''});
         } else {
-          fieldDef.label.forEach(({value, lang}) =>
-            label.push({value: createValue(value), lang})
+          fieldDef.label.forEach(({value, language}) =>
+            label.push({value: createValue(value), lang: language})
           );
         }
       }
@@ -343,7 +343,7 @@ export function unwrapState(state: State) {
     insertPattern, deletePattern, askPattern, valueSetPattern, autosuggestionPattern,
   };
   type Unwrapped = { [K in keyof typeof fields]: string | undefined } & {
-    label: ReadonlyArray<Rdf.LangLiteral>,
+    label: ReadonlyArray<Rdf.Literal>,
     categories: ReadonlyArray<Rdf.Iri>,
     domain: ReadonlyArray<string>,
     range: ReadonlyArray<string>,

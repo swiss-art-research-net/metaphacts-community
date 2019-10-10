@@ -26,10 +26,11 @@ import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.model.vocabulary.SP;
+import org.eclipse.rdf4j.query.MalformedQueryException;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 
-import com.google.common.base.Throwables;
+import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.api.sparql.SparqlUtil;
 import com.metaphacts.data.rdf.PointedGraph;
 import com.metaphacts.repository.MpRepositoryProvider;
@@ -52,11 +53,9 @@ public class QueryContainer extends AbstractLDPContainer {
             m.add(vf.createStatement(IRI, RDF.TYPE, LDP.Resource));
             m.add(vf.createStatement(IRI, RDFS.LABEL, vf.createLiteral("Query Container")));
             m.add(vf.createStatement(IRI, RDFS.COMMENT, vf.createLiteral("Container to store sp:Query instances.")));
-            try {
-                getRootContainer().add(new PointedGraph(IRI, m));
-            } catch (RepositoryException e) {
-                throw Throwables.propagate(e);
-            }
+
+            getRootContainer().add(new PointedGraph(IRI, m));
+
         }
     }
 
@@ -68,17 +67,18 @@ public class QueryContainer extends AbstractLDPContainer {
     @Override
     protected void add(PointedGraph pointedGraph, RepositoryConnection repConnection)
             throws RepositoryException {
-        validateIfEmptyQuery(pointedGraph);
+        validateQuery(pointedGraph);
         super.add(pointedGraph, repConnection);
     }
 
     @Override
     public void update(PointedGraph pointedGraph) throws RepositoryException {
-        validateIfEmptyQuery(pointedGraph);
+        validateQuery(pointedGraph);
         super.update(pointedGraph);
     }
     
-    protected void validateIfEmptyQuery(PointedGraph pointedGraph) throws IllegalArgumentException {
+    protected void validateQuery(PointedGraph pointedGraph) throws IllegalArgumentException {
+        
         Optional<String> optText = pointedGraph.getGraph().filter(null, SP.TEXT_PROPERTY, null)
                 .stream()
                 .map(Statement::getObject)
@@ -87,6 +87,13 @@ public class QueryContainer extends AbstractLDPContainer {
                 
         if (!optText.isPresent() || SparqlUtil.isEmpty(optText.get())) {
             throw new IllegalArgumentException("Cannot save an empty query");
+        }
+
+        String query = optText.get();
+        try {
+            SparqlOperationBuilder.create(query).validate();
+        } catch (MalformedQueryException e) {
+            throw new IllegalArgumentException("Syntax error in query: " + e.getMessage(), e);
         }
     }
 

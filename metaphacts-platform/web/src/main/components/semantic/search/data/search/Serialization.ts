@@ -34,7 +34,7 @@ import {
 import { Dataset, Alignment } from '../datasets/Model';
 
 export interface RawState {
-  search: Search;
+  search: Search | undefined;
   facet: FacetModel.Ast;
   result: { [componentId: string]: object };
   datasets: Array<Dataset>;

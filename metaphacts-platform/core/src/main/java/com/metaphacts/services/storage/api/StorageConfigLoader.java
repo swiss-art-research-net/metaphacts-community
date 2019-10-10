@@ -106,7 +106,7 @@ public class StorageConfigLoader {
                 parsedConfig.validate();
             } catch (StorageConfigException e) {
                 throw new StorageConfigException(
-                    "Invalid configuration for storage ID '" + storageId + "'", e);
+                    "Invalid configuration for storage ID '" + storageId + "'. Details: " + e.getMessage(), e);
             }
             configs.put(storageId, parsedConfig);
         }

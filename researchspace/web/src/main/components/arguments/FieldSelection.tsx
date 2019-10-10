@@ -25,11 +25,11 @@ import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
-import { getArgumentsFieldDefinition } from './FieldUtils';
-import { ArgumentsFieldDefinition } from './ArgumentsApi';
+import { getPreferredLabel } from 'platform/components/forms';
 import { getRepositoryStatus } from 'platform/api/services/repository';
 
-import { getPreferredLabel } from 'platform/components/utils';
+import { getArgumentsFieldDefinition } from './FieldUtils';
+import { ArgumentsFieldDefinition } from './ArgumentsApi';
 
 export interface BaseFieldSelectionProps {
   record: Rdf.Iri

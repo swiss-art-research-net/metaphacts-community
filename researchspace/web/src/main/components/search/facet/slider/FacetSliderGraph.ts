@@ -110,8 +110,8 @@ export class FacetSliderGraph extends Component<FacetSliderGraphProps, {}> {
   }
 
   updateCanvas() {
-    const canvas = findDOMNode<HTMLCanvasElement>(this.refs['canvas']);
-    canvas.width = (<HTMLElement>this.refs['canvas-container']).clientWidth;
+    const canvas = findDOMNode(this.refs['canvas']) as HTMLCanvasElement;
+    canvas.width = (this.refs['canvas-container'] as HTMLElement).clientWidth;
     const h = canvas.height;
     const w = canvas.width;
     const ctx = canvas.getContext('2d');

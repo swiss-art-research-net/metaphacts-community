@@ -19,24 +19,16 @@
 import { createElement, HTMLAttributes } from 'react';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { shallow } from 'enzyme';
-
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import * as LanguageService from 'platform/api/services/language';
-
-sinon.stub(ConfigHolder, 'getUIConfig', function() {
-  return {preferredLanguages: []};
-});
-sinon.stub(LanguageService, 'getPreferredUserLanguage', function() {
-  return undefined;
-});
 
 import { Rdf } from 'platform/api/rdf';
 import {
-  AutocompleteInput, AutocompleteInputProps, SparqlBindingValue, FieldValue,
-  normalizeFieldDefinition,
+  AutocompleteInput, AutocompleteInputProps, FieldValue, normalizeFieldDefinition,
 } from 'platform/components/forms';
-import * as Immutable from 'immutable';
+
+import { shallow } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
+
+mockLanguagePreferences();
 
 interface AutocompleteProps extends HTMLAttributes<HTMLElement> {
   minimumInput: string;

@@ -17,7 +17,7 @@
  */
 
 import * as React from 'react';
-import { Alert } from 'react-bootstrap';
+import { Alert, Row, Col } from 'react-bootstrap';
 import { Cancellation } from 'platform/api/async';
 import { Component } from 'platform/api/components';
 
@@ -68,9 +68,28 @@ export class RepositoryConfigInitializer extends Component<{}, State> {
             <h2>Please configure the default repository</h2>
             <p>There is no configuration for the default repository in the system.
              Please set the configuration of the repository you would like to use
-             as the system default one and restart the platform.
+             as the system default, then validate the connection and confirm with Update Config.
              The configuration has to be expressed in the RDF Turtle format.
              You can select a template for some of the commonly used repository types.</p>
+            <Row>
+              <Col sm={2}>
+                  <b>neptune</b>
+                  <p>For use with Amazon Neptune.</p>
+              </Col>
+              <Col sm={2}>
+                  <b>stardog</b>
+                  <p>For use with a Stardog repository</p>
+              </Col>
+              <Col sm={3}>
+                  <b>sparql</b>
+                  <p>Use with any SPARQL 1.1 compliant database endpoint where authentication is not required, e.g. Blazegraph, RDF4J</p>
+              </Col>
+              <Col sm={3}>
+                  <b>sparql-basic</b>
+                  <p>Same as "sparql", but includes basic authentication. Can be used for GraphDB amongst others.</p>
+              </Col>
+
+            </Row>
              <Alert bsStyle='info'>
                 In the template, please replace all placeholders marked with {'{'}% and %{'} '}
                 with your actual values.
@@ -79,6 +98,8 @@ export class RepositoryConfigInitializer extends Component<{}, State> {
            <RepositoryConfigEditor id='default'
                 repositoryTemplates={repositoryTemplates}
                 showRestartPrompt={ true }
+                reloadPageOnSuccess={ true }
+                initializerMode={ true }
                 preselectedTemplate='sparql'/>
           }
         </div>

@@ -18,7 +18,6 @@
 
 package com.metaphacts.repository.sparql;
 
-import org.eclipse.rdf4j.http.client.SPARQLProtocolSession;
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository;
 
 /**
@@ -62,7 +61,7 @@ public class SPARQLAuthenticatingRepository extends SPARQLRepository {
     }
     
     @Override
-    protected SPARQLProtocolSession createHTTPClient() {
+    protected MpSPARQLProtocolSession createHTTPClient() {
         if(authenticationModus.equals(AuthMethod.BasicAuth)){
             // when setting this on the super class
             // createHTTPClient will create a client with basic auth context

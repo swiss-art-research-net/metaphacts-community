@@ -21,9 +21,8 @@ import { Button } from 'react-bootstrap';
 
 import { Rdf } from 'platform/api/rdf';
 import { AutoCompletionInput } from 'platform/components/ui/inputs';
-import { getPreferredLabel } from 'platform/components/utils';
 
-import { FieldDefinition } from '../FieldDefinition';
+import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import { FieldValue, AtomicValue, EmptyValue } from '../FieldValues';
 import { NestedModalForm, tryExtractNestedForm } from './NestedModalForm';
 import { AtomicValueInput, AtomicValueInputProps } from './SingleValueInput';

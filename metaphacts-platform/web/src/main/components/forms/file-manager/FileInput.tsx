@@ -19,18 +19,20 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import * as ReactBootstrap from 'react-bootstrap';
-import * as ReactDropzone from 'react-dropzone';
+import * as Kefir from 'kefir';
+
+import { Cancellation } from 'platform/api/async';
+import { Rdf } from 'platform/api/rdf';
+import { FileManager } from 'platform/api/services/file-manager';
 
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
-import * as Kefir from 'kefir';
-import { FileManager } from 'platform/api/services/file-manager';
+import { Dropzone } from 'platform/components/ui/dropzone';
 
 import * as styles from './FileManager.scss';
 import { AtomicValueInputProps, AtomicValueInput } from '../inputs';
 import { EmptyValue, CompositeValue, AtomicValue, FieldValue } from '../FieldValues';
-import { Rdf } from 'platform/api/rdf';
 import FileVisualizer from './FileVisualizer';
-import { Cancellation } from 'platform/api/async';
+
 
 interface FileInputConfig {
   /** Target storage ID. */
@@ -257,17 +259,16 @@ export class FileInput extends AtomicValueInput<FileInputProps, State> {
     const alert = this.state.alertState ? <Alert {...this.state.alertState}></Alert> : null;
     const placeholder = this.props.placeholder || 'Please drag&drop your file here.';
     return <div className={styles.FileUploader}>
-      <ReactDropzone
+      <Dropzone
         accept={this.props.acceptPattern}
         onDropAccepted={this.onDropAccepted.bind(this)}
         onDropRejected={this.onDropRejected.bind(this)}
-        disableClick={Boolean(this.state.progress)}
-        >
-          {
-            this.props.children ||
-            <div className = {styles.mpDropZonePlaceHolder}>{placeholder}</div>
-          }
-      </ReactDropzone>
+        noClick={Boolean(this.state.progress)}>
+        {
+          (this.props.children as JSX.Element | JSX.Element[]) ||
+          <div className = {styles.mpDropZonePlaceHolder}>{placeholder}</div>
+        }
+      </Dropzone>
       {alert ? <div className={styles.alertComponent}>{alert}</div> : null}
     </div>;
   }

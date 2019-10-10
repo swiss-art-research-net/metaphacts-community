@@ -94,9 +94,7 @@ export interface OtherElementMapping {
  *
  * Inputs derived from `SingleValueInput` are automatically wrapped by `CardinalitySupport`.
  */
-export function mapChildToComponent(
-  child: ReactElement<any> | string | number
-): FieldMapping | undefined {
+export function mapChildToComponent(child: ReactNode): FieldMapping | undefined {
   if (!isValidChild(child)) { return undefined; }
 
   const element = child as ReactElement<any>;

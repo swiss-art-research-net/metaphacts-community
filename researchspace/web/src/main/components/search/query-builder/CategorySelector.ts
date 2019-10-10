@@ -164,7 +164,7 @@ export class CategorySelectorComponent extends Component<
           this.refs,
           (acc, ref, key) => {
             acc[key] = this.hasDisabledChild(
-              findDOMNode<HTMLElement>(ref)
+              findDOMNode(ref) as HTMLElement
             );
             return acc;
           }, {}

@@ -23,6 +23,7 @@ import { Cancellation } from 'platform/api/async/Cancellation';
 import { listen } from 'platform/api/events';
 
 import PageLoaderComponent from 'platform/components/ui/page-loader';
+import { isValidChild, componentHasType } from 'platform/components/utils';
 import { OntodiaPanel } from './OntodiaPanel';
 import { IIIFViewerPanel } from './IIIFViewerPanel';
 import * as PanelSystemEvents from './PanelSystemEvents';
@@ -110,14 +111,14 @@ export class PanelSystemHolder extends React.Component<Props, State> {
   private mapChildren(children: React.ReactNode) {
     const {holder, data, holderKey} = this.state;
     return Children.map(children, child => {
-        if (typeof child === 'object') {
-          if (holder === Holder.PageLoader && child.type === PageLoaderComponent &&
+        if (isValidChild(child)) {
+          if (holder === Holder.PageLoader && componentHasType(child, PageLoaderComponent) &&
             child.props.id === data.pageId) {
             return cloneElement(child, {key: holderKey, ...data.pageProps});
           }
           if (
-            (holder === Holder.GraphAuthoring && child.type === OntodiaPanel) ||
-            (holder === Holder.IIIFViewer && child.type === IIIFViewerPanel)
+            (holder === Holder.GraphAuthoring && componentHasType(child, OntodiaPanel)) ||
+            (holder === Holder.IIIFViewer && componentHasType(child, IIIFViewerPanel))
           ) {
             return cloneElement(child, {key: holderKey, ...data});
           }

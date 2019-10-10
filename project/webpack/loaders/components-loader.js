@@ -25,7 +25,7 @@ module.exports.default = function(input) {
             if(tagName === '${component}') {
               return import(/* webpackChunkName: "${component}"*/'${file}').then(
                 function(comp) {
-                  comp.default.__htmlTag = '${component}';
+                  onLoaded(comp);
                   return comp;
                 }
               );
@@ -35,6 +35,12 @@ module.exports.default = function(input) {
         }, '');
 
   return `module.exports = function(tagName) {
-     ${ifs}
+    function onLoaded(comp) {
+      if (!comp.default) {
+        throw new Error('Failed to load component <' + tagName + '>');
+      }
+      comp.default.__htmlTag = tagName;
+    }
+    ${ifs}
   };`;
 };

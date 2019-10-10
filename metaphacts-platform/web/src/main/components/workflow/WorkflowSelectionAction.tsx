@@ -21,7 +21,7 @@ import * as React from 'react';
 import { Component, ComponentContext } from 'platform/api/components';
 import { listen } from 'platform/api/events';
 import { Cancellation } from 'platform/api/async';
-import { universalChildren } from 'platform/components/utils';
+import { isValidChild, componentHasType, universalChildren } from 'platform/components/utils';
 import {
   SelectionEvents, SelectionGroupContext, SelectionGroupContextTypes,
 } from 'platform/components/ui/selection';
@@ -104,8 +104,8 @@ export class WorkflowSelectionAction extends Component<Props, State> {
 
   private mapChildren(children: React.ReactNode) {
     return universalChildren(React.Children.map(children, child => {
-      if (typeof child === 'object') {
-        if (child.type === WorkflowManagerComponent) {
+      if (isValidChild(child)) {
+        if (componentHasType(child, WorkflowManagerComponent)) {
           const {values} = this.state;
           const selectedValues = Object.keys(values).filter(iri => values[iri]);
           return React.cloneElement(child, {iris: selectedValues});

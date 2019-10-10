@@ -28,6 +28,7 @@ import {
   Timeline,
   TimelineAlignType,
   TimelineOptionsDataAttributesType,
+  TimelineOptionsTemplateFunction,
   TimelineTimeAxisScaleType,
   HeightWidthType,
 } from 'vis';
@@ -605,16 +606,17 @@ export class SemanticTimeline extends Component<SemanticTimelineProps, SemanticT
     const {dateFormat} = this.props;
     if (dateFormat) {
       format = dateFormat;
-    } else if (date.dataType.equals(vocabularies.xsd.dateTime)) {
+    } else if (date.datatype.equals(vocabularies.xsd.dateTime)) {
       format = 'Y-MM-DDTHH:mm:ss';
-    } else if (date.dataType.equals(vocabularies.xsd.time)) {
+    } else if (date.datatype.equals(vocabularies.xsd.time)) {
       format = 'HH:mm:ss';
     }
     return moment(date.value, format);
   }
 
   private prepareData(props: SemanticTimelineConfigProps) {
-    const stream = SparqlClient.select(props.query);
+    const context = this.context.semanticContext;
+    const stream = SparqlClient.select(props.query, {context});
 
     stream.onValue(res => {
       if (SparqlUtil.isSelectResultEmpty(res)) {
@@ -705,7 +707,7 @@ export class SemanticTimeline extends Component<SemanticTimelineProps, SemanticT
     };
   }
 
-  private getTimelineItemTemplate = (item, element) => {
+  private getTimelineItemTemplate = makeVisJsTemplateFunction(this, item => {
     const {tupleTemplate, tupleTemplateHeight} = this.props;
     // restore initial values that were in the result
     const options = {
@@ -713,32 +715,18 @@ export class SemanticTimeline extends Component<SemanticTimelineProps, SemanticT
       start: item._start,
       end: item._end,
     };
-    const templateItem = (
+    return (
       <div style={{height: tupleTemplateHeight}}>
         <TemplateItem template={{source: tupleTemplate, options}} />
       </div>
     );
-    const timelineItem = ReactDOM.unstable_renderSubtreeIntoContainer(this, templateItem, element);
+  });
 
-    // cast return type to any as
-    // there is incomplete function type definition of TimelineOptionsTemplateFunction,
-    // the documentation states that the function can return string or ReactDOM.render() result
-    return timelineItem as any;
-  }
-
-  private getTimelineGroupTemplate = (group, element) => {
+  private getTimelineGroupTemplate = makeVisJsTemplateFunction(this, group => {
     const {groupTemplate} = this.props.options;
-
     if (!groupTemplate) { return group.content; }
-
-    const templateItem = <TemplateItem template={{source: groupTemplate, options: group}} />;
-    const timelineGroup = ReactDOM.unstable_renderSubtreeIntoContainer(this, templateItem, element);
-
-    // cast return type to any as
-    // there is incomplete function type definition of TimelineOptionsTemplateFunction,
-    // the documentation states that the function can return string or ReactDOM.render() result
-    return timelineGroup as any;
-  }
+    return <TemplateItem template={{source: groupTemplate, options: group}} />;
+  });
 
   private renderFitButton = () => {
     if (this.state.isDrawing) { return null; }
@@ -843,6 +831,25 @@ export class SemanticTimeline extends Component<SemanticTimelineProps, SemanticT
       </div>
     );
   }
+}
+
+function makeVisJsTemplateFunction(
+  parent: React.Component,
+  renderData: (item: any) => JSX.Element
+): TimelineOptionsTemplateFunction {
+  return (item: any, element: Element, changedData?: any) => {
+    if (!changedData) { return; }
+    const markup = renderData(item);
+    ReactDOM.unstable_renderSubtreeIntoContainer(parent, markup, element);
+    // Cast return type to any as
+    // there is incomplete function type definition of TimelineOptionsTemplateFunction,
+    // the documentation states that the function can return string or ReactDOM.render() result.
+    //
+    // In React 16.x rendering using ReactDOM always returns null inside lifecycle methods,
+    // however if we return a non-Element object, Vis.js will call template function again
+    // without `changedData` specified.
+    return {} as any;
+  };
 }
 
 export default SemanticTimeline;

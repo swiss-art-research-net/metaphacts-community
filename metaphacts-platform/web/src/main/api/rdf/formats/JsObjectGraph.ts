@@ -167,13 +167,13 @@ export function deserialize(
       }
     },
     literal => {
-      if (literal.dataType.equals(xsd._string)) {
+      if (literal.datatype.equals(xsd._string)) {
         return literal.value;
-      } else if (literal.dataType.equals(xsd.boolean)) {
+      } else if (literal.datatype.equals(xsd.boolean)) {
         return literal.value === 'true';
-      } else if (literal.dataType.equals(xsd.double)) {
+      } else if (literal.datatype.equals(xsd.double)) {
         return parseFloat(literal.value);
-      } else if (literal.dataType.equals(xsd.integer)) {
+      } else if (literal.datatype.equals(xsd.integer)) {
         return parseInt(literal.value);
       }
     },

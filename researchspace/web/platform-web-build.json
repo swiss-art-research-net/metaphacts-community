@@ -14,7 +14,8 @@
     "src/main/components/search/query-builder",
     "src/main/components/search/web-components",
     "src/main/components/text-annotation",
-    "src/main/components/timeline"
+    "src/main/components/timeline",
+    "src/main/components/dashboard"
   ],
   "generatedJsonSchemas": [
     "TextAnnotationTemplateBindings",

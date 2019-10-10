@@ -158,58 +158,46 @@ public class FieldsBasedSearch {
         return result;
     }
 
-    public SearchRelation relationFromJsonTuple(Map<String, String> tuple) {
-        String xsdDatatype = tuple.get("xsdDatatype");
-        RelationKind kind = RelationKind.fromFieldDatatype(tuple.get("id"), xsdDatatype);
+    public SearchRelation relationFromField(FieldDefinition field, String label) {
+        RelationKind kind = RelationKind.fromFieldDatatype(
+            field.getIri().stringValue(),
+            field.getXsdDatatype().stringValue()
+        );
 
         String queryPattern;
         String rangePattern = null;
         try {
-            queryPattern = transformFieldInsertQueryToRelationPattern(kind, tuple.get("insertPattern"));
-            String selectQuery = tuple.get("selectPattern");
-            if (selectQuery != null) {
-                rangePattern = transformFieldSelectQueryToCategoryPattern(selectQuery);
+            queryPattern = transformFieldInsertQueryToRelationPattern(kind, field.getInsertPattern());
+            if (field.getSelectPattern() != null) {
+                rangePattern = transformFieldSelectQueryToCategoryPattern(field.getSelectPattern());
             }
         } catch (MalformedQueryException ex) {
             String message = String.format(
-                "Error transforming queries of field definition <%s>", tuple.get("id"));
+                "Error transforming queries of field definition %s", field.getIri());
             logger.error(message, ex);
             throw new RuntimeException(message, ex);
         }
 
-        ValueFactory vf = SimpleValueFactory.getInstance();
-
-        Set<IRI> domain;
+        Set<IRI> domain = new HashSet<>(field.getDomain());
         Set<IRI> range;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            Set<String> domainValues = mapper.readValue(tuple.get("domain"), new TypeReference<Set<String>>(){});
-            domain = domainValues.stream().map(vf::createIRI).collect(Collectors.toSet());
-            if (kind.rangeCategory == null) {
-                Set<String> rangeValues = mapper.readValue(tuple.get("range"), new TypeReference<Set<String>>(){});
-                range = rangeValues.stream().map(vf::createIRI).collect(Collectors.toSet());
-            } else {
-                range = new HashSet<>();
-                range.add(kind.rangeCategory);
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        if (kind.rangeCategory == null) {
+            range = new HashSet<>(field.getRange());
+        } else {
+            range = new HashSet<>();
+            range.add(kind.rangeCategory);
         }
 
         SearchRelation relation = new SearchRelation();
-        relation.id = vf.createIRI(tuple.get("id"));
+        relation.id = field.getIri();
         relation.kind = kind;
-        relation.label = tuple.get("label");
+        relation.label = label;
         relation.domain = domain;
         relation.range = range;
-        relation.xsdDatatype = iriOrNull(xsdDatatype);
+        relation.xsdDatatype = field.getXsdDatatype();
         relation.queryPattern = queryPattern;
         relation.rangePattern = rangePattern;
-        return relation;
-    }
 
-    private IRI iriOrNull(@Nullable String iri) {
-        return iri == null ? null : SimpleValueFactory.getInstance().createIRI(iri);
+        return relation;
     }
 
     private String transformFieldInsertQueryToRelationPattern(RelationKind kind, String insertQuery) {

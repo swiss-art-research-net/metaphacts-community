@@ -118,7 +118,7 @@ public class ShiroGuiceModule extends ShiroWebModule {
     }
 
     protected void addLocalLogin(Configuration config) {
-        if (config.getEnvironmentConfig().enableLocalUsers()) {
+        if (config.getEnvironmentConfig().isEnableLocalUsers()) {
             bindLocalUsersRealm();
         }
 

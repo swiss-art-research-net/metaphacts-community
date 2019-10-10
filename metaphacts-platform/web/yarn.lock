@@ -2,6 +2,20 @@
 # yarn lockfile v1
 
 
+"@babel/runtime@^7.1.2", "@babel/runtime@^7.4.5":
+  version "7.5.5"
+  resolved "https://nexus.grapphs.com/repository/npm/@babel/runtime/-/runtime-7.5.5.tgz#74fba56d35efbeca444091c7850ccd494fd2f132"
+  integrity sha512-28QvEGyQyNkB0/m2B4FU7IEZGK2NUrcMtT6BZEFALTguLk+AUT6ofsHtPk5QyjAdUkpMJ+/Em+quwz4HOt30AQ==
+  dependencies:
+    regenerator-runtime "^0.13.2"
+
+"@mattiasbuelens/web-streams-polyfill@^0.2.0":
+  version "0.2.1"
+  resolved "https://nexus.grapphs.com/repository/npm/@mattiasbuelens/web-streams-polyfill/-/web-streams-polyfill-0.2.1.tgz#d7c4aa94f98084ec0787be084d47167d62ea5f67"
+  integrity sha512-oKuFCQFa3W7Hj7zKn0+4ypI8JFm4ZKIoncwAC6wd5WwFW2sL7O1hpPoJdSWpynQ4DJ4lQ6MvFoVDmCLilonDFg==
+  dependencies:
+    "@types/whatwg-streams" "^0.0.7"
+
 "@types/backbone@^1.3.33":
   version "1.3.33"
   resolved "https://nexus.grapphs.com/repository/npm/@types/backbone/-/backbone-1.3.33.tgz#33ab2e71619dd1d5adc477b689292fee7a34d4a3"
@@ -13,13 +27,36 @@
   version "3.5.2"
   resolved "https://nexus.grapphs.com/repository/npm/@types/chai/-/chai-3.5.2.tgz#c11cd2817d3a401b7ba0f5a420f35c56139b1c1e"
 
-"@types/codemirror@*":
+"@types/cheerio@*":
+  version "0.22.12"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/cheerio/-/cheerio-0.22.12.tgz#93c050401d4935a5376e8b352965f7458bed5340"
+  integrity sha512-aczowyAJNfrkBV+HS8DyAA87OnvkqGrrOmm5s7V6Jbgimzv/1ZoAy91cLJX8GQrUS60KufD7EIzA2LbK8HV4hg==
+  dependencies:
+    "@types/node" "*"
+
+"@types/codemirror@0.0.40":
   version "0.0.40"
   resolved "https://nexus.grapphs.com/repository/npm/@types/codemirror/-/codemirror-0.0.40.tgz#0868ed9ba5bf3ef8072de80e245ecf4a8f0bbdfd"
+  integrity sha1-CGjtm6W/PvgHLegOJF7PSo8Lvf0=
 
 "@types/d3-color@^1.0.5":
   version "1.0.5"
   resolved "https://nexus.grapphs.com/repository/npm/@types/d3-color/-/d3-color-1.0.5.tgz#cad755f0fc6de7b70fa6e5e08afa81ef4c2248de"
+
+"@types/enzyme-adapter-react-16@^1.0.5":
+  version "1.0.5"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/enzyme-adapter-react-16/-/enzyme-adapter-react-16-1.0.5.tgz#1bf30a166f49be69eeda4b81e3f24113c8b4e9d5"
+  integrity sha512-K7HLFTkBDN5RyRmU90JuYt8OWEY2iKUn43SDWEoBOXd/PowUWjLZ3Q6qMBiQuZeFYK/TOstaZxsnI0fXoAfLpg==
+  dependencies:
+    "@types/enzyme" "*"
+
+"@types/enzyme@*":
+  version "3.10.3"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/enzyme/-/enzyme-3.10.3.tgz#02b6c5ac7d0472005944a652e79045e2f6c66804"
+  integrity sha512-f/Kcb84sZOSZiBPCkr4He9/cpuSLcKRyQaEE20Q30Prx0Dn6wcyMAWI0yofL6yvd9Ht9G7EVkQeRqK0n5w8ILw==
+  dependencies:
+    "@types/cheerio" "*"
+    "@types/react" "*"
 
 "@types/handlebars@^4.0.32":
   version "4.0.32"
@@ -67,22 +104,18 @@
   version "15.5.2"
   resolved "https://nexus.grapphs.com/repository/npm/@types/prop-types/-/prop-types-15.5.2.tgz#3c6b8dceb2906cc87fe4358e809f9d20c8d59be1"
 
-"@types/react-addons-css-transition-group@^15.0.2":
-  version "15.0.2"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react-addons-css-transition-group/-/react-addons-css-transition-group-15.0.2.tgz#a10fe5606cda1fc04ee9004cd2550edf79860677"
+"@types/rc-slider@^8.6.4":
+  version "8.6.4"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/rc-slider/-/rc-slider-8.6.4.tgz#e29e21771b195b008eff8235c3c2b5f0c04dab92"
+  integrity sha512-KMWVUWW5iKtYxNb+or77l0Ru9FGqerRM18noWf7GB/ptgv3Kdu6gI3WHHkppfn3gQUMT/9jkaVa/6Zx1Pq/6wA==
   dependencies:
-    "@types/react" "*"
-    "@types/react-addons-transition-group" "*"
-
-"@types/react-addons-test-utils@^0.14.18":
-  version "0.14.18"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react-addons-test-utils/-/react-addons-test-utils-0.14.18.tgz#83e10af1dbe5ec2535bc2dc5373d7bc3b82fdee1"
-  dependencies:
+    "@types/rc-tooltip" "*"
     "@types/react" "*"
 
-"@types/react-addons-transition-group@*":
-  version "15.0.0"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react-addons-transition-group/-/react-addons-transition-group-15.0.0.tgz#6e0ce5269a7b69407c2b55633c3e36721cfe24a7"
+"@types/rc-tooltip@*":
+  version "3.7.1"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/rc-tooltip/-/rc-tooltip-3.7.1.tgz#20bde0f9c872f824c1dea86d0fc741dfd9aca3d7"
+  integrity sha512-H+pW9+H42rlb3PBjcxuXhQre1ldr0gdDVbVfCj0Pf4Mdjd1plti9ekt1yJ+gGig3bRFLpCknWDmfOkAjKY+S+Q==
   dependencies:
     "@types/react" "*"
 
@@ -92,35 +125,36 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-codemirror@1.0.2":
-  version "1.0.2"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react-codemirror/-/react-codemirror-1.0.2.tgz#f70f6283e873e7e9c0cb551e85aa84968610c246"
-  integrity sha512-59UY5C5EVaFq/f+p1mkgLpNQELehdCNGTiLuFYacjptTzDDSyMKF4Zrs1z2WJWQSh53vIeuS8i2JrPFyfHjxBw==
-  dependencies:
-    "@types/codemirror" "*"
-    "@types/react" "*"
-
 "@types/react-dom-factories@^1.0.0":
   version "1.0.0"
   resolved "https://nexus.grapphs.com/repository/npm/@types/react-dom-factories/-/react-dom-factories-1.0.0.tgz#2538f666d299bfe1de76930d2dc94f9e9365d11b"
   dependencies:
     "@types/react" "*"
 
-"@types/react-dom@^15.5.0":
-  version "15.5.0"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react-dom/-/react-dom-15.5.0.tgz#7f4fb9613d4051141773242f7b6b5f1a46b34bd9"
+"@types/react-dom@16.8.5":
+  version "16.8.5"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/react-dom/-/react-dom-16.8.5.tgz#3e3f4d99199391a7fb40aa3a155c8dd99b899cbd"
+  integrity sha512-idCEjROZ2cqh29+trmTmZhsBAUNQuYrF92JHKzZ5+aiFM1mlSk3bb23CK7HhYuOY75Apgap5y2jTyHzaM2AJGA==
   dependencies:
     "@types/react" "*"
 
-"@types/react-dropzone@^0.0.32":
-  version "0.0.32"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react-dropzone/-/react-dropzone-0.0.32.tgz#0035029a938db8f80d575db280e6b241a71247ce"
+"@types/react-infinite@^0.0.34":
+  version "0.0.34"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/react-infinite/-/react-infinite-0.0.34.tgz#0b514f65c4ba80ad22dea079075e04345ddcaae2"
+  integrity sha512-QymnFjmUUjeqhT8ztQpK5dmNgCGv+FSB5IsImj5OwXpz58xIrnucIJZtF3ZqjyfmCEMBGUpnQZHh5Mkc2Yhj8w==
   dependencies:
     "@types/react" "*"
 
 "@types/react-notification-system@^0.2.34":
   version "0.2.34"
   resolved "https://nexus.grapphs.com/repository/npm/@types/react-notification-system/-/react-notification-system-0.2.34.tgz#ae00df0dc591cb3c7d42fddc56b8225f77c64b55"
+  dependencies:
+    "@types/react" "*"
+
+"@types/react-radio-group@^3.0.2":
+  version "3.0.2"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/react-radio-group/-/react-radio-group-3.0.2.tgz#4c84a2aed1965eeb5b387dc4769bd0b8c76918e4"
+  integrity sha512-b5hVFpUYYq4OVfivs0GFSzDUuRvhKyxlXAyeduCYLN6lO5nV/C56ig/TYl3PqRnB37k863o7DZ2208fZCal3ug==
   dependencies:
     "@types/react" "*"
 
@@ -142,6 +176,13 @@
   dependencies:
     "@types/react" "*"
 
+"@types/react-transition-group@4.2.0":
+  version "4.2.0"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/react-transition-group/-/react-transition-group-4.2.0.tgz#86ddb509ce3de27341c7cb7797abb99b1c4676bf"
+  integrity sha512-8KkpFRwqS9U1dtVVw1kt/MmWgLmbd5iK5TgqsaeC7fAm74J4j/HiBiRC8eETvwjGGju48RAwyZ3l5iv1H1x93Q==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-virtualized@^9.7.8":
   version "9.7.8"
   resolved "https://nexus.grapphs.com/repository/npm/@types/react-virtualized/-/react-virtualized-9.7.8.tgz#86091109d8404ed9bff5900c0e4a39500699955a"
@@ -149,9 +190,13 @@
     "@types/prop-types" "*"
     "@types/react" "*"
 
-"@types/react@*", "@types/react@16.0.22", "@types/react@^16.0.18":
-  version "16.0.22"
-  resolved "https://nexus.grapphs.com/repository/npm/@types/react/-/react-16.0.22.tgz#19ad106e124aceebd2b4d430a278d55413ee8759"
+"@types/react@*", "@types/react@16.8.23", "@types/react@^16.0.18":
+  version "16.8.23"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/react/-/react-16.8.23.tgz#ec6be3ceed6353a20948169b6cb4c97b65b97ad2"
+  integrity sha512-abkEOIeljniUN9qB5onp++g0EY38h7atnDHxwKUFz1r3VH1+yG1OKi2sNPTyObL40goBmfKFpdii2lEzwLX1cA==
+  dependencies:
+    "@types/prop-types" "*"
+    csstype "^2.2.0"
 
 "@types/sinon@2.1.3":
   version "2.1.3"
@@ -187,6 +232,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/whatwg-streams@^0.0.7":
+  version "0.0.7"
+  resolved "https://nexus.grapphs.com/repository/npm/@types/whatwg-streams/-/whatwg-streams-0.0.7.tgz#28bfe73dc850562296367249c4b32a50db81e9d3"
+  integrity sha512-6sDiSEP6DWcY2ZolsJ2s39ZmsoGQ7KVwBDI3sESQsEm9P2dHTcqnDIHRZFRNtLCzWp7hCFGqYbw5GyfpQnJ01A==
+
 "@webcomponents/custom-elements@1.2.1":
   version "1.2.1"
   resolved "https://nexus.grapphs.com/repository/npm/@webcomponents/custom-elements/-/custom-elements-1.2.1.tgz#0b9c8d06c6d8f059752ff389a6e4418f393338e7"
@@ -217,15 +267,32 @@ acorn@^4.0.3:
   version "4.0.13"
   resolved "https://nexus.grapphs.com/repository/npm/acorn/-/acorn-4.0.13.tgz#105495ae5361d697bd195c825192e1ad7f253787"
 
-add-dom-event-listener@1.x:
-  version "1.0.2"
-  resolved "https://nexus.grapphs.com/repository/npm/add-dom-event-listener/-/add-dom-event-listener-1.0.2.tgz#8faed2c41008721cf111da1d30d995b85be42bed"
+add-dom-event-listener@^1.1.0:
+  version "1.1.0"
+  resolved "https://nexus.grapphs.com/repository/npm/add-dom-event-listener/-/add-dom-event-listener-1.1.0.tgz#6a92db3a0dd0abc254e095c0f1dc14acbbaae310"
+  integrity sha512-WCxx1ixHT0GQU9hb0KI/mhgRQhnU+U3GvwY6ZvVjYq8rsihIGoaIOUbY0yMPBxLH5MDtr0kz3fisWGNcbWW7Jw==
   dependencies:
     object-assign "4.x"
 
 adler32cs@0.0.1:
   version "0.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/adler32cs/-/adler32cs-0.0.1.tgz#9e29cd8087564d7055209ced1206a58d22e778eb"
+
+airbnb-prop-types@^2.13.2:
+  version "2.14.0"
+  resolved "https://nexus.grapphs.com/repository/npm/airbnb-prop-types/-/airbnb-prop-types-2.14.0.tgz#3d45cb1459f4ce78fdf1240563d1aa2315391168"
+  integrity sha512-Yb09vUkr3KP9r9NqfRuYtDYZG76wt8mhTUi2Vfzsghk+qkg01/gOc9NU8n63ZcMCLzpAdMEXyKjCHlxV62yN1A==
+  dependencies:
+    array.prototype.find "^2.1.0"
+    function.prototype.name "^1.1.1"
+    has "^1.0.3"
+    is-regex "^1.0.4"
+    object-is "^1.0.1"
+    object.assign "^4.1.0"
+    object.entries "^1.1.0"
+    prop-types "^15.7.2"
+    prop-types-exact "^1.2.0"
+    react-is "^16.8.6"
 
 ajax@0.0.4:
   version "0.0.4"
@@ -264,6 +331,14 @@ amdefine@>=0.0.4:
 arity-n@^1.0.4:
   version "1.0.4"
   resolved "https://nexus.grapphs.com/repository/npm/arity-n/-/arity-n-1.0.4.tgz#d9e76b11733e08569c0847ae7b39b2860b30b745"
+
+array.prototype.find@^2.1.0:
+  version "2.1.0"
+  resolved "https://nexus.grapphs.com/repository/npm/array.prototype.find/-/array.prototype.find-2.1.0.tgz#630f2eaf70a39e608ac3573e45cf8ccd0ede9ad7"
+  integrity sha512-Wn41+K1yuO5p7wRZDl7890c3xvv5UBrfVXTVIe28rSQb6LS0fZMDrQB6PAcxQFRFy6vJTLDc3A2+3CjQdzVKRg==
+  dependencies:
+    define-properties "^1.1.3"
+    es-abstract "^1.13.0"
 
 asap@~1.0.0:
   version "1.0.0"
@@ -317,9 +392,12 @@ asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://nexus.grapphs.com/repository/npm/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
 
-attr-accept@^1.0.3:
-  version "1.1.0"
-  resolved "https://nexus.grapphs.com/repository/npm/attr-accept/-/attr-accept-1.1.0.tgz#b5cd35227f163935a8f1de10ed3eba16941f6be6"
+attr-accept@^1.1.3:
+  version "1.1.3"
+  resolved "https://nexus.grapphs.com/repository/npm/attr-accept/-/attr-accept-1.1.3.tgz#48230c79f93790ef2775fcec4f0db0f5db41ca52"
+  integrity sha512-iT40nudw8zmCweivz6j58g+RT33I4KbaIvRUhjNmDwO2WmsQUxFEZZYZ5w3vXe5x5MX9D7mfvA/XaLOZYFR9EQ==
+  dependencies:
+    core-js "^2.5.0"
 
 aws-sign2@~0.6.0:
   version "0.6.0"
@@ -345,14 +423,14 @@ babel-polyfill@6.23.0:
     core-js "^2.4.0"
     regenerator-runtime "^0.10.0"
 
-babel-runtime@6.x, babel-runtime@^6.11.6, babel-runtime@^6.23.0:
+babel-runtime@6.x, babel-runtime@^6.11.6:
   version "6.23.0"
   resolved "https://nexus.grapphs.com/repository/npm/babel-runtime/-/babel-runtime-6.23.0.tgz#0a9489f144de70efb3ce4300accdb329e2fc543b"
   dependencies:
     core-js "^2.4.0"
     regenerator-runtime "^0.10.0"
 
-babel-runtime@^6.22.0:
+babel-runtime@^6.22.0, babel-runtime@^6.26.0:
   version "6.26.0"
   resolved "https://nexus.grapphs.com/repository/npm/babel-runtime/-/babel-runtime-6.26.0.tgz#965c7058668e82b55d7bfe04ff2337bc8b5647fe"
   dependencies:
@@ -640,9 +718,14 @@ cipher-base@^1.0.0, cipher-base@^1.0.1, cipher-base@^1.0.3:
   dependencies:
     inherits "^2.0.1"
 
-classnames@2.2.5, classnames@2.x, classnames@^2.2.3, classnames@^2.2.4, classnames@^2.2.5:
+classnames@2.2.5, classnames@^2.2.4, classnames@^2.2.5:
   version "2.2.5"
   resolved "https://nexus.grapphs.com/repository/npm/classnames/-/classnames-2.2.5.tgz#fb3801d453467649ef3603c7d61a02bd129bde6d"
+
+classnames@^2.2.6:
+  version "2.2.6"
+  resolved "https://nexus.grapphs.com/repository/npm/classnames/-/classnames-2.2.6.tgz#43935bffdd291f326dad0a205309b38d00f650ce"
+  integrity sha512-JR/iSQOSt+LQIWwrwEzJ9uk0xfN3mTVYMwt1Ir5mUcSN6pU+V4zQFFaJsclJbPuAUQH+yfWef6tm7l1quW3C8Q==
 
 cliui@^2.1.0:
   version "2.1.0"
@@ -652,6 +735,11 @@ cliui@^2.1.0:
     right-align "^0.1.1"
     wordwrap "0.0.2"
 
+clsx@^1.0.1:
+  version "1.0.4"
+  resolved "https://nexus.grapphs.com/repository/npm/clsx/-/clsx-1.0.4.tgz#0c0171f6d5cb2fe83848463c15fcc26b4df8c2ec"
+  integrity sha512-1mQ557MIZTrL/140j+JVdRM6e31/OA4vTYxXgqIIZlndyfjHpyawKZia1Im05Vp9BWmImkcNrNtFYQMyFcgJDg==
+
 co@^4.6.0:
   version "4.6.0"
   resolved "https://nexus.grapphs.com/repository/npm/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
@@ -660,7 +748,7 @@ codemirror@5.17.0:
   version "5.17.0"
   resolved "https://nexus.grapphs.com/repository/npm/codemirror/-/codemirror-5.17.0.tgz#a9431353373f152fe2851f29502a3aa12c1d6247"
 
-codemirror@5.19.0, codemirror@^5.18.2:
+codemirror@5.19.0:
   version "5.19.0"
   resolved "https://nexus.grapphs.com/repository/npm/codemirror/-/codemirror-5.19.0.tgz#71fa8523b9425216a2be4734e8aba625ff66e7ec"
 
@@ -783,6 +871,11 @@ core-js@^1.0.0:
   version "1.2.7"
   resolved "https://nexus.grapphs.com/repository/npm/core-js/-/core-js-1.2.7.tgz#652294c14651db28fa93bd2d5ff2983a4f08c636"
 
+core-js@^2.5.0:
+  version "2.6.9"
+  resolved "https://nexus.grapphs.com/repository/npm/core-js/-/core-js-2.6.9.tgz#6b4b214620c834152e179323727fc19741b084f2"
+  integrity sha512-HOpZf6eXmnl7la+cUdMnLvUxKNqLUzJvgIziQ0DiF3JwSImNphIqdGqzj6hIKyX04MmV0poclQ7+wjWvxQyR2A==
+
 core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://nexus.grapphs.com/repository/npm/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
@@ -864,6 +957,11 @@ css-in-js-utils@^2.0.0:
   resolved "https://nexus.grapphs.com/repository/npm/css-in-js-utils/-/css-in-js-utils-2.0.0.tgz#5af1dd70f4b06b331f48d22a3d86e0786c0b9435"
   dependencies:
     hyphenate-style-name "^1.0.2"
+
+csstype@^2.2.0:
+  version "2.6.6"
+  resolved "https://nexus.grapphs.com/repository/npm/csstype/-/csstype-2.6.6.tgz#c34f8226a94bbb10c32cc0d714afdf942291fc41"
+  integrity sha512-RpFbQGUE74iyPgvr46U9t1xoQBM8T4BL8SxrN66Le2xYAPSaDJJKeztV3awugusb3g3G9iL8StmkBBXhcbbXhg==
 
 cytoscape-cose-bilkent@^1.6.5:
   version "1.6.7"
@@ -1018,6 +1116,13 @@ deepcopy@^0.4.0:
   version "0.4.0"
   resolved "https://nexus.grapphs.com/repository/npm/deepcopy/-/deepcopy-0.4.0.tgz#4964ba39b9f89ff5e5c6747adaf6de0d0a8aece5"
 
+define-properties@^1.1.2, define-properties@^1.1.3:
+  version "1.1.3"
+  resolved "https://nexus.grapphs.com/repository/npm/define-properties/-/define-properties-1.1.3.tgz#cf88da6cbee26fe6db7094f61d870cbd84cee9f1"
+  integrity sha512-3MqfYKj2lLzdMSf8ZIZE/V+Zuy+BgD6f164e8K2w7dgnpKArBDerGYpM46IYYcjnkdPNMjPk9A6VFB8+3SKlXQ==
+  dependencies:
+    object-keys "^1.0.12"
+
 defined@^1.0.0:
   version "1.0.0"
   resolved "https://nexus.grapphs.com/repository/npm/defined/-/defined-1.0.0.tgz#c98d9bcef75674188e110969151199e39b1fa693"
@@ -1075,13 +1180,21 @@ docson@metaphacts/docson#npm:
     marked "^0.3.5"
     traverse "^0.6.6"
 
-dom-align@1.x:
-  version "1.6.0"
-  resolved "https://nexus.grapphs.com/repository/npm/dom-align/-/dom-align-1.6.0.tgz#10afe5b3e0b1befc5b6e1395a3d720d0254c88ce"
+dom-align@^1.7.0:
+  version "1.10.1"
+  resolved "https://nexus.grapphs.com/repository/npm/dom-align/-/dom-align-1.10.1.tgz#515e7469b78a69ab8ff0adb5f866d0840467a6bb"
+  integrity sha512-qztehcEqIwxjz0bEn2CuF6zgSGmeorTrAuWyYkhatGpOOAO93Blbt4UjV9YZSM4hPS3ZkFFC/qU6Kb9TD7JiwQ==
 
 "dom-helpers@^2.4.0 || ^3.0.0", dom-helpers@^3.2.0, dom-helpers@^3.2.1:
   version "3.2.1"
   resolved "https://nexus.grapphs.com/repository/npm/dom-helpers/-/dom-helpers-3.2.1.tgz#3203e07fed217bd1f424b019735582fc37b2825a"
+
+dom-helpers@^3.4.0:
+  version "3.4.0"
+  resolved "https://nexus.grapphs.com/repository/npm/dom-helpers/-/dom-helpers-3.4.0.tgz#e9b369700f959f62ecde5a6babde4bccd9169af8"
+  integrity sha512-LnuPJ+dwqKDIyotW1VzmOZ5TONUN7CwkCR5hrgawTUbkBGYdeoNLZo6nNfGkCrjtE1nXXaj7iMMpDa8/d9WoIA==
+  dependencies:
+    "@babel/runtime" "^7.1.2"
 
 dom-serializer@0:
   version "0.1.0"
@@ -1176,6 +1289,66 @@ entities@^1.1.1, entities@~1.1.1:
   version "1.1.1"
   resolved "https://nexus.grapphs.com/repository/npm/entities/-/entities-1.1.1.tgz#6e5c2d0a5621b5dadaecef80b90edfb5cd7772f0"
 
+enzyme-adapter-react-16@1.1.1:
+  version "1.1.1"
+  resolved "https://nexus.grapphs.com/repository/npm/enzyme-adapter-react-16/-/enzyme-adapter-react-16-1.1.1.tgz#a8f4278b47e082fbca14f5bfb1ee50ee650717b4"
+  integrity sha512-kC8pAtU2Jk3OJ0EG8Y2813dg9Ol0TXi7UNxHzHiWs30Jo/hj7alc//G1YpKUsPP1oKl9X+Lkx+WlGJpPYA+nvw==
+  dependencies:
+    enzyme-adapter-utils "^1.3.0"
+    lodash "^4.17.4"
+    object.assign "^4.0.4"
+    object.values "^1.0.4"
+    prop-types "^15.6.0"
+    react-reconciler "^0.7.0"
+    react-test-renderer "^16.0.0-0"
+
+enzyme-adapter-react-16@1.14.0:
+  version "1.14.0"
+  resolved "https://nexus.grapphs.com/repository/npm/enzyme-adapter-react-16/-/enzyme-adapter-react-16-1.14.0.tgz#204722b769172bcf096cb250d33e6795c1f1858f"
+  integrity sha512-7PcOF7pb4hJUvjY7oAuPGpq3BmlCig3kxXGi2kFx0YzJHppqX1K8IIV9skT1IirxXlu8W7bneKi+oQ10QRnhcA==
+  dependencies:
+    enzyme-adapter-utils "^1.12.0"
+    has "^1.0.3"
+    object.assign "^4.1.0"
+    object.values "^1.1.0"
+    prop-types "^15.7.2"
+    react-is "^16.8.6"
+    react-test-renderer "^16.0.0-0"
+    semver "^5.7.0"
+
+enzyme-adapter-utils@^1.12.0, enzyme-adapter-utils@^1.3.0:
+  version "1.12.0"
+  resolved "https://nexus.grapphs.com/repository/npm/enzyme-adapter-utils/-/enzyme-adapter-utils-1.12.0.tgz#96e3730d76b872f593e54ce1c51fa3a451422d93"
+  integrity sha512-wkZvE0VxcFx/8ZsBw0iAbk3gR1d9hK447ebnSYBf95+r32ezBq+XDSAvRErkc4LZosgH8J7et7H7/7CtUuQfBA==
+  dependencies:
+    airbnb-prop-types "^2.13.2"
+    function.prototype.name "^1.1.0"
+    object.assign "^4.1.0"
+    object.fromentries "^2.0.0"
+    prop-types "^15.7.2"
+    semver "^5.6.0"
+
+es-abstract@^1.11.0, es-abstract@^1.12.0, es-abstract@^1.13.0:
+  version "1.13.0"
+  resolved "https://nexus.grapphs.com/repository/npm/es-abstract/-/es-abstract-1.13.0.tgz#ac86145fdd5099d8dd49558ccba2eaf9b88e24e9"
+  integrity sha512-vDZfg/ykNxQVwup/8E1BZhVzFfBxs9NqMzGcvIJrqg5k2/5Za2bWo40dK2J1pgLngZ7c+Shh8lwYtLGyrwPutg==
+  dependencies:
+    es-to-primitive "^1.2.0"
+    function-bind "^1.1.1"
+    has "^1.0.3"
+    is-callable "^1.1.4"
+    is-regex "^1.0.4"
+    object-keys "^1.0.12"
+
+es-to-primitive@^1.2.0:
+  version "1.2.0"
+  resolved "https://nexus.grapphs.com/repository/npm/es-to-primitive/-/es-to-primitive-1.2.0.tgz#edf72478033456e8dda8ef09e00ad9650707f377"
+  integrity sha512-qZryBOJjV//LaxLTV6UC//WewneB3LcXOL9NP++ozKVXsIIIpm/2c13UDiD9Jp2eThsecw9m3jPqDwTyobcdbg==
+  dependencies:
+    is-callable "^1.1.4"
+    is-date-object "^1.0.1"
+    is-symbol "^1.0.2"
+
 es6-promise@4.0.5:
   version "4.0.5"
   resolved "https://nexus.grapphs.com/repository/npm/es6-promise/-/es6-promise-4.0.5.tgz#7882f30adde5b240ccfa7f7d78c548330951ae42"
@@ -1238,7 +1411,7 @@ fbjs@^0.8.16:
     setimmediate "^1.0.5"
     ua-parser-js "^0.7.9"
 
-fbjs@^0.8.4, fbjs@^0.8.9:
+fbjs@^0.8.9:
   version "0.8.12"
   resolved "https://nexus.grapphs.com/repository/npm/fbjs/-/fbjs-0.8.12.tgz#10b5d92f76d45575fd63a217d4ea02bea2f8ed04"
   dependencies:
@@ -1249,6 +1422,11 @@ fbjs@^0.8.4, fbjs@^0.8.9:
     promise "^7.1.1"
     setimmediate "^1.0.5"
     ua-parser-js "^0.7.9"
+
+fetch-readablestream@^0.2.0:
+  version "0.2.0"
+  resolved "https://nexus.grapphs.com/repository/npm/fetch-readablestream/-/fetch-readablestream-0.2.0.tgz#eaa6d1a76b12de2d4731a343393c6ccdcfe2c795"
+  integrity sha512-qu4mXWf4wus4idBIN/kVH+XSer8IZ9CwHP+Pd7DL7TuKNC1hP7ykon4kkBjwJF3EMX2WsFp4hH7gU7CyL7ucXw==
 
 file-saver@1.3.2:
   version "1.3.2"
@@ -1261,6 +1439,13 @@ file-saver@1.3.3:
 file-saverjs@~1.3.6:
   version "1.3.6"
   resolved "https://nexus.grapphs.com/repository/npm/file-saverjs/-/file-saverjs-1.3.6.tgz#b7a454e126f56cf71fcb70159b8356142654e78e"
+
+file-selector@^0.1.11:
+  version "0.1.12"
+  resolved "https://nexus.grapphs.com/repository/npm/file-selector/-/file-selector-0.1.12.tgz#fe726547be219a787a9dcc640575a04a032b1fd0"
+  integrity sha512-Kx7RTzxyQipHuiqyZGf+Nz4vY9R1XGxuQl/hLoJwq+J4avk/9wxxgZyHKtbyIPJmbD4A66DWGYfyykWNpcYutQ==
+  dependencies:
+    tslib "^1.9.0"
 
 filesaver.js@0.2.0:
   version "0.2.0"
@@ -1320,6 +1505,26 @@ function-bind@^1.0.2:
   version "1.1.0"
   resolved "https://nexus.grapphs.com/repository/npm/function-bind/-/function-bind-1.1.0.tgz#16176714c801798e4e8f2cf7f7529467bb4a5771"
 
+function-bind@^1.1.1:
+  version "1.1.1"
+  resolved "https://nexus.grapphs.com/repository/npm/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
+  integrity sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A==
+
+function.prototype.name@^1.1.0, function.prototype.name@^1.1.1:
+  version "1.1.1"
+  resolved "https://nexus.grapphs.com/repository/npm/function.prototype.name/-/function.prototype.name-1.1.1.tgz#6d252350803085abc2ad423d4fe3be2f9cbda392"
+  integrity sha512-e1NzkiJuw6xqVH7YSdiW/qDHebcmMhPNe6w+4ZYYEg0VA+LaLzx37RimbPLuonHhYGFGPx1ME2nSi74JiaCr/Q==
+  dependencies:
+    define-properties "^1.1.3"
+    function-bind "^1.1.1"
+    functions-have-names "^1.1.1"
+    is-callable "^1.1.4"
+
+functions-have-names@^1.1.1:
+  version "1.1.1"
+  resolved "https://nexus.grapphs.com/repository/npm/functions-have-names/-/functions-have-names-1.1.1.tgz#79d35927f07b8e7103d819fed475b64ccf7225ea"
+  integrity sha512-U0kNHUoxwPNPWOJaMG7Z00d4a/qZVrFtzWJRaK8V9goaVOCXBSQSJpt3MYGNtkScKEBKovxLjnNdC9MlXwo5Pw==
+
 getpass@^0.1.1:
   version "0.1.7"
   resolved "https://nexus.grapphs.com/repository/npm/getpass/-/getpass-0.1.7.tgz#5eff8e3e684d569ae4cb2b1282604e8ba62149fa"
@@ -1339,11 +1544,12 @@ glob@^4.0.5:
   version "1.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/graceful-readlink/-/graceful-readlink-1.0.1.tgz#4cafad76bc62f02fa039b2f94e9a3dd3a391a725"
 
-griddle-react@0.6.1:
-  version "0.6.1"
-  resolved "https://nexus.grapphs.com/repository/npm/griddle-react/-/griddle-react-0.6.1.tgz#4e008095331421b4a87ffc35ac710571ae04da78"
+griddle-react@0.8.2:
+  version "0.8.2"
+  resolved "https://nexus.grapphs.com/repository/npm/griddle-react/-/griddle-react-0.8.2.tgz#5bfe00b6680c571229916557c2f48ebc0798217a"
+  integrity sha512-3Va7bpyyDTl3gM2L9wJbUVLq9xLrwp1CMlaR4CEYCRJphwCQhmJLZkmdbOcr+I4XT3pBD4M9d8fp5jTgvz6umg==
   dependencies:
-    lodash "^4.12.0"
+    lodash "^4.17.4"
 
 handlebars@4.0.10, handlebars@^4.0.5:
   version "4.0.10"
@@ -1377,11 +1583,23 @@ har-validator@~5.1.0:
     ajv "^6.5.5"
     har-schema "^2.0.0"
 
+has-symbols@^1.0.0:
+  version "1.0.0"
+  resolved "https://nexus.grapphs.com/repository/npm/has-symbols/-/has-symbols-1.0.0.tgz#ba1a8f1af2a0fc39650f5c850367704122063b44"
+  integrity sha1-uhqPGvKg/DllD1yFA2dwQSIGO0Q=
+
 has@^1.0.0:
   version "1.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/has/-/has-1.0.1.tgz#8461733f538b0837c9361e39a9ab9e9704dc2f28"
   dependencies:
     function-bind "^1.0.2"
+
+has@^1.0.1, has@^1.0.3:
+  version "1.0.3"
+  resolved "https://nexus.grapphs.com/repository/npm/has/-/has-1.0.3.tgz#722d7cbfc1f6aa8241f16dd814e011e1f41e8796"
+  integrity sha512-f2dvO0VU6Oej7RkWJGrehjbzMAjFp5/VKPp5tTpWIV4JHHZK1/BxbFRtf/siA2SWTe09caDmVtYYzWEIbBS4zw==
+  dependencies:
+    function-bind "^1.1.1"
 
 hash-base@^2.0.0:
   version "2.0.2"
@@ -1512,6 +1730,11 @@ immutable@3.8.1:
   version "3.8.1"
   resolved "https://nexus.grapphs.com/repository/npm/immutable/-/immutable-3.8.1.tgz#200807f11ab0f72710ea485542de088075f68cd2"
 
+immutable@^3.8.2:
+  version "3.8.2"
+  resolved "https://nexus.grapphs.com/repository/npm/immutable/-/immutable-3.8.2.tgz#c2439951455bb39913daf281376f1530e104adf3"
+  integrity sha1-wkOZUUVbs5kT2vKBN28VMOEErfM=
+
 indexof@0.0.1:
   version "0.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/indexof/-/indexof-0.0.1.tgz#82dc336d232b9062179d05ab3293a66059fd435d"
@@ -1573,9 +1796,33 @@ is-buffer@^1.1.0, is-buffer@^1.1.5:
   version "1.1.5"
   resolved "https://nexus.grapphs.com/repository/npm/is-buffer/-/is-buffer-1.1.5.tgz#1f3b26ef613b214b88cbca23cc6c01d87961eecc"
 
+is-callable@^1.1.4:
+  version "1.1.4"
+  resolved "https://nexus.grapphs.com/repository/npm/is-callable/-/is-callable-1.1.4.tgz#1e1adf219e1eeb684d691f9d6a05ff0d30a24d75"
+  integrity sha512-r5p9sxJjYnArLjObpjA4xu5EKI3CuKHkJXMhT7kwbpUyIFD1n5PMAsoPvWnvtZiNz7LjkYDRZhd7FlI0eMijEA==
+
+is-date-object@^1.0.1:
+  version "1.0.1"
+  resolved "https://nexus.grapphs.com/repository/npm/is-date-object/-/is-date-object-1.0.1.tgz#9aa20eb6aeebbff77fbd33e74ca01b33581d3a16"
+  integrity sha1-mqIOtq7rv/d/vTPnTKAbM1gdOhY=
+
+is-regex@^1.0.4:
+  version "1.0.4"
+  resolved "https://nexus.grapphs.com/repository/npm/is-regex/-/is-regex-1.0.4.tgz#5517489b547091b0930e095654ced25ee97e9491"
+  integrity sha1-VRdIm1RwkbCTDglWVM7SXul+lJE=
+  dependencies:
+    has "^1.0.1"
+
 is-stream@^1.0.1:
   version "1.1.0"
   resolved "https://nexus.grapphs.com/repository/npm/is-stream/-/is-stream-1.1.0.tgz#12d4a3dd4e68e0b79ceb8dbc84173ae80d91ca44"
+
+is-symbol@^1.0.2:
+  version "1.0.2"
+  resolved "https://nexus.grapphs.com/repository/npm/is-symbol/-/is-symbol-1.0.2.tgz#a055f6ae57192caee329e7a860118b497a950f38"
+  integrity sha512-HS8bZ9ox60yCJLH9snBpIwv9pYUAkcuLhSA1oero1UB5y9aiQpRA8y2ex945AOtCZL1lJDeIk3G5LthswI46Lw==
+  dependencies:
+    has-symbols "^1.0.0"
 
 is-typedarray@~1.0.0:
   version "1.0.0"
@@ -1629,6 +1876,11 @@ js-cookie@2.1.3:
 js-tokens@^3.0.0:
   version "3.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/js-tokens/-/js-tokens-3.0.1.tgz#08e9f132484a2c45a30907e9dc4d5567b7f114d7"
+
+"js-tokens@^3.0.0 || ^4.0.0":
+  version "4.0.0"
+  resolved "https://nexus.grapphs.com/repository/npm/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
+  integrity sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==
 
 jsbn@~0.1.0:
   version "0.1.1"
@@ -1772,6 +2024,11 @@ lexical-scope@^1.2.0:
   dependencies:
     astw "^2.0.0"
 
+linear-layout-vector@0.0.1:
+  version "0.0.1"
+  resolved "https://nexus.grapphs.com/repository/npm/linear-layout-vector/-/linear-layout-vector-0.0.1.tgz#398114d7303b6ecc7fd6b273af7b8401d8ba9c70"
+  integrity sha1-OYEU1zA7bsx/1rJzr3uEAdi6nHA=
+
 loader-utils@^1.0.2:
   version "1.1.0"
   resolved "https://nexus.grapphs.com/repository/npm/loader-utils/-/loader-utils-1.1.0.tgz#c98aef488bcceda2ffb5e2de646d6a754429f5cd"
@@ -1787,10 +2044,6 @@ lodash-es@^4.2.1:
 lodash._getnative@^3.0.0:
   version "3.9.1"
   resolved "https://nexus.grapphs.com/repository/npm/lodash._getnative/-/lodash._getnative-3.9.1.tgz#570bc7dede46d61cdcde687d65d3eecbaa3aaff5"
-
-lodash.debounce@^4.0.8:
-  version "4.0.8"
-  resolved "https://nexus.grapphs.com/repository/npm/lodash.debounce/-/lodash.debounce-4.0.8.tgz#82d79bff30a67c4005ffd5e2515300ad9ca4d7af"
 
 lodash.isarguments@^3.0.0:
   version "3.1.0"
@@ -1816,7 +2069,7 @@ lodash.memoize@~3.0.3:
   version "3.0.4"
   resolved "https://nexus.grapphs.com/repository/npm/lodash.memoize/-/lodash.memoize-3.0.4.tgz#2dcbd2c287cbc0a55cc42328bd0c736150d53e3f"
 
-lodash@4.16.4, lodash@^4.12.0:
+lodash@4.16.4:
   version "4.16.4"
   resolved "https://nexus.grapphs.com/repository/npm/lodash/-/lodash-4.16.4.tgz#01ce306b9bad1319f2a5528674f88297aeb70127"
 
@@ -1845,6 +2098,13 @@ loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.2.0, loose-envify@^1.3
   resolved "https://nexus.grapphs.com/repository/npm/loose-envify/-/loose-envify-1.3.1.tgz#d1a8ad33fa9ce0e713d65fdd0ac8b748d478c848"
   dependencies:
     js-tokens "^3.0.0"
+
+loose-envify@^1.4.0:
+  version "1.4.0"
+  resolved "https://nexus.grapphs.com/repository/npm/loose-envify/-/loose-envify-1.4.0.tgz#71ee51fa7be4caec1a63839f7e682d8132d30caf"
+  integrity sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==
+  dependencies:
+    js-tokens "^3.0.0 || ^4.0.0"
 
 lz-string@1.4.4:
   version "1.4.4"
@@ -1921,6 +2181,11 @@ minimist@~0.0.1:
   version "0.0.10"
   resolved "https://nexus.grapphs.com/repository/npm/minimist/-/minimist-0.0.10.tgz#de3f98543dbf96082be48ad1a0c7cda836301dcf"
 
+mitt@^1.1.2:
+  version "1.1.3"
+  resolved "https://nexus.grapphs.com/repository/npm/mitt/-/mitt-1.1.3.tgz#528c506238a05dce11cd914a741ea2cc332da9b8"
+  integrity sha512-mUDCnVNsAi+eD6qA0HkRkwYczbLHJ49z17BGe2PYRhZL4wpZUFZGJHU7/5tmvohoma+Hdn0Vh/oJTiPEmgSruA==
+
 module-deps@^3.7.0:
   version "3.9.1"
   resolved "https://nexus.grapphs.com/repository/npm/module-deps/-/module-deps-3.9.1.tgz#ea75caf9199090d25b0d5512b5acacb96e7f87f3"
@@ -1974,7 +2239,6 @@ node-fetch@^1.0.1:
 node-forge@^0.8.1:
   version "0.8.5"
   resolved "https://nexus.grapphs.com/repository/npm/node-forge/-/node-forge-0.8.5.tgz#57906f07614dc72762c84cef442f427c0e1b86ee"
-  integrity sha512-vFMQIWt+J/7FLNyKouZ9TazT74PRV3wgv9UT4cRjC8BffxFbKXkgIWR42URCPSnHm/QDz6BOlb2Q0U4+VQT67Q==
 
 node-noop@1.0.0:
   version "1.0.0"
@@ -2008,6 +2272,56 @@ object-assign@^3.0.0:
   version "3.0.0"
   resolved "https://nexus.grapphs.com/repository/npm/object-assign/-/object-assign-3.0.0.tgz#9bedd5ca0897949bca47e7ff408062d549f587f2"
 
+object-is@^1.0.1:
+  version "1.0.1"
+  resolved "https://nexus.grapphs.com/repository/npm/object-is/-/object-is-1.0.1.tgz#0aa60ec9989a0b3ed795cf4d06f62cf1ad6539b6"
+  integrity sha1-CqYOyZiaCz7Xlc9NBvYs8a1lObY=
+
+object-keys@^1.0.11, object-keys@^1.0.12:
+  version "1.1.1"
+  resolved "https://nexus.grapphs.com/repository/npm/object-keys/-/object-keys-1.1.1.tgz#1c47f272df277f3b1daf061677d9c82e2322c60e"
+  integrity sha512-NuAESUOUMrlIXOfHKzD6bpPu3tYt3xvjNdRIQ+FeT0lNb4K8WR70CaDxhuNguS2XG+GjkyMwOzsN5ZktImfhLA==
+
+object.assign@^4.0.4, object.assign@^4.1.0:
+  version "4.1.0"
+  resolved "https://nexus.grapphs.com/repository/npm/object.assign/-/object.assign-4.1.0.tgz#968bf1100d7956bb3ca086f006f846b3bc4008da"
+  integrity sha512-exHJeq6kBKj58mqGyTQ9DFvrZC/eR6OwxzoM9YRoGBqrXYonaFyGiFMuc9VZrXf7DarreEwMpurG3dd+CNyW5w==
+  dependencies:
+    define-properties "^1.1.2"
+    function-bind "^1.1.1"
+    has-symbols "^1.0.0"
+    object-keys "^1.0.11"
+
+object.entries@^1.1.0:
+  version "1.1.0"
+  resolved "https://nexus.grapphs.com/repository/npm/object.entries/-/object.entries-1.1.0.tgz#2024fc6d6ba246aee38bdb0ffd5cfbcf371b7519"
+  integrity sha512-l+H6EQ8qzGRxbkHOd5I/aHRhHDKoQXQ8g0BYt4uSweQU1/J6dZUOyWh9a2Vky35YCKjzmgxOzta2hH6kf9HuXA==
+  dependencies:
+    define-properties "^1.1.3"
+    es-abstract "^1.12.0"
+    function-bind "^1.1.1"
+    has "^1.0.3"
+
+object.fromentries@^2.0.0:
+  version "2.0.0"
+  resolved "https://nexus.grapphs.com/repository/npm/object.fromentries/-/object.fromentries-2.0.0.tgz#49a543d92151f8277b3ac9600f1e930b189d30ab"
+  integrity sha512-9iLiI6H083uiqUuvzyY6qrlmc/Gz8hLQFOcb/Ri/0xXFkSNS3ctV+CbE6yM2+AnkYfOB3dGjdzC0wrMLIhQICA==
+  dependencies:
+    define-properties "^1.1.2"
+    es-abstract "^1.11.0"
+    function-bind "^1.1.1"
+    has "^1.0.1"
+
+object.values@^1.0.4, object.values@^1.1.0:
+  version "1.1.0"
+  resolved "https://nexus.grapphs.com/repository/npm/object.values/-/object.values-1.1.0.tgz#bf6810ef5da3e5325790eaaa2be213ea84624da9"
+  integrity sha512-8mf0nKLAoFX6VlNVdhGj31SVYpaNFtUnuoOXWyFEstsWRgU837AK+JYM0iAxwkSzGRbwn8cbFmgbyxj1j4VbXg==
+  dependencies:
+    define-properties "^1.1.3"
+    es-abstract "^1.12.0"
+    function-bind "^1.1.1"
+    has "^1.0.3"
+
 ol-ext@2.0.1:
   version "2.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/ol-ext/-/ol-ext-2.0.1.tgz#192e3528118a37a21ef0e5ddf8def833c733f90f"
@@ -2035,9 +2349,9 @@ once@^1.3.0:
   dependencies:
     wrappy "1"
 
-ontodia@0.9.10:
-  version "0.9.10"
-  resolved "https://nexus.grapphs.com/repository/npm/ontodia/-/ontodia-0.9.10.tgz#a3ea6e828c576058a1f70ff44abdcba78a8d3b8f"
+"ontodia@ssh://git@bitbucket.org:metaphacts/ontodia-build.git#v0.10.0-mph":
+  version "0.9.12"
+  resolved "ssh://git@bitbucket.org:metaphacts/ontodia-build.git#6e85f823ba77160ceb5216a0d5d730b56cfd2031"
   dependencies:
     d3-color "~1.0.2"
     file-saverjs "~1.3.6"
@@ -2159,13 +2473,31 @@ promise@^7.1.1:
   dependencies:
     asap "~2.0.3"
 
+prop-types-exact@^1.2.0:
+  version "1.2.0"
+  resolved "https://nexus.grapphs.com/repository/npm/prop-types-exact/-/prop-types-exact-1.2.0.tgz#825d6be46094663848237e3925a98c6e944e9869"
+  integrity sha512-K+Tk3Kd9V0odiXFP9fwDHUYRyvK3Nun3GVyPapSIs5OBkITAm15W0CPFD/YKTkMUAbc0b9CUwRQp2ybiBIq+eA==
+  dependencies:
+    has "^1.0.3"
+    object.assign "^4.1.0"
+    reflect.ownkeys "^0.2.0"
+
 prop-types-extra@^1.0.1:
   version "1.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/prop-types-extra/-/prop-types-extra-1.0.1.tgz#a57bd4810e82d27a3ff4317ecc1b4ad005f79a82"
   dependencies:
     warning "^3.0.0"
 
-prop-types@15.6.0, prop-types@^15.5.10, prop-types@^15.5.4, prop-types@^15.5.7:
+prop-types@15.7.2, prop-types@15.x, prop-types@^15.6.0, prop-types@^15.6.1, prop-types@^15.6.2, prop-types@^15.7.2:
+  version "15.7.2"
+  resolved "https://nexus.grapphs.com/repository/npm/prop-types/-/prop-types-15.7.2.tgz#52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
+  integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
+  dependencies:
+    loose-envify "^1.4.0"
+    object-assign "^4.1.1"
+    react-is "^16.8.1"
+
+prop-types@^15.5.10, prop-types@^15.5.4, prop-types@^15.5.7:
   version "15.6.0"
   resolved "https://nexus.grapphs.com/repository/npm/prop-types/-/prop-types-15.6.0.tgz#ceaf083022fc46b4a35f69e13ef75aed0d639856"
   dependencies:
@@ -2173,7 +2505,7 @@ prop-types@15.6.0, prop-types@^15.5.10, prop-types@^15.5.4, prop-types@^15.5.7:
     loose-envify "^1.3.1"
     object-assign "^4.1.1"
 
-prop-types@^15.5.2, prop-types@^15.5.6, prop-types@^15.5.8, prop-types@~15.5.0:
+prop-types@^15.5.6, prop-types@^15.5.8:
   version "15.5.10"
   resolved "https://nexus.grapphs.com/repository/npm/prop-types/-/prop-types-15.5.10.tgz#2797dfc3126182e3a95e3dfbb2e893ddd7456154"
   dependencies:
@@ -2244,6 +2576,13 @@ quickselect@^1.0.0:
   version "1.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/quickselect/-/quickselect-1.0.1.tgz#1e6ceaa9db1ca7c75aafcc863c7bef2037ca62a1"
 
+raf@^3.4.0:
+  version "3.4.1"
+  resolved "https://nexus.grapphs.com/repository/npm/raf/-/raf-3.4.1.tgz#0742e99a4a6552f445d73e3ee0328af0ff1ede39"
+  integrity sha512-Sq4CW4QhwOHE8ucn6J34MqtZCeWFP2aQSmrlroYgqAV1PjStIhJXxYuTgUIfkEk7zTLjmIjLmU5q+fbD1NnOJA==
+  dependencies:
+    performance-now "^2.1.0"
+
 ramda@^0.22.0:
   version "0.22.1"
   resolved "https://nexus.grapphs.com/repository/npm/ramda/-/ramda-0.22.1.tgz#031da0c3df417c5b33c96234757eb37033f36a0e"
@@ -2264,13 +2603,15 @@ rbush@2.0.1:
   dependencies:
     quickselect "^1.0.0"
 
-rc-align@2.x:
-  version "2.3.4"
-  resolved "https://nexus.grapphs.com/repository/npm/rc-align/-/rc-align-2.3.4.tgz#d83bdab7560f0142e72a3de1d495dab6ba225249"
+rc-align@^2.4.0:
+  version "2.4.5"
+  resolved "https://nexus.grapphs.com/repository/npm/rc-align/-/rc-align-2.4.5.tgz#c941a586f59d1017f23a428f0b468663fb7102ab"
+  integrity sha512-nv9wYUYdfyfK+qskThf4BQUSIadeI/dCsfaMZfNEoxm9HwOIioQ+LyqmMK6jWHAZQgOzMLaqawhuBXlF63vgjw==
   dependencies:
-    dom-align "1.x"
+    babel-runtime "^6.26.0"
+    dom-align "^1.7.0"
     prop-types "^15.5.8"
-    rc-util "4.x"
+    rc-util "^4.0.4"
 
 rc-animate@2.x:
   version "2.3.6"
@@ -2279,50 +2620,51 @@ rc-animate@2.x:
     css-animation "^1.3.0"
     prop-types "^15.5.6"
 
-rc-slider@5.3.5:
-  version "5.3.5"
-  resolved "https://nexus.grapphs.com/repository/npm/rc-slider/-/rc-slider-5.3.5.tgz#8398cadb044c90196d3c635b677583e50516a69b"
+rc-slider@8.6.13:
+  version "8.6.13"
+  resolved "https://nexus.grapphs.com/repository/npm/rc-slider/-/rc-slider-8.6.13.tgz#88a8150c2dda6709f3f119135de11fba80af765b"
+  integrity sha512-fCUe8pPn8n9pq1ARX44nN2nzJoATtna4x/PdskUrxIvZXN8ja7HuceN/hq6kokZjo3FBD2B1yMZvZh6oi68l6Q==
   dependencies:
     babel-runtime "6.x"
     classnames "^2.2.5"
-    rc-tooltip "^3.4.2"
-    rc-util "^3.2.1"
-    warning "^3.0.0"
+    prop-types "^15.5.4"
+    rc-tooltip "^3.7.0"
+    rc-util "^4.0.4"
+    shallowequal "^1.0.1"
+    warning "^4.0.3"
 
-rc-tooltip@^3.4.2:
-  version "3.4.6"
-  resolved "https://nexus.grapphs.com/repository/npm/rc-tooltip/-/rc-tooltip-3.4.6.tgz#ed98de2a7b412e527c6bd8a2a97dddf0babd2f21"
-  dependencies:
-    babel-runtime "^6.23.0"
-    prop-types "^15.5.8"
-    rc-trigger "1.x"
-
-rc-trigger@1.x:
-  version "1.10.4"
-  resolved "https://nexus.grapphs.com/repository/npm/rc-trigger/-/rc-trigger-1.10.4.tgz#fa30dd75a1a19d71abff4db4c97c0bf3d74964a2"
+rc-tooltip@^3.7.0:
+  version "3.7.3"
+  resolved "https://nexus.grapphs.com/repository/npm/rc-tooltip/-/rc-tooltip-3.7.3.tgz#280aec6afcaa44e8dff0480fbaff9e87fc00aecc"
+  integrity sha512-dE2ibukxxkrde7wH9W8ozHKUO4aQnPZ6qBHtrTH9LoO836PjDdiaWO73fgPB05VfJs9FbZdmGPVEbXCeOP99Ww==
   dependencies:
     babel-runtime "6.x"
-    create-react-class "^15.5.2"
     prop-types "^15.5.8"
-    rc-align "2.x"
+    rc-trigger "^2.2.2"
+
+rc-trigger@^2.2.2:
+  version "2.6.5"
+  resolved "https://nexus.grapphs.com/repository/npm/rc-trigger/-/rc-trigger-2.6.5.tgz#140a857cf28bd0fa01b9aecb1e26a50a700e9885"
+  integrity sha512-m6Cts9hLeZWsTvWnuMm7oElhf+03GOjOLfTuU0QmdB9ZrW7jR2IpI5rpNM7i9MvAAlMAmTx5Zr7g3uu/aMvZAw==
+  dependencies:
+    babel-runtime "6.x"
+    classnames "^2.2.6"
+    prop-types "15.x"
+    rc-align "^2.4.0"
     rc-animate "2.x"
-    rc-util "4.x"
+    rc-util "^4.4.0"
+    react-lifecycles-compat "^3.0.4"
 
-rc-util@4.x:
-  version "4.0.4"
-  resolved "https://nexus.grapphs.com/repository/npm/rc-util/-/rc-util-4.0.4.tgz#99813dd90aee7e29b64939a70ac176ead3f4ff39"
+rc-util@^4.0.4, rc-util@^4.4.0:
+  version "4.8.4"
+  resolved "https://nexus.grapphs.com/repository/npm/rc-util/-/rc-util-4.8.4.tgz#e7baa462ed2647bd478745a9aec7353c0944813a"
+  integrity sha512-1B2h0/pMXfSUBRAgPdoDIKK5XBuzLBuLI9rLwUEW163SPoDvfb9jmg3ymBPtzne2jWgwtdNw4j0vIq/8Yo849A==
   dependencies:
-    add-dom-event-listener "1.x"
+    add-dom-event-listener "^1.1.0"
     babel-runtime "6.x"
+    prop-types "^15.5.10"
+    react-lifecycles-compat "^3.0.4"
     shallowequal "^0.2.2"
-
-rc-util@^3.2.1:
-  version "3.4.1"
-  resolved "https://nexus.grapphs.com/repository/npm/rc-util/-/rc-util-3.4.1.tgz#4b7e0b0c7593bdbcff8ed045d88fbbc773a7b061"
-  dependencies:
-    add-dom-event-listener "1.x"
-    classnames "2.x"
-    shallowequal "0.2.x"
 
 rdf-canonize@^1.0.2:
   version "1.0.3"
@@ -2367,20 +2709,6 @@ rdf-store-inmemory@^0.3.0:
     rdf-ext "^0.3.0"
     rdf-store-abstract "^0.3.0"
 
-react-addons-css-transition-group@15.5.2:
-  version "15.5.2"
-  resolved "https://nexus.grapphs.com/repository/npm/react-addons-css-transition-group/-/react-addons-css-transition-group-15.5.2.tgz#ea7e0a9f0e1c27ca426da4efd3559915bd42ead2"
-  dependencies:
-    fbjs "^0.8.4"
-    object-assign "^4.1.0"
-
-react-addons-update@15.5.2:
-  version "15.5.2"
-  resolved "https://nexus.grapphs.com/repository/npm/react-addons-update/-/react-addons-update-15.5.2.tgz#0ada50494387b17238999ee9662f9f3fc38f935d"
-  dependencies:
-    fbjs "^0.8.9"
-    object-assign "^4.1.0"
-
 react-bootstrap@0.31.5:
   version "0.31.5"
   resolved "https://nexus.grapphs.com/repository/npm/react-bootstrap/-/react-bootstrap-0.31.5.tgz#57040fa8b1274e1e074803c21a1b895fdabea05a"
@@ -2403,13 +2731,10 @@ react-chartjs-2@2.7.4:
     lodash "^4.17.4"
     prop-types "^15.5.8"
 
-react-codemirror@0.3.0:
-  version "0.3.0"
-  resolved "https://nexus.grapphs.com/repository/npm/react-codemirror/-/react-codemirror-0.3.0.tgz#cd6bd6ef458ec1e035cfd8b3fe7b30c8c7883c6c"
-  dependencies:
-    classnames "^2.2.5"
-    codemirror "^5.18.2"
-    lodash.debounce "^4.0.8"
+react-codemirror2@^6.0.0:
+  version "6.0.0"
+  resolved "https://nexus.grapphs.com/repository/npm/react-codemirror2/-/react-codemirror2-6.0.0.tgz#180065df57a64026026cde569a9708fdf7656525"
+  integrity sha512-D7y9qZ05FbUh9blqECaJMdDwKluQiO3A9xB+fssd5jKM7YAXucRuEOlX32mJQumUvHUkHRHqXIPBjm6g0FW0Ag==
 
 react-copy-to-clipboard@5.0.1:
   version "5.0.1"
@@ -2431,31 +2756,36 @@ react-dom-factories@1.0.2:
   version "1.0.2"
   resolved "https://nexus.grapphs.com/repository/npm/react-dom-factories/-/react-dom-factories-1.0.2.tgz#eb7705c4db36fb501b3aa38ff759616aa0ff96e0"
 
-react-dom@15.5.2:
-  version "15.5.2"
-  resolved "https://nexus.grapphs.com/repository/npm/react-dom/-/react-dom-15.5.2.tgz#9248038cf37427ff675efdefbb78924c229e085d"
+react-dom@16.8.6:
+  version "16.8.6"
+  resolved "https://nexus.grapphs.com/repository/npm/react-dom/-/react-dom-16.8.6.tgz#71d6303f631e8b0097f56165ef608f051ff6e10f"
+  integrity sha512-1nL7PIq9LTL3fthPqwkvr2zY7phIPjYrT0jp4HjyEQrEROnw4dG41VVwi/wfoCneoleqrNX7iAD+pXebJZwrwA==
   dependencies:
-    fbjs "^0.8.9"
     loose-envify "^1.1.0"
-    object-assign "^4.1.0"
-    prop-types "~15.5.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    scheduler "^0.13.6"
 
-react-dropzone@3.6.0:
-  version "3.6.0"
-  resolved "https://nexus.grapphs.com/repository/npm/react-dropzone/-/react-dropzone-3.6.0.tgz#31e9cdfc0db921525dae0b82115cf4dc764c680a"
+react-dropzone@10.1.7:
+  version "10.1.7"
+  resolved "https://nexus.grapphs.com/repository/npm/react-dropzone/-/react-dropzone-10.1.7.tgz#faba6b460a41a27a2d642316602924fe0ec2139c"
+  integrity sha512-PT4DHJCQrY/2vVljupveqnlwzVRQGK7U6mhoO0ox6kSJV0EK6W1ZmZpRyHMA1S6/KUOzN+1pASUMSqV/4uAIXg==
   dependencies:
-    attr-accept "^1.0.3"
+    attr-accept "^1.1.3"
+    file-selector "^0.1.11"
+    prop-types "^15.7.2"
 
-react-frame-component@0.6.6:
-  version "0.6.6"
-  resolved "https://nexus.grapphs.com/repository/npm/react-frame-component/-/react-frame-component-0.6.6.tgz#f86ccab8d8c2feb4606cfda17ec65ca8ace84e36"
-  dependencies:
-    object-assign "^4.1.0"
+react-frame-component@4.1.1:
+  version "4.1.1"
+  resolved "https://nexus.grapphs.com/repository/npm/react-frame-component/-/react-frame-component-4.1.1.tgz#ea8f7c518ef6b5ad72146dd1f648752369826894"
+  integrity sha512-NfJp90AvYA1R6+uSYafQ+n+UM2HjHqi4WGHeprVXa6quU9d8o6ZFRzQ36uemY82dlkZFzf2jigFx6E4UzNFajA==
 
-react-infinite@0.10.0:
-  version "0.10.0"
-  resolved "https://nexus.grapphs.com/repository/npm/react-infinite/-/react-infinite-0.10.0.tgz#04567469dd26b2f0d53bd9793bafbcd26e05c58b"
+react-infinite@0.13.0:
+  version "0.13.0"
+  resolved "https://nexus.grapphs.com/repository/npm/react-infinite/-/react-infinite-0.13.0.tgz#a08f84d800f4a4af5f732724c61200d5142697ea"
+  integrity sha512-sISd4IYKELmOrvCq9i3FaQo4HR+Bn49ufK0eYAWQAisQ87QWJ5tqiQvEzww+JJZryZVMFvBCuiV7RUn/MfeEww==
   dependencies:
+    enzyme-adapter-react-16 "1.1.1"
     lodash.isarray "3.0.4"
     lodash.isfinite "3.2.0"
     object-assign "4.0.1"
@@ -2466,6 +2796,31 @@ react-input-autosize@^2.0.1:
   dependencies:
     create-react-class "^15.5.2"
     prop-types "^15.5.8"
+
+react-is@^16.8.1, react-is@^16.8.6:
+  version "16.8.6"
+  resolved "https://nexus.grapphs.com/repository/npm/react-is/-/react-is-16.8.6.tgz#5bbc1e2d29141c9fbdfed456343fe2bc430a6a16"
+  integrity sha512-aUk3bHfZ2bRSVFFbbeVS4i+lNPZr3/WM5jT2J5omUVV1zzcs1nAaf3l51ctA5FFvCRbhrH0bdAsRRQddFJZPtA==
+
+react-lazylog@4.3.2:
+  version "4.3.2"
+  resolved "https://nexus.grapphs.com/repository/npm/react-lazylog/-/react-lazylog-4.3.2.tgz#267769216d7d509404d3a59547b0e9a349d8bce4"
+  integrity sha512-Uk0NtO9N1Wbn2JC3WzmVJX81bVMLIUM6VH5O8mqxYKFt2TfYqSC2beSnw542QEsh3rd7JeloQSptMKalTU1Gmw==
+  dependencies:
+    "@mattiasbuelens/web-streams-polyfill" "^0.2.0"
+    fetch-readablestream "^0.2.0"
+    immutable "^3.8.2"
+    mitt "^1.1.2"
+    prop-types "^15.6.1"
+    react-string-replace "^0.4.1"
+    react-virtualized "^9.21.0"
+    text-encoding-utf-8 "^1.0.1"
+    whatwg-fetch "^2.0.4"
+
+react-lifecycles-compat@^3.0.4:
+  version "3.0.4"
+  resolved "https://nexus.grapphs.com/repository/npm/react-lifecycles-compat/-/react-lifecycles-compat-3.0.4.tgz#4f1a273afdfc8f3488a8c516bfda78f872352362"
+  integrity sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==
 
 react-notification-system@0.2.14:
   version "0.2.14"
@@ -2489,13 +2844,29 @@ react-overlays@^0.7.4:
     prop-types-extra "^1.0.1"
     warning "^3.0.0"
 
-react-radio-group@3.0.1:
-  version "3.0.1"
-  resolved "https://nexus.grapphs.com/repository/npm/react-radio-group/-/react-radio-group-3.0.1.tgz#b8890cc7c159de4522a918e548dde38bc2493bc1"
+react-radio-group@3.0.3:
+  version "3.0.3"
+  resolved "https://nexus.grapphs.com/repository/npm/react-radio-group/-/react-radio-group-3.0.3.tgz#60bb29c7ad05d8b6f67cf443af0767ee2007cf98"
+  integrity sha512-MUNRRjZqQ2y+1K6rBuH0zO+gLVmCnWIcc5GnNwr9WNoUwZ9FUAKJ1UfsKXwYS93whR6/qrZKoVgiOltRkbzezw==
+  dependencies:
+    prop-types "^15.5.8"
 
-react-scrollchor@2.2.0:
-  version "2.2.0"
-  resolved "https://nexus.grapphs.com/repository/npm/react-scrollchor/-/react-scrollchor-2.2.0.tgz#ca6b21962ca4bde85216041250b47d438a351e6c"
+react-reconciler@^0.7.0:
+  version "0.7.0"
+  resolved "https://nexus.grapphs.com/repository/npm/react-reconciler/-/react-reconciler-0.7.0.tgz#9614894103e5f138deeeb5eabaf3ee80eb1d026d"
+  integrity sha512-50JwZ3yNyMS8fchN+jjWEJOH3Oze7UmhxeoJLn2j6f3NjpfCRbcmih83XTWmzqtar/ivd5f7tvQhvvhism2fgg==
+  dependencies:
+    fbjs "^0.8.16"
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.0"
+
+react-scrollchor@6.0.0:
+  version "6.0.0"
+  resolved "https://nexus.grapphs.com/repository/npm/react-scrollchor/-/react-scrollchor-6.0.0.tgz#7c2545e743355c0069f4c6a5ab4f9d9875182b4d"
+  integrity sha512-Ryc3SoxG/urLrqQ4rFIsj1nWfW9pPGZK30CSlJ670zJWpPFQtVfYOmiZmQUwY96P8L+LcCVmV4q1ZdBlZsuW/Q==
+  dependencies:
+    requestanimationframe-timer "1.x.x"
 
 react-select@1.0.0-rc.10:
   version "1.0.0-rc.10"
@@ -2527,17 +2898,44 @@ react-split-pane@0.1.68:
     prop-types "^15.5.10"
     react-style-proptype "^3.0.0"
 
+react-string-replace@^0.4.1:
+  version "0.4.4"
+  resolved "https://nexus.grapphs.com/repository/npm/react-string-replace/-/react-string-replace-0.4.4.tgz#24006fbe0db573d5be583133df38b1a735cb4225"
+  integrity sha512-FAMkhxmDpCsGTwTZg7p/2v+/GTmxAp73so3fbSvlAcBBX36ujiGRNEaM/1u+jiYQrArhns+7eE92g2pi5E5FUA==
+  dependencies:
+    lodash "^4.17.4"
+
 react-style-proptype@^3.0.0:
   version "3.1.0"
   resolved "https://nexus.grapphs.com/repository/npm/react-style-proptype/-/react-style-proptype-3.1.0.tgz#c8912fc13460f5b0c1ec1114c729d535b52b8073"
   dependencies:
     prop-types "^15.5.4"
 
+react-test-renderer@^16.0.0-0:
+  version "16.8.6"
+  resolved "https://nexus.grapphs.com/repository/npm/react-test-renderer/-/react-test-renderer-16.8.6.tgz#188d8029b8c39c786f998aa3efd3ffe7642d5ba1"
+  integrity sha512-H2srzU5IWYT6cZXof6AhUcx/wEyJddQ8l7cLM/F7gDXYyPr4oq+vCIxJYXVGhId1J706sqziAjuOEjyNkfgoEw==
+  dependencies:
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    react-is "^16.8.6"
+    scheduler "^0.13.6"
+
 react-textarea-autosize@5.1.0:
   version "5.1.0"
   resolved "https://nexus.grapphs.com/repository/npm/react-textarea-autosize/-/react-textarea-autosize-5.1.0.tgz#ffbf8164fce217c79443c1c17dedf730592df224"
   dependencies:
     prop-types "^15.5.10"
+
+react-transition-group@4.2.1:
+  version "4.2.1"
+  resolved "https://nexus.grapphs.com/repository/npm/react-transition-group/-/react-transition-group-4.2.1.tgz#61fc9e36568bff9a1fe4e60fae323c8a6dbc0680"
+  integrity sha512-IXrPr93VzCPupwm2O6n6C2kJIofJ/Rp5Ltihhm9UfE8lkuVX2ng/SUUl/oWjblybK9Fq2Io7LGa6maVqPB762Q==
+  dependencies:
+    "@babel/runtime" "^7.4.5"
+    dom-helpers "^3.4.0"
+    loose-envify "^1.4.0"
+    prop-types "^15.6.2"
 
 react-treeview@0.4.7:
   version "0.4.7"
@@ -2549,24 +2947,28 @@ react-truncate@2.2.2:
   version "2.2.2"
   resolved "https://nexus.grapphs.com/repository/npm/react-truncate/-/react-truncate-2.2.2.tgz#c13e420df82cf6d0385bb2a6eb10212743085550"
 
-react-virtualized@^9.13.0:
-  version "9.13.0"
-  resolved "https://nexus.grapphs.com/repository/npm/react-virtualized/-/react-virtualized-9.13.0.tgz#83e4d984271a37631225e5fe6faeaeada6e59f53"
+react-virtualized@^9.21.0:
+  version "9.21.1"
+  resolved "https://nexus.grapphs.com/repository/npm/react-virtualized/-/react-virtualized-9.21.1.tgz#4dbbf8f0a1420e2de3abf28fbb77120815277b3a"
+  integrity sha512-E53vFjRRMCyUTEKuDLuGH1ld/9TFzjf/fFW816PE4HFXWZorESbSTYtiZz1oAjra0MminaUU1EnvUxoGuEFFPA==
   dependencies:
-    babel-runtime "^6.23.0"
-    classnames "^2.2.3"
+    babel-runtime "^6.26.0"
+    clsx "^1.0.1"
     dom-helpers "^2.4.0 || ^3.0.0"
+    linear-layout-vector "0.0.1"
     loose-envify "^1.3.0"
-    prop-types "^15.5.4"
+    prop-types "^15.6.0"
+    react-lifecycles-compat "^3.0.4"
 
-react@15.5.2:
-  version "15.5.2"
-  resolved "https://nexus.grapphs.com/repository/npm/react/-/react-15.5.2.tgz#3405c1b93222e9647dbf393c7a340c9fb191c912"
+react@16.8.6:
+  version "16.8.6"
+  resolved "https://nexus.grapphs.com/repository/npm/react/-/react-16.8.6.tgz#ad6c3a9614fd3a4e9ef51117f54d888da01f2bbe"
+  integrity sha512-pC0uMkhLaHm11ZSJULfOBqV4tIZkx87ZLvbbQYunNixAAvjnC+snJCg0XQXn9VIsttVsbZP/H/ewzgsd5fxKXw==
   dependencies:
-    fbjs "^0.8.9"
     loose-envify "^1.1.0"
-    object-assign "^4.1.0"
-    prop-types "^15.5.2"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    scheduler "^0.13.6"
 
 read-only-stream@^1.1.1:
   version "1.1.1"
@@ -2630,6 +3032,11 @@ redux@3.6.0:
     loose-envify "^1.1.0"
     symbol-observable "^1.0.2"
 
+reflect.ownkeys@^0.2.0:
+  version "0.2.0"
+  resolved "https://nexus.grapphs.com/repository/npm/reflect.ownkeys/-/reflect.ownkeys-0.2.0.tgz#749aceec7f3fdf8b63f927a04809e90c5c0b3460"
+  integrity sha1-dJrO7H8/34tj+SegSAnpDFwLNGA=
+
 regenerator-runtime@^0.10.0:
   version "0.10.5"
   resolved "https://nexus.grapphs.com/repository/npm/regenerator-runtime/-/regenerator-runtime-0.10.5.tgz#336c3efc1220adcedda2c9fab67b5a7955a33658"
@@ -2637,6 +3044,11 @@ regenerator-runtime@^0.10.0:
 regenerator-runtime@^0.11.0:
   version "0.11.1"
   resolved "https://nexus.grapphs.com/repository/npm/regenerator-runtime/-/regenerator-runtime-0.11.1.tgz#be05ad7f9bf7d22e056f9726cee5017fbf19e2e9"
+
+regenerator-runtime@^0.13.2:
+  version "0.13.3"
+  resolved "https://nexus.grapphs.com/repository/npm/regenerator-runtime/-/regenerator-runtime-0.13.3.tgz#7cf6a77d8f5c6f60eb73c5fc1955b2ceb01e6bf5"
+  integrity sha512-naKIZz2GQ8JWh///G7L3X6LaQUAMp2lvb1rvwwsURe/VXwD6VMfr+/1NuNw3ag8v2kY1aQ/go5SNn79O9JU7yw==
 
 repeat-string@^1.5.2:
   version "1.6.1"
@@ -2694,6 +3106,13 @@ request@^2.88.0:
     tunnel-agent "^0.6.0"
     uuid "^3.3.2"
 
+requestanimationframe-timer@1.x.x:
+  version "1.0.4"
+  resolved "https://nexus.grapphs.com/repository/npm/requestanimationframe-timer/-/requestanimationframe-timer-1.0.4.tgz#3b48fe55f4359f07c54745caec7437e2532f89d8"
+  integrity sha512-5ehtMkIS7RLI/UxjgAEZg6zGLoRdSSzfwjwowpBRImAr8Rbs2pdcS/4tmJ7CAtvYjtO/H+ui96AMkyefzUqUlQ==
+  dependencies:
+    raf "^3.4.0"
+
 reselect@3.0.1:
   version "3.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/reselect/-/reselect-3.0.1.tgz#efdaa98ea7451324d092b2b2163a6a1d7a9a2147"
@@ -2747,9 +3166,22 @@ safe-buffer@^5.1.2:
   version "5.1.2"
   resolved "https://nexus.grapphs.com/repository/npm/safe-buffer/-/safe-buffer-5.1.2.tgz#991ec69d296e0313747d59bdfd2b745c35f8828d"
 
+scheduler@^0.13.6:
+  version "0.13.6"
+  resolved "https://nexus.grapphs.com/repository/npm/scheduler/-/scheduler-0.13.6.tgz#466a4ec332467b31a91b9bf74e5347072e4cd889"
+  integrity sha512-IWnObHt413ucAYKsD9J1QShUKkbKLQQHdxRyw73sw4FN26iWr3DY/H34xGPe4nmL1DwXyWmSWmMrA9TfQbE/XQ==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+
 semver@^5.6.0:
   version "5.6.0"
   resolved "https://nexus.grapphs.com/repository/npm/semver/-/semver-5.6.0.tgz#7e74256fbaa49c75aa7c7a205cc22799cac80004"
+
+semver@^5.7.0:
+  version "5.7.0"
+  resolved "https://nexus.grapphs.com/repository/npm/semver/-/semver-5.7.0.tgz#790a7cf6fea5459bac96110b29b60412dc8ff96b"
+  integrity sha512-Ya52jSX2u7QKghxeoFGpLwCtGlt7j0oY9DYb5apt9nPlJ42ID+ulTXESnt/qAQcoSERyZ5sl3LDIOw0nAn/5DA==
 
 serve-favicon@^2.1.6:
   version "2.4.3"
@@ -2775,11 +3207,16 @@ shallow-copy@0.0.1:
   version "0.0.1"
   resolved "https://nexus.grapphs.com/repository/npm/shallow-copy/-/shallow-copy-0.0.1.tgz#415f42702d73d810330292cc5ee86eae1a11a170"
 
-shallowequal@0.2.x, shallowequal@^0.2.2:
+shallowequal@^0.2.2:
   version "0.2.2"
   resolved "https://nexus.grapphs.com/repository/npm/shallowequal/-/shallowequal-0.2.2.tgz#1e32fd5bcab6ad688a4812cb0cc04efc75c7014e"
   dependencies:
     lodash.keys "^3.1.2"
+
+shallowequal@^1.0.1:
+  version "1.1.0"
+  resolved "https://nexus.grapphs.com/repository/npm/shallowequal/-/shallowequal-1.1.0.tgz#188d521de95b9087404fd4dcb68b13df0ae4e7f8"
+  integrity sha512-y0m1JoUZSlPAjXVtPPW70aZWfIL/dSP7AFkRnniLCrK/8MDKog3TySTBmckD+RObVxH0v4Tox67+F14PdED2oQ==
 
 shasum@^1.0.0:
   version "1.0.2"
@@ -2962,6 +3399,11 @@ syntax-error@^1.1.1:
   dependencies:
     acorn "^4.0.3"
 
+text-encoding-utf-8@^1.0.1:
+  version "1.0.2"
+  resolved "https://nexus.grapphs.com/repository/npm/text-encoding-utf-8/-/text-encoding-utf-8-1.0.2.tgz#585b62197b0ae437e3c7b5d0af27ac1021e10d13"
+  integrity sha512-8bw4MY9WjdsD2aMtO0OzOCY3pXGYNx2d2FfHRVUKkiCPDWjKuOlhLVASS+pD7VkLTVjW268LYJHwsnPFlBpbAg==
+
 through2@^1.0.0:
   version "1.1.1"
   resolved "https://nexus.grapphs.com/repository/npm/through2/-/through2-1.1.1.tgz#0847cbc4449f3405574dbdccd9bb841b83ac3545"
@@ -3007,9 +3449,10 @@ traverse@^0.6.6:
   version "0.6.6"
   resolved "https://nexus.grapphs.com/repository/npm/traverse/-/traverse-0.6.6.tgz#cbdf560fd7b9af632502fed40f918c157ea97137"
 
-tslib@1.8.0:
-  version "1.8.0"
-  resolved "https://nexus.grapphs.com/repository/npm/tslib/-/tslib-1.8.0.tgz#dc604ebad64bcbf696d613da6c954aa0e7ea1eb6"
+tslib@1.10.0, tslib@^1.9.0:
+  version "1.10.0"
+  resolved "https://nexus.grapphs.com/repository/npm/tslib/-/tslib-1.10.0.tgz#c3c19f95973fb0a62973fb09d90d961ee43e5c8a"
+  integrity sha512-qOebF53frne81cf0S9B41ByenJ3/IuH8yJKngAX35CmiZySA0khhkovshKK+jGCaMnVomla7gVlIcc3EvKPbTQ==
 
 tty-browserify@~0.0.0:
   version "0.0.0"
@@ -3149,6 +3592,13 @@ warning@^3.0.0:
   dependencies:
     loose-envify "^1.0.0"
 
+warning@^4.0.3:
+  version "4.0.3"
+  resolved "https://nexus.grapphs.com/repository/npm/warning/-/warning-4.0.3.tgz#16e9e077eb8a86d6af7d64aa1e05fd85b4678ca3"
+  integrity sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==
+  dependencies:
+    loose-envify "^1.0.0"
+
 webcola@~3.3.8:
   version "3.3.8"
   resolved "https://nexus.grapphs.com/repository/npm/webcola/-/webcola-3.3.8.tgz#af5a8e2faf5213f40ab75d948bd582e1111b763e"
@@ -3172,7 +3622,7 @@ whatwg-fetch@>=0.10.0:
   version "2.0.2"
   resolved "https://nexus.grapphs.com/repository/npm/whatwg-fetch/-/whatwg-fetch-2.0.2.tgz#fe294d1d89e36c5be8b3195057f2e4bc74fc980e"
 
-whatwg-fetch@~2.0.2:
+whatwg-fetch@^2.0.4, whatwg-fetch@~2.0.2:
   version "2.0.4"
   resolved "https://nexus.grapphs.com/repository/npm/whatwg-fetch/-/whatwg-fetch-2.0.4.tgz#dde6a5df315f9d39991aa17621853d720b85566f"
 

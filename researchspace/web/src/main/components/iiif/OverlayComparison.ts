@@ -25,8 +25,10 @@ import * as classNames from 'classnames';
 import { Rdf } from 'platform/api/rdf';
 import { navigateToResource } from 'platform/api/navigation';
 import { getOverlaySystem } from 'platform/components/ui/overlay';
-import { KefirComponentBase } from 'platform/components/utils';
 import { CreateResourceDialog } from 'platform/components/ldp';
+
+// TODO: remove KefirComponent and replace it by utilizing Cancellation object
+import { KefirComponentBase } from 'platform/components/utils/KefirComponent';
 
 import {
   queryIIIFImageOrRegion, ImageOrRegionInfo,

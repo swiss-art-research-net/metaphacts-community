@@ -27,7 +27,7 @@ const ROOT_BUILD_CONFIG = JSON.parse(
 
 let testResultPaths = 'project/webpack/tests_out/junit/**/*.xml';
 for (const projectName of ROOT_BUILD_CONFIG.includeProjects) {
-  testResultPaths += ',' + `${projectName}/core/target/test-reports/*.xml`;
+  testResultPaths += ' ' + `${projectName}/core/target/test-reports/*.xml`;
 }
 
 const {defaultShiroIniFolder = 'metaphacts-platform/app/config'} = ROOT_BUILD_CONFIG;

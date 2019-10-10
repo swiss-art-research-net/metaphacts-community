@@ -23,12 +23,16 @@ import * as Immutable from 'immutable';
 import { serializer, deserializer } from 'platform/api/json';
 
 module Rdf {
+  export type TermType = 'NamedNode' | 'BlankNode' | 'Literal' | 'Variable' | 'DefaultGraph';
+
   export abstract class Node {
     private _value: string;
 
     constructor(value: string) {
       this._value = value;
     }
+
+    abstract get termType(): TermType;
 
     get value(): string {
       return this._value;
@@ -86,9 +90,9 @@ module Rdf {
   }
 
   export class Iri extends Node {
-    // prevent assignment from other node types to IRI due to structural typing
-    // tslint:disable-next-line:no-unused-variable
-    private _rdfIriBrand: string;
+    get termType(): 'NamedNode' {
+      return 'NamedNode';
+    }
 
     public equals(other: Node) {
       return super.equals(other) && other instanceof Rdf.Iri;
@@ -129,106 +133,96 @@ module Rdf {
 
   export const BASE_IRI = iri('');
 
+  const RDF_LANG_STRING = iri('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString');
+  const XSD_STRING = iri('http://www.w3.org/2001/XMLSchema#string');
+  const XSD_BOOLEAN = iri('http://www.w3.org/2001/XMLSchema#boolean');
+
   export class Literal extends Node {
     private _dataType: Iri;
+    private _lang: string;
 
-    constructor(value: string, dataType: Iri) {
+    constructor(value: string, datatypeOrLanguage: Iri | string) {
       super(value);
-      this._dataType = dataType;
+      if (typeof datatypeOrLanguage === 'string') {
+        this._dataType = RDF_LANG_STRING;
+        this._lang = datatypeOrLanguage;
+      } else {
+        this._dataType = datatypeOrLanguage;
+        this._lang = '';
+      }
     }
 
-    get dataType(): Iri {
+    get termType(): 'Literal' {
+      return 'Literal';
+    }
+
+    get datatype(): Iri {
       return this._dataType;
     }
 
+    get language(): string {
+      return this._lang;
+    }
+
     public toString() {
-      return `"${this.value}"^^${this.dataType.toString()}`;
+      return this.language
+        ? `"${this.value}"@${this.language}`
+        : `"${this.value}"^^${this.datatype.toString()}`;
     }
 
     public equals(other: Node) {
       if (!other || typeof other !== 'object') {
         return false;
       } else {
-        return other instanceof Literal && !(other instanceof LangLiteral)
+        return other instanceof Literal
           && this.value === other.value
-          && this.dataType.equals(other.dataType);
+          && this.datatype.equals(other.datatype)
+          && this.language === other.language;
       }
     }
 
     @serializer
     public toJSON() {
-      return {
-        'value': this.value,
-        'dataType': this._dataType,
-      };
+      if (this.language) {
+        return {
+          'value': this.value,
+          'dataType': this.datatype,
+          'lang': this.language,
+        };
+      } else {
+        return {
+          'value': this.value,
+          'dataType': this.datatype,
+        };
+      }
     }
 
     @deserializer
-    public static fromJSON (obj: {value: string; dataType: Rdf.Iri}): Literal {
-      return new Literal(obj.value, obj.dataType);
+    public static fromJSON(obj: { value: string; dataType: Rdf.Iri; lang: string }): Literal {
+      return new Literal(obj.value, obj.lang ? obj.lang : obj.dataType);
     }
   }
 
   export function literal(value: string | boolean, dataType?: Iri) {
     if (typeof value === 'boolean') {
-      return new Literal(value.toString(), iri('http://www.w3.org/2001/XMLSchema#boolean'));
+      return new Literal(value.toString(), XSD_BOOLEAN);
     } else {
       if (dataType === undefined) {
-        return new Literal(value, iri('http://www.w3.org/2001/XMLSchema#string'));
+        return new Literal(value, XSD_STRING);
       } else {
         return new Literal(value, dataType);
       }
     }
   }
 
-  export class LangLiteral extends Literal {
-    private _lang: string;
-
-    constructor(value: string, lang: string) {
-      super(value, iri('http://www.w3.org/1999/02/22-rdf-syntax-ns#langString'));
-      this._lang = lang;
-    }
-
-    get lang(): string {
-      return this._lang;
-    }
-
-    public equals(other: Node) {
-      if (!other || typeof other !== 'object') {
-        return false;
-      } else {
-        return other instanceof LangLiteral
-          && this.value === other.value
-          && this.dataType.equals(other.dataType)
-          && this.lang === other.lang;
-      }
-    }
-
-    public toString() {
-      return `"${this.value}"@${this.lang}`;
-    }
-
-    @serializer
-    public toJSON() {
-      return {
-        'value': this.value,
-        'dataType': this.dataType,
-        'lang': this.lang,
-      };
-    }
-
-    @deserializer
-    public static fromJSON(obj: {value: string; dataType: Rdf.Iri; lang: string}): LangLiteral {
-      return new LangLiteral(obj.value, obj.lang);
-    }
-  }
-  export function langLiteral(value: string, lang: string): LangLiteral {
-    return new LangLiteral(value, lang);
+  export function langLiteral(value: string, lang: string): Literal {
+    return new Literal(value, lang);
   }
 
   export class BNode extends Node {
-    // tslint:disable-next-line:no-unused-variable
-    private _rdfBlankBrand: string;
+    get termType(): 'BlankNode' {
+      return 'BlankNode';
+    }
 
     public toString() {
       return `${this.value}`;
@@ -331,7 +325,7 @@ module Rdf {
   }
 
   // http://jsperf.com/hashing-strings
-  function hashString(string: string) {
+  export function hashString(string: string) {
     // This is the hash from JVM
     // The hash code for a string is computed as
     // s[0] * 31 ^ (n - 1) + s[1] * 31 ^ (n - 2) + ... + s[n - 1],
@@ -382,6 +376,23 @@ module Rdf {
         [pg.pointer]
       );
     return _.uniqBy(nodes, node => node.value) as Array<T>;
+  }
+
+  /**
+   * Extracts local name for URI the same way as it's done in RDF4J.
+   */
+  export function getLocalName(uri: string): string | undefined {
+    let index = uri.indexOf('#');
+    if (index < 0) {
+      index = uri.lastIndexOf('/');
+    }
+    if (index < 0) {
+      index = uri.lastIndexOf(':');
+    }
+    if (index < 0) {
+      return undefined;
+    }
+    return uri.substring(index + 1);
   }
 }
 

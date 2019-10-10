@@ -18,7 +18,7 @@
 
 import * as Kefir from 'kefir';
 import * as React from 'react';
-import { WorkspaceProps } from 'ontodia';
+import { WorkspaceProps, Workspace } from 'ontodia';
 
 import { ExtensionPoint } from 'platform/api/module-loader';
 
@@ -41,6 +41,9 @@ export interface OntodiaFactory {
   createToolbar(
     componentProps: OntodiaProps, toolbarProps: ToolbarProps
   ): JSX.Element;
+  onNewDigaramInitialized(
+    componentProps: OntodiaProps, workspace: Workspace
+  ): void;
 }
 
 export const OntodiaExtension = new ExtensionPoint<OntodiaFactory>();

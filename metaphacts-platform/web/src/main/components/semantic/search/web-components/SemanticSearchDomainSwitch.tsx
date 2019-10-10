@@ -22,19 +22,30 @@ import * as maybe from 'data.maybe';
 import { Map } from 'immutable';
 
 import { Rdf } from 'platform/api/rdf';
-import { InitialQueryContext, InitialQueryContextTypes } from './SemanticSearchApi';
+import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 
-export interface Props {
+export interface SemanticSearchDomainSwitchProps {
   /**
    * Specifies the available search domains, ties them with the projection variables
    */
   availableDomains?: { [iri: string]: string }
 }
 
-export class SemanticSearchDomainSwitch extends React.Component<Props, {}> {
-  static contextTypes = InitialQueryContextTypes;
-  context: InitialQueryContext;
+export class SemanticSearchDomainSwitch extends React.Component<SemanticSearchDomainSwitchProps> {
+  render() {
+    return (
+      <SemanticSearchContext.Consumer>
+        {context => <SemanticSearchDomainSwitchInner {...this.props} context={context} />}
+      </SemanticSearchContext.Consumer>
+    );
+  }
+}
 
+interface InnerProps extends SemanticSearchDomainSwitchProps {
+  context: InitialQueryContext;
+}
+
+class SemanticSearchDomainSwitchInner extends React.Component<InnerProps, {}> {
   componentDidMount() {
     this.setAvailableDomains();
   }
@@ -43,19 +54,19 @@ export class SemanticSearchDomainSwitch extends React.Component<Props, {}> {
     maybe.fromNullable(this.props.availableDomains).map(
       domains => Map(domains).mapKeys(Rdf.iri)
     ).map(
-      this.context.setAvailableDomains
+      this.props.context.setAvailableDomains
     );
   }
 
   private onChangeDomain = (option: { value: string; label: string }) => {
-    const {searchProfileStore, setDomain} = this.context;
+    const {searchProfileStore, setDomain} = this.props.context;
     const profileStore = searchProfileStore.get();
     const category = profileStore.categories.get(Rdf.iri(option.value));
     setDomain(category);
   }
 
   render() {
-    const {availableDomains, domain, searchProfileStore} = this.context;
+    const {availableDomains, domain, searchProfileStore} = this.props.context;
     if (availableDomains.isNothing || domain.isNothing) { return null; }
 
     const value = domain.get().iri.value;

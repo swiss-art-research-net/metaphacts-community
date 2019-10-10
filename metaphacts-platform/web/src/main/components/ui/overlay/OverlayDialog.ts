@@ -27,6 +27,8 @@ import * as block from 'bem-cn';
 import * as classNames from 'classnames';
 
 import { getOverlaySystem } from 'platform/components/ui/overlay';
+import { componentHasType } from 'platform/components/utils';
+
 import OverlayDialogTrigger from './OverlayDialogTrigger';
 import OverlayDialogContent from './OverlayDialogContent';
 
@@ -114,12 +116,12 @@ export class OverlayComponent extends Component<OverlayComponentProps, {}> {
     // 1. find anchor child and body child
     let children = Children.toArray(this.props.children);
     const anchorComponent =
-      _.find(children,  child => (child as ReactElement<any>).type === OverlayDialogTrigger);
+      _.find(children,  child => componentHasType(child, OverlayDialogTrigger));
     const bodyComponent =
-      _.find(children,  child => (child as ReactElement<any>).type === OverlayDialogContent);
+      _.find(children,  child => componentHasType(child, OverlayDialogContent));
 
-    const anchorChild = Children.only(anchorComponent).props.children;
-    const bodyChild = Children.only(bodyComponent).props.children;
+    const anchorChild = (Children.only(anchorComponent) as ReactElement<any>).props.children;
+    const bodyChild = (Children.only(bodyComponent) as ReactElement<any>).props.children;
     // use childs to create anchor and body
     const props = {
       onClick: (event: React.SyntheticEvent<any>) => {

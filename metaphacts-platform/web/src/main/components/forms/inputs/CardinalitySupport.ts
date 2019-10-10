@@ -33,9 +33,10 @@ import * as classnames from 'classnames';
 import { Button } from 'react-bootstrap';
 
 import {
-  isValidChild, hasBaseDerivedRelationship, universalChildren, getPreferredLabel,
+  isValidChild, componentHasType, hasBaseDerivedRelationship, universalChildren,
 } from 'platform/components/utils';
 
+import { getPreferredLabel } from '../FieldDefinition';
 import {
   FieldValue, EmptyValue, CompositeValue, DataState, ErrorKind, FieldError,
 } from '../FieldValues';
@@ -291,12 +292,12 @@ function isInputGroup(children: ReactNode) {
     return childCount > 1;
   }
   const child = Children.toArray(children)[0];
-  if (typeof child !== 'object' || typeof child.type === 'string') {
+  if (!isValidChild(child)) {
     return true;
   }
-  return !hasBaseDerivedRelationship(SingleValueInput, child.type)
-    || child.type === CompositeInput
-    || child.type === FormSwitch;
+  return componentHasType(child, CompositeInput)
+    || componentHasType(child, FormSwitch)
+    || !componentHasType(child, SingleValueInput as any);
 }
 
 function getFirst<T>(items: IterableIterator<T>): T {

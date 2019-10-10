@@ -224,7 +224,7 @@ export class CreateProfileDialogClass extends Component<Props, State> {
   }
 
   private getInputElement(ref): HTMLInputElement {
-    return findDOMNode<HTMLInputElement>(this.refs[ref]);
+    return findDOMNode(this.refs[ref]) as HTMLInputElement;
   }
 }
 

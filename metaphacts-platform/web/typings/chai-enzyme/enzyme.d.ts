@@ -4,6 +4,7 @@
  */
 
 declare module 'enzyme' {
+  export function configure({ adapter: any }): void;
   export function shallow(...args: any[]): any;
   export function mount(...args: any[]): any;
   export function mount<T, K>(...args: any[]): any;

@@ -20,25 +20,18 @@ import { createElement } from 'react';
 import * as sinon from 'sinon';
 import { clone } from 'lodash';
 import { expect } from 'chai';
-import { mount } from 'enzyme';
 import { FormControl } from 'react-bootstrap';
 import ReactSelect from 'react-select';
 
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import * as LanguageService from 'platform/api/services/language';
-
-sinon.stub(ConfigHolder, 'getUIConfig', function() {
-  return {preferredLanguages: []};
-});
-sinon.stub(LanguageService, 'getPreferredUserLanguage', function() {
-  return undefined;
-});
-
 import { Rdf } from 'platform/api/rdf';
 import { PlainTextInput, PlainTextInputProps, FieldValue } from 'platform/components/forms';
-const LangLiteral = Rdf.LangLiteral;
+
+import { mount } from 'platform-tests/configuredEnzyme';
+import { mockLanguagePreferences } from 'platform-tests/mocks';
 
 import { PROPS as BASIC_PROPS } from './fixturies/FieldProps';
+
+mockLanguagePreferences();
 
 describe('Plain Text Component', () => {
   const inputComponent = mount(createElement(PlainTextInput, BASIC_PROPS));
@@ -87,7 +80,7 @@ describe('Plain Text Component', () => {
     });
 
     it('show default language when its langLiteral', () => {
-      const langLiteral = new LangLiteral('value', 'language');
+      const langLiteral = Rdf.langLiteral('value', 'language');
       let props = clone(BASIC_PROPS);
       props.value = FieldValue.fromLabeled({value: langLiteral});
       const wrapper = mount(createElement(PlainTextInput, props));

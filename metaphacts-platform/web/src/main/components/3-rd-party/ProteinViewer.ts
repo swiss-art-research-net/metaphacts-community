@@ -71,7 +71,7 @@ export class ProteinViewerComponent extends Component<ProteinViewerConfig, Prote
 
   componentDidMount() {
 
-      this.viewer = pv.Viewer(findDOMNode(this.refs[REF]),
+      this.viewer = pv.Viewer(findDOMNode(this.refs[REF]) as Element,
                              { quality : 'medium',
                               width: 'auto',
                               height : 'auto',

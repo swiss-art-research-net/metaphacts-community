@@ -20,8 +20,7 @@ import { createFactory } from 'react';
 import * as D from 'react-dom-factories';
 import * as classnames from 'classnames';
 
-import { getPreferredLabel } from 'platform/components/utils';
-
+import { getPreferredLabel } from '../FieldDefinition';
 import { ErrorKind, FieldError, FieldValue, CompositeValue } from '../FieldValues';
 import { StaticComponent, StaticFieldProps } from './StaticComponent';
 

@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
         "EdgeStyle": {
             "properties": {
@@ -268,44 +268,6 @@
             ],
             "type": "object"
         },
-        "LinkTypeOptions": {
-            "properties": {
-                "@type": {
-                    "enum": [
-                        "LinkTypeOptions"
-                    ],
-                    "type": "string"
-                },
-                "property": {
-                    "properties": {
-                        "linkTypeBrand": {
-                        }
-                    },
-                    "required": [
-                        "linkTypeBrand"
-                    ],
-                    "type": "object"
-                },
-                "showLabel": {
-                    "type": "boolean"
-                },
-                "visible": {
-                    "type": "boolean"
-                }
-            },
-            "propertyOrder": [
-                "@type",
-                "property",
-                "visible",
-                "showLabel"
-            ],
-            "required": [
-                "@type",
-                "property",
-                "visible"
-            ],
-            "type": "object"
-        },
         "LocalizedString": {
             "properties": {
                 "datatype": {
@@ -482,8 +444,8 @@
     },
     "properties": {
         "acceptBlankNodes": {
-            "default": true,
-            "description": "Allow blank nodes in navigation queries.",
+            "default": false,
+            "description": "Allow blank nodes in navigation queries. Significantly increases complexity of the queries\nand may lead to unexpected query execution plans and timeouts in triple stores.",
             "type": "boolean"
         },
         "addToDefaultSet": {
@@ -497,6 +459,10 @@
         },
         "autoZoom": {
             "description": "If true zoomToFit to call on each addElements event.",
+            "type": "boolean"
+        },
+        "collapseNavigator": {
+            "description": "Collapse navigator panel by default",
             "type": "boolean"
         },
         "defaultEdgeStyle": {
@@ -559,6 +525,10 @@
             "description": "Disable navigation confirmation dialog, resource links will be followed without confirmation.",
             "type": "boolean"
         },
+        "hideNavigator": {
+            "description": "Disable navigator panel",
+            "type": "boolean"
+        },
         "hidePanels": {
             "description": "Disable side panels",
             "type": "boolean"
@@ -600,7 +570,27 @@
         "linkSettings": {
             "description": "Custom options for the links",
             "items": {
-                "$ref": "#/definitions/LinkTypeOptions"
+                "properties": {
+                    "property": {
+                        "type": "string"
+                    },
+                    "showLabel": {
+                        "type": "boolean"
+                    },
+                    "visible": {
+                        "type": "boolean"
+                    }
+                },
+                "propertyOrder": [
+                    "property",
+                    "visible",
+                    "showLabel"
+                ],
+                "required": [
+                    "property",
+                    "visible"
+                ],
+                "type": "object"
             },
             "type": "array"
         },
@@ -733,6 +723,8 @@
         "repositories",
         "linkSettings",
         "hidePanels",
+        "hideNavigator",
+        "collapseNavigator",
         "hideToolbar",
         "zoomRequireCtrl",
         "hideScrollBars",
