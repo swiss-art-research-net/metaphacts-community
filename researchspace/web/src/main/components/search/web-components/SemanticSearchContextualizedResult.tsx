@@ -33,7 +33,7 @@ import {
   RESULT_VARIABLES, SEMANTIC_SEARCH_VARIABLES,
 } from 'platform/components/semantic/search/config/SearchConfig';
 import {
-  SemanticSearchContext, ResultContext,
+  SemanticSearchContext,
 } from 'platform/components/semantic/search/web-components/SemanticSearchApi';
 import {
   SearchProfileStore
@@ -70,7 +70,7 @@ class SemanticSearchContextualizedResult
 }
 
 interface InnerProps extends SemanticSearchContextualizedResultProps {
-  context: ResultContext;
+  context: SemanticSearchContext;
 }
 
 interface State {
@@ -107,12 +107,6 @@ class SemanticSearchContextualizedResultInner extends React.Component<InnerProps
     this.state = initialState;
   }
 
-  getChildContext() {
-    return _.assign({}, this.context, {
-      bindings: this.getBindings(),
-    });
-  }
-
   private getBindings = () => {
     return this.state.relation.map(
       relation => ({
@@ -127,13 +121,18 @@ class SemanticSearchContextualizedResultInner extends React.Component<InnerProps
   }
 
   render() {
-    return <div className={styles.holder}>
-      <FormGroup className={styles.selectorGroup}>
-        <ControlLabel>Visualization Context</ControlLabel>
-        {this.props.context.searchProfileStore.map(this.contextSelector).getOrElse(<span />)}
-      </FormGroup>
-      {React.Children.only(this.props.children)}
-    </div>;
+    const context: SemanticSearchContext = {...this.props.context, bindings: this.getBindings()};
+    return (
+      <SemanticSearchContext.Provider value={context}>
+        <div className={styles.holder}>
+          <FormGroup className={styles.selectorGroup}>
+            <ControlLabel>Visualization Context</ControlLabel>
+            {this.props.context.searchProfileStore.map(this.contextSelector).getOrElse(<span />)}
+          </FormGroup>
+          {React.Children.only(this.props.children)}
+        </div>
+      </SemanticSearchContext.Provider>
+    );
   }
 
   private initialState = (
@@ -147,7 +146,8 @@ class SemanticSearchContextualizedResultInner extends React.Component<InnerProps
       );
     return {
       relations: relations,
-      relation: _.isEmpty(relations) ? Maybe.Nothing<Model.Relation>() : Maybe.Just(_.head(relations)),
+      relation: _.isEmpty(relations)
+        ? Maybe.Nothing<Model.Relation>() : Maybe.Just(_.head(relations)),
     };
   }
 

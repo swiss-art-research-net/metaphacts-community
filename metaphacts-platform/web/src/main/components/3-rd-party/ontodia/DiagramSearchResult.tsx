@@ -19,7 +19,7 @@
 import * as Immutable from 'immutable';
 import * as _ from 'lodash';
 import * as React from 'react';
-import { DiagramModel, ElementTemplateState, InternalApi } from 'ontodia';
+import { Workspace, DiagramModel, ElementTemplateState, InternalApi } from 'ontodia';
 
 import { Cancellation } from 'platform/api/async';
 import { Component, SemanticContext } from 'platform/api/components';
@@ -34,7 +34,6 @@ import {
 import { Action, componentHasType } from 'platform/components/utils';
 import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
-import { Workspace } from 'sputniq';
 
 const { TemplateProperties } = InternalApi;
 

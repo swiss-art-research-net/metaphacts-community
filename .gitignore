@@ -13,6 +13,9 @@ project/plugins/project/
 .checkstyle
 bin/
 
+# Gradle
+.gradle
+
 # IntelliJ IDEA
 .idea/
 
@@ -27,6 +30,7 @@ node_modules/
 /project/webpack/.happypack
 /project/webpack/.mp-components
 /project/webpack/.mp-extensions
+/project/webpack/.mp-schemas
 /project/webpack/.cache-loader
 /project/webpack/tests_out/
 /project/webpack/*.log.*
@@ -45,7 +49,8 @@ workbench.xmi
 *.iws
 
 # runtime
-/runtime
+/runtime*
+/launchers/*
 
 # Mac
 .DS_Store
