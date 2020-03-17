@@ -1,138 +1,185 @@
-# Metaphacts Platform Development
+# metaphacts Semantic Platform for Cultural Heritage and Digital Humanities
 
-## Quick Overview
-The development workspace (i.e. the root folder) is divided into these parts:
+The metaphacts platform provides a comprehensive platform to publish research data modelled using the [CIDOC-CRM](http://www.cidoc-crm.org/) ontology for [Cultural Heritage](https://en.wikipedia.org/wiki/Cultural_heritage) and [Digital Humanities](https://en.wikipedia.org/wiki/Digital_humanities) in the Galeries, Libraries, Archives and Museums [(GLAM) sector](https://en.wikipedia.org/wiki/GLAM_(industry_sector)).
 
-* `metaphacts-platform` - core metaphacts platform;
-* `project` - all build related artifacts (SBT script, Webpack config, etc);
-* additional extension folders - extensions for backend services and/or frontend components.
+For examples see the list of demos and public projects at the bottom of this page.
 
-For the frontend we are using Yarn for dependency management, Webpack for bundling.
+## Use Cases
 
-We use SBT as a single entry point for compiling and bundling the sources, whereas the SBT build script calls Webpack for compiling and bundling the frontend part.
-The file `build.(sh|bat)` located in the root directory, provides a simple wrapper around SBT in order to set some required build parameters as well as points to a dedicated maven proxy.
+### Semantic Web Database
 
-## Core Platform Overview
+* Definition of new patterns of knowledge using [CIDOC-CRM](http://www.cidoc-crm.org/) to capture contextual details based on expert requirements
 
-* `metaphacts-platform/core` - platform backend
+* Authoring of ontology and instance data for better model management and data quality assurance
 
-  Developed in Java 8. Mainly builds upon RDF4J 2.0 (formerly known as openrdf-sesame) for processing and handling RDF data, Guice for dependency injection, Apache Shiro for security matters and Jersey for developing RESTful services.
+* Ability to integrate patterns of knowledge into search and visualization components using metadata
 
-  Maven dependencies are being managed in the file `project/dependencies.scala` and will automatically be imported and resolved by the SBT based build script.
+* Ability to share knowledge patterns with the community
 
-* `metaphacts-platform/client-api` - platform client
+### Semantic Search
 
-  Initial Java 8 based client to (remotely) connect to the platform. Provides dedicated interfaces for accessing assets and services such as queries. Provides some further utils ontop of RDF4J.
+* Semantic search across heterogeneous datasets using contextual relationships
 
-* `metaphacts-platform/web` - platform frontend
+* Simple text search components featuring auto-completion and semantic disambiguation
 
-  Developed in Typescript and compiled to clean, simple JavaScript code which runs on any browser. Mainly using React for web-component development, SCSS for stylesheets.
+* Interactive expert search system based on a user-friendly graphical interface for query construction
 
-## Development Setup
+* Search functions across spatial and temporal dimensions
 
-### Prerequisites
-It is possible to use an unix-based OS as well as Windows for development against the platform. As prerequisites you need to have installed on your machine:
+* Intelligent semantic clipboard allowing users to save searches and search results to their personalized research space, create own datasets, create arguments, and underpin narratives - all of this privately or collaboratively
 
-* OpenJDK 8 (preferred, but Oracle JDK 8 is fine too)
-* Node.js 8.x
-* SBT
-* Yarn
-* an RDF database or at least access to such (see section below)
+### Semantic Annotations & Narratives
 
-In particular, on OSX and Unix systems the most stable versions for SBT and Node.js are usually available from common package managers (e.g. homebrew, apt) and as such easy to install and to upgrade.
-On Windows the use of [Chocolatey](https://chocolatey.org/) is highly recommended.
+* Innovative functionalities to support text-based annotations, represent assertions, and create general narratives backed up by semi-formalized arguments with clear data provenance
 
-### RDF Database (Triplestore)
+* Ability to track the development of arguments and assertions over time
 
-For most developments (i.e. for starting-up the platform properly) you will need to have a RDF database in place. The database does not necessarily need to run on your local machine as long as it is accessible over a standard conform SPARQL endpoint interface. For your convenience, we recommend to run, for example, Blazegraph as a container on your local docker daemon so you can easily run serveral databases in parallel and switch between them:
+* Functionalities to visualize narratives and create digital essays that are related to the resources they reference
 
-1. Login into DockerHub: `docker login`
-2. Pull latest blazegraph image: `docker pull metaphacts/blazegraph-basic:2.2.0-20160908.003514-6`
-3. Run Blazegraph container with local storage mounted as data volume: `docker run --name blazegraph -d --restart=always -p 10080:8080 --env JAVA_OPTS="" -v /home/user/path-to-blazegraph-journal:/blazegraph-data metaphacts/blazegraph-basic:2.2.0-20160908.003514-6`
+* Semantic annotation of images leveraging the IIIF standard for streaming high-resolution images
 
-Where `/home/user/path-to-blazegraph-journal-folder` is the folder on the host system where blazegraph journal will be stored.
 
-**Please note that on Windows, it is required to first activate sharing of drives through `Docker Desktop App > Settings > Shared Drives`. You can afterwards specify the folder like `C:\path-to-blzaegraph-journal`**
 
-Afterwards, **connect your development setup to the SPARQL endpoint** as exposed by the Blazegraph container running on your docker machine by adding `sparqlEndpoint=http://localhost:10080/blazegraph/sparql` to your `runtime/config/environment.prop` configuration file. The folder structure and the `environment.prop file` do not exist right after checkout and have to be created manually or will be created during first build run.
+## Partners and Users of the Platform
 
-### IDE
-At metaphacts we are using various IDEs and text editors like Eclipse, IDEA, VSCode, Atom and Emacs. While there exist some addons for JavaScript and Typescript in Eclipse, it is in principle possible to develop everything in only one IDE, e.g. Eclipse or IDEA. However, in particular for the JavaScript/TypeScript development it can be convenient to use editors such as VSCode, Atom or Emacs with much more powerful plugins.
+[![Consortium for Open Research Data in the Humanities](https://metaphacts.com/images/bitbucket/CORDH.png)](https://www.cordh.net)
+[![Bibliotheca Hertziana – Max Planck Institute for Art History (BHMPI)](https://metaphacts.com/images/bitbucket/BHMPI.png)](https://www.biblhertz.it/)
+[![Villa I Tatti, The Harvard University Center for Italian Renaissance Studies](https://metaphacts.com/images/bitbucket/ITATTI.png)](http://itatti.harvard.edu/)
+[![Max Planck Institute for the History of Science (MPIWG)](https://metaphacts.com/images/bitbucket/MPIWG.png)](https://www.mpiwg-berlin.mpg.de/)
+[![The International Consortium of Photo Archives](https://metaphacts.com/images/bitbucket/Pharos.png)](http://pharosartresearch.org/)
+[![Swiss Archive of Performing Arts (SAPA)](https://metaphacts.com/images/bitbucket/SAPA.png)](https://sapa.swiss/)
+[![SARI - The Swiss Art Research Infrastructure](https://metaphacts.com/images/bitbucket/SARI.png)](https://swissartresearch.net/)
+[![ETH Zürich](https://metaphacts.com/images/bitbucket/ETH.png)](https://ethz.ch/)
+[![Universität Zürich](https://metaphacts.com/images/bitbucket/UZH.png)](https://www.uzh.ch/)
+[![The Parthenos Project](https://metaphacts.com/images/bitbucket/PARTHENOS.png)](http://www.parthenos-project.eu/)
 
-### Initial Setup
+## Technology
 
-#### NPM Dependencies
-Simply execute `sh build.sh` or `build.bat` to get into the SBT console. While loading the build script, it will automatically invoke `yarn install` within the platform-web folder to install all npm depdencies using Yarn. This may take some time.
+The metaphacts platform provides building blocks for building semantic web applications around [Knowledge Graphs](https://en.wikipedia.org/wiki/Knowledge_Graph). Examples for well-known public knowledge graphs are [Wikidata](https://www.wikidata.org/) or [DBpedia](https://wiki.dbpedia.org/), but there are also many non-public Enterprise Knowledge Graphs.
 
-#### Eclipse
-If you are used to develop in Eclipse, you can automatically generate a new Eclipse project by executing the `build.sh`, which is located in the project root folder.
-Once in the SBT console, execute the command `eclipse` which will first resolve all required dependencies and then will automatically generate the classpath file as well as required Eclipse metadata files. Finally, you can import the project into your Eclipse Workspace using the "Existing Projects into Workspace" wizard.
+[Cultural Heritage](https://en.wikipedia.org/wiki/Cultural_heritage) and [Digital Humanities](https://en.wikipedia.org/wiki/Digital_humanities) data sets are typically modelled using the [CIDOC Conceptual Reference Model](http://www.cidoc-crm.org/) ontology as the knowledge representation system, although other conceptual reference models can also be implemented.
 
-#### VSCode
-When developing frontend code in the Visual Studio Code we recommend setting TypeScript compiler to locally installed one by clicking on compiler version number in the status bar while viewing any `*.ts` file, or manually setting `"typescript.tsdk": "project/webpack/node_modules/typescript/lib"` in the `.vscode/settings.json`.
+### Technical Overview
 
-#### Known Issues
-* Git - do not clone the project from GIT using Eclipse (c.f. this [bug report](https://bugs.eclipse.org/bugs/show_bug.cgi?id=342372));
-* IntelliJ IDEA - should add `-Dsbt.override.build.repos=true -Dsbt.repository.config=./project/repositories` to VM parameters when importing the project (c.f. this [answer](https://stackoverflow.com/questions/26933523/why-intellij-cant-find-sbt-snapshot-dependencies/27173389#27173389)).
+See [Development Instructions](DevelopmentInstructions.md) for details on source code structure and how to build the platform.
 
-## Running the Platform
-Once being in the SBT console (`sh build.sh`), run `~jetty:start` which will compile all sources and start the jetty server. The tilde `~` will make SBT to watch source directories for changes in order to trigger incremental compilation, so any change to the server-side or client-side sources triggers re-deployment, which takes no more than a few seconds until they are picked-up by Jetty.
+### Built on open standards
 
-Finally, go to [http://127.0.0.1:10214/](http://127.0.0.1:10214/). You should see the login screen and should be able to login with standard login `admin:admin`.
+The platform is built on open standards and technologies:
 
-## Debugging
+* Semantic Web standards defined by the [W3C](https://www.w3.org/) and other organizations such as the [Resource Description Format (RDF)](https://www.w3.org/RDF/), the [SPARQL Query Language](https://www.w3.org/TR/rdf-sparql-query/), the [Web Ontology Language](https://www.w3.org/OWL/), and the [Linked Data Platform](https://www.w3.org/TR/ldp/)
 
-### Backend
-Run `build.sh` with an additional parameter `-Ddebug=true` will open a remote debugging port when starting jetty with `~jetty:start`.
-Once the SBT console displays the message "Listening for transport dt_socket at address: 5005" you can connect to the respective port using, for example, the remote debugging functionality in Eclipse (Run -> Debug Configurations .. -> New "Remote Java Application" -> Choose a name, `localhost` as host and `5005` as port parameter).
+* Data sets are typically modelled using the [CIDOC Conceptual Reference Model](http://www.cidoc-crm.org/) ontology or using the [Simple Knowledge Organization System (SKOS)](https://www.w3.org/2004/02/skos/)
 
-### Frontend
-At metaphacts we are using standard browser developer tools for debugging the frontend. Furthermore, there is a dedicated plugin called "React Developer Tools" (available for Chrome, Firefox) for debugging and tracing states of React components.
+* Web standards such as [HTML5](https://html.spec.whatwg.org/), [Web Components](https://www.webcomponents.org/)
 
-There are several convenient specifies, if being in the development mode:
+* Widely used technologies such as the [Java](https://www.oracle.com/java/technologies/) programming language, Web Services and [REST APIs](https://en.wikipedia.org/wiki/Representational_state_transfer)
 
-* Hot-Reloading
+## Contributors and Acknowledgements
 
-  Changes to JS/TS and CSS/LESS files are compiled and pushed during runtime. We are using so called "hot loaders" which will try to "swap" changes live into the client application i.e. without the need to reload the entire page in the browser.
+Many thanks to the following organizations for contributions and funding:
 
-* Source Attachments
+* [ResearchSpace](https://www.researchspace.org/), a project funded by the [Andrew W. Mellon Foundation](https://mellon.org) working in partnership with the [British Museum](https://www.britishmuseum.org)
 
-  Sourcemaps are being attached (`webpack://./src`) i.e. you can debug in the Typescript code instead of in the compile JS code.
+* [BHMPI - Bibliotheca Hertziana – Max Planck Institute for Art History](https://www.biblhertz.it/)
 
-* Save app data directly to checked-out working copy of repository
+* [Villa I Tatti, The Harvard University Center for Italian Renaissance Studies](http://itatti.harvard.edu/)
 
-  Base plaform app `metaphacts-platform` and other attached apps are directly available for write. This means any changes to the storage-based data (templates, configuration, namespaces, etc) will be applied directly to the working directory which is managed by git.
+* [MPIWG - Max Planck Institute for History of Science](https://www.mpiwg-berlin.mpg.de/)
 
-## Backend Logging
-The platform's backend is using log4j2 (and respective adapters) for logging and comes with four pre-configured log profiles.
-The default profile is "debug", however, the profile can easily be switched by supplying the `build.sh -Dlog={log4j2-debug,log4j2-trace,log4j2-trace2,log4j2}` environment variable
-to the sbt console. The `log4j2-trace` and `log4j2-trace2` profile produce a lot of log messages, however, can particularly be useful when one needs to trace, for example, request headers or queries without goint to debug low level APIs.
+* [SARI - The Swiss Art Research Infrastructure](https://swissartresearch.net/)
 
-**Please note:** If an old `log4j2.xml` file is still present in the compilation `/target/webapp/WEB-INF` folder, it will always be be preceded over the file set via the `-Dlog` env variable. Execute `clean` and `clean-files` in the sbt console to clean the target folder.
+* [ETH Zürich](https://ethz.ch/)
 
-## Codestyle & Linting
+* [UZH - Uni Zürich](https://www.uzh.ch/)
 
-### Java
+Also see [CONTRIBUTORS](metaphacts-platform/CONTRIBUTORS.md).
 
-You will find a readymade Java checkstyle file in `project/checkstyle.xml`. We recommend to use the [eclipse-cs](https://github.com/checkstyle/eclipse-cs) plugin. You can install the plugin if you drag&drop the following link into your eclipse: [Install](http://marketplace.eclipse.org/marketplace-client-intro?mpc_install=150) . Afterwards  you should create a new global check configuration and import the checkstyle file: Preferences -> Checkstyle -> New… -> Name "metaphacts-platform" -> Import … (Select from `project/checkstyle.xml`) -> Set as Default (optional).
 
-### Typescript & SCSS
+## License
 
-You will find a `tslint.json` file in the root folder of the project, which should automatically be recognised by your IDE and respective linting extensions. Make sure that your IDE has installed the latest tslint plugin/extension, i.e.  the `tslint@1.0.x` extension in Visual Code (View -> Extensions -> search … 'tslint' ) is deprecated and you should install `tslint@1.2.x` or newer, which is a separate extension and requires to uninstall the old extension.
+The metaphacts platform is released under the [LGPL 2.1](COPYING.txt).
 
-## Testing
-Running `test` command in the SBT console will execute all backend tests (Java JUnit) as well as client-side unit tests (using mainly mocha, chai, sinon). To just execute the client-side test, you can also run `npm run test` in the `project/webpack` folder. We also have a number of integration tests, see `researchspace/integration-tests`.
+## Contributions
 
-## Packaging
-Run `build.sh -DbuildEnv=prod` and then `package`. The compiled war file will be copied to `/target/platform-*.war` and can be deployed using common servlet containers such as Jetty or Tomcat.
+Contributing to the platform is possible with a signed Contributor Licensing Agreement. Please see [Contributing](CONTRIBUTING.md) and/or reach out to us for details.
 
-## Generate JSON Schema from JSDoc
+## Support and Commercial Services
 
-To generate generate JSON schema from any TypeScript interface to use in the documentation with `mp-documentation`, add interface name to `platform-web-build.json` under `generatedJsonSchemas` property and execute the following command at `project/webpack` directory:
+metaphacts offers commercial support for the platform in the form of developer and production support subscriptions. Please contact info@metaphacts.com for details.
 
-`yarn run generate-schema <project-name> <interface-name>`
+Some use cases might need extensions or additional features. metaphacts offers custom development to support these use cases. Please contact info@metaphacts.com to enquire about options.
 
-## Troubleshooting
+## Demos & Public Projects
 
-* We have been reported that fetching and installing dependencies may fail on the first run, i.e. when running `build.(bat|sh)` initially, there might be random `npm` errors/race conditions. These are typically related to compiling certain `npm` (peer/dev)  dependencies  (depending on the node.js version and operation system being used) . Usually running `build.(bat|sh)` a second time will solve the issue. Once the dependencies are compiled/installed, these will be cached unless running `build.(bat|sh) clean`.
+The metaphacts platform is used by many organisations to implement a wide variety of use cases. This section provides some examples and links to publicly accessible projects or demo systems.
 
+### Sphaera CorpusTracer (MPIWG)
+
+The [Sphaera CorpusTracer](https://sphaera.mpiwg-berlin.mpg.de/) ([demo system](http://db.sphaera.mpiwg-berlin.mpg.de/resource/Start), [paper](https://academic.oup.com/dsh/article/33/2/336/4085304)) project reconstructs the transformation process of the original treatise 'Tractatus de sphaera' by Johannes de Sacrobosco & explores the evolutionary path of the scientific system pivoted around  cosmological knowledge by:
+
+* Cataloguing text parts and context to trace how certain parts have been disseminated
+
+* Determining how successful certain texts were and how the knowledge conveyed in those texts was spread in space and time
+
+* Identifying the roles, relationships and social context of different actors
+
+[![Sphaera CorpusTracer](https://metaphacts.com/images/bitbucket/corpustracer_small.png)](https://metaphacts.com/images/bitbucket/corpustracer.png)
+[![Semantic Web Database](https://metaphacts.com/images/bitbucket/semantic-web-database_small.png)](https://metaphacts.com/images/bitbucket/semantic-web-database.png)
+
+
+### Digital Research Infrastructure (MPIWG)
+
+The [Digital Research Infrastructure](https://www.mpiwg-berlin.mpg.de/research/projects/digital-research-infrastructure) establishes a common technical standard and best-practices for digital research in the humanities. While it is derived from the specific knowledge economy at the MPIWG, it makes use of existing standards, technologies and APIs. It is generic enough to be implemented and adapted by other institutions with similar digital research needs.
+
+
+### Art & Architecture Thesaurus Translation Service (AAT) (Swiss Art Research Infrastructure)
+
+The [Art & Architecture Thesaurus Translation Service](https://aat.swissartresearch.net/) aims at enabling specialised research institutions and cultural heritage institutions to mutually tap into a decentralised service for linking digital image resources, research results and metadata in the field of art history and related disciplines.
+
+This is achieved by:
+
+* Using multi-lingual reference data vocabularies and metadata standards to enable mutual exchange and referencing of digital resources across linguistic and national borders
+
+* Building a cross-institutional research environment which links actors with diverse scholarly and institutional orientations
+
+[![Art & Architecture Thesaurus Translation Service (AAT)](https://metaphacts.com/images/bitbucket/aat-gastronomy_small.png)](https://metaphacts.com/images/bitbucket/aat-gastronomy.png)
+
+### Reference Data Service (RDS) (Swiss Art Research Infrastructure)
+
+The [Reference Data Service](https://rds-dev.swissartresearch.net/) aims to provide a unified and fast access to reference data and, thus to enhance the user's look-up process for commonly used terms and vocabularies.
+
+[![Reference Data Service (RDS)](https://metaphacts.com/images/bitbucket/SARI-Reference-Data-Service_small.png)](https://metaphacts.com/images/bitbucket/SARI-Reference-Data-Service.png).
+
+### Photographic Knowledge of History of Arts (University of Zürich)
+
+The project [Photographic Knowledge of History of Arts](https://fw.swissartresearch.net/) (_Rechercheportal Fotografisches Wissen der Kunstgeschichte_)  provides research data regarding the collection of historic slides of the History of Arts Institute of the University of Zürich.
+
+[![Fotografisches Wissen der Kunstgeschichte](https://metaphacts.com/images/bitbucket/Fotografisches-Wissen-der-Kunstgeschichte_small.png)](https://metaphacts.com/images/bitbucket/Fotografisches-Wissen-der-Kunstgeschichte.png)
+
+### gta Research Portal (ETH Zürich)
+
+The [gta Archive](https://archiv.gta.arch.ethz.ch/about/about-us) at ETH Zurich is Switzerland’s most renown architectural archive and one of the most important by international comparison. It holds unique collections of historical documents in the fields of architecture and architectural theory, engineering, design, local, regional and national planning, garden architecture and landscape architecture from the mid-nineteenth century to the present day.
+
+The [gta Research Portal](https://grp.swissartresearch.net/) allows not only for unified access to the gta Archives’ collections data and digitised visual research resources but also to research data from related research projects, such as [Experimental Design in the Post-War Period](https://stalder.arch.ethz.ch/researchprojects/experimental-design-in-the-postwar-period-heinz-islers-19262009-contribution-in-the-perspective-of-the-history-of-engineering-and-culture). By allowing both human-interpretable and machine-processable access by way of the semantic web (based on Linked Open Data) and by consistently implementing scholarly acknowledged, yet open standards for data modelling and data exchange, the gta Research Portal provides unique and unprecedented access to these most valuable research resources to the international academic community for further research and re-use. By integrating the data into established research portals (such as the ETH Library Search Portal), the gta Archives’ holdings will also be made visible to a broader public outside the ETH Zurich.
+
+[![gta Research Portal](https://metaphacts.com/images/bitbucket/gta-Research-Portal_small.png)](https://metaphacts.com/images/bitbucket/gta-Research-Portal.png)
+
+### PARTHENOS Entities Dataspace
+
+The [PARTHENOS](https://www.oeaw.ac.at/acdh/projects/completed-projects/parthenos/) [Entities Dataspace](https://parthenos.acdh.oeaw.ac.at/) contains metadata from all partner Research Infrastructures which is aggregated here under a common semantic model, allowing for unprecedented interdisciplinary view on these hetereogeneous datasets.
+
+[![Parthenos Discovery](https://metaphacts.com/images/bitbucket/PARTHENOS-Discovery_small.png)](https://metaphacts.com/images/bitbucket/PARTHENOS-Discovery.png)
+
+### Mingei (FORTH)
+
+[Mingei](http://www.mingei-project.eu/) will explore the possibilities of representing and making accessible both tangible and intangible aspects of craft as cultural heritage (CH). Heritage Crafts (HCs) involve craft artefacts, materials, and tools and encompass craftsmanship as a form of Intangible Cultural Heritage. Intangible HC dimensions include dexterity, know-how, and skilled use of tools, as well as tradition and identity of the communities in which they are, or were, practiced. HCs are part of the history and have impact upon the economy of the areas in which they flourish. The significance and urgency to the preservation of HCs is underscored, as several are threatened with extinction.
+
+Despite their cultural significance, efforts for HC representation and preservation are scattered geographically and thematically. Mingei will provide means to establish HC representations based on digital assets, semantics, existing literature and repositories, as well as mature digitisation and representation technologies. These representations will capture and preserve tangible and intangible dimensions of HCs.
+
+[![Mingei Home](https://metaphacts.com/images/bitbucket/FORTH-Mingei-home_small.png)](https://metaphacts.com/images/bitbucket/FORTH-Mingei-home.png)
+[![Mingei narrative](https://metaphacts.com/images/bitbucket/FORTH-Mingei-narrative_small.png)](https://metaphacts.com/images/bitbucket/FORTH-Mingei-narrative.png)
+
+## Get in contact
+
+Please get in contact with metaphacts at info@metaphacts.com, we are interested in use cases and examples!
