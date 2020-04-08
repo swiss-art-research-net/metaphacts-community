@@ -29,17 +29,17 @@ import {
   CompositeValue, EmptyValue, FieldState, FieldValue, FieldError, queryValues,
 } from 'platform/components/forms';
 
-import { EntityMetadata, isObjectProperty } from './OntodiaEntityMetadata';
+import { EntityMetadata, isObjectProperty } from './FieldConfigurationCommon';
 
 export function fetchInitialModel(
   subject: Rdf.Iri,
   metadata: EntityMetadata,
-  fieldsToFetch = metadata.fieldById
+  fieldsToFetch = metadata.fieldByIri
 ): Kefir.Property<CompositeValue> {
   const initial: CompositeValue = {
     type: CompositeValue.type,
     subject,
-    definitions: metadata.fieldById,
+    definitions: metadata.fieldByIri,
     fields: Immutable.Map<string, FieldState>(),
     errors: FieldError.noErrors,
   };
@@ -74,7 +74,7 @@ export function convertElementModelToCompositeValue(
   metadata: EntityMetadata
 ): CompositeValue {
   const fields = Immutable.Map<string, FieldState>().withMutations(map => {
-    metadata.fieldById.forEach((definition, fieldId) => {
+    metadata.fieldByIri.forEach((definition, fieldId) => {
       let fieldValues: FieldValue[] = [];
       if (definition.iri === metadata.typeField.iri) {
         fieldValues = model.types.map(type =>
@@ -100,7 +100,7 @@ export function convertElementModelToCompositeValue(
   return {
     type: CompositeValue.type,
     subject: Rdf.iri(model.id),
-    definitions: metadata.fieldById,
+    definitions: metadata.fieldByIri,
     fields,
     errors: FieldError.noErrors,
   };
@@ -116,7 +116,7 @@ export function convertCompositeValueToElementModel(
   const properties: { [id: string]: Property } = {};
 
   composite.fields.forEach((field, fieldId) => {
-    const definition = metadata.fieldById.get(fieldId);
+    const definition = metadata.fieldByIri.get(fieldId);
     if (definition.iri === metadata.typeField.iri) {
       types = field.values
         .map(FieldValue.asRdfNode)
@@ -130,11 +130,12 @@ export function convertCompositeValueToElementModel(
         .map(v => v.value)
         .first();
     } else if (definition.iri === metadata.labelField.iri) {
-      labels = field.values.map(v => {
+      field.values.forEach(v => {
         if (FieldValue.isAtomic(v) && v.value.isLiteral()) {
-          return FieldValue.asRdfNode(v) as Rdf.Literal;
+          const label = FieldValue.asRdfNode(v) as Rdf.Literal;
+          labels = labels ? [...labels, label] : [label];
         }
-      }).toArray();
+      });
     } else {
       field.values.forEach(v => {
         if (!FieldValue.isAtomic(v)) { return; }
