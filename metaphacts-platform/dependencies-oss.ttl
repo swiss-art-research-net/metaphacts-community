@@ -9,7 +9,7 @@
 :metaphacts-platform a spdx:Package ;
 	spdx:name "metaphacts Platform" ;
 	spdx:copyrightText "Copyright (C) 2015-2019, metaphacts GmbH" ;
-	spdx:licenseConcluded <http://spdx.org/licenses/LGPL-2.1-or-later> 
+	spdx:licenseConcluded <http://spdx.org/licenses/LGPL-2.1-or-later>
 	.
 
 
@@ -22,31 +22,31 @@
 	spdx:relationship [
 		a spdx:Relationship ;
 		spdx:relationshipType spdx:relationshipType_dynamicLink ;
-		spdx:relatedSpdxElement :metaphacts-platform 
+		spdx:relatedSpdxElement :metaphacts-platform
 	] ;
 # 	spdx:fileName "Filename relative to package " ;
 	spdx:artifactOf [
 		a doap:Project ;
 		doap:homepage "https://github.com/google/guava" ;
 		doap:name "Guava" ;
-		doap:description """Guava is a suite of core and expanded libraries that 
+		doap:description """Guava is a suite of core and expanded libraries that
 				include utility classes, google's collections, io classes, and much much more.
 			""" ;
 		doap:programming-language "Java" ;
 		doap:release [
 			a doap:Version ;
-			doap:created "2017-12-21"^^xsd:date ;
+			doap:created "2019-12-27"^^xsd:date ;
 			doap:name "guava" ;
-			doap:revision "23.6-jre" 
+			doap:revision "28.2-jre"
 		] ;
-		doap:download-page <https://mvnrepository.com/artifact/com.google.guava/guava/23.6-jre> 
+		doap:download-page <https://repo1.maven.org/maven2/com/google/guava/guava/28.2-jre/guava-28.2-jre.jar>
 	] ;
 	spdx-ext:useOfOSS "embedded" ;
 	spdx-ext:planToDistribute "binary" ;
 	spdx-ext:planToModify false ;
 	spdx:checksum [
 		a spdx:Checksum ;
-		spdx:checksumValue "260efbcec9cb95b7f221dbe31f76e007112380ed" ;
+		spdx:checksumValue "8ec9ed76528425762174f0011ce8f74ad845b756" ;
 		spdx:algorithm spdx:checksumAlgorithm_sha1
 	]
 #	;
@@ -58,40 +58,43 @@
 #		spdx:annotationType spdx:annotationType_review
 #	]
 	.
-	
-	
-:handlebars a spdx:File ;
+
+:guice a spdx:File ;
 	spdx:fileType spdx:fileType_archive ;
-	rdfs:label "Handlebars" ;
+	rdfs:label "Guice" ;
 #	rdfs:comment "Entry comment" ;
-	spdx:copyrightText "Copyright (C) 2011-2017 by Yehuda Katz" ;
-	spdx:licenseConcluded <http://spdx.org/licenses/MIT> ;
+	spdx:copyrightText "Copyright (C) 2008 Google Inc." ;
+	spdx:licenseConcluded <http://spdx.org/licenses/Apache-2.0> ;
 	spdx:relationship [
 		a spdx:Relationship ;
 		spdx:relationshipType spdx:relationshipType_dynamicLink ;
-		spdx:relatedSpdxElement :metaphacts-platform 
+		spdx:relatedSpdxElement :metaphacts-platform
 	] ;
 # 	spdx:fileName "Filename relative to package " ;
 	spdx:artifactOf [
 		a doap:Project ;
-		doap:homepage "https://github.com/wycats/handlebars.js" ;
-		doap:name "Handlebars" ;
-		doap:description """Handlebars.js is an extension to the Mustache templating language created 
-			by Chris Wanstrath. Handlebars.js and Mustache are both logicless templating languages that keep 
-			the view and the code separated like we all know they should be.
+		doap:homepage "https://github.com/google/guice" ;
+		doap:name "Guice" ;
+		doap:description """Guice (pronounced 'juice') is a lightweight dependency
+				injection framework for Java 6 and above, brought to you by Google.
 			""" ;
-		doap:programming-language "Java Script" ;
+		doap:programming-language "Java" ;
 		doap:release [
 			a doap:Version ;
-			doap:created "2017-05-2017"^^xsd:date ;
-			doap:name "handlebars" ;
-			doap:revision "4.0.10" 
+			doap:created "2018-10-29"^^xsd:date ;
+			doap:name "guice" ;
+			doap:revision "4.2.2"
 		] ;
-		doap:download-page <https://www.npmjs.com/package/handlebars/v/4.0.10> 
+		doap:download-page <https://repo1.maven.org/maven2/com/google/inject/guice/4.2.2/guice-4.2.2.jar>
 	] ;
 	spdx-ext:useOfOSS "embedded" ;
 	spdx-ext:planToDistribute "binary" ;
-	spdx-ext:planToModify false 
+	spdx-ext:planToModify false ;
+	spdx:checksum [
+		a spdx:Checksum ;
+		spdx:checksumValue "6dacbe18e5eaa7f6c9c36db33b42e7985e94ce77" ;
+		spdx:algorithm spdx:checksumAlgorithm_sha1
+	]
 #	;
 #	spdx:annotation [
 #		a spdx:Annotation ;
@@ -101,32 +104,115 @@
 #		spdx:annotationType spdx:annotationType_review
 #	]
 	.
-	
+
+:handlebars a spdx:File ;
+	spdx:fileType spdx:fileType_archive ;
+	rdfs:label "Handlebars" ;
+#	rdfs:comment "Entry comment" ;
+	spdx:copyrightText "Copyright (C) 2011-2017 by Yehuda Katz" ;
+	spdx:licenseConcluded <http://spdx.org/licenses/MIT> ;
+	spdx:relationship [
+		a spdx:Relationship ;
+		spdx:relationshipType spdx:relationshipType_dynamicLink ;
+		spdx:relatedSpdxElement :metaphacts-platform
+	] ;
+# 	spdx:fileName "Filename relative to package " ;
+	spdx:artifactOf [
+		a doap:Project ;
+		doap:homepage "https://github.com/wycats/handlebars.js" ;
+		doap:name "Handlebars" ;
+		doap:description """Handlebars.js is an extension to the Mustache templating language created
+			by Chris Wanstrath. Handlebars.js and Mustache are both logicless templating languages that keep
+			the view and the code separated like we all know they should be.
+			""" ;
+		doap:programming-language "Java Script" ;
+		doap:release [
+			a doap:Version ;
+			doap:created "2017-05-21"^^xsd:date ;
+			doap:name "handlebars" ;
+			doap:revision "4.0.10"
+		] ;
+		doap:download-page <https://www.npmjs.com/package/handlebars/v/4.0.10>
+	] ;
+	spdx-ext:useOfOSS "embedded" ;
+	spdx-ext:planToDistribute "binary" ;
+	spdx-ext:planToModify false
+#	;
+#	spdx:annotation [
+#		a spdx:Annotation ;
+#		spdx:annotationDate "2019-10-28T16:00:37Z"^^xsd:dateTime ;
+#		rdfs:comment "Review comment" ;
+#		spdx:annotator "Person: Jane Doe ()" ;
+#		spdx:annotationType spdx:annotationType_review
+#	]
+	.
+
+:handlebarsjava a spdx:File ;
+	spdx:fileType spdx:fileType_archive ;
+	rdfs:label "Handlebars.java" ;
+#	rdfs:comment "Entry comment" ;
+	spdx:copyrightText "Copyright (c) 2012-2015 Edgar Espina" ;
+	spdx:licenseConcluded <http://spdx.org/licenses/Apache-2.0> ;
+	spdx:relationship [
+		a spdx:Relationship ;
+		spdx:relationshipType spdx:relationshipType_dynamicLink ;
+		spdx:relatedSpdxElement :metaphacts-platform
+	] ;
+# 	spdx:fileName "Filename relative to package " ;
+	spdx:artifactOf [
+		a doap:Project ;
+		doap:homepage "https://github.com/jknack/handlebars.java" ;
+		doap:name "handlebars" ;
+		doap:description """Handlebars.java is a Java port of handlebars.
+				Handlebars provides the power necessary to let you build semantic templates effectively with no frustration.
+			""" ;
+		doap:programming-language "Java" ;
+		doap:release [
+			a doap:Version ;
+			doap:created "2018-10-30"^^xsd:date ;
+			doap:name "handlebars" ;
+			doap:revision "4.2.0"
+		] ;
+		doap:download-page <https://repo1.maven.org/maven2/com/github/jknack/handlebars/4.2.0/handlebars-4.2.0.jar>
+	] ;
+	spdx-ext:useOfOSS "embedded" ;
+	spdx-ext:planToDistribute "binary" ;
+	spdx-ext:planToModify false
+#	;
+#	spdx:annotation [
+#		a spdx:Annotation ;
+#		spdx:annotationDate "2019-10-28T16:00:37Z"^^xsd:dateTime ;
+#		rdfs:comment "Review comment" ;
+#		spdx:annotator "Person: Jane Doe ()" ;
+#		spdx:annotationType spdx:annotationType_review
+#	]
+	.
+
 :rdf4j a spdx:File ;
 	spdx:fileType spdx:fileType_archive ;
 	rdfs:label "RDF4J" ;
-	rdfs:comment "Parent project for included rdf4j modules" ;
-	spdx:copyrightText "Copyright (c) 2019 Eclipse RDF4J contributors." ;
+	rdfs:comment "Parent project for included RDF4J modules" ;
+	spdx:copyrightText "Copyright (c) 2020 Eclipse RDF4J contributors." ;
 	spdx:licenseConcluded <http://spdx.org/licenses/EDL-1.0> ;
 	spdx:relationship [
 		a spdx:Relationship ;
 		spdx:relationshipType spdx:relationshipType_dynamicLink ;
-		spdx:relatedSpdxElement :metaphacts-platform 
+		spdx:relatedSpdxElement :metaphacts-platform
 	] ;
 # 	spdx:fileName "Filename relative to package " ;
 	spdx:artifactOf [
 		a doap:Project ;
 		doap:homepage "https://rdf4j.org/" ;
-		doap:name "rdf4j" ;
+		doap:name "RDF4J" ;
 		doap:description """An extensible Java framework for RDF and SPARQL""" ;
 		doap:programming-language "Java" ;
 		doap:release [
 			a doap:Version ;
-			doap:created "2019-10-26"^^xsd:date ;
-			doap:name "rdf4j" ;
-			doap:revision "3.0.2" 
+			doap:created "2020-09-25"^^xsd:date ;
+			doap:name "RDF4J" ;
+			doap:revision "3.4.2"
 		] ;
-		doap:download-page <https://mvnrepository.com/artifact/org.eclipse.rdf4j/rdf4j-runtime/3.0.2> 
+		doap:download-page <https://mvnrepository.com/artifact/org.eclipse.rdf4j/rdf4j-storage/3.4.2>
 	] ;
 	spdx-ext:useOfOSS "embedded" ;
 	spdx-ext:planToDistribute "binary" ;
@@ -139,17 +225,17 @@
 #		spdx:annotationType spdx:annotationType_review
 #	]
 	.
-	
+
 :jackson a spdx:File ;
 	spdx:fileType spdx:fileType_archive ;
-	rdfs:label "RDF4J" ;
+	rdfs:label "Jackson" ;
 	rdfs:comment "Parent project for included jackson modules" ;
 	spdx:copyrightText "Copyright (c) 2009-2011 FasterXML, LLC" ;
 	spdx:licenseConcluded <http://spdx.org/licenses/Apache-2.0> ;
 	spdx:relationship [
 		a spdx:Relationship ;
 		spdx:relationshipType spdx:relationshipType_dynamicLink ;
-		spdx:relatedSpdxElement :metaphacts-platform 
+		spdx:relatedSpdxElement :metaphacts-platform
 	] ;
 # 	spdx:fileName "Filename relative to package " ;
 	spdx:artifactOf [
@@ -162,9 +248,9 @@
 			a doap:Version ;
 			doap:created "2019-11-09"^^xsd:date ;
 			doap:name "jackson-core" ;
-			doap:revision "2.10.1" 
+			doap:revision "2.10.1"
 		] ;
-		doap:download-page <https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core/2.10.1> 
+		doap:download-page <https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core/2.10.1>
 	] ;
 	spdx-ext:useOfOSS "embedded" ;
 	spdx-ext:planToDistribute "binary" ;
@@ -176,4 +262,96 @@
 #		spdx:annotator "Person: Jane Doe ()" ;
 #		spdx:annotationType spdx:annotationType_review
 #	]
-	.		
+	.
+
+:pf4j a spdx:File ;
+	spdx:fileType spdx:fileType_archive ;
+	rdfs:label "Plugin Framework for Java (PF4J)" ;
+#	rdfs:comment "Entry comment" ;
+	spdx:copyrightText "Copyright (C) 2012-present the original author or authors." ;
+	spdx:licenseConcluded <http://spdx.org/licenses/Apache-2.0> ;
+	spdx:relationship [
+		a spdx:Relationship ;
+		spdx:relationshipType spdx:relationshipType_dynamicLink ;
+		spdx:relatedSpdxElement :metaphacts-platform
+	] ;
+# 	spdx:fileName "Filename relative to package " ;
+	spdx:artifactOf [
+		a doap:Project ;
+		doap:homepage "https://github.com/pf4j/pf4j" ;
+		doap:name "PF4J" ;
+		doap:description """Plugin Framework for Java (PF4J).
+        A plugin is a way for a third party to extend the functionality of an application.
+        A plugin implements extension points declared by application or other plugins.
+        Also a plugin can define extension points.
+			""" ;
+		doap:programming-language "Java" ;
+		doap:release [
+			a doap:Version ;
+			doap:created "2019-11-29"^^xsd:date ;
+			doap:name "pf4j" ;
+			doap:revision "3.2.0"
+		] ;
+		doap:download-page <https://repo1.maven.org/maven2/org/pf4j/pf4j/3.2.0/pf4j-3.2.0.jar>
+	] ;
+	spdx-ext:useOfOSS "embedded" ;
+	spdx-ext:planToDistribute "binary" ;
+	spdx-ext:planToModify false ;
+	spdx:checksum [
+		a spdx:Checksum ;
+		spdx:checksumValue "07a07d038ae3531aab2ed344b16333b75087fe9a" ;
+		spdx:algorithm spdx:checksumAlgorithm_sha1
+	]
+#	;
+#	spdx:annotation [
+#		a spdx:Annotation ;
+#		spdx:annotationDate "2019-10-28T16:00:37Z"^^xsd:dateTime ;
+#		rdfs:comment "Review comment" ;
+#		spdx:annotator "Person: Jane Doe ()" ;
+#		spdx:annotationType spdx:annotationType_review
+#	]
+	.
+
+:jsonlint a spdx:File ;
+	spdx:fileType spdx:fileType_archive ;
+	rdfs:label "JavaScript Object Notation Lint Mod (JSON Lint - Mod)" ;
+#	rdfs:comment "Entry comment" ;
+	spdx:copyrightText "Copyright (C) 2012 Zachary Carter" ;
+	spdx:licenseConcluded <http://spdx.org/licenses/MIT> ;
+	spdx:relationship [
+		a spdx:Relationship ;
+		spdx:relationshipType spdx:relationshipType_dynamicLink ;
+		spdx:relatedSpdxElement :metaphacts-platform
+	] ;
+# 	spdx:fileName "Filename relative to package " ;
+	spdx:artifactOf [
+		a doap:Project ;
+		doap:homepage "https://github.com/circlecell/jsonlint-mod" ;
+		doap:name "JSON Lint" ;
+		doap:description """JavaScript Object Notation Lint Mod (JSON Lint - Mod).
+        The fork is a modified version of jsonlint enhanced by the original Douglas Crockford's JSON parser which brought the following features:
+        Handle hidden chars
+        Handle key duplicates
+        Web version exported as CJS module to use with Webpack and other bundlers
+      """ ;
+		doap:programming-language "Java Script" ;
+		doap:release [
+			a doap:Version ;
+			doap:created "2019-07-26"^^xsd:date ;
+			doap:name "jsonlint-mod" ;
+			doap:revision "1.7.5"
+		] ;
+		doap:download-page <https://www.npmjs.com/package/jsonlint-mod>
+	] ;
+	spdx-ext:useOfOSS "embedded" ;
+	spdx-ext:planToDistribute "binary" ;
+	spdx-ext:planToModify false
+#	;
+#	spdx:annotation [
+#		a spdx:Annotation ;
+#		spdx:annotationDate "2019-10-28T16:00:37Z"^^xsd:dateTime ;
+#		rdfs:comment "Review comment" ;
+#		spdx:annotator "Person: Jane Doe ()" ;
+#		spdx:annotationType spdx:annotationType_review
+#	]
+	.

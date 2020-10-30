@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,17 +37,17 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 
 import { Rdf } from 'platform/api/rdf';
 import { SparqlClient } from 'platform/api/sparql';
 
-import { FieldDefinition } from './FieldDefinition';
+import { FieldDefinition, FieldConstraint, MultipleFieldConstraint } from './FieldDefinition';
 
 export interface LabeledValue {
   readonly value: Rdf.Node;
   readonly label?: string;
+  readonly index?: number;
 }
 export namespace LabeledValue {
   export function set(source: LabeledValue, props: Partial<LabeledValue>): LabeledValue {
@@ -71,10 +93,12 @@ export enum ErrorKind {
 
 export interface FieldError {
   readonly kind: ErrorKind;
+  /** Opaque reference to filter errors from multiple sources. */
+  readonly source?: FieldConstraint;
   readonly message: string;
 }
 export namespace FieldError {
-  export const noErrors = Immutable.List<FieldError>();
+  export const noErrors: ReadonlyArray<FieldError> = [];
 
   export function isPreventSubmit(error: FieldError) {
     return error.kind === ErrorKind.Configuration ||
@@ -100,7 +124,7 @@ export namespace EmptyValue {
 
 export interface AtomicValue extends LabeledValue {
   readonly type: 'atomic';
-  readonly errors: Immutable.List<FieldError>;
+  readonly errors: ReadonlyArray<FieldError>;
 }
 export namespace AtomicValue {
   export const type = 'atomic';
@@ -120,9 +144,9 @@ export namespace AtomicValue {
 }
 
 export enum DataState {
-  /** Field is loading intial value and/or value set. */
+  /** Field is loading initial value and/or value set. */
   Loading = 1,
-  /** Field is intialized and ready to user input. */
+  /** Field is initialized and ready to user input. */
   Ready,
   /** Field is currently validating by {@link FormModel}. */
   Verifying,
@@ -139,13 +163,13 @@ export function mergeDataState(a: DataState, b: DataState) {
 }
 
 export interface FieldState {
-  readonly values: Immutable.List<FieldValue>;
-  readonly errors: Immutable.List<FieldError>;
+  readonly values: ReadonlyArray<FieldValue>;
+  readonly errors: ReadonlyArray<FieldError>;
 }
 export namespace FieldState {
   export const empty: FieldState = {
-    values: Immutable.List<FieldValue>(),
-    errors: Immutable.List<FieldError>(),
+    values: [],
+    errors: [],
   };
 
   export function set(source: FieldState, props: Partial<FieldState>): FieldState {
@@ -156,12 +180,39 @@ export namespace FieldState {
     }
     return {...source, ...props};
   }
+
+  export function getFirst<T>(items: ReadonlyArray<T>): T | undefined {
+    return items.length > 0 ? items[0] : undefined;
+  }
+
+  export function setValueAtIndex(
+    values: ReadonlyArray<FieldValue>, index: number, newValue: FieldValue
+  ): FieldValue[] {
+    if (index < 0 || index >= values.length) {
+      throw new Error('Cannot set field value: index out of range');
+    }
+    const newValues = [...values];
+    newValues.splice(index, 1, newValue);
+    return newValues;
+  }
+
+  export function deleteValueAtIndex(
+    values: ReadonlyArray<FieldValue>, index: number
+  ): FieldValue[] {
+    if (index < 0 || index >= values.length) {
+      throw new Error('Cannot delete field value: index out of range');
+    }
+    const newValues = [...values];
+    newValues.splice(index, 1);
+    return newValues;
+  }
 }
 
 export interface CompositeValue {
   readonly type: 'composite';
   readonly subject: Rdf.Iri;
   readonly definitions: Immutable.Map<string, FieldDefinition>;
+  readonly constraints: ReadonlyArray<MultipleFieldConstraint>;
   /**
    * Discriminator field value for form switch component to match composite value
    * with corresponding switch case.
@@ -172,10 +223,18 @@ export interface CompositeValue {
    * Errors related to form (e.g. configuration errors),
    * doesn't include errors from individual fields.
    */
-  readonly errors: Immutable.List<FieldError>;
+  readonly errors: ReadonlyArray<FieldError>;
 }
 export namespace CompositeValue {
   export const type = 'composite';
+  export const empty: CompositeValue = {
+    type,
+    subject: Rdf.iri(''),
+    definitions: Immutable.Map(),
+    constraints: [],
+    fields: Immutable.Map(),
+    errors: [],
+  };
 
   export function set(source: CompositeValue, props: Partial<CompositeValue>): CompositeValue {
     return {...source, ...props};
@@ -232,7 +291,7 @@ export namespace FieldValue {
 
   export function setErrors(
     value: AtomicValue | CompositeValue,
-    errors: Immutable.List<FieldError>
+    errors: ReadonlyArray<FieldError>
   ): AtomicValue | CompositeValue {
     if (!errors) {
       throw new Error('Cannot set field value errors to null or undefined');
@@ -247,8 +306,7 @@ export namespace FieldValue {
   export function replaceError(v: FieldValue, error: FieldError) {
     const nonEmpty = FieldValue.isEmpty(v)
       ? FieldValue.fromLabeled({value: Rdf.iri('')}) : v;
-    const errors = FieldError.noErrors.push(error);
-    return FieldValue.setErrors(nonEmpty, errors);
+    return FieldValue.setErrors(nonEmpty, [error]);
   }
 
   export function unknownFieldType(value: never) {

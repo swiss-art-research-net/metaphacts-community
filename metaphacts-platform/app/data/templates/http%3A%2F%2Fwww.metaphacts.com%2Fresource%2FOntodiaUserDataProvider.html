@@ -1,0 +1,45 @@
+[[#*inline "ClassTreeConfig"]]
+[[!-- check to see if we have more then 1000 classes in the database, if so show only top level classes in ontodia class selector --]]
+[[#if (ask "ASK {{ SELECT (COUNT(?class) as ?count) WHERE { BIND(<http://dummy> AS ?dummy) { SELECT ?class {{ ?class rdf:type rdfs:Class. } UNION { ?class rdf:type owl:Class. }} LIMIT 1001}} GROUP BY ?dummy HAVING (COUNT(?class) > 1000)}}")]]
+"classTreeQuery": "SELECT ?class ?label ?parent WHERE {
+      { ?class rdf:type rdfs:Class. }
+      UNION
+      { ?class rdf:type owl:Class. }
+      FILTER(ISIRI(?class))
+      FILTER NOT EXISTS {
+        ?class rdfs:subClassOf ?p.
+      }
+      OPTIONAL { ?class rdfs:label ?label. }
+    } LIMIT 1000"
+[[/if]]
+[[!-- class tree including stats:
+    "classTreeQuery": "
+      SELECT ?class ?instcount ?label ?parent
+          WHERE {
+              {SELECT ?class (count(?inst) as ?instcount)
+                  WHERE {
+                      ?inst rdf:type ?class.
+                      FILTER ISIRI(?class)
+                  } GROUP BY ?class } UNION
+              {
+                  ?class rdf:type rdfs:Class
+              } UNION {
+                  ?class rdf:type owl:Class
+              }
+              OPTIONAL {?class rdfs:label ?label}
+              OPTIONAL {?class rdfs:subClassOf ?parent. FILTER ISIRI(?parent)}
+          }
+    "
+  --]]
+[[/inline]]
+<ontodia-sparql-provider
+  [[#if (urlParam "repository")]]repository='[[urlParam "repository"]]'[[/if]]
+
+  provider-settings='{
+    [[#if ClassTreeConfig]]
+    	[[> ClassTreeConfig]]
+    [[/if]]
+  }'
+>
+
+</ontodia-sparql-provider>

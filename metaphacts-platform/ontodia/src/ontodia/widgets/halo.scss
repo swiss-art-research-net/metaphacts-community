@@ -1,0 +1,199 @@
+/*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, you can receive a copy
+ * of the GNU Lesser General Public License from http://www.gnu.org/
+ */
+ $buttonWidth: 20px;
+ $buttonHeight: 20px;
+ $buttonMargin: 2px;
+
+ @mixin haloButton {
+  position: absolute;
+  background-color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: 0 none;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  pointer-events: auto;
+  width: $buttonWidth;
+  height: $buttonHeight;
+
+  opacity: 0.5;
+  transition: opacity 0.3s;
+  &:hover {
+    opacity: 1;
+  }
+
+  &[disabled] {
+    cursor: not-allowed;
+    opacity: 0.2;
+  }
+}
+
+@mixin spinner {
+  position: absolute;
+  width: $buttonWidth;
+  height: $buttonHeight;
+}
+
+@mixin n-docked {
+  top: -($buttonHeight + $buttonMargin);
+  left: 50%;
+  margin-left: -($buttonWidth / 2);
+}
+
+@mixin ne-docked {
+  top: -($buttonHeight + $buttonMargin);
+  right: -($buttonWidth + $buttonMargin);
+}
+
+@mixin e-docked {
+  top: 50%;
+  margin-top: -($buttonHeight / 2);
+  right: -($buttonWidth + $buttonMargin);
+}
+
+@mixin w-docked {
+  top: 50%;
+  margin-top: -($buttonHeight / 2);
+  left: -($buttonWidth + $buttonMargin);
+}
+
+@mixin s-docked {
+  bottom: -($buttonHeight + $buttonMargin);
+  left: 50%;
+  margin-left: -($buttonWidth / 2);
+}
+
+@mixin sw-docked {
+  bottom: -($buttonHeight + $buttonMargin);
+  left: -($buttonWidth + $buttonMargin);
+}
+
+@mixin se-docked {
+  bottom: -($buttonHeight + $buttonMargin);
+  right: -($buttonWidth + $buttonMargin);
+}
+
+.halo {
+  position: absolute;
+  pointer-events: none;
+  * {
+    pointer-events: initial;
+  }
+}
+
+.template {
+  pointer-events: none;
+  height: 100%;
+  width: 100%;
+  border: 1.5px dashed #d8956d;
+  border-radius: 2px;
+  box-shadow: 0 0 5px 0 #d8956d inset;
+}
+
+.navigate {
+  @include haloButton;
+  @include e-docked;
+
+}
+
+.navigateOpen {
+  background-image: url("../../../images/connections.svg");
+}
+
+.navigateClosed {
+  background-image: url("../../../images/close-connections.svg");
+}
+
+.follow {
+  @include haloButton;
+  @include w-docked;
+
+  background-image: url("../../../images/link.svg");
+}
+
+.remove {
+  @include haloButton;
+  @include ne-docked;
+  background-image: url("../../../images/delete.svg");
+}
+
+.delete {
+  @include haloButton;
+  @include ne-docked;
+  background-image: url("../../../images/font-awesome/trash-alt.svg");
+}
+
+.expand {
+  @include haloButton;
+  @include s-docked;
+}
+
+.expandOpen {
+  background-image: url("../../../images/expand-properties.png");
+}
+
+.expandClosed {
+  background-image: url("../../../images/collapse-properties.png");
+}
+
+.addToFilter {
+  @include haloButton;
+  @include se-docked;
+  background-image: url("../../../images/add-to-filter.png");
+}
+
+.revert {
+  @include haloButton;
+  @include n-docked;
+  background-image: url("../../../images/font-awesome/undo-solid.svg");
+}
+
+.establishConnection {
+  @include haloButton;
+  @include sw-docked;
+  background-image: url("../../../images/font-awesome/plug.svg");
+}
+
+.establishConnectionSpinner {
+  @include spinner;
+  @include sw-docked;
+}

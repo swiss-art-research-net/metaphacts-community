@@ -1,0 +1,409 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Lazy Tree Component </h1>
+    <div class="documentation__intro">
+      <div class="documentation__intro__description">
+        <p>The component is best for tree-based visualization, navigation, browsing through sub-tree structures or hierarchies with ability to use keyword filtering.</p>
+        <p>The main difference from <semantic-link title="Tree Component" uri="[[resolvePrefix "Help:SemanticTree"]]">Tree Component</semantic-link> is that data in Lazy Tree is lazily loaded by small portions as the user explores the hierarchy by expanding branches. This allows the component to render large hierarchical structures with thousands of nodes without any large impact on the performance.</p>
+      </div>
+      <div class="documentation__intro__demo" id='demo1'>
+        <div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
+          [[> lazy-tree-top-example]]
+        </div>
+      </div>
+    </div>
+    <div style="clear:both;"></div>
+    <h2>Configuration </h2>
+    <mp-documentation type="SemanticLazyTreeProps"></mp-documentation>
+
+    <p><b>Note:</b> For the following examples to display actual results, it is required to have some ontology with <code>owl:Class</code> and <code>rdfs:subClassOf</code> relationships in the graph database. Consider loading the <a href="http://xmlns.com/foaf/spec/index.rdf" target="_BLANK">FOAF ontology</a> as an example dataset.</p>
+
+    <h2>Example 1</h2>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>This  example produces a class tree hierarchy. It uses the <code>roots-query</code> to compute the top level <code>owl:Class</code> elements and while navigating through the tree invokes <code>children-query</code> to determine and render sub-classes (identified using the <code>rdfs:subClassOf</code> relationship).</p>
+        <p>Display values of the tree nodes are retrieved automatically by the platform's label service. Also note that the elements are ordered in alphabetical order using the display value.</p>
+      </div>
+      <div class="documentation__example__demo">
+        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
+          <![CDATA[
+<div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
+
+  <semantic-lazy-tree
+    roots-query='
+      SELECT ?item WHERE {
+        ?item a owl:Class .
+        FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
+      }
+    '
+    children-query='
+      SELECT ?item WHERE {
+        ?item rdfs:subClassOf ?parent .
+      }
+    '>
+  </semantic-lazy-tree>
+
+</div>
+          ]]>
+        </mp-code-example>
+      </div>
+    </div>
+
+    <h2>Example 2 - Custom labels and custom order</h2>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>Similarly to the first example, this one produces a class hierarchy. However, with some adjusted configuration:</p>
+        <ul>
+          <li>Custom display values for nodes can be provided using the <code>?label</code> projection in the configured SPARQL queries.</li>
+          <li>A custom order of nodes can be achieved using the <code>ORDER BY</code> keyword in the queries (e.g. in this case <i>descending</i>)</li>
+        </ul>
+        <p>Please be aware that the nodes should be uniquely assigned one <code>rdfs:label</code> to avoid cross products. Also note that that nodes actually must have an explict <code>label</code> value for the query to return data.</p>
+      </div>
+      <div class="documentation__example__demo">
+        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
+          <![CDATA[
+<div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
+
+  <semantic-lazy-tree
+    roots-query='
+      SELECT ?item ?label WHERE {
+        ?item a owl:Class .
+        FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
+        ?item rdfs:label ?label .
+      } ORDER BY DESC (?label)
+    '
+    children-query='
+      SELECT ?item ?label WHERE {
+        ?item rdfs:subClassOf ?parent .
+        ?item rdfs:label ?label .
+      } ORDER BY DESC (?label)
+    '>
+  </semantic-lazy-tree>
+
+</div>
+          ]]>
+        </mp-code-example>
+      </div>
+    </div>
+
+    <h2>Example 3 - Searching by label</h2>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>Search or filtering functionality can be activated by providing both a <code>search-query</code> and a <code>parents-query</code>.</p>
+        <p>The <code>search-query</code> is used to compute the set of nodes matching the user's input, while the <code>parents-query</code> is used to recursively compute the parents of the result items to produce the tree hierarchy.</p>
+      </div>
+      <div class="documentation__example__demo">
+        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
+          <![CDATA[
+<div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
+
+  <semantic-lazy-tree
+    roots-query='
+      SELECT ?item WHERE {
+        ?item a owl:Class .
+        FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
+      }
+    '
+    children-query='
+      SELECT ?item WHERE {
+        ?item rdfs:subClassOf ?parent .
+      }
+    '
+    parents-query='
+      SELECT ?item ?parent WHERE {
+        ?item rdfs:subClassOf ?parent .
+      }
+    '
+    search-query='
+      SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
+        ?item rdfs:label ?label .
+        BIND(false AS ?hasChildren)
+        FILTER REGEX(LCASE(?label), LCASE(?__token__), "i")
+      } ORDER BY DESC (?score) (?label) LIMIT 200
+    '
+    placeholder='Select or search for a class..'>
+  </semantic-lazy-tree>
+
+</div>
+          ]]>
+        </mp-code-example>
+      </div>
+    </div>
+
+    <h2>Example 4 - Change the bounding box of the tree</h2>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>By default the height of the tree container is limited, i.e. there will be a scrollbar if the elements do not fit in.</p>
+
+        <p>Using an additional container with a specified <code>height</code> and/or <code>width</code> it is possible to influence the rendered result meaning that the component tries to fill all available space of the container.</p>
+      </div>
+      <div class="documentation__example__demo">
+        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
+          <![CDATA[
+<div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
+
+  <div style="height: 500px"><!-- Container with specified height-->
+    <semantic-lazy-tree
+      roots-query='
+        SELECT DISTINCT ?item ?hasChildren WHERE {
+          ?item a owl:Class .
+          FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
+          OPTIONAL { ?subClass rdfs:subClassOf ?item }
+          BIND (IF(BOUND(?subClass), true, false) AS ?hasChildren)
+        }
+      '
+      children-query='
+        SELECT ?item ?hasChildren WHERE {
+          ?item rdfs:subClassOf ?parent .
+          OPTIONAL { ?subClass rdfs:subClassOf ?item }
+          BIND (IF(BOUND(?subClass), true, false) AS ?hasChildren)
+        }
+      '>
+    </semantic-lazy-tree>
+  </div>
+
+</div>
+          ]]>
+        </mp-code-example>
+      </div>
+    </div>
+
+    <h2>Example 5 - Pre-compute information about children</h2>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>By default the tree is lazy in the sense that it optimistically thinks that a tree node has children, i.e. the graphical icon is rendered.</p>
+
+        <p>Optionally, the <code>?hasChildren</code> projection can be provided in the <code>roots-query</code> and <code>children-query</code> to provide the tree component with the additional information about whether the element in the tree has children or not.</p>
+      </div>
+      <div class="documentation__example__demo">
+        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
+          <![CDATA[
+<div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
+
+  <semantic-lazy-tree
+    roots-query='
+      SELECT DISTINCT ?item ?hasChildren WHERE {
+        ?item a owl:Class .
+        FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
+        OPTIONAL { ?subClass rdfs:subClassOf ?item }
+        BIND (IF(BOUND(?subClass), true, false) AS ?hasChildren)
+      }
+    '
+    children-query='
+      SELECT ?item ?hasChildren WHERE {
+        ?item rdfs:subClassOf ?parent .
+        OPTIONAL { ?subClass rdfs:subClassOf ?item }
+        BIND (IF(BOUND(?subClass), true, false) AS ?hasChildren)
+      }
+    '>
+  </semantic-lazy-tree>
+
+</div>
+          ]]>
+        </mp-code-example>
+      </div>
+    </div>
+
+    <h2>Example 6 - Custom node template</h2>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>By default the tree uses <code>&lt;semantic-link&gt;</code> to render each tree node. This can be customized using the <code>node-template</code> attribute. Additionally <code>no-result-template</code> may be used to display an empty tree.</p>
+
+        <p>Note that this example also defines a <code>node-data-query</code> for making the number of subclasses for each node available in the template as additional binding <code>data.totalSubClasses.value</code></p>
+
+        <p>When using <code>node-template</code> the following properties are available in the template:</p>
+        <mp-documentation type="SemanticLazyTreeTemplateData"
+          disable-transform-attributes=true>
+        </mp-documentation>
+      </div>
+      <div class="documentation__example__demo">
+        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
+          <![CDATA[
+<div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
+  <style>
+    .exampleHighlight { color: green; }
+  </style>
+
+  <semantic-lazy-tree
+    placeholder='Select or search for a class...'
+    roots-query='
+      SELECT DISTINCT ?item ?hasChildren WHERE {
+        ?item a owl:Class .
+        FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
+        OPTIONAL { ?subClass rdfs:subClassOf ?item }
+        BIND(BOUND(?subClass) AS ?hasChildren)
+      }
+    '
+    children-query='
+      SELECT ?item ?hasChildren WHERE {
+        ?item rdfs:subClassOf ?parent .
+        OPTIONAL { ?subClass rdfs:subClassOf ?item }
+        BIND(BOUND(?subClass) AS ?hasChildren)
+      }
+    '
+    parents-query='
+      SELECT ?item ?parent WHERE {
+        ?item rdfs:subClassOf ?parent .
+      }
+    '
+    search-query='
+      SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
+        ?item rdfs:label ?label .
+        BIND(false AS ?hasChildren)
+        FILTER REGEX(LCASE(?label), LCASE(?__token__), "i")
+        OPTIONAL { ?subClass rdfs:subClassOf ?item }
+        BIND(BOUND(?subClass) AS ?hasChildren)
+      } ORDER BY DESC (?score) (?label) LIMIT 200
+    '
+    node-data-query='
+      SELECT ?item (COUNT(?subClass) AS ?totalSubClasses) {
+        OPTIONAL { ?subClass rdfs:subClassOf+ ?item }
+      } GROUP BY ?item
+    '
+    node-template='{{>node}}'
+    no-result-template='<span>No results found at all ☹</span>'>
+    <template id='node'>
+      <span title='{{iri}}'>
+        <mp-highlight highlight={{highlight}}
+          highlight-props='{"className": "exampleHighlight"}'>
+          {{label}}
+        </mp-highlight>
+        &nbsp;({{data.totalSubClasses.value}})
+      </span>
+      {{#if expanded}}&nbsp;📖{{else}}&nbsp;📕{{/if}}
+      {{#if hasError}}&nbsp;[error]{{/if}}
+    </template>
+  </semantic-lazy-tree>
+
+</div>
+          ]]>
+        </mp-code-example>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+[[#*inline "lazy-tree-top-example"]]
+<semantic-lazy-tree
+  placeholder='Select or search for an entity...'
+  roots-query='
+    SELECT DISTINCT ?item ?label ?hasChildren WHERE {
+      VALUES(?item ?label ?hasChildren) {
+        (<http://example.com/Organization> "Organization" true)
+      }
+    } ORDER BY [[#if reorder]]DESC [[/if]](?label) LIMIT 200
+  '
+  children-query='
+    SELECT DISTINCT ?item ?label ?hasChildren WHERE {
+      {
+        FILTER(?parent = <http://example.com/Organization>)
+        VALUES(?item ?label ?hasChildren) {
+          (<http://example.com/ITDepartment> "IT Department" true)
+          (<http://example.com/ManagementDepartment> "Management Department" true)
+          (<http://example.com/AccountDepartment> "Account Department" true)
+          (<http://example.com/LowDepartment> "Low Department" true)
+        }
+      } UNION {
+        FILTER (?parent = <http://example.com/ITDepartment>)
+        VALUES(?item ?label ?hasChildren) {
+          (<http://example.com/Employee1> "Employee 1" false)
+          (<http://example.com/Employee2> "Employee 2" false)
+          (<http://example.com/Employee3> "Employee 3" false)
+          (<http://example.com/Employee4> "Employee 4" false)
+        }
+      } UNION {
+        FILTER (?parent = <http://example.com/ManagementDepartment>)
+        VALUES(?item ?label ?hasChildren) {
+          (<http://example.com/Employee5> "Employee 5" false)
+          (<http://example.com/Employee6> "Employee 6" false)
+        }
+      } UNION {
+        FILTER (?parent = <http://example.com/AccountDepartment>)
+        VALUES(?item ?label ?hasChildren) {
+          (<http://example.com/Employee7> "Employee 7" false)
+          (<http://example.com/Employee8> "Employee 8" false)
+        }
+      } UNION {
+        FILTER (?parent = <http://example.com/LowDepartment>)
+        VALUES(?item ?label ?hasChildren) {
+          (<http://example.com/Employee9> "Employee 9" false)
+        }
+      }
+    } ORDER BY [[#if reorder]]DESC [[/if]](?label) LIMIT 200
+  ',
+  parents-query='
+    SELECT DISTINCT ?item ?parent ?parentLabel WHERE {
+      {
+        VALUES(?parent ?parentLabel) {
+          (<http://example.com/Organization> "Organization")
+        }
+        VALUES(?item) {
+          (<http://example.com/ITDepartment>)
+          (<http://example.com/ManagementDepartment>)
+          (<http://example.com/AccountDepartment>)
+          (<http://example.com/LowDepartment>)
+        }
+      } UNION {
+        VALUES(?parent ?parentLabel) {
+          (<http://example.com/ITDepartment> "IT Department")
+        }
+        VALUES(?item) {
+          (<http://example.com/Employee1>)
+          (<http://example.com/Employee2>)
+          (<http://example.com/Employee3>)
+          (<http://example.com/Employee4>)
+        }
+      } UNION {
+        VALUES(?parent ?parentLabel) {
+          (<http://example.com/ManagementDepartment> "Management Department")
+        }
+        VALUES(?item) {
+          (<http://example.com/Employee5>)
+          (<http://example.com/Employee6>)
+        }
+      } UNION {
+        VALUES(?parent ?parentLabel) {
+          (<http://example.com/AccountDepartment> "Account Department")
+        }
+        VALUES(?item) {
+          (<http://example.com/Employee7>)
+          (<http://example.com/Employee8>)
+        }
+      } UNION {
+        VALUES(?parent ?parentLabel) {
+          (<http://example.com/LowDepartment> "Low Department")
+        }
+        VALUES(?item) {
+          (<http://example.com/Employee9>)
+        }
+      }
+    }
+  ',
+  search-query='
+    SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
+      VALUES(?item ?label ?hasChildren) {
+          (<http://example.com/Organization> "Organization" true)
+          (<http://example.com/ITDepartment> "IT Department" true )
+          (<http://example.com/ManagementDepartment> "Management Department" true)
+          (<http://example.com/AccountDepartment> "Account Department" true)
+          (<http://example.com/LowDepartment> "Low Department" true)
+          (<http://example.com/Employee1> "Employee 1" false)
+          (<http://example.com/Employee2> "Employee 2" false)
+          (<http://example.com/Employee3> "Employee 3" false)
+          (<http://example.com/Employee4> "Employee 4" false)
+          (<http://example.com/Employee5> "Employee 5" false)
+          (<http://example.com/Employee6> "Employee 6" false)
+          (<http://example.com/Employee7> "Employee 7" false)
+          (<http://example.com/Employee8> "Employee 8" false)
+          (<http://example.com/Employee9> "Employee 9" false)
+      }
+      FILTER REGEX(LCASE(?label), LCASE(?__token__), "i")
+    } ORDER BY DESC (?score) (?label) LIMIT 200
+  '
+></semantic-lazy-tree>
+[[/inline]]
+

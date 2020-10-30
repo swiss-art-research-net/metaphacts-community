@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,8 +37,35 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.services.fields;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.inject.Inject;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.eclipse.rdf4j.query.QueryLanguage;
+import org.eclipse.rdf4j.query.algebra.Compare;
+import org.eclipse.rdf4j.query.algebra.Filter;
+import org.eclipse.rdf4j.query.algebra.Modify;
+import org.eclipse.rdf4j.query.algebra.TupleExpr;
+import org.eclipse.rdf4j.query.algebra.UpdateExpr;
+import org.eclipse.rdf4j.query.algebra.ValueExpr;
+import org.eclipse.rdf4j.query.algebra.Var;
+import org.eclipse.rdf4j.query.parser.QueryParserUtil;
+import org.eclipse.rdf4j.rio.ntriples.NTriplesUtil;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -25,29 +74,9 @@ import com.google.common.collect.Maps;
 import com.metaphacts.cache.LabelCache;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.sparql.renderer.MpSparqlQueryRenderer;
 import com.metaphacts.sparql.visitors.VarRenameVisitor;
 import com.metaphacts.templates.TemplateContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Literal;
-import org.eclipse.rdf4j.model.ValueFactory;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.eclipse.rdf4j.query.MalformedQueryException;
-import org.eclipse.rdf4j.query.QueryLanguage;
-import org.eclipse.rdf4j.query.algebra.*;
-import org.eclipse.rdf4j.query.parser.QueryParserUtil;
-import org.eclipse.rdf4j.rio.ntriples.NTriplesUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.io.IOException;
+import com.metaphacts.util.QueryUtil;
 
 public class FieldsBasedSearch {
     private static final Logger logger = LogManager.getLogger(FieldsBasedSearch.class);
@@ -247,8 +276,7 @@ public class FieldsBasedSearch {
 
     private static String renderTupleExpression(TupleExpr expr) {
         try {
-            String rendered = new MpSparqlQueryRenderer().render(expr);
-            return rendered;
+            return QueryUtil.toSPARQL(expr);
         } catch (Exception ex) {
             throw Throwables.propagate(ex);
         }

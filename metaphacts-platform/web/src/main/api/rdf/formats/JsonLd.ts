@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as JsonLd from 'jsonld';
 import * as Kefir from 'kefir';
 import * as N3 from 'n3';
+import type * as RdfJs from 'rdf-js';
 
 import * as Rdf from '../core/Rdf';
 
@@ -87,17 +109,13 @@ export function fromRdf(
 
 function registerTtlParser() {
   JsonLd.registerRDFParser('text/turtle', (input, callback) => {
-    const quads: JsonLd.Quad[] = [];
-    N3.Parser().parse(input, (error, triple, hash) => {
-      if (error) {
-        callback(error, quads);
-      } else if (triple) {
-        const quad = createJsonLdQuad(triple);
-        quads.push(quad);
-      } else if (callback) {
-        callback(undefined, quads);
-      }
-    });
+    const parser = new N3.Parser({factory: Rdf.DATA_FACTORY as RdfJs.DataFactory<any, any>});
+    try {
+      const quads = parser.parse(input);
+      callback(undefined, quads as JsonLd.Quad[]);
+    } catch (err) {
+      callback(err, undefined);
+    }
   });
 }
 
@@ -107,80 +125,6 @@ function registerTtlParser() {
 function registerGraphParser() {
   JsonLd.registerRDFParser('mph/graph', (input, callback) => {
     const inputGraph = input as Rdf.Graph;
-    const quads = inputGraph.triples.forEach(triple => (
-      {
-        subject: getTerm(triple.s),
-        predicate: getTerm(triple.p),
-        object: getTerm(triple.o),
-        graph: {
-          termType: 'DefaultGraph',
-          value: '',
-        }
-      }
-    ));
-    function getTerm(term: Rdf.Node): JsonLd.Term {
-      if (term.isLiteral()) {
-        return {
-          termType: 'Literal',
-          value: term.value,
-          language: term.language,
-          datatype: {
-            termType: 'NamedNode',
-            value: term.datatype.value,
-          },
-        };
-      } else if (term.isBnode()) {
-          return {
-            termType: 'BlankNode',
-            value: term.value,
-          };
-      } else if (term.isIri()) {
-        return {
-          termType: 'NamedNode',
-          value: term.value,
-        };
-      }
-    }
-    return quads;
+    return inputGraph.triples.toArray();
   });
-}
-
-function createJsonLdQuad(triple: N3.Triple): JsonLd.Quad {
-  return {
-    subject: getTerm(triple.subject),
-    predicate: getTerm(triple.predicate),
-    object: getTerm(triple.object),
-    graph: {
-      termType: 'DefaultGraph',
-      value: '',
-    },
-  };
-
-  function getTerm(value: string): JsonLd.Term {
-    if (N3.Util.isLiteral(value)) {
-      return getLiteralTerm(value);
-    } else if (N3.Util.isBlank(value)) {
-      return {
-        termType: 'BlankNode',
-        value: value,
-      };
-    } else {
-      return {
-        termType: 'NamedNode',
-        value: value,
-      };
-    }
-  }
-
-  function getLiteralTerm(literal: string): JsonLd.Term {
-    return {
-      termType: 'Literal',
-      value: N3.Util.getLiteralValue(literal),
-      language: N3.Util.getLiteralLanguage(literal),
-      datatype: {
-        termType: 'NamedNode',
-        value: N3.Util.getLiteralType(literal),
-      },
-    };
-  }
 }

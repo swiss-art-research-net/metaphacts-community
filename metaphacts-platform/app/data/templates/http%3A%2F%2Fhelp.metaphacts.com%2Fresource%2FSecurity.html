@@ -1,0 +1,27 @@
+<ol class="page-breadcrumb">
+ <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title="Help" iri='[[resolvePrefix "Help:Start"]]'>Help</semantic-link>
+  </li>
+  <li class="active">
+    Security Configuration
+  </li>
+</ol>
+
+<div class="page">
+  <div class='page__body'>
+    <h1> Security </h1>
+    <p>
+      The platform relies on the <a href="http://shiro.apache.org" target="_blank">Apache Shiro</a> security framework.
+      While it is possible to hook-in different security providers and realms, the easiest way is to define local users using the <code>shiro.ini</code> file and role extensions using <code>shiro-roles.ini</code>
+    </p>
+
+
+		[[> Help:SecurityACLs]]
+
+  </div> <!-- page__body -->
+</div>
+
+

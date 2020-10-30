@@ -1,0 +1,27 @@
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title="Assets" iri='[[resolvePrefix "Assets:"]]'>Assets</semantic-link>
+  </li>
+  <li class="active">Named Graphs</li>
+</ol>
+
+<div class="page">
+  <div class="page__header">
+    <div class='page__header-thumbnail'>
+      <h2><div class='named-graph-icon'></div></h2>
+    </div>
+    <div class='page__header-body'>
+      <h2>Named Graphs</h2>
+    </div>
+  </div>
+  <div class='page__body'>
+    [[> Assets:NamedGraphsInclude]]
+    
+    <mp-resource-link-container uri="http://www.metaphacts.com/resource/admin/DataImportExport">
+      <button style="float:left; margin-top: 10px;" class="btn btn-primary">Upload Named Graph</button>
+    </mp-resource-link-container>
+	</div>
+</div>

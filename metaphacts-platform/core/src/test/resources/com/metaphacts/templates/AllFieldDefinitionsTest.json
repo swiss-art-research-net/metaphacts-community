@@ -36,7 +36,8 @@ WHERE {}",
  "treePatterns":{
    "type":"simple",
    "schemePattern":"?item a <http://example.com/treeItem>"
- }
+ },
+ "orderedWith": "index-property"
 },
 {
   "id": "http://www.metaphacts.com/field/testinstance/fieldDefinitionContainer/fieldInstance2",

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -223,7 +222,7 @@ export class CreateProfileDialogClass extends Component<Props, State> {
     return this.getInputElement(CreateProfileDialogClass.descriptionInputRef);
   }
 
-  private getInputElement(ref): HTMLInputElement {
+  private getInputElement(ref: string): HTMLInputElement {
     return findDOMNode(this.refs[ref]) as HTMLInputElement;
   }
 }

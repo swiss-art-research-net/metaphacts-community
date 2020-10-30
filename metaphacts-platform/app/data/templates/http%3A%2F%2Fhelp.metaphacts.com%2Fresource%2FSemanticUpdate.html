@@ -1,0 +1,95 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page documentation">
+  <div class='page__body'>
+    <h1>SPARQL Update Component </h1>
+    
+    <p>This component can be used for executing SPARQL UPDATE queries.</p>
+
+    <p>Consider for example the case where users are required to delete instance data (e.g. a given instance of a person): using <code>semantic-update</code> it is possible to show a button in the UI which upon click executes a pre-defined DELETE query.</p>
+
+    <h2>Configuration </h2>
+
+    <mp-documentation type="SemanticUpdateConfig"></mp-documentation>
+
+    <p>Query parameters can be set with <code>queryparam-*</code> attributes. Note that these are currently always added as string, so conversions to IRIs or other data types need to be done as part of the query.</p>
+
+    <p>If the query fails (e.g because of missing permissions or network connection) the error is shown next to the button. In case the <code>post-action</code> is set to <code>event</code>, the query result needs to be handled manually through the following events:</p>
+    
+    <mp-documentation type="SemanticUpdateEventData" disable-transform-attributes=true hide-required-label=true></mp-documentation>
+    
+    <p>See <semantic-link iri='[[resolvePrefix "Help:EventSystem"]]'>Event System</semantic-link> for more info about events.</p>
+    
+    <h2>Examples </h2>
+    
+    <h3>Basic INSERT</h3>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>Basic query attaching the literal <code>some value</code> to the property <code>:exampleProp</code> on the current resource.</p>
+      </div>
+      <div class="documentation__example__demo" id='demo2'>
+        <mp-code-block>
+<![CDATA[<semantic-update query='INSERT {
+  GRAPH <urn:exampleGraph> {
+    ?? :exampleValue "some value" .
+  }
+} WHERE {
+}'>
+  <button class='btn btn-primary'>Add value</button>
+</semantic-update>]]>       
+        </mp-code-block>
+      </div>
+    </div>
+    
+    <h3>Parameterized INSERT</h3>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>Query with two parameters <code>person</code> and <code>name</code>, where <code>person</code> defines the subject and <code>name</code> a literal value that gets attached to the person.</p>
+        
+        <p>Note that the provided subject parameter needs to be explicitly converted to an IRI inside the query. As the <code>subject</code> variable is not required to be specified as a parameter, it needs to be added to <code>variable-params</code>.</p>
+      </div>
+      <div class="documentation__example__demo" id='demo2'>
+        <mp-code-block>
+<![CDATA[<semantic-update query='INSERT {
+  GRAPH <urn:exampleGraph> {
+    ?subject a <http://xmlns.com/foaf/0.1/Person> .
+    ?subject rdfs:label $name .
+  }
+} WHERE {
+  BIND(IRI($person) as ?subject)
+}' variable-params='["subject"]'
+   queryparam-person='http://example.com/Alice'
+	 queryparam-name='Alice'>
+  <button class='btn btn-primary'>Add Person</button>
+</semantic-update>]]>       
+        </mp-code-block>
+      </div>
+    </div>
+    
+    <h3>Deletion with confirmation</h3>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        This example shows how a deletion can be implemented (e.g. to delete all statements of a given resource). In this example we assume that the current resource (i.e. referred to by <code>??</code> in the query) refers to a person instance.
+        
+      </div>
+      <div class="documentation__example__demo" id='demo2'>
+        <mp-code-block>
+<![CDATA[<semantic-update query='DELETE {
+  ?? ?p ?o .
+} WHERE {
+  ?? ?p ?o .
+}' variable-params='["p", "o"]'
+   post-action='http://xmlns.com/foaf/0.1/Person'
+   show-confirmation='true'
+   confirmation-options='{
+     "message": "Do you really want to delete this person and all associated data?",
+     "confirmLabel": "Delete"
+   }'>
+  <button class='btn btn-danger'>Delete values</button>
+</semantic-update>]]>       
+        </mp-code-block>
+      </div>
+    </div>
+
+  </div>
+</div>

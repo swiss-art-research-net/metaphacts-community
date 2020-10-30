@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "iiifServerUrl": {
+            "description": "IIIF server URL.",
+            "type": "string"
+        },
+        "imageIdPattern": {
+            "description": "Pattern to generate image ID from image IRI.",
+            "type": "string"
+        },
+        "repositories": {
+            "description": "Repositories to query the image.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "selection": {
+            "description": "Images IRIs to be compared.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        }
+    },
+    "propertyOrder": [
+        "selection",
+        "imageIdPattern",
+        "iiifServerUrl",
+        "repositories"
+    ],
+    "required": [
+        "iiifServerUrl",
+        "imageIdPattern",
+        "selection"
+    ],
+    "type": "object"
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Maybe from 'data.maybe';
 import * as _ from 'lodash';
@@ -27,7 +26,7 @@ import { Rdf } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { getOverlaySystem, OverlayDialog } from 'platform/components/ui/overlay';
 import { getRepositoryStatus } from 'platform/api/services/repository';
-import { ResourceLinkComponent } from 'platform/api/navigation/components';
+import { ResourceLinkComponent } from 'platform/components/navigation';
 import { DropArea } from 'platform/components/dnd/DropArea';
 
 import { rso } from 'researchspace/data/vocabularies/vocabularies';
@@ -45,6 +44,7 @@ import * as styles from './PremiseComponent.scss';
 interface SelectedBelief {
   beliefType: typeof BeliefTypeArgumentsKind,
   argumentsBeliefType: ArgumentsBeliefType;
+  assertion: Rdf.Iri;
   record: Rdf.Iri;
   types: Array<Rdf.Iri>;
   selectedFields: Array<ArgumentsFieldDefinition>;
@@ -74,7 +74,7 @@ interface State {
  */
 export class BeliefSelection extends React.Component<BeliefSelectionProps, State> {
 
-  constructor(props, context) {
+  constructor(props: BeliefSelectionProps, context: any) {
     super(props, context);
     this.state = {
       belief: Maybe.Nothing<SelectedBelief>(),
@@ -134,7 +134,7 @@ export class BeliefSelection extends React.Component<BeliefSelectionProps, State
     this.getTypes(resource).onValue(
       types => {
         const isAssertion = _.some(types, t => rso.EX_Assertion.equals(t));
-        const belief = {
+        const belief: SelectedBelief = {
           beliefType: BeliefTypeArgumentsKind as typeof BeliefTypeArgumentsKind,
           argumentsBeliefType: (isAssertion ? ArgumentsBeliefTypeAssertionKind : ArgumentsBeliefTypeFieldKind) as ArgumentsBeliefType,
           assertion: resource,
@@ -223,7 +223,7 @@ export class BeliefSelection extends React.Component<BeliefSelectionProps, State
       repos => Kefir.combine(repos.map(r => this.getTypesFromRepository(r, resource)))
     ).map(_.flatten)
     .map(
-      types => _.uniqWith(types, (a, b) => a.equals(b))
+      types => _.uniqWith(types, (a: Rdf.Iri, b: Rdf.Iri) => a.equals(b))
     );
 
   private getTypesFromRepository =

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,22 +37,21 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.config.groups;
 
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
-import com.metaphacts.services.storage.api.StoragePath;
 import org.apache.commons.configuration2.CombinedConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -43,7 +64,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.ConfigParameterValueInfo;
-import com.metaphacts.config.Configuration;
 import com.metaphacts.config.ConfigurationParameter;
 import com.metaphacts.config.ConfigurationParameterHook;
 import com.metaphacts.config.ConfigurationUtil;
@@ -52,10 +72,8 @@ import com.metaphacts.config.UnknownConfigurationException;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectStorage;
 import com.metaphacts.services.storage.api.PlatformStorage;
-
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.ScanResult;
+import com.metaphacts.services.storage.api.StoragePath;
+import com.metaphacts.util.ReflectionUtil;
 
 
 /**
@@ -289,23 +307,18 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
 
     @Nullable
     private Method findParameterUpdateHook(String configIdInGroup) {
-        ClassGraph updateHookGraph = new ClassGraph()
-            .enableClassInfo()
-            .enableAnnotationInfo()
-            .enableMethodInfo()
-            .enableStaticFinalFieldConstantInitializerValues()
-            .whitelistPackages("com.metaphacts.config.groups");
+        
+        // Look into the current configuration class for methods annotated with
+        // ConfigurationParameterHook, and return the first where the parameter
+        // name matches the expected config ID
+        ReflectionUtil.findMethodsWithAnnotation(this.getClass(), ConfigurationParameterHook.class);
 
-        try (ScanResult scanResult = updateHookGraph.scan()) {
-            for (ClassInfo routeClassInfo : scanResult.getClassesWithMethodAnnotation(ConfigurationParameterHook.class.getName())) {
-                Class<?> classWithConfigurationHook = routeClassInfo.loadClass();
-                for (Method method : classWithConfigurationHook.getDeclaredMethods()) {
-                    if (method.isAnnotationPresent(ConfigurationParameterHook.class)) {
-                        if (method.getName().equals("onUpdate" + StringUtils.capitalize(configIdInGroup))) {
-                            return method;
-                        }
-                    }
-                }
+        for (Method method : ReflectionUtil.findMethodsWithAnnotation(this.getClass(),
+                ConfigurationParameterHook.class)) {
+            ConfigurationParameterHook configurationParameterHook = method
+                    .getAnnotation(ConfigurationParameterHook.class);
+            if (configurationParameterHook.forSetting().equalsIgnoreCase(configIdInGroup)) {
+                return method;
             }
         }
 
@@ -412,7 +425,7 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
     @Override
     public ConfigurationParameterType getParameterType(String paramName) throws UnknownConfigurationException {
         // get read method (using bean conventions)
-        Method readMethod = Configuration.getGetterMethod(paramName, getClass());
+        Method readMethod = getGetterMethod(paramName, getClass());
         if (readMethod == null) {
             throw new UnknownConfigurationException(
                 "Config property \"" + paramName +
@@ -439,7 +452,7 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
         String parameterId
     ) throws UnknownConfigurationException {
         // get read method (using bean conventions)
-        Method readMethod = Configuration.getGetterMethod(parameterId, getClass());
+        Method readMethod = getGetterMethod(parameterId, getClass());
         if (readMethod == null) {
             throw new UnknownConfigurationException(
                 "Config property \"" + parameterId +
@@ -458,8 +471,11 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
 
             List<String> definedByApps = ConfigurationUtil.getStorageIdsInOverrideOrderForParam(config, parameterId);
 
-            // and return the information required
-            return new ConfigParameterValueInfo(type, value, isShadowed, definedByApps);
+            ConfigurationParameter configParameter = readMethod.getAnnotation(ConfigurationParameter.class);
+            if (configParameter == null) {
+                configParameter = ConfigurationUtil.toConfigurationParameter(parameterId, "", true);
+            }
+            return new ConfigParameterValueInfo(type, value, isShadowed, definedByApps, configParameter);
         } catch (IllegalAccessException | InvocationTargetException e) {
             // this should not happen, so write some log output
             logger.warn("Exception during ID based config parameter lookup "
@@ -475,10 +491,17 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
 
         Method[] methods = getClass().getDeclaredMethods();
         for (Method method : methods) {
-            if (method.getAnnotationsByType(ConfigurationParameter.class).length == 0) {
+            ConfigurationParameter[] configParameter = method.getAnnotationsByType(ConfigurationParameter.class);
+            if (configParameter.length == 0) {
                 continue;
             }
-            String parameterId = Configuration.getParamNameForGetter(method);
+            String parameterId = configParameter[0].name();
+
+            // legacy support: if the name is not specified in the annotation
+            // infer it from the method
+            if (StringUtils.isEmpty(parameterId)) {
+                parameterId = getParamNameForGetter(method);
+            }
             if (parameterId != null) {
                 ConfigParameterValueInfo value = getParameterInfo(parameterId);
                 params.put(parameterId, value);
@@ -486,5 +509,112 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
         }
 
         return params;
+    }
+
+    /**
+     * Returns a getter for the given property.
+     * 
+     * <p>
+     * This method tries to find a {@link Method} for the given parameter in the
+     * respective class.
+     * </p>
+     * 
+     * <p>
+     * By default we inspect all methods for the {@link ConfigurationParameter}
+     * annotation and compare the {@link ConfigurationParameter#name()}.
+     * </p>
+     * 
+     * <p>
+     * For legacy reasons we support resolving the Method using method name logics.
+     * </p>
+     * 
+     * <p>
+     * Note: we can's use the {@link PropertyDescriptor} here, since our classes
+     * only have a setter. That's why we have custom logics to resolve getters. We
+     * give priority to get over is prefixes (which is fine as long as there's only
+     * one present).
+     * </p>
+     *
+     * @return the getter name for a given
+     */
+    static Method getGetterMethod(String paramName, Class<?> clazz) {
+
+        if (StringUtils.isEmpty(paramName)) {
+            return null;
+        }
+
+        // TODO introduce cache to avoid reflective access for constant data
+
+        // scan for method for annotation with the same param name
+        Optional<Method> targetGetter = ReflectionUtil.findMethodsWithAnnotation(clazz, ConfigurationParameter.class)
+                .stream().filter(m -> m.getAnnotation(ConfigurationParameter.class).name().equals(paramName))
+                .findFirst();
+
+        if (targetGetter.isPresent()) {
+            return targetGetter.get();
+        }
+
+        // LEGACY SUPPORT
+
+        final String capitalizedParamName = Character.toUpperCase(paramName.charAt(0)) + paramName.substring(1);
+
+        // try "get" prefix
+        Method getter = null;
+        try {
+            getter = clazz.getMethod("get" + capitalizedParamName);
+        } catch (NoSuchMethodException e) {
+            // ignore
+        } catch (SecurityException e) {
+            logger.warn("Security exception accessing getter for " + capitalizedParamName + ": " + e.getMessage());
+        }
+
+        if (getter == null) { // fallback: try "is" prefix
+            try {
+                getter = clazz.getMethod("is" + capitalizedParamName);
+            } catch (NoSuchMethodException e) {
+                // ignore
+            } catch (SecurityException e) {
+                logger.warn("Security exception accessing getter for " + capitalizedParamName + ": " + e.getMessage());
+            }
+        }
+
+        if (getter == null) {
+            return null; // not found
+        }
+
+        // finally check that the method has a non-void return type
+        final Class<?> propertyType = getter.getReturnType();
+
+        return propertyType == Void.TYPE ? null : getter;
+    }
+
+    /**
+     * Returns the parameter name identified by the getter method.
+     * 
+     * @deprecated replaced with {@link ConfigurationParameter#name()} mechanism
+     */
+    @Deprecated
+    static String getParamNameForGetter(Method method) {
+
+        if (method == null) {
+            return null;
+        }
+
+        final String name = method.getName();
+
+        if (name.startsWith("get")) {
+
+            final String paramName = name.substring(3);
+            return Character.toLowerCase(paramName.charAt(0)) + paramName.substring(1);
+
+        } else if (name.startsWith("is")) {
+
+            final String paramName = name.substring(2);
+            return Character.toLowerCase(paramName.charAt(0)) + paramName.substring(1);
+
+        } else {
+            logger.warn("Called getParamNameForGetter() for method not being a getter: " + name);
+            return null;
+        }
     }
 }

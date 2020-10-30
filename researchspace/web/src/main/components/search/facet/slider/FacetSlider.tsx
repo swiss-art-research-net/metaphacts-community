@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Denis Ostapenko
  */
@@ -39,23 +38,21 @@ import * as styles from './FacetSlider.scss';
 
 export type SliderRange = {begin: number, end: number};
 
-interface FacetSliderDateProps extends Props<FacetSliderComponent> {
-  kind: 'date-range'
-  data: Array<DateRange>
-  value: Data.Maybe<DateRange>
-  actions: {
-    toggleFacetValue: (term: DateRange) => void
+interface SliderProps<Range> {
+  readonly data: ReadonlyArray<Range>;
+  readonly value: Data.Maybe<Range>;
+  readonly actions: {
+    readonly toggleFacetValue: (term: Range) => void;
   }
 }
-interface FacetSliderNumericProps extends Props<FacetSliderComponent> {
-  kind: 'numeric-range'
-  data: Array<NumericRange>
-  value: Data.Maybe<NumericRange>
-  actions: {
-    toggleFacetValue: (term: NumericRange) => void
-  }
+
+interface FacetSliderDateProps extends SliderProps<DateRange>, Props<FacetSliderComponent> {
+  kind: 'date-range';
 }
-type FacetSliderProps = FacetSliderDateProps | FacetSliderNumericProps;
+interface FacetSliderNumericProps extends SliderProps<NumericRange>, Props<FacetSliderComponent> {
+  kind: 'numeric-range';
+}
+export type FacetSliderProps = FacetSliderDateProps | FacetSliderNumericProps;
 function isDateProps(props: FacetSliderProps): props is FacetSliderDateProps {
   return props.kind === 'date-range';
 }
@@ -86,8 +83,15 @@ interface FacetSliderState {
   events?: GraphEvent[]
 }
 
+interface Converter<Point, Range> {
+  toStringFn(input: number): string;
+  toSliderRange(valueRange: Range): SliderRange;
+  fromSliderRange(range: SliderRange): Range;
+  toInputValue(point: number): Point;
+  fromInputValue(value: Point): number;
+}
 
-export class DateConverter {
+export class DateConverter implements Converter<YearValue, DateRange> {
   fromNumberFn = (x: number): DateValue => moment({year: x}).startOf('year');
   dateToYears = (m: DateValue): number => m === null ? null : m.year() + (m.dayOfYear() - 1) / 366;
 
@@ -116,7 +120,7 @@ export class DateConverter {
   };
 }
 
-export class NumericConverter {
+export class NumericConverter implements Converter<string, NumericRange> {
   toStringFn = (num: number): string => '' + num;
   toSliderRange = (numericRange: NumericRange): SliderRange => numericRange;
   fromSliderRange = (range: SliderRange): NumericRange => range;
@@ -125,7 +129,13 @@ export class NumericConverter {
 }
 
 // Trick to avoid union types in kind-related code blocks
-function getConverter(props, fn): any {
+function getConverter<T>(
+  props: FacetSliderProps,
+  fn: <Range, Point>(
+    props: SliderProps<Range>,
+    converter: Converter<Point, Range>
+  ) => T
+): T {
   if (isDateProps(props)) {
     return fn(props, new DateConverter());
   } else if (isNumericProps(props)) {
@@ -137,7 +147,7 @@ function getConverter(props, fn): any {
 interface CustomHandleProps {
   offset?: number
   value?: number
-  toStringFn: (number) => string
+  toStringFn: (number: number) => string
 }
 class CustomHandle extends Component<CustomHandleProps, {}> {
   render() {
@@ -148,7 +158,7 @@ class CustomHandle extends Component<CustomHandleProps, {}> {
 }
 
 export class FacetSliderComponent extends Component<FacetSliderProps, FacetSliderState> {
-  constructor(props) {
+  constructor(props: FacetSliderProps) {
     super(props);
     this.state = _.assign({isValidRange: true}, this.propsToState(props));
     this.onNewRange = _.debounce(this.onNewRange, 500);
@@ -204,7 +214,7 @@ export class FacetSliderComponent extends Component<FacetSliderProps, FacetSlide
   render() {
     const { min, max, value, isValidRange } = this.state;
     const events = this.state.events;
-    const {toStringFn, toInputValue} = getConverter(this.props, (props, converter) => converter);
+    const converter = getConverter(this.props, (props, converter) => converter);
     return <div>
       <div className={styles.slidergraph}>
         <FacetSliderGraph events={events} range={value} min={this.state.min} max={this.state.max} />
@@ -216,29 +226,35 @@ export class FacetSliderComponent extends Component<FacetSliderProps, FacetSlide
         <Slider
           allowCross={false} min={min} max={max} className={styles.slider}
           value={[value.begin, value.end]}
-          handle={props => <CustomHandle {...props} toStringFn={toStringFn} />}
+          handle={props => <CustomHandle {...props} toStringFn={converter.toStringFn} />}
           onChange={this.onSliderValueChange}
         />
         {this.props.kind === 'numeric-range' ?
           <div className={styles.range}>
-            <FormControl value={toInputValue(value.begin)} onChange={(e) => {
-              const newValue = (e.target as any).value;
-              this.onBeginChange(newValue);
-            }}/>
+            <FormControl value={(converter as NumericConverter).toInputValue(value.begin)}
+              onChange={(e) => {
+                const newValue = (e.target as any).value;
+                this.onBeginChange(newValue);
+              }}
+            />
             <span>to</span>
-            <FormControl value={toInputValue(value.end)} onChange={(e) => {
-              const newValue = (e.target as any).value;
-              this.onEndChange(newValue);
-            }}/>
+            <FormControl value={(converter as NumericConverter).toInputValue(value.end)}
+              onChange={(e) => {
+                const newValue = (e.target as any).value;
+                this.onEndChange(newValue);
+              }}
+            />
           </div>
           :
           <div className={styles.range}>
-            <YearInput value={toInputValue(value.begin)} onChange={this.onBeginChange}
-                       isYearValid={this.state.isValidRange}
+            <YearInput value={(converter as DateConverter).toInputValue(value.begin)}
+              onChange={this.onBeginChange}
+              isYearValid={this.state.isValidRange}
             />
             <span>to</span>
-            <YearInput value={toInputValue(value.end)} onChange={this.onEndChange}
-                       isYearValid={this.state.isValidRange}
+            <YearInput value={(converter as DateConverter).toInputValue(value.end)}
+              onChange={this.onEndChange}
+              isYearValid={this.state.isValidRange}
             />
           </div>
         }
@@ -252,21 +268,21 @@ export class FacetSliderComponent extends Component<FacetSliderProps, FacetSlide
     this.onNewRange(newRange);
   }
 
-  private onBeginChange = (newValue) => {
+  private onBeginChange = (newValue: number | YearValue) => {
     getConverter(this.props, (props, converter) => {
       const newRange = {
-        begin: converter.fromInputValue(newValue),
+        begin: converter.fromInputValue(newValue as any),
         end: this.state.value ? this.state.value.end : null,
       };
       this.setState({value: newRange});
       this.onNewRange(newRange);
     });
   }
-  private onEndChange = (newValue) => {
+  private onEndChange = (newValue: number | YearValue) => {
     getConverter(this.props, (props, converter) => {
       const newRange = {
         begin: this.state.value ? this.state.value.begin : null,
-        end: converter.fromInputValue(newValue),
+        end: converter.fromInputValue(newValue as any),
       };
       this.setState({value: newRange});
       this.onNewRange(newRange);

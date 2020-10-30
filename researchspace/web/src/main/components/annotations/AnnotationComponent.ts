@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { createFactory, createElement, MouseEvent } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
@@ -23,13 +22,14 @@ import * as maybe from 'data.maybe';
 
 import { Rdf } from 'platform/api/rdf';
 import { Component } from 'platform/api/components';
-import { navigateToResource, refresh, navigationConfirmation } from 'platform/api/navigation';
+import { navigateToResource, refresh } from 'platform/api/navigation';
 import {
   factory as AnnotationTextEditor, component as AnnotationTextEditorComponent
 } from './AnnotationTextEditorComponent';
 import {
   LdpAnnotationServiceClass, Annotation, RdfaLink,
 } from '../../services/LDPAnnotationService';
+import { navigationConfirmation } from 'platform/components/navigation';
 import {
   Error, Alert, AlertType, AlertConfig,
 } from 'platform/components/ui/alert';
@@ -70,7 +70,7 @@ interface Props {
 export class AnnotationComponentClass extends Component<Props, State> {
   private navigationListenerUnsubscribe?: () => void;
 
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     if (props.readOnly === true && props.annotationToEdit === undefined) {
       throw 'readOnly can be used only with annotationToEdit';
@@ -189,7 +189,7 @@ export class AnnotationComponentClass extends Component<Props, State> {
       {condition: !editor.isEmpty(), message: 'Body should not be empty'},
       {condition: editor.allRdfaRelationsAreSet(), message: 'All semantic blocks should have RDFa rel attribute set'},
     ];
-    let messages = [];
+    let messages: string[] = [];
     for (let i = 0; i < conditions.length; ++i) {
       if (!conditions[i].condition) {
         messages.push(conditions[i].message);

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -28,13 +49,20 @@ import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
-import com.metaphacts.config.NamespaceRecord;
-import com.metaphacts.config.NamespaceRegistry.ProtectedNamespaceDeletionException;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.eclipse.rdf4j.model.IRI;
@@ -43,10 +71,18 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.common.base.Throwables;
+import com.metaphacts.config.NamespaceRecord;
 import com.metaphacts.config.NamespaceRegistry;
+import com.metaphacts.config.NamespaceRegistry.ProtectedNamespaceDeletionException;
 import com.metaphacts.data.json.JsonUtil;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.security.Permissions.NAMESPACES;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
@@ -54,6 +90,7 @@ import com.metaphacts.security.Permissions.NAMESPACES;
  */
 @Singleton
 @Path("data/rdf/namespace")
+//@Tag(name = "RDF Namespace Endpoint", description = "Central registry of RDF Namespaces")
 public class RdfNamespaceEndpoint {
 
     @Inject
@@ -63,7 +100,8 @@ public class RdfNamespaceEndpoint {
     @Path("getFullUris")
     @Produces(APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    public Response getFullUris(final JsonParser jp) throws IOException {
+    public Response getFullUris(@RequestBody(content = { @Content(mediaType = "application/json", examples = {
+            @ExampleObject(value = "[\"Help:Start\"]") }) }) final JsonParser jp) throws IOException {
         final ValueFactory vf = SimpleValueFactory.getInstance();
         final JsonUtil.JsonFieldProducer processor = (jGenerator, input) -> {
             try {
@@ -86,7 +124,10 @@ public class RdfNamespaceEndpoint {
     @Path("getPrefixedUris")
     @Produces(APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    public Response getPrefixedUris(final JsonParser jp) throws IOException {
+    public Response getPrefixedUris(@RequestBody(content = {
+            @Content(mediaType = "application/json", examples = {
+                    @ExampleObject(value = "[\"http://help.metaphacts.com/resource/Start\"]")
+            })}) final JsonParser jp) throws IOException {
         final ValueFactory vf = SimpleValueFactory.getInstance();
         final JsonUtil.JsonFieldProducer processor = (jGenerator, input) -> {
             try {
@@ -103,6 +144,8 @@ public class RdfNamespaceEndpoint {
     @Path("getRegisteredPrefixes")
     @NoCache
     @Produces(APPLICATION_JSON)
+    @Operation(summary = "Get RDF Prefix Namespaces",
+    description = "Get a list of all registered namespaces")
     public Map<String, String> getRegisteredPrefixes(){
         return ns.getPrefixMap();
     }

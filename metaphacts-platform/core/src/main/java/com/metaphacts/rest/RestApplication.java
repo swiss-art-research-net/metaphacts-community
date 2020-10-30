@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest;
 
 import java.util.ServiceLoader;
@@ -34,6 +55,7 @@ import com.metaphacts.rest.endpoint.FieldEndpoint;
 import com.metaphacts.rest.endpoint.LogAdminEndpoint;
 import com.metaphacts.rest.endpoint.OntologyManagerEndpoint;
 import com.metaphacts.rest.endpoint.RdfNamespaceEndpoint;
+import com.metaphacts.rest.endpoint.ReconciliationEndpoint;
 import com.metaphacts.rest.endpoint.RepositoryManagerEndpoint;
 import com.metaphacts.rest.endpoint.ResourceUtilsEndpoint;
 import com.metaphacts.rest.endpoint.SecurityEndpoint;
@@ -41,6 +63,7 @@ import com.metaphacts.rest.endpoint.SetManagementEndpoint;
 import com.metaphacts.rest.endpoint.SystemAdminEndpoint;
 import com.metaphacts.rest.endpoint.TemplateEndpoint;
 import com.metaphacts.rest.endpoint.URLMinifierEndpoint;
+import com.metaphacts.rest.endpoint.WebExtensionsEndpoint;
 
 /**
  * Main REST application with explicit /rest URL pattern.
@@ -104,21 +127,14 @@ public class RestApplication extends AbstractPlatformApplication {
         register(RepositoryManagerEndpoint.class);
 
         /*
+         *  /rest/reconciliation
+         */
+        register(ReconciliationEndpoint.class);
+
+        /*
          * /rest/ontologies
          */
         register(OntologyManagerEndpoint.class);
-
-        /*
-         * Exception mapper for a generic {@link Exception} not caught in the method
-         * itself.
-         */
-        register(DefaultExceptionMapper.class);
-
-        /*
-         * Exception mapper for a security {@link Exception} not caught in the method
-         * itself.
-         */
-        register(ForbiddenExceptionMapper.class);
 
         register(AppAdminEndpoint.class);
 
@@ -126,11 +142,15 @@ public class RestApplication extends AbstractPlatformApplication {
 
         register(LogAdminEndpoint.class);
 
+        register(WebExtensionsEndpoint.class);
+
         // registration using service loader
         for (RestEndpoint endpoint : ServiceLoader.load(RestEndpoint.class)) {
             logger.trace("Loaded rest endpoint {}", endpoint.getClass());
             register(endpoint.getClass());
         }
+
+        registerSwagger("API");
     }
 
 }

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.security;
 
 import org.eclipse.rdf4j.model.IRI;
@@ -52,6 +73,16 @@ public class Permissions {
             return "api:config:" + configGroup + ":" + configIdInGroup + ":" + usageMode;
         }
     }
+
+    @PermissionsDocGroup(desc = "Permissions for managing page configuration.")
+    public static class PAGE_CONFIG {
+        @PermissionsDocField(desc = "Permission for reading page view configurations.")
+        public static final String READ_PAGE_VIEW_CONFIG = "api:page:pageViewConfig:read";
+
+        @PermissionsDocField(desc = "Permission for writing page view configurations.")
+        public static final String WRITE_PAGE_VIEW_CONFIG = "api:page:pageViewConfig:write";
+    }
+
     @PermissionsDocGroup(desc = "Permissions for pages.")
     public static class PAGES{
         public static enum Action {
@@ -93,9 +124,9 @@ public class Permissions {
                 example = "/com/metaphacts/security/aclhelp/page_view.html"
             )
             VIEW("view");
-            
+
             final String action;
-            
+
             private Action(String action) {
                 this.action = action;
             }
@@ -105,14 +136,14 @@ public class Permissions {
                 return action;
             }
         }
-        
+
         public static final String DOMAIN = "pages";
         private static final String PREFIX = DOMAIN + ":";
-        
+
         public static String templateOperationDefaultPermission(Action action) {
             return PREFIX + action.toString();
         }
-        
+
         public static String templateOperationPermission(IRI iri, Action action) {
             return PREFIX + action.toString() + ":<" + iri.stringValue() + ">";
         }
@@ -215,7 +246,7 @@ public class Permissions {
             example="/com/metaphacts/security/aclhelp/sparql_update.html"
         )
         public static final String UPDATE_POSTFIX = "update";
-        
+
         private static final String QUERY_SELECT_DEFAULT = PREFIX + QUERY_SELECT_POSTFIX;
         private static final String QUERY_ASK_DEFAULT = PREFIX + QUERY_ASK_POSTFIX;
         private static final String QUERY_DESCRIBE_DEFAULT = PREFIX + QUERY_DESCRIBE_POSTFIX;
@@ -247,7 +278,7 @@ public class Permissions {
             }
             return builder.toString();
         }
-        
+
         public static final String sparqlOperationDefaultPermission(SparqlOperation operationType) {
             switch (operationType) {
                 case CONSTRUCT:
@@ -264,7 +295,7 @@ public class Permissions {
                     throw new IllegalArgumentException("Unknown operation type " + operationType.toString());
             }
         }
-        
+
         @PermissionsDocField(
             desc = "Grants permission to get, create, modify or delete any named graph by performing a HEAD operation on /rdf-graph-store?graph={URI}."
         )
@@ -286,7 +317,7 @@ public class Permissions {
         )
         public static final String GRAPH_STORE_DELETE = "sparql:graphstore:delete";
     }
-    
+
     @PermissionsDocGroup(desc = "Permissions for managing and accessing LDP containers.")
     public static class CONTAINER {
         /**
@@ -415,27 +446,48 @@ public class Permissions {
         )
         public static final String CREATE = "repository-config:create";
     }
-    
+
+    @PermissionsDocGroup(desc = "Permissions for interacting with the reconciliation service.")
+    public static class RECONCILIATION_SERVICE{
+        @PermissionsDocField(
+            desc = "Grants permission to use lookup operation of the reconciliation service."
+        )
+        public static final String LOOKUP = "reconciliation:lookup:*";
+
+        @PermissionsDocField(
+            desc = "Grants permission to see manifest of the reconciliation service."
+        )
+        public static final String READ_MANIFEST = "reconciliation:manifest:read";
+
+        @PermissionsDocField(
+            desc = "Grants permission to read descriptions."
+        )
+        public static final String READ_DESCRIPTION = "reconciliation:description:read";
+    }
+
     public static class EPHEDRA_SERVICE_CONFIG {
         public static final String PREFIX_UPDATE = "ephedra-service-config:update:";
         public static final String PREFIX_DELETE = "ephedra-service-config:delete:";
         public static final String PREFIX_VIEW = "ephedra-service-config:view:";
         public static final String CREATE = "ephedra-service-config:create";
     }
-    
+
     @PermissionsDocGroup(desc = "Permissions for managing the base system.")
     public static class SYSTEM {
         @PermissionsDocField(desc = "Grants permission to restart the system, e.g. after installing an app.")
         public static final String RESTART = "system:restart";
+        @PermissionsDocField(desc = "Grants permission to read the jvm properties.")
+        public static final String JVM_PROPERTIES = "system:jvm-properties";
     }
 
     @PermissionsDocGroup(desc = "Permissions for managing apps.")
     public static class APP {
-    	public static final String PREFIX_CONFIG_VIEW = "app:view-config:";
+        public static final String PREFIX_CONFIG_VIEW = "app:view-config:";
         @PermissionsDocField(desc = "Grants permission to upload app ZIP artefacts."
                 + "This is a global permission, i.e. there is no distinction between different apps."
         )
-    	public static final String UPLOAD = "app:upload";
+        public static final String UPLOAD = "app:upload";
+        public static final String REMOVE = "app:remove";
     }
 
     @PermissionsDocGroup(desc = "Permissions for managing storages.")
@@ -478,7 +530,7 @@ public class Permissions {
         )
         public static final String PREFIX_WRITE = "file:write:";
     }
-    
+
     @PermissionsDocGroup(desc = "Permissions for managing logs.")
     public static class LOGS {
         @PermissionsDocField(
@@ -487,7 +539,7 @@ public class Permissions {
             example="/com/metaphacts/security/aclhelp/logs_read.html"
         )
         public static final String PREFIX_READ = "logs:read:";
-        
+
         @PermissionsDocField(
                 desc="Permissions for configuring the logging system (e.g. the logging profile).",
                 pattern="logs:configure:*",
@@ -495,7 +547,7 @@ public class Permissions {
             )
             public static final String PREFIX_CONFIGURE = "logs:configure:";
     }
-    
+
     @PermissionsDocGroup(desc = "Permissions for managing ontologies.")
     public static class ONTOLOGIES {
         @PermissionsDocField(
@@ -503,7 +555,7 @@ public class Permissions {
                 pattern = "ontologies:*:*"
         )
         public static final String PREFIX_AUTHORING = "ontologies:";
-        
+
     }
 
     @PermissionsDocGroup(desc = "Permissions for managing data quality jobs.")
@@ -524,6 +576,20 @@ public class Permissions {
             example="/com/metaphacts/security/aclhelp/proxy.html"
         )
         public static final String PREFIX = "proxy:";
+    }
+
+    @PermissionsDocGroup(desc = "Permissions for documentation related services.")
+    public static class DOCUMENTATION {
+
+        @PermissionsDocField(desc = "Permission for listing available OpenAPI specs.")
+        public static final String API_SPECS = "api:spec:list";
+    }
+
+    @PermissionsDocGroup(desc = "Permissions for accessing parts of the UI")
+    public static class UI {
+
+        @PermissionsDocField(desc = "Permission for toggling the knowledge graph bar on resources it is not shown on by default.")
+        public static final String KNOWLEDGE_GRAPH_BAR_TOGGLE = "ui:page:knowledge-graph-bar:toggle";
     }
 
 }

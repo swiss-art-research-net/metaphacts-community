@@ -1,0 +1,46 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "`ontodia` listens to events.",
+    "properties": {
+        "Ontodia.ClearAll": {
+            "description": "Event which should be triggered to delete all elements from the diagram.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Ontodia.FocusOnElement": {
+            "description": "Event which should be triggered to focus on an element.",
+            "properties": {
+                "iri": {
+                    "description": "IRI of an entity to be focused on.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "iri"
+            ],
+            "required": [
+                "iri"
+            ],
+            "type": "object"
+        },
+        "Ontodia.Save": {
+            "description": "Event which should be triggered to save the diagram.",
+            "properties": {
+            },
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "Ontodia.FocusOnElement",
+        "Ontodia.Save",
+        "Ontodia.ClearAll"
+    ],
+    "required": [
+        "Ontodia.ClearAll",
+        "Ontodia.FocusOnElement",
+        "Ontodia.Save"
+    ],
+    "type": "object"
+}
+

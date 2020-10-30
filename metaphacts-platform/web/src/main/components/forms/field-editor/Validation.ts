@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,14 +37,15 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as N3 from 'n3';
 import * as SparqlJs from 'sparqljs';
 
+import { Rdf, turtle } from 'platform/api/rdf';
 import { SparqlUtil, QueryVisitor, SparqlTypeGuards } from 'platform/api/sparql';
 
 import {
   Value, ValidatedTreeConfig, ValidatedSimpleTreeConfig, ValidatedFullTreeConfig, State,
+  OrderedWith,
 } from './FieldEditorState';
 
 export function collectStateErrors(state: State): Error[] {
@@ -37,6 +60,7 @@ export function collectStateErrors(state: State): Error[] {
     state.id, state.description, state.xsdDatatype,
     state.min, state.max, state.order, state.testSubject, state.selectPattern, state.insertPattern,
     state.deletePattern, state.askPattern, state.valueSetPattern, state.autosuggestionPattern,
+    state.orderedWith,
   ];
   for (const value of values) {
     value.map(collectError);
@@ -76,7 +100,13 @@ export function collectTreeConfigErrors(config: ValidatedTreeConfig): Error[] {
  * an error observable otherwise.
  */
 export function validateIri(v: string): Value {
-  if (!N3.Util.isIRI(v)) {
+  let term: Rdf.Node;
+  try {
+    term = turtle.deserialize.n3ValueToRdf(`<${v}>`);
+  } catch (err) {
+    /* ignore */
+  }
+  if (!(term && Rdf.isIri(term))) {
     return {
       value: v,
       error: new Error('Identifier must be a valid full IRI string.'),
@@ -119,8 +149,16 @@ export function validateMin(v: string): Value {
 /**
  * Returns a valid max observable value if value is >=1 or unbound, an error observable otherwise.
  */
-export function validateMax(v: string): Value {
+export function validateMax(v: string, orderedWith: OrderedWith | undefined): Value {
   const num = Number(v);
+  if (orderedWith === 'index-property' && Number.isInteger(num) && num <= 1) {
+    return {
+      value: v,
+      error: new Error(
+        'Max. Cardinality must be > 1 or unbound when a field has "Ordered With" property.'
+      ),
+    };
+  }
   if (v === 'unbound' || (Number.isInteger(num) && num >= 1)) {
     return {value: v};
   } else {
@@ -151,10 +189,23 @@ export function validateOrder(v: string): Value {
  * SPARQL INSERT query and fulfills all constraints e.g. containing ?value ?subject.
  * Returns an error observable otherwise.
  */
-export function validateInsert(query: string): Value {
+export function validateInsert(query: string, orderedWith: OrderedWith | undefined): Value {
   const error = `Insert pattern must be a valid SPARQL UPDATE INSERT query `
     + `and must have a $subject and $value variable.`;
-  return validateQuery({query, type: 'insertdelete', variables: ['subject', 'value'], error});
+  const value = validateQuery({
+    query,
+    type: 'insertdelete',
+    variables: ['subject', 'value'],
+    error,
+  });
+  if (orderedWith === 'index-property' && !value.error) {
+    return validateQuery({
+      query,
+      variables: ['index'],
+      error: 'Insert pattern must have a $index variable when a field has "Ordered With" property.',
+    });
+  }
+  return value;
 }
 
 /**
@@ -165,7 +216,12 @@ export function validateInsert(query: string): Value {
 export function validateDelete(query: string): Value {
   const error = `Delete pattern must be a valid SPARQL UPDATE DELETE query `
     + `and must have a $subject and $value variable.`;
-  return validateQuery({query, type: 'insertdelete', variables: ['subject', 'value'], error});
+  return validateQuery({
+    query,
+    type: 'insertdelete',
+    variables: ['subject', 'value'],
+    error,
+  });
 }
 
 /**
@@ -173,8 +229,8 @@ export function validateDelete(query: string): Value {
  * SPARQL SELECT query and fulfills all constraints e.g. containing ?value ?subject.
  * Returns an error observable otherwise.
  */
-export function validateSelect(query: string): Value {
-  return validateQuery({
+export function validateSelect(query: string, orderedWith: OrderedWith | undefined): Value {
+  const value = validateQuery({
     query,
     type: 'SELECT',
     variables: ['subject', 'value'],
@@ -183,6 +239,17 @@ export function validateSelect(query: string): Value {
       `must have a $subject and $value variable ` +
       `and must expose a ?value projection variable.`,
   });
+  if (orderedWith === 'index-property' && !value.error) {
+    return validateQuery({
+      query,
+      variables: ['index'],
+      projection: ['index'],
+      error: 'Select pattern must have a $index variable ' +
+        'and must expose a ?index projection variable ' +
+        'when a field has "Ordered With" property.'
+    })
+  }
+  return value;
 }
 
 /**
@@ -322,6 +389,16 @@ function validateQuery(params: ValidateQueryParams): Value {
   }
 }
 
+export function validateDatatype(value: string): Value {
+  if (value === 'http://www.w3.org/2001/XMLSchema#langString') {
+    return {
+      value,
+      error: new Error('"xsd:langString" is deprecated and will be removed in the future. Use "rdf:langLiteral" instead.'),
+    };
+  }
+  return {value};
+}
+
 export interface QueryInfo {
   queryType: string;
   allVariables: Set<string>;
@@ -343,8 +420,8 @@ export function collectQueryInfo(params: {
     allVariables = new Set<string>();
     queryType: string;
 
-    variableTerm(variable: SparqlJs.Term) {
-      const name = variable.substr(1);
+    variableTerm(variable: SparqlJs.VariableTerm) {
+      const name = variable.value;
       this.allVariables.add(name);
       return super.variableTerm(variable);
     }
@@ -370,7 +447,7 @@ export function collectQueryInfo(params: {
       && !SparqlTypeGuards.isStarProjection(query.variables)
     ) {
       projectionVariables = query.variables.map(
-        v => SparqlTypeGuards.isTerm(v) ? v.substr(1) : v.variable.substr(1)
+        v => (SparqlTypeGuards.isTerm(v) ? v : v.variable).value
       );
     }
   } else if (patterns) {

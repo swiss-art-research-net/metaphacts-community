@@ -28,17 +28,17 @@
       <AppenderRef ref="STDOUT"/>
     </Logger>
     
-    <!-- additional platform specific loggers that can be switched on individually (INFO) -->
+    <!-- additional platform specific loggers that can be switched on individually  -->
     <Logger name="platform.logging" level="OFF" additivity="false">
       <AppenderRef ref="LOGFILE"/>
       <AppenderRef ref="STDOUT"/>
     </Logger>
     <Logger name="platform.logging.ephedra.QueryPlanLogger" level="OFF" additivity="true" />
     
-    <!-- specifically exclude MpSPARQLProtocolSession as this spams the log
+    <!-- specifically exclude LookupServiceRegistry as this provides to much details to the log
          due to the same logger name being used by the RDF4J parent class
     -->
-    <Logger name="com.metaphacts.repository.sparql.MpSPARQLProtocolSession" level="warn" additivity="false" />
+    <Logger name="com.metaphacts.lookup.impl.LookupServiceRegistry" level="warn" additivity="false" />
 
     <Logger name="httpclient.wire" level="warn" additivity="false">
       <AppenderRef ref="LOGFILE"/>

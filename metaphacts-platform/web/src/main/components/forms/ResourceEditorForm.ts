@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,9 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
-  Props, ReactNode, Children, cloneElement, MouseEvent, createElement,
+  ClassAttributes, ReactNode, Children, cloneElement, MouseEvent, createElement,
 } from 'react';
 import * as Kefir from 'kefir';
 import { uniqBy } from 'lodash';
@@ -34,14 +55,19 @@ import {
   BrowserPersistence, isValidChild, componentHasType, universalChildren
 } from 'platform/components/utils';
 import { ErrorNotification } from 'platform/components/ui/notification';
+import { Spinner } from 'platform/components/ui/spinner';
 import { trigger } from 'platform/api/events';
 
-import { FieldDefinitionProp } from './FieldDefinition';
+import {
+  FieldDefinitionConfig, FieldDefinitionProp, FieldDependency, MultipleFieldConstraint,
+} from './FieldDefinition';
 import { DataState, FieldValue, FieldError, CompositeValue } from './FieldValues';
-import { readyToSubmit } from './FormModel';
+import { CompositeChange, readyToSubmit } from './FormModel';
+import { validateModelConstraints } from './FormValidation';
 import { SemanticForm, SemanticFormProps } from './SemanticForm';
 import { ValuePatch, computeValuePatch, applyValuePatch } from './Serialization';
 
+import { TriplestorePersistenceExtension } from './persistence/extensions';
 import {
   TriplestorePersistence, isTriplestorePersistence
 } from './persistence/TriplestorePersistence';
@@ -60,63 +86,121 @@ export type PostAction = (
   'none' | 'reload' | 'redirect' | 'event' | string | ((subject: Rdf.Iri) => void)
 );
 
-/**
- * @see getPostActionUrlQueryParams().
- */
-export interface ResourceEditorFormProps {
-  fields: ReadonlyArray<FieldDefinitionProp>;
+interface ResourceEditorFormConfigBase {
+  /**
+   * An array of multi-field constraints on field values.
+   */
+  fieldConstraints?: ReadonlyArray<MultipleFieldConstraint>;
+  /**
+   * Definitions for dependencies between field values.
+   */
+  fieldDependencies?: ReadonlyArray<FieldDependency>;
   /**
    * IRI of instance described by the form.
-   * This value will be passed down to all queries as $subject.
+   * This value will be passed down to all queries as `?subject`.
+   *
+   * If this attribute is set to a non-empty value then the form will operate
+   * in the "editing existing instance" mode instead of "creating a new instance".
    */
   subject?: Rdf.Iri | string;
   /**
    * URI template to customize subject generation.
    *
-   * The template allows to reference form values, e.g if there is field A that uniquely
-   * identify record, we can specify subject template as `http://collection.bm.com/records/{{A}}`,
-   * where A will be substituted with value of the field A.
+   * The template allows to reference form values, e.g if there is field ABC that uniquely
+   * identify record, we can specify subject template as `http://example.com/records/{{ABC}}`,
+   * where `{{ABC}}` will be substituted with value of the field ABC.
    *
    * `{{UUID}}` placeholder allows to substitute a random UUID.
+   *
+   * `new-subject-template` for composite-input can be a relative IRI.
+   * If it's set as '.' the IRI will be equal to the parent form IRI.
    */
   newSubjectTemplate?: string;
-  initializeModel?: (model: CompositeValue) => CompositeValue;
-  persistence?:
-    TriplestorePersistenceConfig['type'] |
-    TriplestorePersistenceConfig |
-    TriplestorePersistence;
-  children?: ReactNode;
-  /**
-   * Whether intermediate user inputs to the form should
-   * be persisted on client-side persistence layer (such as local storage, cookies etc).
-   * If undefined or false, the form will neither try persist change
-   * nor try to recover on initalization form states from the persistence layer.
-   */
-  browserPersistence?: boolean;
-  /**
-   * Optional identifier to be used to recover cached
-   * form states from the local storage. By default the current {@link ResourceContext} will
-   * be used as identifier. However, if several forms being embedded on a page,
-   * unique and static form idenfier need to be assigned manually.
-   */
-  formId?: string;
-  /**
-   * Optional post-action to be performed after saving the form.
-   * Can be either "none", "reload" or "redirect" (redirects to the subject of the form)
-   * or any IRI string to which the form will redirect.
-   */
-  postAction?: PostAction;
-  debug?: boolean;
   /**
    * Used as source id for emitted events.
    */
   id?: string;
   /**
-   * `true` if persisted component should be added to the default set of the current user
+   * Optional identifier to be used to recover cached
+   * form states from the local storage. By default the current resource (`[[this]]`) will
+   * be used as identifier. However, if several forms being embedded on a page,
+   * unique and static form identifier need to be assigned manually.
+   */
+  formId?: string;
+  /**
+   * Whether to save intermediate changes in browser's local storage.
+   *
+   * Use `form-id` attribute to assign an storage ID and
+   * `<semantic-form-recover-notification>` to display notification to user
+   * whether a form state was recovered from the local storage.
+   *
+   * If not set or `false` the form will neither try persist change
+   * nor try to recover on initialization form states from the local storage.
+   *
+   * @default false
+   */
+  browserPersistence?: boolean;
+  /**
+   * Optional post-action to be performed after saving the form.
+   * Can be either `'none'`, `'reload'` or `'redirect'` (redirects to the subject of the form)
+   * or any IRI string to which the form will redirect.
+   *
+   * @default 'reload'
+   */
+  postAction?: PostAction;
+  /**
+   * Whether the form should be validated after it is loaded.
+   * If set to false, the form is only validated on user input and before submit.
+   *
+   * @default false
+   */
+  validateAfterLoad?: boolean;
+  /**
+   * `true` if persisted component should be added to the default set of the current user.
    *
    * @default false
    */
   addToDefaultSet?: boolean;
+  /**
+   * Enables debugging mode which allows to inspect current form state.
+   *
+   * @default false
+   */
+  debug?: boolean;
+}
+
+export interface ResourceEditorFormConfig extends ResourceEditorFormConfigBase {
+  /**
+   * An array of fields to define data model of the form.
+   */
+  fields: ReadonlyArray<FieldDefinitionConfig>;
+  /**
+   * Persistence and operation mode to use for creating and modifying data.
+   * Both modes require dedicated ACL permissions.
+   *
+   * In `ldp` mode, all generated statements for a form subject are being stored into
+   * a dedicated LDP container and as such can easily be updated or even reverted and
+   * have provenance information attached.
+   * However, `ldp` requires to enable quads mode in the graph database.
+   *
+   * In the `sparql` mode no provenance can be captured.
+   *
+   * @default 'ldp'
+   */
+  persistence?: TriplestorePersistenceConfig['type'];
+}
+
+/**
+ * @see getPostActionUrlQueryParams().
+ */
+export interface ResourceEditorFormProps extends ResourceEditorFormConfigBase {
+  fields: ReadonlyArray<FieldDefinitionProp>;
+  persistence?:
+    TriplestorePersistenceConfig['type'] |
+    TriplestorePersistenceConfig |
+    TriplestorePersistence;
+  initializeModel?: (model: CompositeValue) => CompositeValue;
+  children?: JSX.Element | ReadonlyArray<JSX.Element>;
 }
 
 export type TriplestorePersistenceConfig =
@@ -125,6 +209,8 @@ export type TriplestorePersistenceConfig =
   | RawSparqlPersistenceConfig;
 
 interface State {
+  readonly initializingExtensions: boolean;
+  readonly persistence?: TriplestorePersistence;
   readonly model?: CompositeValue;
   readonly modelState?: DataState;
   readonly submitting?: boolean;
@@ -137,9 +223,9 @@ const BROWSER_PERSISTENCE = BrowserPersistence.adapter<ValuePatch>();
 /**
  * Form component to create and edit resources represented by input fields.
  *
- * The component supports submitting or reverting the form to the intial
+ * The component supports submitting or reverting the form to the initial
  * state by specifying <button> element as child with the following name attribute:
- *   'reset' - revert form content to intial state.
+ *   'reset' - revert form content to initial state.
  *   'submit' - persist form content as new or edited resource.
  *
  * This functionality can be used to backup form data,
@@ -190,29 +276,47 @@ const BROWSER_PERSISTENCE = BrowserPersistence.adapter<ValuePatch>();
  */
 export class ResourceEditorForm extends Component<ResourceEditorFormProps, State> {
   private initialState: State;
-  private persistence: TriplestorePersistence;
 
   private form: SemanticForm;
 
   private readonly cancellation = new Cancellation();
   private unmounted = false;
 
-  constructor(props: ResourceEditorFormProps, context) {
+  constructor(props: ResourceEditorFormProps, context: any) {
     super(props, context);
-
-    // TODO: add ability to use non-default repository to fetch and persist data
-    this.persistence = normalizePersistenceMode(this.props.persistence, 'default');
-
     this.state = {
+      initializingExtensions: true,
       model: undefined,
       submitting: false,
     };
   }
 
   componentDidMount() {
-    if (this.persistence instanceof SparqlPersistenceClass) {
-      this.validateFields();
+    if (TriplestorePersistenceExtension.isLoading()) {
+      TriplestorePersistenceExtension.loadAndUpdate(this, this.cancellation);
+    } else {
+      this.updatePersistence();
     }
+  }
+
+  componentDidUpdate(prevProps: ResourceEditorFormProps) {
+    if (!TriplestorePersistenceExtension.isLoading()) {
+      if (this.state.initializingExtensions || this.props.persistence !== prevProps.persistence) {
+        this.updatePersistence();
+      }
+    }
+  }
+
+  private updatePersistence() {
+    // TODO: add ability to use non-default repository to fetch and persist data
+    const persistence = normalizePersistenceMode(this.props.persistence, 'default');
+    if (persistence instanceof SparqlPersistenceClass) {
+      this.validateFields(persistence);
+    }
+    this.setState({
+      persistence,
+      initializingExtensions: false
+    });
   }
 
   componentWillUnmount() {
@@ -220,7 +324,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
     this.unmounted = true;
   }
 
-  private validateFields() {
+  private validateFields(persistence: TriplestorePersistence) {
     const invalidFields = [
       ...getInvalidFields(this.props.fields),
       ...this.validateNestedFormsFields(this.props.children),
@@ -249,33 +353,49 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
   }
 
   public render() {
+    if (this.state.initializingExtensions) {
+      return createElement(Spinner);
+    }
     if (this.state.error) {
       return createElement(ErrorNotification, {errorMessage: this.state.error});
     }
 
-    const formProps: SemanticFormProps & Props<SemanticForm> = {
-      ref: (form: SemanticForm) => { this.form = form; },
+    const formProps: SemanticFormProps & ClassAttributes<SemanticForm> = {
+      ref: this.onFormMount,
       fields: this.props.fields,
+      fieldConstraints: this.props.fieldConstraints,
+      fieldDependencies: this.props.fieldDependencies,
       model: this.state.model || FieldValue.fromLabeled({value: getSubject(this.props)}),
       newSubjectTemplate: this.props.newSubjectTemplate,
-      onLoaded: loadedModel => {
-        const initialized = this.props.initializeModel
-          ? this.props.initializeModel(loadedModel) : loadedModel;
-        this.initialState = {
-          model: initialized,
-          submitting: false,
-          recoveredFromStorage: false,
-        };
-        const {model, recoveredFromStorage} = this.applyCachedData(this.initialState.model);
-        this.setState({model, recoveredFromStorage, submitting: false});
-      },
       onChanged: model => {
         this.setState({model});
       },
-      onUpdated: modelState => {
+      onUpdateState: (modelState, loadedModel) => {
         this.setState({modelState});
         if (this.initialState && modelState === DataState.Ready) {
           this.saveToStorage(this.state.model);
+        }
+        if (loadedModel) {
+          const initialized = this.props.initializeModel
+            ? this.props.initializeModel(loadedModel) : loadedModel;
+          this.initialState = {
+            initializingExtensions: false,
+            model: initialized,
+            submitting: false,
+            recoveredFromStorage: false,
+          };
+          let {model, recoveredFromStorage} = this.applyCachedData(this.initialState.model);
+
+          if (this.props.validateAfterLoad) {
+            model = this.form.validate(model);
+            this.validateConstraints(model);
+          }
+
+          if (this.props.debug && recoveredFromStorage) {
+            const persistenceId = this.computePersistentId();
+            console.log(`Applying state from local storage with persistenceId:`, persistenceId);
+          }
+          this.setState({model, recoveredFromStorage, submitting: false});
         }
       },
       debug: this.props.debug,
@@ -283,8 +403,12 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
     return createElement(SemanticForm, formProps, this.mapChildren(this.props.children));
   }
 
+  private onFormMount = (form: SemanticForm | null) => {
+    this.form = form;
+  }
+
   private applyCachedData(
-    model: CompositeValue,
+    model: CompositeValue
   ): { model: CompositeValue; recoveredFromStorage: boolean } {
     const patch = this.loadFromStorage();
     const patched = applyValuePatch(model, patch);
@@ -293,6 +417,21 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
     } else {
       return {model: patched, recoveredFromStorage: true};
     }
+  }
+
+  private validateConstraints(model: CompositeValue) {
+    const modelChanges = validateModelConstraints(model);
+
+    this.cancellation.map(
+      modelChanges
+        // apply all changes to model
+        .scan((changeModel: CompositeValue, change: CompositeChange) => change(changeModel), model)
+        .last()
+        // set state to model that has all changes
+    ).observe({
+      value: (changedModel: CompositeValue) => this.setState({ model: changedModel }),
+      error: (error: any) => console.error('Error while validating model constraints', error),
+    });
   }
 
   private canSubmit() {
@@ -333,7 +472,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
               }),
               cloneElement(element, {
                 onClick: () => this.onLoadData(input)
-              })
+              }),
             ];
           }
           case 'save-state': return cloneElement(element, {
@@ -373,10 +512,18 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
     let state = this.initialState;
     if (this.props.initializeModel) {
       state = {
+        initializingExtensions: false,
         model: this.props.initializeModel(state.model),
         submitting: false,
         recoveredFromStorage: false,
       };
+    }
+    if (this.props.validateAfterLoad) {
+      state = {
+        ...state,
+        model: this.form.validate(state.model)
+      };
+      this.validateConstraints(state.model);
     }
 
     this.resetStorage();
@@ -393,7 +540,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
 
       const initialModel = this.initialState.model;
       this.form.finalize(this.state.model).flatMap(finalModel =>
-        this.persistence.persist(initialModel, finalModel)
+        this.state.persistence.persist(initialModel, finalModel)
           .map(() =>
             this.props.addToDefaultSet
               ? addToDefaultSet(finalModel.subject, this.props.id)
@@ -404,9 +551,12 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
         value: finalModel => {
           // only ignore setState() and always reset localStorage and perform post-action
           // event if the form is already unmounted
-          this.resetStorage();
           if (!this.unmounted) {
-            this.setState({model: finalModel, submitting: false});
+            this.setState({model: finalModel, submitting: false}, () => {
+              this.resetStorage();
+            });
+          } else {
+            this.resetStorage();
           }
           const isNewSubject =
             !this.initialState.model ||
@@ -450,14 +600,22 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
         value: (data) => {
           const loadedData: {formId: string, valuePatch: ValuePatch} = JSON.parse(data);
           if (loadedData.formId === this.props.formId) {
-            const patched = applyValuePatch(this.state.model, loadedData.valuePatch);
-            this.setState({model: patched as CompositeValue});
+            let patched = applyValuePatch(
+              this.state.model, loadedData.valuePatch
+            ) as CompositeValue;
+
+            if (this.props.validateAfterLoad) {
+              patched = this.form.validate(patched);
+              this.validateConstraints(patched);
+            }
+
+            this.setState({model: patched});
           }
         },
         error: (error) => {
           this.setState({error});
         }
-      })
+      });
     }
   }
 
@@ -589,8 +747,20 @@ function normalizePersistenceMode(
       return new LdpPersistence(configWithRepository);
     default: {
       const unknownConfig = configWithRepository as TriplestorePersistenceConfig;
-      console.warn(`Unknown from persistence type '${unknownConfig.type}', using LDP as fallback`);
-      return new LdpPersistence();
+
+      // try load from extension
+      const extensions = TriplestorePersistenceExtension.get();
+      const extension = extensions ? extensions[unknownConfig.type] : null;
+      if (extension) {
+        return extension(unknownConfig);
+      } else {
+        // if not use default
+        console.warn(
+          `Unknown from persistence type '${unknownConfig.type}', using LDP as fallback`
+        );
+        return new LdpPersistence();
+      }
+
     }
   }
 }
@@ -620,7 +790,7 @@ export function getPostActionUrlQueryParams(props: ResourceEditorFormProps) {
     if (Object.hasOwnProperty.call(props, key)) {
       if (key.indexOf(POST_ACTION_QUERY_PARAM_PREFIX) === 0) {
         const queryKey = key.substring(POST_ACTION_QUERY_PARAM_PREFIX.length).toLowerCase();
-        params[queryKey] = props[key];
+        params[queryKey] = (props as unknown as { [key: string]: string })[key];
       }
     }
   }

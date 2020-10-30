@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as Immutable from 'immutable';
 import * as SparqlJs from 'sparqljs';
@@ -429,7 +428,7 @@ function syncDecoratorsAndMatches(toolState: ToolState): Partial<ToolState> {
 function decorateMatchChildren(
   sourceNode: AlignmentNode, isAlignChild: (node: AlignmentNode) => boolean
 ) {
-  const mapNode = (child: AlignmentNode) => {
+  const mapNode = (child: AlignmentNode): AlignmentNode => {
     const decorateAlignChild = isAlignChild(child);
     const children = child.children.map(mapNode);
     return AlignmentNode.set(child, {decorateAlignChild, children});
@@ -492,14 +491,10 @@ class IriBinder extends QueryVisitor {
 
   private tryReplace(termValue: string) {
     const replacement = this.replacements[termValue];
-    if (replacement !== undefined) {
-      return turtle.serialize.nodeToN3(replacement) as SparqlJs.Term;
-    } else {
-      return undefined;
-    }
+    return replacement;
   }
 
-  iri(iri: SparqlJs.Term) {
-    return this.tryReplace(iri);
+  iri(iri: SparqlJs.IriTerm) {
+    return this.tryReplace(iri.value);
   }
 }

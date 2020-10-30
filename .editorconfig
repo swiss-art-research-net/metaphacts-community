@@ -12,3 +12,6 @@ spaces_around_brackets = inside
 
 [*.java]
 indent_size = 4
+
+[*.gradle]
+indent_size = 2

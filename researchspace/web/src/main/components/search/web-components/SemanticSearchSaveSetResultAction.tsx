@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -69,7 +68,7 @@ class SaveSetResultActionInner extends React.Component<InnerProps, {}> {
     return resultQuery.cata({
       Nothing: () => null,
       Just: (query) => SparqlClient.select(query).onValue(resultSet => {
-        const projectionVariable = query.variables[0] as string;
+        const projectionVariable = query.variables[0] as Rdf.Variable;
         if (resultQuery.isNothing) {
           return;
         }
@@ -77,9 +76,7 @@ class SaveSetResultActionInner extends React.Component<InnerProps, {}> {
           this.props.id,
           name,
           resultSet.results.bindings.map(
-            // in sparql.js projection variable is prefixed by ?,
-            // so we need to remove it to get binding name
-            bindingSet => bindingSet[projectionVariable.substring(1)] as Rdf.Iri
+            bindingSet => bindingSet[projectionVariable.value] as Rdf.Iri
           )
         ).onValue(() =>
           getOverlaySystem().hide(DIALOG_REF)

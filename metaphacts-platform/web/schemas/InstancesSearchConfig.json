@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Searches instances of a class.",
+    "properties": {
+        "id": {
+            "description": "Unique ID, should be used to receive commands from a specific class tree.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "id"
+    ],
+    "type": "object"
+}
+

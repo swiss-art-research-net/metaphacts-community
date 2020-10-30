@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.security;
 
 import java.util.Collection;
@@ -43,6 +64,7 @@ import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 
 import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.Configuration;
+import com.metaphacts.services.storage.api.PlatformStorage;
 
 import io.buji.pac4j.token.Pac4jToken;
 
@@ -68,8 +90,11 @@ public class MetaphactsSecurityManager extends DefaultWebSecurityManager {
 
     private final CacheManager cacheManager;
     
+    private final PlatformRoleManager platformRoleManager;
+
     @Inject
-    public MetaphactsSecurityManager(Collection<Realm> realms, Configuration config, CacheManager cacheManager) {
+    public MetaphactsSecurityManager(Collection<Realm> realms, Configuration config, CacheManager cacheManager,
+            PlatformStorage platformStorage) {
         super(realms);
 
         this.cacheManager = cacheManager;
@@ -100,9 +125,18 @@ public class MetaphactsSecurityManager extends DefaultWebSecurityManager {
 
         setSessionManager(sessionManager);
 
+        // configure the role permission resolver
+        platformRoleManager = new PlatformRoleManager(this, platformStorage, cacheManager);
+
         for(Realm r : realms){
             if(CachingRealm.class.isAssignableFrom(r.getClass())){
                 ((CachingRealm) r).setCacheManager(_cacheManager);
+            }
+            // attach one time role permission resolver to respective realms
+            if (r instanceof OneTimeRolePermissionResolverAware) {
+                OneTimeRolePermissionResolverAware resolverRealm = (OneTimeRolePermissionResolverAware) r;
+                resolverRealm.setOneTimeRolePermissionResolver(platformRoleManager);
+                resolverRealm.updateRoleDefinitions();
             }
         }
 
@@ -184,9 +218,17 @@ public class MetaphactsSecurityManager extends DefaultWebSecurityManager {
     }
 
     /**
-     * @return Instance of the {@link ShiroTextRealm}
+     * 
+     * @return the instance of the {@link PlatformRoleManager}
      */
-    public ShiroTextRealm getShiroTextRealm() throws IllegalStateException {
+    public PlatformRoleManager getPlatformRoleManager() {
+        return this.platformRoleManager;
+    }
+    
+    /**
+     * @return Instance of the {@link AccountManager}
+     */
+    public AccountManager getAccountManager() throws IllegalStateException {
         return shiroTextRealm;
     }
 
@@ -211,6 +253,14 @@ public class MetaphactsSecurityManager extends DefaultWebSecurityManager {
         this.passwordService = passwordService;
     }
 
+    /**
+     * Inject a {@link ShiroTextRealim} explicitly, can be used for testing
+     * 
+     * @param accountManager
+     */
+    /* package */ void setAccountManager(ShiroTextRealm accountManager) {
+        this.shiroTextRealm = accountManager;
+    }
 
     class MPCacheManager extends AbstractCacheManager {
 

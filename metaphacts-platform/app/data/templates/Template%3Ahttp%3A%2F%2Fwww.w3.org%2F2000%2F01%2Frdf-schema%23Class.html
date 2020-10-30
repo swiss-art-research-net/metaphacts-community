@@ -1,13 +1,3 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>        
-  [[> http://www.metaphacts.com/resource/assets/OntologyBreadcrumbs ]]
-  <li class="active">
-    <mp-label iri='[[this]]'></mp-label>
-  </li>
-</ol>
-
 <div class="page">
   <div class='page__header-navtabs'>
     [[> Platform:DefaultResourceHeader]]
@@ -118,5 +108,8 @@
       </semantic-table>
     </bs-tab>
     [[> "http://www.metaphacts.com/resource/LinksToOtherDatabases" eventKey='5']]
+    <bs-tab event-key="6" title="Diagrams">
+      [[> Assets:OntodiaDiagramsTable resource=(this)]]
+    </bs-tab>
   </bs-tabs>
 </div>

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.repository;
 
 import java.util.Collection;
@@ -29,6 +50,7 @@ import java.util.Set;
 import org.eclipse.rdf4j.repository.config.RepositoryConfig;
 import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
 import org.eclipse.rdf4j.repository.config.RepositoryImplConfig;
+import org.eclipse.rdf4j.repository.sail.config.ProxyRepositoryConfig;
 import org.eclipse.rdf4j.repository.sail.config.SailRepositoryConfig;
 import org.eclipse.rdf4j.sail.config.SailImplConfig;
 
@@ -75,17 +97,30 @@ public class RepositoryDependencySorter {
                             ((MpDelegatingImplConfig)sailImplConfig)
                                 .getDelegateRepositoryIDs());
                 }
+            } else if (implConfig instanceof ProxyRepositoryConfig) {
+                ProxyRepositoryConfig proxyConfig = (ProxyRepositoryConfig) implConfig;
+                delegateRepositoryIds.add(proxyConfig.getProxiedRepositoryID());
             }
+
+            // special handling for virtual proxy repository: if any repo depends on the
+            // proxyToDefault repo, it automatically depends on the default repo
+            if (delegateRepositoryIds.contains(RepositoryManager.PROXY_TO_DEFAULT_REPOSITORY_ID)) {
+                delegateRepositoryIds.add(RepositoryManager.DEFAULT_REPOSITORY_ID);
+                delegateRepositoryIds.remove(RepositoryManager.PROXY_TO_DEFAULT_REPOSITORY_ID);
+            }
+
             // default and/or assets repository configs not provided explicitly: 
             // we ignore it as they will be initialized first anyway
             if (!originals.containsKey(RepositoryManager.DEFAULT_REPOSITORY_ID)) {
                 delegateRepositoryIds.remove(RepositoryManager.DEFAULT_REPOSITORY_ID);
+                delegateRepositoryIds.remove(RepositoryManager.PROXY_TO_DEFAULT_REPOSITORY_ID);
             }
             
             if (!originals.containsKey(RepositoryManager.ASSET_REPOSITORY_ID)) {
                 delegateRepositoryIds.remove(RepositoryManager.ASSET_REPOSITORY_ID);
             }
             
+
             dependOn.putAll(entry.getKey(), delegateRepositoryIds);
             delegateRepositoryIds.stream().forEach(id -> dependOnMe.put(id, entry.getKey()));
         }

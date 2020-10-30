@@ -1,0 +1,57 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "id": {
+            "description": "Unique ID of the component.",
+            "type": "string"
+        },
+        "iiifServerUrl": {
+            "description": "IIIF server URL.",
+            "type": "string"
+        },
+        "imageIdPattern": {
+            "description": "Pattern to generate image ID from image IRI.",
+            "type": "string"
+        },
+        "imageOrRegion": {
+            "anyOf": [
+                {
+                    "additionalProperties": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array"
+                    },
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "description": "Image or region IRI.\nSupports specifying an Object where the key is subject IRI and the value is an Array of images IRIs, to display images of subjects side by side."
+        },
+        "repositories": {
+            "description": "Repositories to query the image.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "imageOrRegion",
+        "imageIdPattern",
+        "iiifServerUrl",
+        "repositories"
+    ],
+    "required": [
+        "iiifServerUrl",
+        "imageIdPattern",
+        "imageOrRegion"
+    ],
+    "type": "object"
+}
+

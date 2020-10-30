@@ -1,0 +1,107 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>UI Extensions</h1>
+
+    <bs-alert bs-style="info"> 
+      <strong>Info!</strong><br/>
+      <p>
+        Please note that the UI extensions mechanism and the available extension types are currently in beta and are subject to change in one of the next versions of the platform. 
+        This may involve non-backward compatible changes!
+      </p>
+    </bs-alert>
+
+   
+    <p>In addition to extensions for the backend (see <semantic-link iri='[[resolvePrefix "Help:AppExtensions"]]'>App Extensions</semantic-link>), the platform allows providing extensions to specific frontend components. These currently cover:</p>
+      
+    <ul>
+      <li>Table: Custom aggregations for grouped rows</li>
+      <li>Table: Custom column filter UI and behavior</li>
+    </ul>
+    
+    <h2>Setup</h2>
+    
+    <p>Component extensions need to be registered explicitly, which allows the platform to load them in the correct order and only if they are actually used. An extension consists of 3 parts:</p>
+    
+    <ul>
+      <li>web-extensions.json</li>
+      <li>Extension registration</li>
+      <li>Extension implementation</li>
+    </ul>
+    
+    <p>Starting with <code>web-extensions.json</code>: This is a file located in the root directory of an app (next to <code>plugin.properties</code>). Its <code>extensions</code> property refers to scripts inside the <code>assets</code> directory. Example:</p>
+    
+    <mp-code-block mode='application/json'>
+<![CDATA[{
+    "extensions": ["/assets/my-extensions.js"]
+}]]>
+  </mp-code-block>
+    
+    <p>The next part is the registration of extensions in <code>my-extensions.js</code>. This is required to allow on-demand loading, e.g. table extensions are only loaded if there is a table on the page.</p>
+    <p>A registration looks as follows:</p>
+    
+    <mp-code-block mode='text/javascript'>
+<![CDATA[window.metaphacts.tableAggregationsLoader(async original => {
+  const { default: aggregationExtension } = await import('./my-table-aggregate.js')
+  return aggregationExtension(original);
+});]]>
+  </mp-code-block>
+
+    <p>In this example, <code>tableAggregationsLoader</code> defines the extension type. It is a function with a callback that accepts the previous state and returns a <code>Promise</code> of the new state. As this file is always loaded, it should be kept minimal with the actual implementation loaded dynamically.</p>
+    
+    <p>How the implementation (<code>my-table-aggregate.js</code> in the example above) looks like depends on the type of extension, which are described next.
+    
+    <h3>Extension Types</h3>
+    
+    <h4>Table aggregations</h4>
+    
+    <p>When rows are grouped in the table, the aggregation defines what is shown for the grouped rows. This can be e.g. average, sum or the list of values. This extension type allows to add custom aggregation functions</p>
+    
+    <p>The structure of the underlying element of this extension looks like this:<p>
+    
+    <mp-code-block mode='text/typescript'>
+<![CDATA[{
+  [aggregationName: string]: {
+    aggregate: (values: any[]) => any
+  }
+}]]>
+  </mp-code-block>
+    
+    <p>An implementation of a <code>max</code> aggregation can look like this (provided the file is loaded as described above):</p>
+    
+    <mp-code-block mode='text/javascript'>
+<![CDATA[export default (original) => {
+  return {
+    ...original,
+    max: {
+      aggregate: (values) => {
+        const numbers = values.map(value => {
+          const rawValue = value?.value ?? value;
+          return rawValue   != null ? parseFloat(rawValue) : null;
+        }).filter(value => value != null);
+        return Math.max(...numbers);
+      }
+    }
+  }
+};]]>
+  </mp-code-block>
+    
+    <h4>Table column filters</h4>
+    
+    <p>The table has different column filter types for different kinds of data. E.g. single value selection and number range filters. This extension type allows adding custom UI and logic for filtering values.</p>
+    
+    <p>The structure of the underlying element of this extension looks like this:<p>
+    
+    <mp-code-block mode='text/typescript'>
+<![CDATA[{
+  [filterName: string]: {
+    filter: (rows: any[], columns: string[], filterValue: any) => any[];
+    component: string; // custom element tag
+  }
+}]]>
+  </mp-code-block>
+    
+    <p>Custom elements can retrieve and set the filter value using the <code>filterValue</code> property.    
+  </div>
+</div>

@@ -1,0 +1,44 @@
+.ontodia-paper-area {
+  flex: auto;
+  width: 0;
+  display: flex;
+  position: relative;
+  cursor: default;
+
+  &__area {
+    flex: auto;
+    overflow: hidden;
+  }
+
+  &__widgets {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  &__watermark {
+    background-size: cover;
+    width: 8%;
+    max-width: 130px;
+    min-width: 50px;
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+
+    &:hover {
+      opacity: 0.5;
+    }
+  }
+}
+
+.ontodia-paper {
+  position: relative;
+}
+
+.ontodia-exported-watermark {
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}

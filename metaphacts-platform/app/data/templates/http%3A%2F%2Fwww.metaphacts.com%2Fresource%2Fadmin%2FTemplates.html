@@ -10,7 +10,7 @@
 
 
 <div class="page">
-  <div class="page__header">
+  <div class="page__header-navtabs">
     <div class='page__header-thumbnail'>
       <h2><i class="fa fa-file-text-o fa-2x"></i></h2>
     </div>
@@ -18,15 +18,25 @@
       <h2>Templates & Application Pages</h2>
     </div>
   </div>
-  <div class='page__body'>  
-    
-    <bs-row>
-      <p>You can use the following form to navigate to any static page or template by providing its full IRI.</p>
-    </bs-row>
-    <mp-navigate-to-resource placeholder='Enter the full IRI to navigate to the static page or template, e.g http://help.metaphacts.com/resource/Start'></mp-navigate-to-resource>
-    
-    <hr>
-    
-    <mp-admin-page-manager> </mp-admin-page-manager>
-  </div>
+  
+  <bs-tabs id="tabs" class='page__body-navtabs' unmount-on-exit=true>
+    <bs-tab event-key='pages' title='Pages'>
+      <bs-row>
+        <p>You can use the following form to create a new page.</p>
+      </bs-row>
+      <mp-admin-create-new-page></mp-admin-create-new-page>
+
+      <hr>
+
+      <mp-admin-page-manager> </mp-admin-page-manager>
+    </bs-tab>
+    [[#if (hasPermission "api:page:pageViewConfig:write")]]
+    <bs-tab event-key='viewconfigs' title='View Configurations'>
+      <p>The view configurations define how resources and types are shown. This includes showing the knowledge graph bar, custom graph views and whether a page is editable.</p>
+      <p>Below are the view configurations for all existing apps. If the app storage is mutable, it can be edited.</p>
+      <mp-admin-page-view-config-editor></mp-admin-page-view-config-editor>
+    </bs-tab>
+    [[/if]]
+  </bs-tabs>
+  
 </div>

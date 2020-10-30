@@ -153,6 +153,9 @@
   </li>
   <li class="active">SPARQL</li>
 </ol>
+
+[[> "http://www.metaphacts.com/resource/OntodiaUserTemplates" ]]
+
 <div class='page'>
     <mp-sparql-query-editor-context>
         <mp-splitpane min-size=35 default-size=500 dock=true persist-resize=true snap-threshold=165 fixed-key='querycatalog-sidebar'>
@@ -348,7 +351,21 @@
           </div>
           <div>
             <semantic-context repository='default'>
-              <mp-sparql-query-editor query="SELECT * WHERE {?a ?b ?c} LIMIT 10"></mp-sparql-query-editor>
+              <mp-sparql-query-editor query="SELECT * WHERE {?a ?b ?c} LIMIT 10">
+                <ontodia id='ontodia'
+                  [[> "http://www.metaphacts.com/resource/assets/OntodiaGlobalSettings" ]]
+                  [[> OntodiaClassAndLinksCustomization ]]>
+                  <ontodia-data-providers>
+                    <ontodia-rdf-provider>
+                    </ontodia-rdf-provider>
+                  </ontodia-data-providers>
+                  [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:any")]]
+                    [[> "http://www.metaphacts.com/resource/OntodiaSimpleWorkspace" expectsSmallDiagram=true]]
+                  [[else]]
+                    [[> "http://www.metaphacts.com/resource/OntodiaSimpleWorkspace" readonly=true expectsSmallDiagram=true]]
+                  [[/if]]
+                </ontodia>
+              </mp-sparql-query-editor>
             </semantic-context>
           </div>
       </mp-splitpane>

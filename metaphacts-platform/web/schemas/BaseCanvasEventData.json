@@ -1,0 +1,192 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Rect": {
+            "properties": {
+                "height": {
+                    "type": "number"
+                },
+                "width": {
+                    "type": "number"
+                },
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "x",
+                "y",
+                "width",
+                "height"
+            ],
+            "required": [
+                "height",
+                "width",
+                "x",
+                "y"
+            ],
+            "type": "object"
+        },
+        "Vector": {
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "x",
+                "y"
+            ],
+            "required": [
+                "x",
+                "y"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "Canvas.CenterTo": {
+            "description": "Center to diagram.",
+            "properties": {
+                "position": {
+                    "$ref": "#/definitions/Vector"
+                }
+            },
+            "propertyOrder": [
+                "position"
+            ],
+            "required": [
+                "position"
+            ],
+            "type": "object"
+        },
+        "Canvas.ExportPng": {
+            "description": "Export diagram as PNG.",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "fileName"
+            ],
+            "required": [
+                "fileName"
+            ],
+            "type": "object"
+        },
+        "Canvas.ExportSvg": {
+            "description": "Export diagram as SVG.",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "fileName"
+            ],
+            "required": [
+                "fileName"
+            ],
+            "type": "object"
+        },
+        "Canvas.ForceLayout": {
+            "description": "Perform Force layout.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Canvas.Print": {
+            "description": "Print diagram;",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Canvas.SetZoomLevel": {
+            "description": "Set zoom level.",
+            "properties": {
+                "scale": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "scale"
+            ],
+            "required": [
+                "scale"
+            ],
+            "type": "object"
+        },
+        "Canvas.ZoomBy": {
+            "description": "Zoom by diagram.",
+            "properties": {
+                "value": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "value"
+            ],
+            "required": [
+                "value"
+            ],
+            "type": "object"
+        },
+        "Canvas.ZoomIn": {
+            "description": "Zoom in diagram.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Canvas.ZoomOut": {
+            "description": "Zoom out diagram.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Canvas.ZoomToFit": {
+            "description": "Zoom to fit diagram.",
+            "properties": {
+                "boundingBox": {
+                    "$ref": "#/definitions/Rect"
+                }
+            },
+            "propertyOrder": [
+                "boundingBox"
+            ],
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "Canvas.ForceLayout",
+        "Canvas.ZoomIn",
+        "Canvas.ZoomOut",
+        "Canvas.ZoomToFit",
+        "Canvas.CenterTo",
+        "Canvas.SetZoomLevel",
+        "Canvas.ZoomBy",
+        "Canvas.ExportPng",
+        "Canvas.ExportSvg",
+        "Canvas.Print"
+    ],
+    "required": [
+        "Canvas.CenterTo",
+        "Canvas.ExportPng",
+        "Canvas.ExportSvg",
+        "Canvas.ForceLayout",
+        "Canvas.Print",
+        "Canvas.SetZoomLevel",
+        "Canvas.ZoomBy",
+        "Canvas.ZoomIn",
+        "Canvas.ZoomOut",
+        "Canvas.ZoomToFit"
+    ],
+    "type": "object"
+}
+

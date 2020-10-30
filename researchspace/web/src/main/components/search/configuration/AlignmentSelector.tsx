@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +15,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
 
 import * as React from 'react';
-import ReactSelect, { Option, Options } from 'react-select';
+import ReactSelect, { Option, Options, OnChangeHandler } from 'react-select';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
 
@@ -39,7 +38,7 @@ interface State {
 }
 
 export class AlignmentSelector extends React.Component<AlignmentSelectorProps, State> {
-  constructor(props: AlignmentSelectorProps, context) {
+  constructor(props: AlignmentSelectorProps, context: any) {
     super(props, context);
     this.state = {
       alignments: this.alignmentsForDatasets(props.selectedDatasets),
@@ -66,12 +65,16 @@ export class AlignmentSelector extends React.Component<AlignmentSelectorProps, S
   }
 
   private alignmentSelector = () => {
+    const options = this.alignmentsToOptions(this.state.alignments);
+    if (options.length === 0) {
+      return null;
+    }
     return <ReactSelect
       disabled={this.props.disabled}
-      options={this.alignmentsToOptions(this.state.alignments)}
+      options={options}
       multi={true}
       value={this.props.selectedAlignment.map(this.alignmentToOption).getOrElse(null)}
-      onChange={this.selectAlignment}
+      onChange={this.selectAlignment as OnChangeHandler<any>}
       placeholder='Select Alignment'
     />;
   }

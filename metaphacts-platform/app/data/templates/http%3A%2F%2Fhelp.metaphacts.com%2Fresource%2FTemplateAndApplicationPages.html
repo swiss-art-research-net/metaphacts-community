@@ -1,12 +1,4 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" data-uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li class="active">Template and Application Pages</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
@@ -15,11 +7,11 @@
     <h2>Template Pages</h2>
     <p>
       In the world of knowledge graphs it is important to distinguish between instance data and model data. 
-      Instances such as, for example, a representation of a particular person can be typed according to an ontology (model) as, for example, being of type Agent.
+      Instances such as, for example, a representation of a particular person can be typed according to an ontology (model) as, for example, <b>Agent</b>.
     </p>
     <p>
-      In principle, it is possible to create a page for every instance of type Agent within the knowledge graph manually. 
-      However, <b>templates</b> can be used to define generic views which are being automatically applied to entire sets of instance, for example, to all instances of type Agent.
+      In principle, it is possible to create a page for every instance of type <b>Agent</b> within the knowledge graph manually. 
+      However, <b>templates</b> can be used to define generic views which are being automatically applied to entire sets of instance, for example, to all instances of type <b>Agent</b>.
     </p>
     <p>
       The <code>templateIncludeQuery</code> in the UI Configuration can be used to refine the logic according to which candidate templates are being computed 
@@ -28,24 +20,37 @@
     </p>
     <p>
       To create a new or modify an existing template, just follow the link within the top of the template editor when editing an instance page 
-      (i.e. when switching to the edit mode on an instance page, applicable templates are being listed in the top of the editor).
+      (i.e. when switching to the edit mode on an instance page, applicable templates are being listed at the top of the editor).</br>
+      <img src="/images/help/templating/template-used.png" width=850px>
     </p>
 
     <h2>Application Pages</h2>
     <p>
       Application pages are those pages which make up your application, but are not directly associated with any entity in the knowledge graph.
-      Let's say, for example, an dashboard page may provide an aggregated view and actions over some data in the domain, 
-      but will not be rendered according to some automatically inherited templates but rather using static markup (which still might be parameterized dynamically).
+      Let's say, for example, a dashboard page may provide an aggregated view and actions over some data in the domain, 
+      but will not be rendered according to some automatically inherited templates - rather using static markup (which still might be parameterized dynamically).
     </p>
 
     <h2>Difference: Template vs. Application Pages</h2>
     <p>
       The fundamental difference between template and pure application pages is their <strong>context</strong>. 
-      In particular, when using the <semantic-link title="Backend Templating" uri="http://help.metaphacts.com/resource/BackendTemplating">Back-end Templating Syntax and Helper Functions</semantic-link>      &nbsp; it is fundamental to understand the meaning of the special <code>??</code> variable within SPARQL queries and <code>[[{{documentation}}]][[this]][[{{/documentation}}]]</code> within the template pages, which will be set to the the IRI of the current RDF resource.
+      In particular, when using the <semantic-link title="Backend Templating" uri="http://help.metaphacts.com/resource/BackendTemplating">Back-end Templating Syntax and Helper Functions</semantic-link>, it is fundamental to understand the meaning of the special <code>??</code> variable within SPARQL queries and <code>&lbrack;&lbrack;this]]</code> within the template pages, which will be set to the IRI of the current RDF resource.
     </p>
     <p>
       On application pages, however, the native context is useless (since application pages do not have corresponding RDF entity in the knowledge graph) and - if at all - 
-      dynamic context parameters need to be passed externally, for example, using parameterized includes or url parameters.
+      dynamic context parameters need to be passed externally, for example, using parameterized includes or URL parameters. Please refer to sections <b>Includes</b> and <b>urlParam Helper</b> of <semantic-link title="Backend Templating" uri="http://help.metaphacts.com/resource/BackendTemplating">Back-end Templating Syntax and Helper Functions</semantic-link> for more details. 
     </p>
+
+
+    
+    <h2>Best practices for application developers</h2>
+    
+    <ul>
+      <li>Before starting to build the application, decide on how you will present a resource page to a user: <b>end-user-centric way </b> (i.e. the appearance is entirely defined inside the application pages) or <b>expert-oriented way </b> (using the out-of-box knowledge graph bar). Of course, it is always possible to incrementally develop your application, starting from out-of-box definitions and gradually moving to polished end-user templates.</li>
+      <li>Define how you will be implementing domain- and application-specific breadcrumbs and whether these should be used at all.</li>
+      <li>Define application-specific pages and templates for concepts or resource types.</li>
+      <li>If required by the application, fine-tune the <semantic-link title="PageRenderer" uri='[[resolvePrefix "Help:PageRenderer"]]'>PageRenderer</semantic-link> configuration.</li>
+    </ul>
+         
   </div>
-</div>
+</div>	

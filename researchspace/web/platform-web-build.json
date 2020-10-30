@@ -24,6 +24,10 @@
     "TextAnnotationWorkspaceProps",
     "DashboardViewConfig",
     "DashboardLinkedViewConfig",
-    "ImageGraphAuthoringConfig"
+    "ImageGraphAuthoringConfig",
+    "ImageRegionEditorConfig",
+    "ImageThumbnailConfig",
+    "OverlayComparisonConfig",
+    "SideBySideComparisonConfig"
   ]
 }

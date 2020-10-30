@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,27 +37,26 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+import * as Rdf from '../core/Rdf';
 
-import RDF = require('../core/Rdf');
+namespace dc {
+  export const _NAMESPACE = 'http://purl.org/dc/elements/1.1/';
 
-module dc {
-  export var _NAMESPACE = 'http://purl.org/dc/elements/1.1/';
-
-  export var contributor = RDF.iri(_NAMESPACE + 'contributor');
-  export var coverage = RDF.iri(_NAMESPACE + 'coverage');
-  export var creator = RDF.iri(_NAMESPACE + 'creator');
-  export var date = RDF.iri(_NAMESPACE + 'date');
-  export var description = RDF.iri(_NAMESPACE + 'description');
-  export var format = RDF.iri(_NAMESPACE + 'format');
-  export var identifier = RDF.iri(_NAMESPACE + 'identifier');
-  export var language = RDF.iri(_NAMESPACE + 'language');
-  export var publisher = RDF.iri(_NAMESPACE + 'publisher');
-  export var relation = RDF.iri(_NAMESPACE + 'relation');
-  export var rights = RDF.iri(_NAMESPACE + 'rights');
-  export var source = RDF.iri(_NAMESPACE + 'source');
-  export var subject = RDF.iri(_NAMESPACE + 'subject');
-  export var title = RDF.iri(_NAMESPACE + 'title');
-  export var type = RDF.iri(_NAMESPACE + 'type');
+  export const contributor = Rdf.iri(_NAMESPACE + 'contributor');
+  export const coverage = Rdf.iri(_NAMESPACE + 'coverage');
+  export const creator = Rdf.iri(_NAMESPACE + 'creator');
+  export const date = Rdf.iri(_NAMESPACE + 'date');
+  export const description = Rdf.iri(_NAMESPACE + 'description');
+  export const format = Rdf.iri(_NAMESPACE + 'format');
+  export const identifier = Rdf.iri(_NAMESPACE + 'identifier');
+  export const language = Rdf.iri(_NAMESPACE + 'language');
+  export const publisher = Rdf.iri(_NAMESPACE + 'publisher');
+  export const relation = Rdf.iri(_NAMESPACE + 'relation');
+  export const rights = Rdf.iri(_NAMESPACE + 'rights');
+  export const source = Rdf.iri(_NAMESPACE + 'source');
+  export const subject = Rdf.iri(_NAMESPACE + 'subject');
+  export const title = Rdf.iri(_NAMESPACE + 'title');
+  export const type = Rdf.iri(_NAMESPACE + 'type');
 }
 
 export default dc;

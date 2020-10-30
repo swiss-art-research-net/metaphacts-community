@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,17 +37,13 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.config;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
@@ -34,11 +52,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.shiro.authz.UnauthorizedException;
 
 import com.google.inject.Inject;
+import com.metaphacts.config.groups.CacheConfiguration;
 import com.metaphacts.config.groups.ConfigurationGroup;
 import com.metaphacts.config.groups.ConfigurationGroupBase;
 import com.metaphacts.config.groups.DataQualityConfiguration;
 import com.metaphacts.config.groups.EnvironmentConfiguration;
 import com.metaphacts.config.groups.GlobalConfiguration;
+import com.metaphacts.config.groups.LookupConfiguration;
 import com.metaphacts.config.groups.UIConfiguration;
 
 /**
@@ -64,6 +84,12 @@ public class Configuration {
     private static final String SYSTEM_PROPERTY_RUNTIME_CONFIG_BASE = "com.metaphacts.config.baselocation";
 
     /**
+     * The key of the system property to look-up {@link #getPlatformStorageId()}
+     * property.
+     */
+    public static final String SYSTEM_PROPERTY_PLATFORM_STORAGE_ID = "platformStorage";
+
+    /**
      * Default value for {@link #getConfigBasePath()} property.
      */
     private final static String DEFAULT_CONFIG_BASE_LOCATION = "config/";
@@ -73,8 +99,12 @@ public class Configuration {
     private final EnvironmentConfiguration environmentConfig;
 
     private final UIConfiguration uiConfig;
-    
+
     private final DataQualityConfiguration dataQualityConfig;
+
+    private final CacheConfiguration cacheConfig;
+
+    private final LookupConfiguration lookupConfiguration;
 
     /**
      * A registry of configuration groups administered by the config. The
@@ -87,23 +117,33 @@ public class Configuration {
         GlobalConfiguration globalConfig,
         UIConfiguration uiConfig,
         EnvironmentConfiguration environmentConfig,
-        DataQualityConfiguration dataQualityConfig
+        DataQualityConfiguration dataQualityConfig,
+        CacheConfiguration cacheConfig,
+        LookupConfiguration lookupConfiguration
     ) {
         this.globalConfig = globalConfig;
         this.uiConfig = uiConfig;
         this.environmentConfig = environmentConfig;
         this.dataQualityConfig = dataQualityConfig;
+        this.cacheConfig = cacheConfig;
+        this.lookupConfiguration = lookupConfiguration;
 
         registry = new HashMap<>();
         registry.put(globalConfig.getId(), globalConfig);
         registry.put(uiConfig.getId(), uiConfig);
         registry.put(environmentConfig.getId(), environmentConfig);
         registry.put(dataQualityConfig.getId(), dataQualityConfig);
+        registry.put(cacheConfig.getId(), cacheConfig);
+        registry.put(lookupConfiguration.getId(), lookupConfiguration);
     }
 
     public static String getRuntimeDirectory() {
         String value = System.getProperty(SYSTEM_PROPERTY_RUNTIME_DIRECTORY);
-        return StringUtils.isEmpty(value) ? "./" : value;
+        if (StringUtils.isEmpty(value)) {
+            logger.warn("using current directory as runtime directory as system property " + SYSTEM_PROPERTY_RUNTIME_DIRECTORY + " is not set!");
+            return "./";
+        }
+        return value;
     }
 
     /**
@@ -125,6 +165,13 @@ public class Configuration {
     public static String getAppsDirectory() {
         String value = System.getProperty("appsDirectory");
         return StringUtils.isEmpty(value) ? (getRuntimeDirectory() + "/apps/") : value;
+    }
+
+    /**
+     * @return identifier of the main platform storage
+     */
+    public static String getPlatformStorageId() {
+        return System.getProperty(SYSTEM_PROPERTY_PLATFORM_STORAGE_ID, "metaphacts-platform");
     }
 
     public static boolean arePluginBasedAppsMutable() {
@@ -152,9 +199,23 @@ public class Configuration {
     public UIConfiguration getUiConfig() {
         return uiConfig;
     }
-    
+
     public DataQualityConfiguration getDataQualityConfig() {
         return dataQualityConfig;
+    }
+
+    /**
+     * @return the cache configuration group
+     */
+    public CacheConfiguration getCacheConfig() {
+        return cacheConfig;
+    }
+
+    /**
+     * @return the lookup service configuration group
+     */
+    public LookupConfiguration getLookupConfig() {
+        return lookupConfiguration;
     }
 
     /**
@@ -257,6 +318,25 @@ public class Configuration {
 
     /**
      * <p>
+     * Returns a description of the group defined in the group's configuration
+     * class.
+     * </p>
+     *
+     * @param configGroup configGroup config group for which the lookup is performed
+     * @throws UnknownConfigurationException
+     */
+    public String getDescriptionForGroup(String configGroup) throws UnknownConfigurationException {
+        ConfigurationGroup group = registry.get(configGroup);
+
+        if (group == null) {
+            throw new UnknownConfigurationException();
+        }
+
+        return group.getDescription();
+    }
+
+    /**
+     * <p>
      * Tries to lookup the specified <strong>configIdInGroup</strong> in the
      * specified <strong>configGroup</strong>.
      * </p>
@@ -300,7 +380,7 @@ public class Configuration {
      *             If the config group or parameter in the group does not exit
      *             or there are any unexpected exceptions while writing the
      *             property.
-     * @throws ConfigurationException 
+     * @throws ConfigurationException
      */
     public void setProperty(
         String configGroup,
@@ -332,13 +412,6 @@ public class Configuration {
                             + "Changing the parameter would have no effect and is forbidden.");
         }
 
-        // This is just a workaround to prevent writing to environment config
-        // -> we may want to protect the environment config via annotations at
-        // some some point
-        if (group instanceof EnvironmentConfiguration) {
-            throw new UnauthorizedException(
-                    "Not allowed to change environment configuration at runtime.");
-        }
 
         // invoke method and return result
         try {
@@ -362,99 +435,5 @@ public class Configuration {
 
     /************************ END REST CALL ENTRY POINTS ***********************/
 
-    /**
-     * Returns the parameter name identified by the getter method.
-     */
-    public static String getParamNameForGetter(Method method) {
-
-        if (method == null) {
-            return null;
-        }
-
-        final String name = method.getName();
-
-        if (name.startsWith("get")) {
-
-            final String paramName = name.substring(3);
-            return Character.toLowerCase(paramName.charAt(0))
-                    + paramName.substring(1);
-
-        } else if (name.startsWith("is")) {
-
-            final String paramName = name.substring(2);
-            return Character.toLowerCase(paramName.charAt(0))
-                    + paramName.substring(1);
-
-        } else {
-            logger.warn("Called getParamNameForGetter() for method not being a getter: "
-                    + name);
-            return null;
-        }
-
-    }
-
-    /**
-     * Note: we can's use the {@link PropertyDescriptor} here, since our classes
-     * only have a setter. That's why we have custom logics to resolve getters.
-     * We give priority to get over is prefixes (which is fine as long as
-     * there's only one present).
-     *
-     * @return the getter name for a given
-     */
-    public static Method getGetterMethod(String paramName, Class<?> clazz) {
-
-        if (StringUtils.isEmpty(paramName)) {
-            return null;
-        }
-
-        final String capitalizedParamName = Character.toUpperCase(paramName
-                .charAt(0)) + paramName.substring(1);
-
-        // try "get" prefix
-        Method getter = null;
-        try {
-
-            getter = clazz.getMethod("get" + capitalizedParamName);
-
-        } catch (NoSuchMethodException e) {
-
-            // ignore
-
-        } catch (SecurityException e) {
-
-            logger.warn("Security exception accessing getter for "
-                    + capitalizedParamName + ": " + e.getMessage());
-
-        }
-
-        if (getter == null) { // fallback: try "is" prefix
-
-            try {
-
-                getter = clazz.getMethod("is" + capitalizedParamName);
-
-            } catch (NoSuchMethodException e) {
-
-                // ignore
-
-            } catch (SecurityException e) {
-
-                logger.warn("Security exception accessing getter for "
-                        + capitalizedParamName + ": " + e.getMessage());
-
-            }
-
-        }
-
-        if (getter == null) {
-            return null; // not found
-        }
-
-        // finally check that the method has a non-void return type
-        final Class<?> propertyType = getter.getReturnType();
-
-        return propertyType == Void.TYPE ? null : getter;
-
-    }
 
 }

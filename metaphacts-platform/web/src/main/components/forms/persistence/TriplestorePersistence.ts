@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,19 +37,19 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 
 import { Rdf } from 'platform/api/rdf';
+import { xsd } from 'platform/api/rdf/vocabularies';
 
 import { FieldDefinition } from '../FieldDefinition';
-import { FieldValue, CompositeValue, EmptyValue } from '../FieldValues';
+import { FieldValue, CompositeValue, EmptyValue, FieldState } from '../FieldValues';
 
 export interface TriplestorePersistence {
   persist(
     initialModel: CompositeValue | EmptyValue,
-    currentModel: CompositeValue | EmptyValue,
+    currentModel: CompositeValue | EmptyValue
   ): Kefir.Property<void>;
 }
 
@@ -39,12 +61,12 @@ export interface ModelDiffEntry {
   subject: Rdf.Iri;
   definition: FieldDefinition;
   deleted: ReadonlyArray<Rdf.Node>;
-  inserted: ReadonlyArray<Rdf.Node>;
+  inserted: ReadonlyArray<{ value: Rdf.Node; index?: Rdf.Literal }>;
 }
 
 export function computeModelDiff(
   base: CompositeValue | EmptyValue,
-  changed: CompositeValue | EmptyValue,
+  changed: CompositeValue | EmptyValue
 ): ModelDiffEntry[] {
   const result: ModelDiffEntry[] = [];
   // replace placeholder models with an empty ones to correctly handle default values
@@ -59,12 +81,10 @@ function isPlaceholderComposite(value: FieldValue): value is CompositeValue {
   return FieldValue.isComposite(value) && CompositeValue.isPlaceholder(value.subject);
 }
 
-const EMPTY_VALUES = Immutable.List<FieldValue>();
-
 function collectCompositeDiff(
   base: CompositeValue | EmptyValue,
   changed: CompositeValue | EmptyValue,
-  result: ModelDiffEntry[],
+  result: ModelDiffEntry[]
 ) {
   if (FieldValue.isComposite(base)) {
     if (CompositeValue.isPlaceholder(base.subject)) {
@@ -84,7 +104,9 @@ function collectCompositeDiff(
     changed.fields.forEach((state, fieldId) => {
       if (FieldValue.isEmpty(base) || !base.fields.has(fieldId)) {
         const definition = changed.definitions.get(fieldId);
-        collectFieldDiff(changed.subject, definition, EMPTY_VALUES, state.values, result);
+        collectFieldDiff(
+          changed.subject, definition, FieldState.empty.values, state.values, result
+        );
       }
     });
   }
@@ -93,26 +115,40 @@ function collectCompositeDiff(
 function getFieldValues(
   composite: CompositeValue | EmptyValue,
   fieldId: string
-): Immutable.List<FieldValue> {
+): ReadonlyArray<FieldValue> {
   if (FieldValue.isEmpty(composite)) {
-    return EMPTY_VALUES;
+    return FieldState.empty.values;
   }
-  const state = composite.fields.get(fieldId);
-  return state ? state.values : EMPTY_VALUES;
+  const state = composite.fields.get(fieldId) || FieldState.empty;
+  return state.values;
 }
 
 function collectFieldDiff(
   subject: Rdf.Iri,
   definition: FieldDefinition,
-  base: Immutable.List<FieldValue>,
-  changed: Immutable.List<FieldValue>,
-  result: ModelDiffEntry[],
+  base: ReadonlyArray<FieldValue>,
+  changed: ReadonlyArray<FieldValue>,
+  result: ModelDiffEntry[]
 ) {
-  const baseSet = base.map(FieldValue.asRdfNode).filter(node => node !== undefined).toSet();
-  const changedSet = changed.map(FieldValue.asRdfNode).filter(node => node !== undefined).toSet();
+  const baseSet = Immutable.OrderedSet(
+    base.map(FieldValue.asRdfNode).filter(node => node !== undefined)
+  );
+  const changedSet = Immutable.OrderedSet(
+    changed.map(FieldValue.asRdfNode).filter(node => node !== undefined)
+  );
 
-  const deleted = baseSet.subtract(changedSet).toArray();
-  const inserted = changedSet.subtract(baseSet).toArray();
+  let deleted: Array<Rdf.Node> = [];
+  let inserted: Array<{ value: Rdf.Node; index?: Rdf.Literal }> = [];
+  if (definition.orderedWith && !Immutable.is(baseSet, changedSet)) {
+    deleted = baseSet.toArray();
+    inserted = changedSet.toArray().map((value, index) => ({
+      value,
+      index: Rdf.literal(index.toString(), xsd.integer),
+    }));
+  } else {
+    deleted = baseSet.subtract(changedSet).toArray();
+    inserted = changedSet.subtract(baseSet).toArray().map(value => ({value}));
+  }
 
   if (deleted.length > 0 || inserted.length > 0) {
     result.push({subject, definition, deleted, inserted});
@@ -132,12 +168,12 @@ function collectFieldDiff(
   });
 }
 
-function pickComposites(values: Immutable.List<FieldValue>): Map<string, CompositeValue> {
+function pickComposites(values: ReadonlyArray<FieldValue>): Map<string, CompositeValue> {
   const result = new Map<string, CompositeValue>();
-  values.forEach(value => {
+  for (const value of values) {
     if (FieldValue.isComposite(value) && !CompositeValue.isPlaceholder(value.subject)) {
       result.set(value.subject.value, value);
     }
-  });
+  }
   return result;
 }

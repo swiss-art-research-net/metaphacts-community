@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Alexey Morozov
@@ -27,7 +26,7 @@ import { findDOMNode } from 'react-dom';
 import * as classnames from 'classnames';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
-import ReactSelect from 'react-select';
+import ReactSelect, { OnChangeHandler, OptionRendererHandler } from 'react-select';
 
 import { TemplateItem } from 'platform/components/ui/template';
 
@@ -55,7 +54,7 @@ class StackSelector extends Component<Props, StackSelectorState> {
     [key: string]: HTMLElement
   };
 
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       focusedOption: Maybe.Nothing<Resource>(),
@@ -154,9 +153,12 @@ class DropdownSelector extends Component<Props, {}> {
         openOnFocus={true}
         value={null}
         options={resources.toArray()}
-        optionRenderer={(resource: Resource) => renderResource(
-          tupleTemplate, resource, actions.selectResource, itemClassName)}
-        onChange={(resource: Resource) => actions.selectResource(resource)}
+        optionRenderer={((resource: Resource) => renderResource(
+          tupleTemplate, resource, actions.selectResource, itemClassName)
+        ) as OptionRendererHandler<Resource>}
+        onChange={
+          ((resource: Resource) => actions.selectResource(resource)) as OnChangeHandler<Resource>
+        }
       />
     );
   }

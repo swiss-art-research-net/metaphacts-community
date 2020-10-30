@@ -15,6 +15,7 @@ bin/
 
 # Gradle
 .gradle
+gradle.properties
 
 # IntelliJ IDEA
 .idea/
@@ -34,6 +35,7 @@ node_modules/
 /project/webpack/.cache-loader
 /project/webpack/tests_out/
 /project/webpack/*.log.*
+
 
 # local development build config
 /default-root-build.json

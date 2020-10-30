@@ -1,49 +1,19 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
-        "DatasetAlignmentConfig": {
-            "properties": {
-                "iri": {
-                    "description": "Alignment IRI, typically some skos:scheme.",
-                    "type": "string"
-                },
-                "isDefault": {
-                    "description": "True if alignment should be selected by default.",
-                    "type": "boolean"
-                },
-                "label": {
-                    "description": "Alignment label.",
-                    "type": "string"
-                }
-            },
-            "propertyOrder": [
-                "iri",
-                "label",
-                "isDefault"
-            ],
-            "required": [
-                "iri",
-                "label"
-            ],
-            "type": "object"
-        },
         "DatasetsConfig": {
             "properties": {
                 "datasetPattern": {
                     "default": "`\nGRAPH ?__dataset__ {\n?subject a ?t .\n}\n\n`",
-                    "description": "Query pattern that is used to discriminate items between datasets in non-federated mode.\nThis pattern will be applied to tree selector queries, resource selector queries,\nfacet queries and final result query. At the runtime `__dataset__`\nwill be bound to dataset selected by the user.",
+                    "description": "The query pattern that will be injected into the search queries to restrict the query patterns to a particular dataset. At the runtime `__dataset__`\nwill be bound to dataset selected by the user.",
                     "type": "string"
                 },
                 "datasets": {
-                    "description": "The list of datasets which should be queried.\nIf not provided, only the search will only affect the default repository.",
+                    "description": "The list of datasets which should be queried.",
                     "items": {
                         "$ref": "#/definitions/SearchDatasetConfig"
                     },
                     "type": "array"
-                },
-                "federated": {
-                    "description": "If true, denotes a federated scenario, in which the search query must be sent\nto multiple repositories (described in the datasets property).",
-                    "type": "boolean"
                 }
             },
             "propertyOrder": [
@@ -202,7 +172,7 @@
             ],
             "type": "object"
         },
-        "Literal": {
+        "Literal_2": {
             "properties": {
                 "kind": {
                     "enum": [
@@ -277,7 +247,7 @@
                             "$ref": "#/definitions/Set"
                         },
                         {
-                            "$ref": "#/definitions/Literal"
+                            "$ref": "#/definitions/Literal_2"
                         },
                         {
                             "$ref": "#/definitions/NumericRange"
@@ -343,7 +313,7 @@
                     "type": "string"
                 },
                 "relationsQuery": {
-                    "description": "SPARQL Select query returning the list of relations available for search,\ngrouped by corresponding search profile.\n\nExpected projection variables:\n   relation- relation IRI\n   label - relation label\n   description - detailed description of the relation\n   domain - relation domain IRI\n   range - relation range IRI",
+                    "description": "SPARQL Select query returning the list of relations available for search,\ngrouped by corresponding search profile.\n\nExpected projection variables:\n   relation- relation IRI\n   label - relation label\n   description - detailed description of the relation\n   hasDomain - relation domain IRI\n   hasRange - relation range IRI",
                     "type": "string"
                 }
             },
@@ -384,15 +354,8 @@
         },
         "SearchDatasetConfig": {
             "properties": {
-                "alignments": {
-                    "description": "Optional list of alignments with other datasets.",
-                    "items": {
-                        "$ref": "#/definitions/DatasetAlignmentConfig"
-                    },
-                    "type": "array"
-                },
                 "iri": {
-                    "description": "Service IRI of the dataset's SPARQL endpoint.\nIf not present, denotes the default repository (having the ID \"default\" in the RepositoryManager).",
+                    "description": "The IRI that will be injected as `__dataset__` variable into the datasetPattern.",
                     "type": "string"
                 },
                 "isDefault": {
@@ -400,12 +363,8 @@
                     "type": "boolean"
                 },
                 "label": {
-                    "description": "Textual label denoting the repository.",
+                    "description": "Textual label denoting the dataset.",
                     "type": "string"
-                },
-                "silent": {
-                    "description": "If true, then error from the repository in fedarate query will be ignored (using SILENT from SPARQL 1.1 standard).",
-                    "type": "boolean"
                 }
             },
             "propertyOrder": [
@@ -468,7 +427,7 @@
                 },
                 "tokenizeLuceneQuery": {
                     "default": true,
-                    "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`. \nE.g. the search for `Hello World` becomes `Hello* World*`.",
+                    "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`.\nE.g. the search for `Hello World` becomes `Hello* World*`.",
                     "type": "boolean"
                 }
             },
@@ -493,10 +452,14 @@
         },
         "datasetsConfig": {
             "$ref": "#/definitions/DatasetsConfig",
-            "description": "Multi-datasets search configuration.\nIf not provided, only the search will only affect the default repository."
+            "description": "Multi-datasets search configuration."
         },
         "id": {
             "description": "Unique HTML id that is used by all nested search-related components, used when one need to have multiple search interfaces on the same page.",
+            "type": "string"
+        },
+        "knowledgePanelId": {
+            "description": "Knowledge panel component id. Default value is `undefined`.",
             "type": "string"
         },
         "limit": {
@@ -544,7 +507,8 @@
         "datasetsConfig",
         "limit",
         "optimizer",
-        "selectorMode"
+        "selectorMode",
+        "knowledgePanelId"
     ],
     "required": [
         "searchProfile"

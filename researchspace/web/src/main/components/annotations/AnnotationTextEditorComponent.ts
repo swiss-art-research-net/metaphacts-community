@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Component, createFactory, createElement, MouseEvent, KeyboardEvent } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
@@ -31,9 +30,9 @@ import {
 } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 
-import { SparqlClient } from 'platform/api/sparql';
+import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Rdf } from 'platform/api/rdf';
-import { ResourceLinkComponent } from 'platform/api/navigation/components';
+import { ResourceLinkComponent } from 'platform/components/navigation';
 import { constructUrlForResource } from 'platform/api/navigation';
 import { getLabel } from 'platform/api/services/resource-label';
 import { DragAndDropApi } from 'platform/components/dnd';
@@ -67,7 +66,7 @@ const Editor = createFactory(EditorComponent);
 
 
 function findEntityStrategy(entityType: string) {
-  return (contentBlock, callback) => {
+  return (contentBlock: ContentBlock, callback: (start: number, end: number) => void) => {
     contentBlock.findEntityRanges((character) => {
       const entityKey = character.getEntity();
       return entityKey !== null && Entity.get(entityKey).getType() === entityType;
@@ -75,7 +74,7 @@ function findEntityStrategy(entityType: string) {
   };
 }
 
-const Link = (props) => {
+const Link = (props: any) => {
   const {url} = Entity.get(props.entityKey).getData();
   if (props.blockProps.parentEditor.props.readOnly === true) {
     return D.a({
@@ -121,7 +120,7 @@ interface SemanticBlockData {
 const findTemplatesForUri = (
   dropTemplateConfig: DropTemplateConfigItem[], uri: string
 ): Kefir.Property<DropTemplateConfigItem[]> => {
-  const query = new SparqlJs.Parser().parse(`
+  const query = SparqlUtil.parseQuery(`
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     SELECT ?type ?label ?lang WHERE {
       <${uri}> a ?type .
@@ -133,7 +132,7 @@ const findTemplatesForUri = (
   `);
   return SparqlClient.select(query).map((result: SparqlClient.SparqlSelectResult) => {
     const types = result.results.bindings;
-    let possibleTemplates = [];
+    let possibleTemplates: DropTemplateConfigItem[] = [];
     dropTemplateConfig.map(configItem => {
       const {type} = configItem;
       if (type === 'any' || _.find(types, value => value['type'].value === type)) {
@@ -161,7 +160,7 @@ interface SemanticBlockProps {
   }
 }
 class SemanticBlock extends Component<SemanticBlockProps, {}> {
-  constructor(props) {
+  constructor(props: SemanticBlockProps) {
     super(props);
   }
 
@@ -189,7 +188,7 @@ class SemanticBlock extends Component<SemanticBlockProps, {}> {
   getData(): SemanticBlockData {
     return Entity.get(this.getEntityKey()).getData() as SemanticBlockData;
   }
-  setData(data) {
+  setData(data: Partial<SemanticBlockData>) {
     Entity.mergeData(this.getEntityKey(), data);
     this.forceUpdate();
   }
@@ -321,7 +320,7 @@ interface AnnotationSemanticEditorComponentState {
 
 class AnnotationSemanticEditorComponent extends
   Component<AnnotationSemanticEditorComponentProps, AnnotationSemanticEditorComponentState> {
-  constructor(props) {
+  constructor(props: AnnotationSemanticEditorComponentProps) {
     super(props);
     this.state = {
       waitingForSemanticWithEntityKey: null,
@@ -348,7 +347,7 @@ class AnnotationSemanticEditorComponent extends
         getLabel(Rdf.iri(data.iri)).take(1),
         constructUrlForResource(Rdf.iri(data.iri)).take(1),
       ]);
-      const onGotLabel = ([label, url]) => {
+      const onGotLabel = ([label, url]: [string, uri.URI]) => {
         labelStream.offValue(onGotLabel);
         Entity.mergeData(newInlineEntityKey, {href: url.valueOf()});
 
@@ -365,7 +364,7 @@ class AnnotationSemanticEditorComponent extends
     });
   }
 
-  changeTemplateFromInlineToBlock(newIndex) {
+  changeTemplateFromInlineToBlock(newIndex: number) {
     let data = this.props.semanticToEdit.getData();
     data.selectedTemplateIndex = newIndex;
     const newBlockEntityKey = Entity.create('SEMANTIC-BLOCK', 'IMMUTABLE', data);
@@ -392,7 +391,7 @@ class AnnotationSemanticEditorComponent extends
 
       let withoutEntityRangesContent = afterInsertBlock.getCurrentContent();
       afterInsertBlock.getCurrentContent().getBlockMap().valueSeq().forEach((block: ContentBlock) => {
-        let ranges = [];
+        let ranges: Array<[number, number]> = [];
         block.findEntityRanges((character) => character.getEntity() === entityKey, (start, end) => {
           ranges.push([start, end]);
         });
@@ -539,7 +538,7 @@ interface State {
 class AnnotationTextEditorComponent extends Component<Props, State> {
   decorators: CompositeDecorator;
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
 
     this.decorators = new CompositeDecorator([{
@@ -595,7 +594,7 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
 
   getSemanticItemsData(editorState: EditorState): SemanticBlockData[] {
     const blocks = editorState.getCurrentContent().getBlockMap().valueSeq();
-    let result = [];
+    let result: SemanticBlockData[] = [];
     const semanticInlineStrategy = findEntityStrategy('SEMANTIC-INLINE');
     blocks.forEach(block => {
       if (block.getType() === 'atomic') {
@@ -647,10 +646,10 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
   }
 
   focus = () => (this.refs['editor'] as any).focus();
-  onTab = (e) => this.onChange(RichUtils.onTab(e, this.state.editorState, 4));
-  toggleBlockType = (blockType) => this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
-  toggleInlineStyle = (inlineStyle) => this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, inlineStyle));
-  handleKeyCommand = (command) => {
+  onTab = (e: Event) => this.onChange(RichUtils.onTab(e, this.state.editorState, 4));
+  toggleBlockType = (blockType: string) => this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
+  toggleInlineStyle = (inlineStyle: string) => this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, inlineStyle));
+  handleKeyCommand = (command: string) => {
     const {editorState} = this.state;
     const newState = RichUtils.handleKeyCommand(editorState, command);
     if (newState) {
@@ -660,8 +659,8 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
     return false;
   }
 
-  handleDrop = (selection: SelectionState, dataTransfer: Object, isInternal: any): boolean => {
-    if ((dataTransfer as any).types.find(item => item === DragAndDropApi.DRAG_AND_DROP_FORMAT)) {
+  handleDrop = (selection: SelectionState, dataTransfer: DataTransfer, isInternal: any): boolean => {
+    if (dataTransfer.types.find(item => item === DragAndDropApi.DRAG_AND_DROP_FORMAT)) {
       const urlValue = (dataTransfer as any).data.getData(DragAndDropApi.DRAG_AND_DROP_FORMAT);
       this.insertSemanticBlock(selection, urlValue);
       return true;
@@ -674,7 +673,7 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
     const contentState = editorState.getCurrentContent();
     const entityKey = semanticBlock.getEntityKey();
     let newContentState = contentState;
-    let removeBlockKey = null;
+    let removeBlockKey: string | null = null;
     let selectionFinal = null;
     contentState.getBlockMap().valueSeq().forEach((block: ContentBlock) => {
       const blockKey = block.getKey();
@@ -749,7 +748,7 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
 
   insertSemanticBlock = (selection: SelectionState, urlValue: string) => {
     findTemplatesForUri(this.props.dropTemplateConfig, urlValue).onValue(templates => {
-      const data = {
+      const data: SemanticBlockData = {
         init: true,
         iri: urlValue,
         href: null,
@@ -983,7 +982,7 @@ interface StyleButtonProps {
   label: string
   title?: string
   style: any
-  onToggle: (any) => void
+  onToggle: (x: any) => void
 }
 const StyleButtonComponent = (props: StyleButtonProps) => Button(
   {
@@ -1009,7 +1008,7 @@ const BLOCK_TYPES = [
   {label: 'fa-list-ol', style: 'ordered-list-item', title: 'Ordered list'},
 ];
 
-const BlockStyleControls = (props) => {
+const BlockStyleControls = (props: any) => {
   const {editorState} = props;
   const selection = editorState.getSelection();
   const blockType = editorState
@@ -1038,7 +1037,7 @@ const INLINE_STYLES = [
   {label: 'fa-strikethrough', style: 'STRIKETHROUGH', title: 'Strikethrough'},
 ];
 
-const InlineStyleControls = (props) => {
+const InlineStyleControls = (props: any) => {
   const currentStyle = props.editorState.getCurrentInlineStyle();
   return ButtonGroup(
     {className: 'annotation-text-editor-toolbar__toolbar'},

@@ -19,16 +19,17 @@
   </div>
   <div class='page__body'>   
     [[#if (hasPermission "api:config:*:*:read")]]
-    Properties that are marked as <b>Shadowed</b> in the tables below have been overriden by system parameters
+    Properties that are marked as <b>Shadowed</b> in the tables below have been overridden by system parameters
     (by passing in "-Dconfig.&lt;GroupId&gt;.&lt;ParamId&gt;" when starting the server). Shadowed parameters cannot
     be modified through the User Interface.
+    <p><i>Note: Configuration changes of settings marked with '*' (Asterisk) require a platform restart.</i></p>
     <hr/>
    	<mp-collapsible-div expanded=false>
       <mp-collapsible-div-trigger>
         <span>Environment Configuration</span>
       </mp-collapsible-div-trigger>
      <mp-collapsible-div-content>
-       <mp-admin-config-manager editable=false group="environment"></mp-admin-config-manager>
+       <mp-admin-config-manager editable=true group="environment"></mp-admin-config-manager>
      </mp-collapsible-div-content>
   	</mp-collapsible-div>
      
@@ -62,6 +63,18 @@
        </div>
      </mp-collapsible-div-content>
   	</mp-collapsible-div>
+
+    <mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>Cache Configuration</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+        <div>
+          <p>Use the following form to configure central platform caches. Note that cache types are grouped hierarchically by kind (e.g. repository.* caches are instantiated per repository, while platform.* caches are global caches). For details on the cache specification syntax refer to the <a href="https://guava.dev/releases/16.0/api/docs/com/google/common/cache/CacheBuilderSpec.html" target="_BLANK">Guava Cache Builder Spec</a>.</p>
+          <mp-admin-config-manager editable=true group="cache"></mp-admin-config-manager>
+        </div>
+      </mp-collapsible-div-content>
+    </mp-collapsible-div>
 
     [[else]]
     No permission to read or change configuration.

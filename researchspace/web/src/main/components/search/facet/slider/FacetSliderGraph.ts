@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Denis Ostapenko
  */
@@ -47,15 +46,15 @@ export interface FacetSliderGraphProps extends Props<FacetSliderGraph> {
 export class FacetSliderGraph extends Component<FacetSliderGraphProps, {}> {
   private points: number[][];
 
-  constructor(props, context) {
+  constructor(props: FacetSliderGraphProps, context: any) {
     super(props, context);
     this.points = [];
   }
 
   private calculatePoints(events: GraphEvent[]) {
     let indices = [];
-    let points = [];
-    let changes = [];
+    let points: number[] = [];
+    let changes: number[] = [];
     let i = 0;
     for (let event of events) {
       let scaledWeight = event.weight / Math.max(1, event.end - event.begin);
@@ -91,7 +90,7 @@ export class FacetSliderGraph extends Component<FacetSliderGraphProps, {}> {
     return coordinates;
   }
 
-  componentWillReceiveProps(newProps) {
+  componentWillReceiveProps(newProps: FacetSliderGraphProps) {
     if (newProps.events !== this.props.events) {
       this.points = this.calculatePoints(newProps.events);
     }
@@ -105,7 +104,7 @@ export class FacetSliderGraph extends Component<FacetSliderGraphProps, {}> {
     this.updateCanvas();
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate() {
     this.updateCanvas();
   }
 

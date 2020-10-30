@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Props, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import { findDOMNode } from 'react-dom';
@@ -50,6 +71,9 @@ import extent from 'ol/extent';
 import { BuiltInEvents, trigger } from 'platform/api/events';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Component, ComponentContext } from 'platform/api/components';
+import {
+  DataContext, CompiledTemplate, mergeInContextOverride, renderHtml,
+} from 'platform/api/services/template';
 
 import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
@@ -80,20 +104,19 @@ export interface SemanticMapConfig {
   query: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for marker popup. By default shows `<semantic-link>` to the resource with a short textual description
-   * **The template MUST have a single HTML root element.**
+   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for marker popup.
+   * By default shows `<semantic-link>` to the resource with a short textual description.
    */
   tupleTemplate?: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results
-   * **The template MUST have a single HTML root element.**
+   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.
    */
   noResultTemplate?: string;
 
   /**
    * Optional numeric zoom between 0-18 (max zoom level may vary depending on the resolution)
-   * to fix the inital map zoom.
+   * to fix the initial map zoom.
    * If no fixed zoom level is provided, the zoom will be calculated on the max bounding box
    * of available markers.
    */
@@ -108,7 +131,7 @@ export interface SemanticMapConfig {
 export type SemanticMapProps = SemanticMapConfig & Props<any>;
 
 interface MapState {
-  tupleTemplate?: Data.Maybe<HandlebarsTemplateDelegate>;
+  tupleTemplate?: Data.Maybe<CompiledTemplate>;
   errorMessage: Data.Maybe<string>;
   noResults?: boolean;
   isLoading?: boolean;
@@ -120,17 +143,21 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
   private layers: {[id: string]: VectorLayer};
   private map: Map;
 
-  constructor(props: SemanticMapProps, context: ComponentContext) {
+  constructor(props: SemanticMapProps, context: any) {
     super(props, context);
     this.state = {
-      tupleTemplate: maybe.Nothing<HandlebarsTemplateDelegate>(),
+      tupleTemplate: maybe.Nothing<CompiledTemplate>(),
       noResults: false,
       isLoading: true,
       errorMessage: maybe.Nothing<string>(),
     };
   }
 
-  private static createPopupContent(props, tupleTemplate: Data.Maybe<HandlebarsTemplateDelegate>) {
+  private static createPopupContent(
+    props: { [key: string]: any },
+    tupleTemplate: Data.Maybe<CompiledTemplate>,
+    outerContext: DataContext | undefined
+  ) {
     let defaultContent = '';
 
     if (_.isUndefined(props.link) === false) {
@@ -140,7 +167,13 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
       `;
     }
 
-    return tupleTemplate.map(template => template(props)).getOrElse(defaultContent);
+    return tupleTemplate
+      .map(template => {
+        const dataContext = mergeInContextOverride(outerContext, props);
+        const nodes = template(dataContext);
+        return renderHtml(nodes);
+      })
+      .getOrElse(defaultContent);
   }
 
   public componentDidMount() {
@@ -188,11 +221,11 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
     );
   }
 
-  private initializeMarkerPopup(map) {
+  private initializeMarkerPopup(map: Map) {
     const popup = new Popup();
-    map.addOverlay(popup);
+    map.addOverlay(popup as any);
 
-    map.on('click', (evt) => {
+    map.on('click', (evt: any) => {
       // Hide existing popup and reset it's offset
       popup.hide();
       popup.setOffset([0, 0]);
@@ -204,12 +237,15 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
 
       if (feature) {
         const geometry = feature.getGeometry();
-        const coord = getPopupCoordinate(geometry, evt.coordinate);
+        const coord = getPopupCoordinate(geometry as Geometry, evt.coordinate);
         const {features = [feature]} = feature.getProperties();
 
-        const popupContent = features.map(feature => {
+        const popupContent = features.map((feature: Feature) => {
           const props = feature.getProperties();
-          return `<div>${SemanticMap.createPopupContent(props, this.state.tupleTemplate)}</div>`;
+          const popupMarkup = SemanticMap.createPopupContent(
+            props, this.state.tupleTemplate, this.context.templateDataContext
+          );
+          return `<div>${popupMarkup}</div>`;
         });
 
         // info += "<p>" + props.locationtext + "</p>";
@@ -219,9 +255,9 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
       }
     });
 
-    map.on('pointermove', e => {
+    map.on('pointermove', (e: any) => {
       const hasFeatureAtPixel = map.hasFeatureAtPixel(e.pixel);
-      map.getTarget().style.cursor = hasFeatureAtPixel ? 'pointer' : '';
+      (map.getTarget() as HTMLElement).style.cursor = hasFeatureAtPixel ? 'pointer' : '';
     });
   }
 
@@ -237,7 +273,7 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
     });
   }
 
-  private createGeometries = (markersData: any[]) => {
+  private createGeometries = (markersData: SparqlClient.StarBinding[]) => {
     const geometries: {[type: string]: Feature[]} = {};
 
     markersData.forEach(marker => {
@@ -276,22 +312,24 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
       const clusterSource = new Cluster({source, distance: 40});
       return new AnimatedCluster({
         source: clusterSource,
-        style: getMarkerStyle(),
+        style: getMarkerStyle() as ol.StyleFunction,
         zIndex: 1, // we want to always have markers on top of polygons
       });
     }
     return new VectorLayer({
       source,
-      style: (feature: Feature) => {
+      style: ((feature: Feature) => {
         const geometry = feature.getGeometry();
         const color = feature.get('color');
         return getFeatureStyle(geometry, color ? color.value : undefined);
-      },
+      }) as ol.StyleFunction,
       zIndex: 0,
     });
   }
 
-  private renderMap(node, props, center, markers) {
+  private renderMap(
+    node: Element, props: SemanticMapProps, center: any, markers: SparqlClient.StarBinding[]
+  ) {
     window.setTimeout(() => {
       const geometries = this.createGeometries(markers);
       const layers = _.mapValues(geometries, this.createLayer);
@@ -335,12 +373,12 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
     const {query, fixZoomLevel} = props;
 
     if (query) {
-      const stream = SparqlClient.select(query, {context: context.semanticContext});
+      const stream = SparqlClient.selectStar(query, {context: context.semanticContext});
 
       stream.onValue(
         res => {
           const m = _.map(res.results.bindings, v =>
-            <any>_.mapValues(v, x => x)
+            _.mapValues(v, x => x)
           );
           if (SparqlUtil.isSelectResultEmpty(res)) {
             this.setState({
@@ -426,7 +464,7 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
   }
 
   private createMap = () => {
-    this.renderMap(findDOMNode(this.refs[MAP_REF]), this.props, {
+    this.renderMap(findDOMNode(this.refs[MAP_REF]) as Element, this.props, {
       lng: parseFloat('0'),
       lat: parseFloat('0'),
     }, []);
@@ -445,7 +483,9 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
         const template = this.state.tupleTemplate;
 
         _.forEach(features, (f) => {
-          const html = SemanticMap.createPopupContent(f.getProperties(), template);
+          const html = SemanticMap.createPopupContent(
+            f.getProperties(), template, this.context.templateDataContext
+          );
           const doc = new DOMParser().parseFromString(html, 'text/html');
           d.appendChild(doc.body.firstChild);
         });
@@ -467,13 +507,16 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
       tupleTemplate => maybe.fromNullable(tupleTemplate)
     ).getOrElse(defaultTemplate);
 
-    this.appliedTemplateScope.compile(template).then(tupleTemplate => {
-      this.setState({
-        tupleTemplate: maybe.Just(tupleTemplate),
-        errorMessage: maybe.Nothing<string>(),
-      });
-    }).catch(error => {
-      this.setState({errorMessage: maybe.Just(error)});
+    this.appliedTemplateScope.prepare(template).observe({
+      value: tupleTemplate => {
+        this.setState({
+          tupleTemplate: maybe.Just(tupleTemplate),
+          errorMessage: maybe.Nothing<string>(),
+        });
+      },
+      error: error => {
+        this.setState({errorMessage: maybe.Just(error)});
+      },
     });
   }
 
@@ -482,7 +525,7 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
       console.warn(
         'layout property in semantic-map is deprecated, please use flat properties instead'
       );
-      return props['layout']['tupleTemplate'];
+      return (props as any)['layout']['tupleTemplate'];
     } else {
       return props.tupleTemplate;
     }
@@ -491,9 +534,9 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
 }
 
 function getMarkerStyle() {
-  const styleCache = {};
+  const styleCache: { [key: string]: any } = {};
 
-  const clusterStyle = (size, radius, color) => new Style({
+  const clusterStyle = (size: number, radius: number, color: string) => new Style({
     image: new Circle({
       radius,
       fill: new Fill({color}),
@@ -526,7 +569,7 @@ function getMarkerStyle() {
   };
 }
 
-function getFeatureStyle(geometry: Geometry, color: string | undefined) {
+function getFeatureStyle(geometry: Geometry, color: string | undefined): any {
   if (geometry instanceof Point || geometry instanceof MultiPoint) {
     return new Style({
       geometry,
@@ -550,7 +593,7 @@ function getFeatureStyle(geometry: Geometry, color: string | undefined) {
   });
 }
 
-function getPopupCoordinate(geometry: Geometry, coordinate: [number, number]) {
+function getPopupCoordinate(geometry: Geometry, coordinate: [number, number]): ol.Coordinate {
   if (geometry instanceof Point) {
     return geometry.getCoordinates();
   } if (geometry instanceof Polygon) {

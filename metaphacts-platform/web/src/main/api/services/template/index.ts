@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,50 +37,34 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+import * as Kefir from 'kefir';
 
+import { requestAsProperty } from 'platform/api/async';
 import * as request from 'platform/api/http';
+import { PageService } from 'platform/api/services/page';
 
-import { purgeRemoteTemplateCache, parseTemplate } from './RemoteTemplateFetcher';
-import { TemplateScope } from './TemplateScope';
+import { purgeRemoteTemplateCache } from './RemoteTemplateFetcher';
 
-const TEMPLATE_SERVICE_URL = '/rest/template/';
+type PageLayoutTemplateName = 'header' | 'footer' | 'noPermissionsPage';
 
-export function getHeader(cb: (html: string) => void): void {
-  request
-    .get(TEMPLATE_SERVICE_URL + 'header')
-    .accept('text/html')
-    .end((err, res) => {
-      cb(res.text);
-    });
+export function getPageLayoutTemplate(name: PageLayoutTemplateName): Kefir.Property<string> {
+  const req = request
+    .get(`/rest/template/${name}`)
+    .accept('text/html');
+  return requestAsProperty(req).map(res => res.text);
 }
 
-export function getFooter(cb: (html: string) => void): void {
-  request
-    .get(TEMPLATE_SERVICE_URL + 'footer')
-    .accept('text/html')
-    .end((err, res) => {
-      cb(res.text);
-    });
-}
+PageService.beforeSave.observe({
+  value: () => purgeRemoteTemplateCache(),
+});
 
-
-export function getNoPermissionsPage(cb: (html: string) => void): void {
-  request
-    .get(TEMPLATE_SERVICE_URL + 'noPermissionsPage')
-    .accept('text/html')
-    .end((err, res) => {
-      cb(res.text);
-    });
-}
-
-
-
-export function purgeTemplateCache() {
-  TemplateScope.default.clearCache();
-  purgeRemoteTemplateCache();
-}
-
-export { ContextCapturer, CapturedContext } from './functions';
-import * as TemplateParser from './TemplateParser';
-export { TemplateParser, parseTemplate };
-export * from './TemplateScope';
+export { DataContext, mergeInContextOverride } from './DataContext';
+export {
+  ExtractedTemplate, extractTemplates, extractTemplateBody, findImportedComponents,
+  isNonEmptyNode, isTemplate, parseHtml, renderHtml,
+} from './TemplateParser';
+export {
+  RawTemplateScope, RAW_TEMPLATES_ATTRIBUTE, CAPTURED_DATA_CONTEXT_ATTRIBUTE,
+} from './TemplateExecution';
+export { matchJsonAttributeValue } from './JsonTemplateParser';
+export { TemplateScope, TemplateScopeProps, CompiledTemplate } from './TemplateScope';

@@ -1,0 +1,32 @@
+/* marker for the metaphacts-platform module */
+
+
+/*
+ * Here we configure the virtual project metaphacts-platform-dist:core.
+ *
+ * This is just used for building the metaphacts-platform distribution
+ * and defines the required bundled dependencies.
+ *
+ * Note that we require an extra virtual project to avoid cyclic
+ * dependencies between metaphacts-platform and researchspace, i.e
+ * the metaphacts-platform distribution is meant to include RS 
+ * components
+ *
+ * See also the reference to this project in platform-only-root-build.json
+ */
+configure(project(':metaphacts-platform-dist:core')) {
+
+	project.ext {
+		externalName = 'researchspace'
+	}
+	
+	dependencies {
+		implementation project(':metaphacts-platform:core')
+		implementation project(':researchspace:core')
+	}
+}
+
+// dummy placeholder task as workaround to allow building metaphacts-platform
+// => we expect the appZip task to exist, metaphacts-platform does not define
+// its own apps
+task appZip { }

@@ -1,0 +1,36 @@
+.ontodia {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  // defaults for inheritable properties
+  box-sizing: border-box;
+  white-space: initial;
+  color: #333;
+  font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  font-size: 14px;
+  line-height: 1.42857;
+
+  *, *:before, *:after {
+    box-sizing: inherit;
+  }
+
+  &__workspace {
+    display: flex;
+    flex: auto;
+    overflow: hidden;
+    flex-direction: column;
+  }
+}
+
+.ontodia-scrollable {
+  flex: 1 1 0px; // IE 11 requires a unit to be added to the third argument
+  overflow-y: scroll;
+}
+
+// fixes the bug in Chrome with redrawing children in scrollable elements
+.ontodia-scrollable > * {
+  position: relative;
+}
+
+.ontodia-horizontal-resizing * { cursor: ew-resize !important; }
+.ontodia-vertical-resizing * { cursor: ns-resize !important; }

@@ -1,0 +1,27 @@
+
+
+task cleanOntodia(type: Delete) {
+	delete project.file('dist')
+}
+
+task clean(dependsOn: cleanOntodia)
+
+
+task buildOntodia(dependsOn: ['yarnRun']) {
+
+	// define inputs and outputs for incremental build
+	inputs.file file('package.json')
+	inputs.dir file('src')
+	outputs.dir file('dist')
+	
+	doLast {
+
+		project.exec {
+			commandLine generateCmdForOS(['yarn', 'run', 'build'])
+		}
+	}
+}
+
+// no additional actions are needed to deploy
+task buildAndDeployOntodia
+buildAndDeployOntodia.dependsOn buildOntodia

@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "JSX.Element": {
+            "type": "object"
+        }
+    },
+    "description": "Consists data providers that `ontodia` will use to fetch data.\nRequires at least one data provider.",
+    "properties": {
+        "children": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSX.Element"
+                },
+                {
+                    "items": {
+                        "$ref": "#/definitions/JSX.Element"
+                    },
+                    "type": "array"
+                }
+            ],
+            "description": "Data providers."
+        }
+    },
+    "propertyOrder": [
+        "children"
+    ],
+    "required": [
+        "children"
+    ],
+    "type": "object"
+}
+

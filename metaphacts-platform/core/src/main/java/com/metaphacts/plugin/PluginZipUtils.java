@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.plugin;
 
 import java.io.File;
@@ -39,11 +60,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.pf4j.PluginRuntimeException;
 
 import com.google.common.collect.Lists;
 import com.metaphacts.util.ZipUtils;
-
-import ro.fortsoft.pf4j.PluginException;
 
 /**
  * Collection of static utils to handle unpacking of ZIP artefacts.
@@ -82,10 +102,10 @@ public class PluginZipUtils {
      * @param zipFile
      * @return the path to the folder where
      * @throws IOException
-     * @throws PluginException
+     * @throws PluginRuntimeException
      */
     protected static Path expandAndDeleteIfValidZipApp(Path zipFile)
-            throws IOException, PluginException {
+            throws IOException, PluginRuntimeException {
 
         // exit if it is NOT a zip file
         if (!isZip(zipFile)) {
@@ -122,7 +142,7 @@ public class PluginZipUtils {
             }
             FileUtils.moveDirectory(tempPluginDirectory.toFile(), destAppFolder);
 
-        } catch (PluginException | IOException e) {
+        } catch (PluginRuntimeException | IOException e) {
             throw e;
         } finally {
             // make sure that the temp directory is deleted in any case
@@ -170,7 +190,7 @@ public class PluginZipUtils {
      * </p>
      * 
      * </p>
-     * It throws a {@link PluginException} in case the zip is determined to be a none-single
+     * It throws a {@link PluginRuntimeException} in case the zip is determined to be a none-single
      * directory ZIP but also does not contain the mandatory files like plugin.properties flat, for
      * example, if is a single directory zip, but the zip name is differnt from the directory name.
      * </p>
@@ -183,10 +203,10 @@ public class PluginZipUtils {
      * @return
      * @throws ZipException
      * @throws IOException
-     * @throws PluginException
+     * @throws PluginRuntimeException
      */
     protected static boolean isSingleDirectoryAppZip(File zipFile)
-            throws ZipException, IOException, PluginException {
+            throws ZipException, IOException, PluginRuntimeException {
         String name = FilenameUtils.getBaseName(zipFile.getName());
         List<String> zipEntries = getZipEntries(zipFile);
         for (String f : zipEntries) {
@@ -198,7 +218,7 @@ public class PluginZipUtils {
         }
         // if it is not a single directory app, make sure that it is flat and not just inconsistent in naming.
         if (!zipEntries.contains("plugin.properties")) {
-            throw new PluginException(
+            throw new PluginRuntimeException(
                     "The zip file does not contain a folder with a name that is equal to the zip name. "
                             + "In this case the platform assumes that the app files are packaged flat into the archive."
                             + "However, mandatory files like the \"plugin.properties\" don't exist. Please make sure that "
@@ -213,15 +233,15 @@ public class PluginZipUtils {
      * 
      * @param appDirectory
      * @return
-     * @throws PluginException
+     * @throws PluginRuntimeException
      * @throws IOException
      */
     protected static boolean assertValidAppStructure(File appDirectory)
-            throws PluginException, IOException {
+            throws PluginRuntimeException, IOException {
         final String pluginFilePropertiesFileName = "plugin.properties";
         File pluginFileProperties = new File(appDirectory, pluginFilePropertiesFileName);
         if (!pluginFileProperties.exists()) {
-            throw new PluginException("App must contain a plugin.properties file");
+            throw new PluginRuntimeException("App must contain a plugin.properties file");
         }
         Properties prop = new Properties();
 
@@ -229,11 +249,11 @@ public class PluginZipUtils {
             prop.load(fois);
             String pluginId = prop.getProperty("plugin.id");
             if (StringUtils.isEmpty(pluginId)) {
-                throw new PluginException(
+                throw new PluginRuntimeException(
                         "plugin.properties file must contain a none empty plugin.id property.");
             }
             if (!pluginId.equals(appDirectory.getName())) {
-                throw new PluginException("plugin.id must be equal to the app folder/zip name.");
+                throw new PluginRuntimeException("plugin.id must be equal to the app folder/zip name.");
             }
         }
 

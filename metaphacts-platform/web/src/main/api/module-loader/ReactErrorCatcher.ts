@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as _ from 'lodash';
 
@@ -32,11 +53,28 @@ const METHODS_TO_WRAP = [
   'componentWillUnmount',
 ];
 
+interface WrappedComponent {
+  [WRAPPED_BY_CATCHER]?: boolean;
+  prototype?: {
+    setState(state: any): void;
+    getChildContext(): any;
+    render?: Function;
+    componentDidCatch?: Function;
+    unstable_handleError?: Function;
+  }
+  getDerivedStateFromError?: Function;
+}
+
+interface WrappedComponentMethod {
+  (this: any): any;
+  [WRAPPED_BY_CATCHER]?: boolean
+}
+
 /**
  * Wrap component prototype functions to catch unexpected errors.
  */
-function wrap(component) {
-  return function(method) {
+function wrap(component: any) {
+  return function(method: string) {
     const isMethodNotDefined =
       _.isUndefined(component.prototype) ||
       !(component.prototype.hasOwnProperty(method) && component.prototype[method]);
@@ -45,7 +83,7 @@ function wrap(component) {
     }
 
     const unsafe = component.prototype[method];
-    const safe = function () {
+    const safe: WrappedComponentMethod = function (this: any) {
       try {
         unsafe.apply(this, arguments);
       } catch (e) {
@@ -62,7 +100,7 @@ function wrap(component) {
  * Wrap react component creation functions to catch unexpected errors.
  */
 function wrapComponent<F extends Function>(original: F): F {
-  return function(comp) {
+  return function (this: any, comp: WrappedComponent) {
     if (_.isUndefined(comp.prototype) ||
       comp instanceof ErrorNotification ||
       comp[WRAPPED_BY_CATCHER] // prevent multiple wrapping
@@ -71,15 +109,16 @@ function wrapComponent<F extends Function>(original: F): F {
     }
     comp[WRAPPED_BY_CATCHER] = true;
 
-    if (!comp.prototype.componentDidCatch) {
+    if (!(comp.prototype.componentDidCatch || comp.getDerivedStateFromError)) {
       comp.prototype.componentDidCatch = defaultComponentDidCatch;
+      comp.getDerivedStateFromError = defaultGetDerivedStateFromError;
     }
 
     const unsafeRender = comp.prototype.render;
     // Default unstable_handleError (without override) set state item
     // that leads to error message rendering
     if (!comp.prototype.unstable_handleError) {
-      comp.prototype.unstable_handleError = function (e) {
+      comp.prototype.unstable_handleError = function (e: any) {
         this.setState({[ERROR]: e});
       };
     }
@@ -117,14 +156,19 @@ function wrapComponent<F extends Function>(original: F): F {
   } as any;
 }
 
+function defaultGetDerivedStateFromError(error: any) {
+  // Update state so the next render will show the fallback UI.
+  return {[ERROR]: error};
+}
+
 function defaultComponentDidCatch(
   this: React.Component<any, any>,
   error: any,
   info: { componentStack: string }
 ) {
+  // You can also log the error to an error reporting service
   console.error(error);
   console.error(info.componentStack);
-  this.setState({[ERROR]: error});
 }
 
 function getError(componentInstance: any) {

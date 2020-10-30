@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { cloneDeep } from 'lodash';
 import * as SparqlJs from 'sparqljs';
 
@@ -27,7 +48,7 @@ import { ConfigHolder } from 'platform/api/services/config-holder';
 
 import { ComplexTreePatterns } from './SemanticTreeInput';
 
-export interface LightwightTreePatterns {
+export interface LightweightTreePatterns {
   /**
    * Binds to `?__scheme__` variable in the `schemePattern`
    */
@@ -48,7 +69,9 @@ export const DefaultLightweightPatterns = {
   relationPattern: '?item <http://www.w3.org/2004/02/skos/core#broader> ?parent',
 };
 
-export function createDefaultTreeQueries(params: LightwightTreePatterns = {}): ComplexTreePatterns {
+export function createDefaultTreeQueries(
+  params: LightweightTreePatterns = {}
+): ComplexTreePatterns {
   const {
     schemePattern = DefaultLightweightPatterns.schemePattern,
     relationPattern = DefaultLightweightPatterns.relationPattern,
@@ -92,7 +115,7 @@ function createRootsQuery({relation, scheme}: TreePatterns) {
       FILTER NOT EXISTS { { FILTER(?__relation__) } }
       ?item ${labelPropertyPattern} ?label .
       OPTIONAL { FILTER(?__childRelation__) }
-      BIND(bound(?child) as ?hasChildren)
+      BIND(BOUND(?child) as ?hasChildren)
     } ORDER BY ?label
   `);
   const childRelation = bindTreePatterns(relation, {itemVar: 'child', parentVar: 'item'});
@@ -110,7 +133,7 @@ function createChildrenQuery({relation, scheme}: TreePatterns) {
       FILTER(?__scheme__)
       ?item ${labelPropertyPattern} ?label .
       OPTIONAL { FILTER(?__childRelation__) }
-      BIND(bound(?child) as ?hasChildren)
+      BIND(BOUND(?child) as ?hasChildren)
     } ORDER BY ?label
   `);
   const childRelation = bindTreePatterns(relation, {itemVar: 'child', parentVar: 'item'});
@@ -137,17 +160,15 @@ function createParentsQuery({relation, scheme}: TreePatterns) {
 }
 
 function createSearchQuery({relation, scheme}: TreePatterns) {
-  const {labelPropertyPattern} = ConfigHolder.getUIConfig();
   const query = SparqlUtil.parseQuery(`
-    PREFIX bds: <http://www.bigdata.com/rdf/search#>
+    PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
     SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
+      SERVICE Repository:lookup {
+        ?item lookup:token ?__token__;
+          lookup:limit 400 .
+      }
       FILTER(?__scheme__)
-      ?item ${labelPropertyPattern} ?label.
-      ?label bds:search ?__token__ ;
-            bds:minRelevance "0.3" ;
-            bds:relevance ?score ;
-            bds:matchAllTerms "true"  .
       OPTIONAL { FILTER(?__childRelation__) }
       BIND(BOUND(?child) AS ?hasChildren)
     }

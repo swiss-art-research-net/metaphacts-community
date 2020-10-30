@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Kefir from 'kefir';
 import { Dropzone } from 'platform/components/ui/dropzone';
@@ -74,7 +95,7 @@ export class AppUpload extends Component<{}, State> {
     }
 
     private appendUploadMessage(message: string, uploadError?: any) {
-        const RestartButton = <RestartWrapper><Button 
+        const RestartButton = <RestartWrapper><Button
         bsStyle='primary'>Restart Now</Button></RestartWrapper>;
         this.setState((state: State): State => {
             return {
@@ -91,9 +112,13 @@ export class AppUpload extends Component<{}, State> {
         const messages = this.state.messages.map((config, index) => <Alert key={index} {...config} />);
         return (
             <div className={'text-center'}>
-                <Dropzone multiple={false} onDrop={this.onDrop} style={{margin:'auto'}}>
+                <Dropzone
+                  multiple={false}
+                  onDrop={this.onDrop}
+                  style={{margin: 'auto', width: '200px', height: '200px'}}>
                     <span>
-                        Please drag&amp;drop your app zip file here OR click into the field to open the browser's standard file selector.
+                        Please drag&amp;drop your app zip file here OR click into the
+                        field to open the browser's standard file selector.
                     </span>
                 </Dropzone>
                 {messages}

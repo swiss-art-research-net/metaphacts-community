@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.templates.helper;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -23,6 +44,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,8 +65,8 @@ import com.metaphacts.api.dto.querytemplate.QueryArgument;
 import com.metaphacts.api.dto.querytemplate.QueryTemplate;
 import com.metaphacts.api.dto.querytemplate.UpdateQueryTemplate;
 import com.metaphacts.cache.QueryTemplateCache;
-import com.metaphacts.sparql.renderer.MpSparqlQueryRenderer;
 import com.metaphacts.sparql.visitors.ParametrizeVisitor;
+import com.metaphacts.util.QueryUtil;
 
 public class SparqlHelperSource {
 
@@ -63,7 +85,7 @@ public class SparqlHelperSource {
      * <p>
      * Example:
      * </p>
-     * 
+     *
      * <pre>
      * <code>
      *     [[setQueryBindings
@@ -82,10 +104,12 @@ public class SparqlHelperSource {
 
     protected Map<String, Value> retrieveParameters(Map<String, Object> queryParams) {
         Map<String, Value> parameters = new HashMap<>();
-        for (String key : queryParams.keySet()) {
-            String value = (String) queryParams.get(key);
-            Value paramValue = NTriplesUtil.parseValue(value, VF);
-            parameters.put(key, paramValue);
+        for (Entry<String, Object> entry : queryParams.entrySet()) {
+            String value = HelperUtil.toString(entry.getValue());
+            if (value != null) {
+                Value paramValue = NTriplesUtil.parseValue(value, VF);
+                parameters.put(entry.getKey(), paramValue);
+            }
         }
         return parameters;
     }
@@ -93,7 +117,7 @@ public class SparqlHelperSource {
     protected String renderWithParameters(ParsedQuery parsedQuery, Map<String, Value> parameters)
             throws Exception {
         parsedQuery.getTupleExpr().visit(new ParametrizeVisitor(parameters));
-        String renderedQuery = new MpSparqlQueryRenderer().render(parsedQuery);
+        String renderedQuery = QueryUtil.toSPARQL(parsedQuery);
         return renderedQuery;
     }
 
@@ -103,18 +127,18 @@ public class SparqlHelperSource {
      * <p>
      * Example:
      * </p>
-     * 
+     *
      * <pre>
      * <code>
      *    [[getQueryString "http://my.host.uri/container/Query_Template_Container/test_query_template" parameter1='<http://www.example.org/parameter1_value>']]
      * </code>
      * </pre>
      */
-    public String getQueryString(String param0, Options options) throws Exception {
-        String queryTemplateId = checkNotNull(param0, "Query template IRI must not be null.");
+    public String getQueryString(Object param0, Options options) throws Exception {
+        IRI queryTemplateId = HelperUtil.toIRI(checkNotNull(param0, "Query template IRI must not be null."));
 
         QueryTemplate<?> queryTemplate = queryTemplateCache
-                .getQueryTemplate(VF.createIRI(queryTemplateId));
+                .getQueryTemplate(queryTemplateId);
 
         if (queryTemplate instanceof UpdateQueryTemplate) {
             throw new IllegalArgumentException("Update operations are not supported");
@@ -150,18 +174,18 @@ public class SparqlHelperSource {
                 if (arg.getValueType() != null) {
                     if (arg.getValueType().equals(XMLSchema.ANYURI) || arg.getValueType().equals(RDFS.RESOURCE)) {
                         val = (val instanceof IRI) ? val : VF.createIRI(val.stringValue());
-                        parameters.put(predicate, VF.createIRI(val.stringValue())); 
+                        parameters.put(predicate, VF.createIRI(val.stringValue()));
                     } else {
                         if (val instanceof Literal) {
                             Literal litVal = (Literal) val;
                             if (!litVal.getLanguage().isPresent()) {
                                 IRI actual = litVal.getDatatype();
                                 if (!arg.getValueType().equals(actual)) {
-                                    // If the literal value does not correspond 
+                                    // If the literal value does not correspond
                                     // to the argument valueType,
                                     // convert it.
                                     litVal = VF.createLiteral(litVal.stringValue(), arg.getValueType());
-                                } 
+                                }
                             }
                             parameters.put(predicate, litVal);
                         } else {

@@ -1,0 +1,15 @@
+{
+  "distribution": "metaphacts-platform-dist",
+  "distributionTitle": "metaphacts Platform",
+  "includeProjects": ["metaphacts-platform", "researchspace"],
+  "ontodiaDist": "metaphacts-platform/ontodia",
+  "bundleAppsFrom": ["researchspace","metaphacts-platform"],
+  "mainWebapp": "metaphacts-platform/webapp",
+  "applyThemeFrom": "metaphacts-platform",
+  "license": {
+    "licenseFile": "metaphacts-platform/LICENSE.txt",
+    "includeFromLibraries": []
+  },
+  "defaultShiroIniFolder": "metaphacts-platform/app/config",
+  "noTsCheck": false
+}

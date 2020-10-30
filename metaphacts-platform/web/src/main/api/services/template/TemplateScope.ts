@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,33 +37,42 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+import * as Kefir from 'kefir';
+import { Node } from 'html-to-react';
 
-import { WrappingError } from 'platform/api/async';
+import { loadPermittedComponents } from 'platform/api/module-loader/ComponentBasedSecurity';
+import { loadComponents } from 'platform/api/module-loader/ComponentsStore';
 import { Rdf } from 'platform/api/rdf';
 
-import { DefaultHelpers, ContextCapturer, CapturedContext } from './functions';
+import { DefaultHelpers } from './functions';
 
+import { DataContext, emptyDataStack } from './DataContext';
+import { ExtractedTemplate, SystemHelpers, parseHtml, extractTemplateBody } from './TemplateParser';
 import {
-  ParsedTemplate, fetchRemoteTemplate, parseTemplate, isRemoteReference,
-  createHandlebarsWithIRILookup,
-} from './RemoteTemplateFetcher';
+  ALLOWED_DYNAMIC_HTML_COMPONENTS, createTemplateRenderingHandlebars, renderTemplate,
+} from './TemplateExecution';
+import { getRemoteTemplate, preloadReferencedRemoteTemplates } from './RemoteTemplateFetcher';
 
-const EMPTY_TEMPLATE: CompiledTemplate = () => '';
-
-export type CompiledTemplate = (
-  dataContext?: object,
-  options?: {
-    capturer?: ContextCapturer;
-    parentContext?: CapturedContext;
-  }
-) => string;
+export type CompiledTemplate = (dataContext: DataContext) => Node[];
 
 export interface TemplateScopeProps {
   partials?: { readonly [id: string]: string };
 }
 
-export interface TemplateScopeOptions extends TemplateScopeProps {
-  helpers?: { readonly [id: string]: Function };
+const EMPTY_TEMPLATES: ReadonlyMap<string, ExtractedTemplate> =
+  new Map<string, ExtractedTemplate>();
+
+const EMPTY_TEMPLATE: CompiledTemplate = () => [];
+
+const KNOWN_HELPERS: { [helperName: string]: boolean } = {
+  [SystemHelpers.NODE]: true,
+  [SystemHelpers.ATTRIBUTE]: true,
+  [SystemHelpers.TEMPLATE]: true,
+  [SystemHelpers.TEXT]: true,
+};
+for (const helperName in DefaultHelpers) {
+  if (!Object.prototype.hasOwnProperty.call(DefaultHelpers, helperName)) { continue; }
+  KNOWN_HELPERS[helperName] = true;
 }
 
 /**
@@ -53,209 +84,201 @@ export interface TemplateScopeOptions extends TemplateScopeProps {
  *
  * @example
  * // compile template with default global partials and helpers
- * TemplateScope.default.compile('<div>{{foo}}</div>')
+ * TemplateScope.empty().prepare('<div>{{foo}}</div>')
  *   .then(template => { ... });
  *
- * // create an isolated scope with partials using `create()` or `builder()`
- * const isolateScopeWithCreate = TemplateScope.create({
+ * // create an isolated scope with partials using `fromProps()`
+ * const isolateScope = TemplateScope.fromProps({
  *   partials: {
  *     foo: '<span>{{> @partial-block}}<span>',
  *   }
  * });
- * const isolatedScopeWithBuilder = TemplateScope.builder()
- *  .registerPartial('foo', '<span>{{> @partial-block}}<span>')
- *  .build();
  *
  * // use either local partials or remote ones
  * // (by specifying IRI as a partial name)
- * clonedScope.compile('{{#> foo}} {{> platform:someTemplate}} {{/foo}}')
+ * isolateScope.prepare('{{#> foo}} {{> platform:someTemplate}} {{/foo}}')
  *   .then(template => { ... });
  */
 export class TemplateScope {
-  static readonly default = new TemplateScope(DefaultHelpers);
-  /** DO NOT USE. For testing purposes only. */
-  static _fetchRemoteTemplate = fetchRemoteTemplate;
+  private static readonly emptyScope = new TemplateScope();
+  private readonly handlebars = createTemplateRenderingHandlebars();
 
-  private readonly handlebars = createHandlebarsWithIRILookup();
-  private readonly compiledCache = new Map<string, HandlebarsTemplateDelegate>();
-
-  private readonly partials: ReadonlyMap<string, ParsedTemplate>;
+  private readonly localTemplates: ReadonlyMap<string, ExtractedTemplate>;
+  private readonly referencedTemplates = new Map<number, ExtractedTemplate>();
 
   private constructor(
-    private readonly helpers: { readonly [id: string]: Function },
-    partials?: ReadonlyMap<string, ParsedTemplate>,
+    templates?: ReadonlyMap<string, ExtractedTemplate>
   ) {
-    for (const helperId in helpers) {
-      if (!helpers.hasOwnProperty(helperId)) { continue; }
-      this.handlebars.registerHelper(helperId, helpers[helperId]);
+    for (const helperName in DefaultHelpers) {
+      if (!Object.prototype.hasOwnProperty.call(DefaultHelpers, helperName)) { continue; }
+      type DefaultHelperName = keyof typeof DefaultHelpers;
+      this.handlebars.registerHelper(helperName, DefaultHelpers[helperName as DefaultHelperName]);
     }
 
-    this.partials = partials || new Map<string, ParsedTemplate>();
-    this.partials.forEach((body, id) => {
-      this.handlebars.registerPartial(id, body.ast);
+    this.localTemplates = templates || EMPTY_TEMPLATES;
+    this.localTemplates.forEach((body, localName) => {
+      this.referencedTemplates.set(body.globalKey, body);
+      this.handlebars.registerPartial(localName, body.transformedAst);
     });
   }
 
-  clearCache() {
-    this.compiledCache.clear();
+  static empty(): TemplateScope {
+    return TemplateScope.emptyScope;
   }
 
-  getPartial(name: string): ParsedTemplate {
-    return this.partials.get(name);
+  static emptyTemplate(): CompiledTemplate {
+    return EMPTY_TEMPLATE;
   }
 
-  static builder(options: TemplateScopeOptions = {}): TemplateScopeBuilder {
-    const helpers = {...DefaultHelpers, ...options.helpers};
-    return new TemplateScopeBuilder(options, partials => new TemplateScope(helpers, partials));
+  static fromProps(options: TemplateScopeProps): TemplateScope {
+    return TemplateScope.empty().addOverrides(options.partials || {});
   }
 
-  static create(options: TemplateScopeOptions = {}) {
-    return TemplateScope.builder(options).build();
+  static fromTemplates(
+    templates: ReadonlyMap<string, ExtractedTemplate> | undefined
+  ): TemplateScope {
+    return new TemplateScope(templates);
+  }
+
+  addOverrides(overrides: { [localName: string]: string }): TemplateScope {
+    const templates = new Map<string, ExtractedTemplate>();
+    this.localTemplates.forEach(
+      (template, localName) => templates.set(localName, template)
+    );
+    for (const localName of Object.keys(overrides)) {
+      const templateNodes = parseHtml(overrides[localName]);
+      const template = extractTemplateBody(templateNodes, localName);
+      templates.set(template.localName, template);
+    }
+    return new TemplateScope(templates);
+  }
+
+  getPartial(name: string): ExtractedTemplate {
+    return this.localTemplates.get(name);
   }
 
   exportProps(): TemplateScopeProps {
     const partials: { [id: string]: string } = {};
-    this.partials.forEach((partial, id) => partials[id] = partial.source);
+    this.localTemplates.forEach((partial, id) => partials[id] = partial.source);
     return {partials};
   }
 
-  compile(template: string): Promise<CompiledTemplate> {
-    if (template === undefined || template === null) {
-      return Promise.resolve(EMPTY_TEMPLATE);
+  prepare(templateSource: string): Kefir.Property<CompiledTemplate> {
+    if (!templateSource) {
+      return Kefir.constant(TemplateScope.emptyTemplate());
     }
-    const fromCache = this.compiledCache.get(template);
-    if (fromCache) {
-      return Promise.resolve(fromCache);
-    }
-    return this.resolve(template).then(resolved => {
-      const withParentContext: CompiledTemplate =
-        (local, {capturer, parentContext} = {}) => resolved(local, {
-          data: {
-            [ContextCapturer.DATA_KEY]: capturer,
-            [CapturedContext.DATA_KEY]: parentContext,
-          }
-        });
-      this.compiledCache.set(template, withParentContext);
-      return withParentContext;
-    });
-  }
 
-  /**
-   * Synchronously compiles template without resolving remote template references.
-   * @deprecated
-   */
-  compileWithoutRemote(template: string): CompiledTemplate {
-    if (template === undefined || template === null) {
-      return EMPTY_TEMPLATE;
+    let template: ExtractedTemplate;
+    try {
+      const templateNodes = parseHtml(templateSource);
+      template = extractTemplateBody(templateNodes, '');
+    } catch (err) {
+      return Kefir.constantError<any>(err);
     }
-    const fromCache = this.compiledCache.get(template);
-    if (fromCache) {
-      return fromCache;
-    }
-    const compiled = this.handlebars.compile(template);
-    const withParentContext: CompiledTemplate =
-      (local, {capturer, parentContext} = {}) => compiled(local, {
-        data: {
-          [ContextCapturer.DATA_KEY]: capturer,
-          [CapturedContext.DATA_KEY]: parentContext,
+
+    const localTemplates = this.findAllReferencedLocalTemplates(template);
+    return preloadReferencedRemoteTemplates(localTemplates)
+      .flatMap(loadedRemotes => {
+        this.registerRemoteTemplates(loadedRemotes);
+        let importedComponents: Set<string>;
+        try {
+          importedComponents = this.findAllImportedComponents(template);
+        } catch (err) {
+          return Kefir.constantError(err);
         }
-      });
-    this.compiledCache.set(template, withParentContext);
-    return withParentContext;
+        return loadPermittedComponents(importedComponents);
+      }).flatMap(permittedComponents => {
+        return Kefir.fromPromise(loadComponents(permittedComponents));
+      })
+      .map(() => this.compilePreloadedTemplate(template))
+      .toProperty();
   }
 
-  private resolve(templateBody: string): Promise<HandlebarsTemplateDelegate> {
-    return Promise.resolve(templateBody).then(parseTemplate).then(parsed => {
-      const dependencies = new Map<string, ParsedTemplate>();
-      return recursiveResolve(parsed, dependencies, this.loadByReference).then(() => {
-        dependencies.forEach((dependency, iri) => {
-          if (!this.partials.has(iri)) {
-            this.handlebars.registerPartial(iri, dependency.ast);
-          }
-        });
-      }).then(() => this.handlebars.compile(parsed.ast));
-    });
-  }
-
-  /** Loads partial by local name or remote reference. */
-  private loadByReference = (reference: string): Promise<ParsedTemplate> => {
-    if (this.partials.has(reference)) {
-      return Promise.resolve(this.partials.get(reference));
-    } else if (isRemoteReference(reference)) {
-      return TemplateScope._fetchRemoteTemplate(Rdf.iri(reference));
-    } else {
-      return Promise.reject(new Error(
-        `Parial template reference '${reference}' is not an IRI and not found ` +
-        `in current template scope.`));
+  private registerRemoteTemplates(remoteReferences: ReadonlyArray<Rdf.Iri>) {
+    for (const remoteName of remoteReferences) {
+      if (this.localTemplates.has(remoteName.value)) { continue; }
+      const remoteTemplate = getRemoteTemplate(remoteName);
+      if (this.referencedTemplates.has(remoteTemplate.globalKey)) { continue; }
+      this.referencedTemplates.set(remoteTemplate.globalKey, remoteTemplate);
+      this.handlebars.registerPartial(remoteName.value, remoteTemplate.transformedAst);
     }
   }
-}
 
-export class TemplateScopeBuilder {
-  private partials = new Map<string, ParsedTemplate>();
+  private findAllReferencedLocalTemplates(root: ExtractedTemplate): Set<ExtractedTemplate> {
+    const localReferences = new Set<ExtractedTemplate>();
 
-  constructor(
-    options: TemplateScopeOptions,
-    private createScope: (partials: Map<string, ParsedTemplate>) => TemplateScope,
-  ) {
-    const {partials = {}} = options;
-    for (const id in partials) {
-      if (!partials.hasOwnProperty(id)) { continue; }
-      const partialText = partials[id];
-      if (typeof partialText === 'string') {
-        this.registerPartial(id, partialText);
+    const visitTemplate = (template: ExtractedTemplate) => {
+      if (!localReferences.has(template)) {
+        localReferences.add(template);
       }
-    }
+      template.localReferences.forEach(visitLocalReference);
+    };
+
+    const visitLocalReference = (localName: string) => {
+      const referencedTemplate = this.localTemplates.get(localName);
+      if (!referencedTemplate) {
+        throw new Error(`Missing local template for reference {{>${localName}}}`);
+      }
+      visitTemplate(referencedTemplate);
+    };
+
+    visitTemplate(root);
+    return localReferences;
   }
 
-  registerPartial(id: string, partial: string | ParsedTemplate): this {
-    if (this.partials.has(id)) {
-      throw new Error(`Template partial '${id}' already registered`);
+  private findAllImportedComponents(template: ExtractedTemplate): Set<string> {
+    const visited = new Set<number>();
+    const importedComponents = new Set<string>();
+    let mayRenderDynamicHtml = false;
+
+    const visitSource = (globalKey: number) => {
+      if (visited.has(globalKey)) { return; }
+      const source = globalKey === template.globalKey
+        ? template : this.referencedTemplates.get(globalKey);
+      visited.add(source.globalKey);
+      if (source.hasDynamicHtml) {
+        mayRenderDynamicHtml = true;
+      }
+      source.importedComponents.forEach(
+        component => importedComponents.add(component)
+      );
+      source.localReferences.forEach(localReference => {
+        const referencedTemplate = this.localTemplates.get(localReference);
+        if (!referencedTemplate) {
+          throw new Error(`Missing local template for reference {{>${localReference}}}`);
+        }
+        visitSource(referencedTemplate.globalKey);
+      });
+      for (const remoteReference of source.remoteReferences) {
+        // this will throw an exception if remote not found
+        const referencedTemplate = getRemoteTemplate(remoteReference);
+        visitSource(referencedTemplate.globalKey);
+      }
+    };
+
+    visitSource(template.globalKey);
+    if (mayRenderDynamicHtml) {
+      ALLOWED_DYNAMIC_HTML_COMPONENTS.forEach(tag => importedComponents.add(tag));
     }
-    const parsedTemplate = typeof partial === 'string' ? parseTemplate(partial) : partial;
-    this.partials.set(id, parsedTemplate);
-    return this;
+    return importedComponents;
   }
 
-  build(): TemplateScope {
-    return this.createScope(this.partials);
+  private compilePreloadedTemplate(template: ExtractedTemplate): CompiledTemplate {
+    const compiledSource = this.handlebars.compile(template.transformedAst, {
+      knownHelpers: KNOWN_HELPERS,
+      preventIndent: true,
+    });
+    const compiledTemplate: CompiledTemplate = (dataContext) => {
+      return renderTemplate(
+        compiledSource,
+        sourceKey => {
+          return sourceKey === template.globalKey
+            ? template : this.referencedTemplates.get(sourceKey);
+        },
+        dataContext.context,
+        dataContext.data || emptyDataStack()
+      );
+    };
+    return compiledTemplate;
   }
-}
-
-function recursiveResolve(
-  parsedTemplate: ParsedTemplate,
-  dependencies: Map<string, ParsedTemplate>,
-  load: (reference: string) => Promise<ParsedTemplate>
-): Promise<{}> {
-  return Promise.resolve(parsedTemplate).then(body => {
-    const referencesToLoad = parsedTemplate.references
-      .filter(reference => !dependencies.has(reference));
-
-    for (const reference of referencesToLoad) {
-      // mark dependency to prevent multiple loading
-      dependencies.set(reference, null);
-    }
-
-    const fetchedDependencies = referencesToLoad.map(
-      reference => load(reference)
-        .then(template => ({reference, template}))
-        .catch(error => {
-          throw new WrappingError(`Failed to load template '${reference}'`, error);
-        })
-    );
-
-    return Promise.all(fetchedDependencies);
-  }).then(fetched => {
-    for (const {reference, template} of fetched) {
-      dependencies.set(reference, template);
-    }
-
-    return Promise.all(fetched.map(
-      ({reference, template}) => recursiveResolve(template, dependencies, load)
-        .catch(error => {
-          throw new WrappingError(
-            `Error while resolving dependencies of template '${reference}'`, error);
-        })
-    ));
-  });
 }

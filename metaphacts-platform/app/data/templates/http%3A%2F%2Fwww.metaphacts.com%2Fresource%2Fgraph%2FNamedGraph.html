@@ -1,0 +1,47 @@
+[[> "http://www.metaphacts.com/resource/OntodiaUserTemplates" ]]
+[[> "http://www.metaphacts.com/resource/assets/OntodiaPresetUtils"]]
+
+[[> "http://www.metaphacts.com/resource/assets/OntodiaNamedGraphViewPreset"]]
+
+<style>
+  #named-graph-ontodia {
+	height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+</style>
+
+[[#*inline "GraphNodesLimit"]]300[[/inline]]
+
+[[#*inline "NewNamedGraphParameters"]]
+    query='CONSTRUCT { ?Subject ?Property ?Object } WHERE {
+        GRAPH {{graphIri}} { ?Subject ?Property ?Object FILTER ISIRI(?Object) }
+    } LIMIT [[>GraphNodesLimit]]'
+[[/inline]]
+
+[[#> NamedGraphGraphSettings graphIri=(urlParam "graph")]]
+<div class="page--fullheight">
+  <div id="named-graph-ontodia">
+
+    <semantic-context repository="default">
+      <semantic-query
+        query='SELECT (COUNT(DISTINCT *) as ?number) WHERE {
+          GRAPH <[[urlParam "graph"]]> { {
+            SELECT * WHERE { ?Subject ?Property ?Object} LIMIT [[> GraphNodesLimit]]
+          } }
+        } LIMIT 1'
+        template='{{> graphWarning number=bindings.0.number}}' >
+        <template id='graphWarning'>
+          {{#ifCond number.value ">=" [[>GraphNodesLimit]]}}
+            <bs-alert bs-style="warning" style='flex: 0 0 auto;'>
+              The visualization below is a preview of <strong>[[>GraphNodesLimit]] statements</strong> from the named graph.
+              However, the absolute number of statements in the graph seems to be larger and some edges or nodes might be missing.
+            </bs-alert>
+          {{/ifCond}}
+        </template>
+      </semantic-query>
+    </semantic-context>
+  [[> NamedGraphGraphBody]]
+  </div>
+</div>
+[[/NamedGraphGraphSettings]]

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,32 +37,35 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
   Component,
-  createFactory,
   createElement,
   Children,
   ReactNode,
   cloneElement,
   ReactElement,
   Props as ReactProps,
+  CSSProperties,
 } from 'react';
 import * as SplitPane from 'react-split-pane';
 import * as assign from 'object-assign';
 import * as _ from 'lodash';
 
+import { Cancellation } from 'platform/api/async/Cancellation';
+import { listen } from 'platform/api/events';
 import { BrowserPersistence, universalChildren } from 'platform/components/utils';
 import { SplitPaneSidebarClosedComponent } from './SplitPaneSidebarClosedComponent';
 import { SplitPaneSidebarOpenComponent } from './SplitPaneSidebarOpenComponent';
 import { SplitPaneToggleOnComponent } from './SplitPaneToggleOnComponent';
 import { SplitPaneToggleOffComponent } from './SplitPaneToggleOffComponent';
 
-import {SplitPaneConfig, configHasDock } from './SplitPaneConfig';
+import { BaseConfig, ConfigWithDock, configHasDock } from './SplitPaneConfig';
+import * as SplitPaneEvents from './SplitPaneEvents';
 
 import './split-pane.scss';
 
-export type Props = SplitPaneConfig & ReactProps<SplitPaneComponent>;
+export type Props = (BaseConfig<CSSProperties> | ConfigWithDock<CSSProperties>) &
+  ReactProps<SplitPaneComponent>;
 
 export interface State {
   isOpen?: boolean;
@@ -71,7 +96,8 @@ const LocalStorageState = BrowserPersistence.adapter<{
  * Using the split-pane as left-side sidebar menu by utilizing
  * the pre-defined "split-pane__leftsidebar-*" css classes
  *
- * <mp-splitpane min-size=30 nav-height=103 footer-height=180 dock=true default-size=300 id="my-panel" persist-resize=true style="margin-top:-60px;" snap-threshold=50>
+ * <mp-splitpane min-size=30 nav-height=103 footer-height=180 dock=true default-size=300
+ *   id="my-panel" persist-resize=true style="margin-top:-60px;" snap-threshold=50>
  *   <div class="split-pane__leftsidebar">
  *     <mp-splitpane-toggle-on>
  *       <div class="split-pane__leftsidebar-caption">SIDEBAR TITLE</div>
@@ -100,6 +126,7 @@ export class SplitPaneComponent extends Component<Props, State> {
     defaultOpen: true,
     navHeight: 105, // our default nav + breadcrumbs size
   };
+  private readonly cancellation = new Cancellation();
 
   constructor(props: Props) {
     super(props);
@@ -118,14 +145,42 @@ export class SplitPaneComponent extends Component<Props, State> {
     };
   }
 
+  componentDidMount() {
+    const {id} = this.props;
+    this.cancellation.map(
+      listen({
+        eventType: SplitPaneEvents.Open,
+        target: id,
+      })
+    ).observe({
+      value: () => {
+        this.setState({isOpen: true});
+      }
+    });
+    this.cancellation.map(
+      listen({
+        eventType: SplitPaneEvents.Close,
+        target: id,
+      })
+    ).observe({
+      value: () => {
+        this.setState({isOpen: false});
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    this.cancellation.cancelAll();
+  }
+
   private getLSIdentifier = () => {
     const id = this.props.id;
     return `mp-splitpane${id ? `-${id}` : ``}`;
-  };
+  }
 
   private isPersistResize = (): boolean => {
     return this.props.persistResize || this.props.persistResize === undefined;
-  };
+  }
 
   private handleOpen = () => {
     let size = this.state.size;
@@ -145,7 +200,7 @@ export class SplitPaneComponent extends Component<Props, State> {
 
       this.triggerWindowResize();
     });
-  };
+  }
 
   private handleDrag = (size: number) => {
     const {minSize} = this.props;
@@ -158,14 +213,14 @@ export class SplitPaneComponent extends Component<Props, State> {
       }
       this.triggerWindowResize();
     });
-  };
+  }
 
   private consideredToBeOpened(size: number) {
     const {minSize, snapThreshold} = this.props;
     return size > minSize + (snapThreshold || 0);
   }
 
-  private mapChildren = (children: ReactNode) => {
+  private mapChildren = (children: ReactNode): ReactNode => {
     const isOpen = this.state.isOpen;
 
     return universalChildren(
@@ -189,7 +244,7 @@ export class SplitPaneComponent extends Component<Props, State> {
           return element;
         }
 
-        return cloneElement(element, {}, ...this.mapChildren(element.props.children));
+        return cloneElement(element, {children: this.mapChildren(element.props.children)});
       })
     );
   }
@@ -214,7 +269,7 @@ export class SplitPaneComponent extends Component<Props, State> {
       primary,
     };
 
-    let [sidebarChild, contentChild] = [children[0], children[1]];
+    let [sidebarChild, contentChild] = children as [ReactElement, ReactElement];
     if (primary === 'second') {
       [sidebarChild, contentChild] = [contentChild, sidebarChild];
     }
@@ -226,15 +281,15 @@ export class SplitPaneComponent extends Component<Props, State> {
         position: 'sticky',
         top: this.props.navHeight + 'px',
         height: `calc(100vh - ${this.props.navHeight}px)`,
-      } : null,
+      } : null
     );
 
-    let [firstChild, secondChild] = [
-      cloneElement(sidebarChild, {style: sidebarChildStyle},
-        ...this.mapChildren(sidebarChild.props.children)
-      ),
-      this.mapChildren(contentChild)
-    ];
+    let firstChild: ReactNode = cloneElement(sidebarChild, {
+      style: sidebarChildStyle,
+      children: this.mapChildren(sidebarChild.props.children),
+    });
+    let secondChild: ReactNode = this.mapChildren(contentChild);
+
     if (primary === 'second') {
       [firstChild, secondChild] = [secondChild, firstChild];
     }
@@ -253,7 +308,4 @@ export class SplitPaneComponent extends Component<Props, State> {
   );
 }
 
-export type component = SplitPaneComponent;
-export const component = SplitPaneComponent;
-export const factory = createFactory(component);
-export default component;
+export default SplitPaneComponent;

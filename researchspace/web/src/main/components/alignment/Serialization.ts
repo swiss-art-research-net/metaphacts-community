@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as Maybe from 'data.maybe';
 
@@ -112,7 +111,7 @@ export function deserializeAlignment(graph: Rdf.Graph): AlignmentState {
 
   graph.triples.forEach(({s, p, o}) => {
     const isMatch = p.equals(rso.PX_exact_match) || p.equals(rso.PX_narrow_match);
-    if (s.isIri() && isMatch) {
+    if (Rdf.isIri(s) && Rdf.isNode(o) && isMatch) {
       const match = Rdf.pg(o, graph);
       const kind = p.equals(rso.PX_exact_match) ? AlignKind.ExactMatch : AlignKind.NarrowerMatch;
       const targets = Rdf.getValuesFromPropertyPath([rso.PX_match_target], match);
@@ -122,7 +121,7 @@ export function deserializeAlignment(graph: Rdf.Graph): AlignmentState {
       }
       const excluded = Immutable.Set(
         Rdf.getValuesFromPropertyPath([rso.PX_match_excludes], match)
-          .filter(node => node.isIri())
+          .filter(node => Rdf.isIri(node))
           .map(node => node.value)
       );
       allMatches.update(targets[0].value, matches => {
@@ -130,14 +129,14 @@ export function deserializeAlignment(graph: Rdf.Graph): AlignmentState {
         result.push({kind, iri: s, excluded});
         return result;
       });
-    } else if (p.equals(rdfs.label) && s.isIri()) {
+    } else if (p.equals(rdfs.label) && Rdf.isIri(s)) {
       metadata.iri = Maybe.Just(s);
       metadata.label = o.value;
     } else if (p.equals(rdfs.comment)) {
       metadata.description = o.value;
-    } else if (p.equals(rso.PX_source_terminology) && o.isIri()) {
+    } else if (p.equals(rso.PX_source_terminology) && Rdf.isIri(o)) {
       metadata.source = o;
-    } else if (p.equals(rso.PX_target_terminology) && o.isIri()) {
+    } else if (p.equals(rso.PX_target_terminology) && Rdf.isIri(o)) {
       metadata.target = o;
     }
   });

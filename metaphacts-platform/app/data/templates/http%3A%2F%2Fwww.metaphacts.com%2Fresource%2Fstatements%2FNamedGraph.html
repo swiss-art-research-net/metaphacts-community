@@ -1,0 +1,39 @@
+<div class="page">
+    <div class="page__body">
+        <h2> Statements </h2>
+        <semantic-query
+        query='
+            SELECT (COUNT(DISTINCT *) as ?number) WHERE {
+                GRAPH <[[urlParam "graph"]]> {
+                {SELECT * WHERE{ ?Subject ?Property ?Object}  LIMIT 1000 }
+                }
+            } LIMIT 1
+        '
+        template='{{> statements}}'
+        >
+        <template id='statements'>
+            {{#each bindings}}
+            {{#ifCond number.value ">=" 1000}}
+                <bs-alert bs-style="warning">
+                    The table below is a preview of <strong>1000 statements</strong> from the named graph.
+                    However, the absolute number of statements in the graph seems to be larger and some statements might be missing.
+                </bs-alert>
+            {{else}}
+                <bs-alert bs-style="info">
+                The named graphs contains <strong>{{number.value}}</strong> distinct statements.
+                </bs-alert>
+            {{/ifCond}}
+            {{/each}}
+        </template>
+            </semantic-query>
+
+        <semantic-table
+        query='
+            SELECT ?Subject ?Property ?Object WHERE{
+                GRAPH <[[urlParam "graph"]]> {
+                ?Subject ?Property ?Object
+                }
+            } LIMIT 1000'
+        ></semantic-table>
+    </div>
+</div>

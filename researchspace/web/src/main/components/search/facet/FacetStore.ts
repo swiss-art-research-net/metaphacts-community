@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Alexey Morozov
@@ -31,7 +30,8 @@ import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
 import {
-  SparqlUtil, SparqlClient, PatternBinder, VariableRenameBinder, QueryVisitor, cloneQuery,
+  SparqlUtil, SparqlClient, PatternBinder, VariableRenameBinder, QueryVisitor, SparqlTypeGuards,
+  cloneQuery,
 } from 'platform/api/sparql';
 import { Action } from 'platform/components/utils';
 import { SemanticContext } from 'platform/api/components';
@@ -316,10 +316,20 @@ export class FacetStore {
     // reset facet values of the selected relation
     Kefir.combine(
       {conjunct: this.removeConjunctAction.$property},
-      {selected: this.selectedValues.$property}
-    ).onValue(({selected, conjunct}) => {
+      {
+        selected: this.selectedValues.$property,
+        selectedRelation: this.toggleRelationAction.$property,
+      }
+    ).onValue(({selected, selectedRelation, conjunct}) => {
       const {relation} = conjunct;
       this.selectedValues(selected.remove(relation));
+
+      // update selected relation values
+      selectedRelation.map(r => {
+        if (!r.equals(relation)) {
+          this.selectRelation(r);
+        }
+      });
     });
   }
 
@@ -563,12 +573,14 @@ export class FacetStore {
       ).map(
         labels => values.map(value => {
           const label = labels.get(value.iri) as string;
-          value.tuple[FACET_VARIABLES.VALUE_RESOURCE_LABEL_VAR] = Rdf.literal(label);
           return {
             iri: value.iri,
             label,
             description: label,
-            tuple: value.tuple
+            tuple: {
+              ...value.tuple,
+              [FACET_VARIABLES.VALUE_RESOURCE_LABEL_VAR]: Rdf.literal(label),
+            }
           };
         })
       );
@@ -714,12 +726,19 @@ export class FacetStore {
     }
   }
 
-  private getProjectionVariable(baseQuery: SparqlJs.SelectQuery): string {
+  private getProjectionVariable(baseQuery: SparqlJs.SelectQuery): Rdf.Variable {
     if (this.config.availableDomains) {
-      return this.config.availableDomains.get(this.config.domain.iri);
+      const domainVariable = this.config.availableDomains.get(this.config.domain.iri);
+      return parseVariable(domainVariable);
     }
-    const variables = baseQuery.variables;
-    return variables[0] as string;
+    if (SparqlTypeGuards.isStarProjection(baseQuery.variables)) {
+      throw new Error('Cannot get main projection variable for wildcard query (*)');
+    }
+    const [variable] = baseQuery.variables;
+    if (!SparqlTypeGuards.isVariable(variable)) {
+      throw new Error('Cannot get main projection variable when it is already assigned');
+    }
+    return variable;
   }
 
   private generateQueryClause(
@@ -731,7 +750,7 @@ export class FacetStore {
           conjunct.relation.hasDomain.iri.equals(iri)
         );
         return conjunctsToQueryPatterns(
-          this.config.baseConfig, projectionVariable,
+          this.config.baseConfig, parseVariable(projectionVariable),
           this.config.domain, filteredConjuncts
         );
       }).flatten().toArray();
@@ -745,6 +764,13 @@ export class FacetStore {
   private removeConjunct = (conjunct: SearchModel.RelationConjunct) => {
     this.removeConjunctAction(conjunct);
   }
+}
+
+function parseVariable(variable: string): Rdf.Variable {
+  if (!(variable.startsWith('?') || variable.startsWith('$'))) {
+    throw new Error(`Invalid variable name '${variable}' (should start with ? or $)`);
+  }
+  return Rdf.DATA_FACTORY.variable(variable.substring(1));
 }
 
 /**
@@ -824,7 +850,7 @@ function transformRelationPatternForFacetValues(pattern: SparqlJs.Pattern[], kin
       FACET_VARIABLES.VALUE_LITERAL);
   } else if (kind === 'date-range') {
     const range = {
-      begin: SEMANTIC_SEARCH_VARIABLES.DATE_BEGING_VAR,
+      begin: SEMANTIC_SEARCH_VARIABLES.DATE_BEGIN_VAR,
       end: SEMANTIC_SEARCH_VARIABLES.DATE_END_VAR,
     };
     const rangeTo = {

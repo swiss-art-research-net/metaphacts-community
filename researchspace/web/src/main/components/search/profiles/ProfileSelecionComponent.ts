@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +15,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
 
 import { Component, createFactory } from 'react';
-import ReactSelectComponent, { Options as ReactSelectOptions } from 'react-select';
+import ReactSelectComponent, { Options as ReactSelectOptions, OnChangeHandler } from 'react-select';
 import { OrderedSet } from 'immutable';
 import * as _ from 'lodash';
 
@@ -45,7 +44,7 @@ interface State {
 
 export class ProfileSelectionComponent extends Component<Props, State> {
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     this.state = {
       options: [],
@@ -67,7 +66,7 @@ export class ProfileSelectionComponent extends Component<Props, State> {
       multi: true,
       options: this.state.options,
       value: this.state.selectedValues,
-      onChange: this.onChange.bind(this),
+      onChange: this.onChange.bind(this) as any,
       disabled: this.props.disabled,
       placeholder: 'Select relationship profile to use. Default: all FCs and FRs',
     });

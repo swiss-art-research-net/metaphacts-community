@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Set } from 'immutable';
 
 import { KeyedForest, Traversable, NodePath } from './KeyedForest';
@@ -23,17 +44,21 @@ import { KeyedForest, Traversable, NodePath } from './KeyedForest';
 export type TreeSelection<T> = KeyedForest<SelectionNode<T>>;
 
 interface SelectionBrand { __selectionBrand: void; }
-export type SelectionNode<T> = T & Traversable<T> & SelectionBrand;
+export type SelectionNode<T> = T & Traversable<T> & Traversable<SelectionNode<T>> & SelectionBrand;
 export namespace SelectionNode {
   export function set<T>(node: T, props: Partial<Traversable<T>>) {
-    return {...node as any, ...props} as SelectionNode<T>;
+    return {...node, ...props} as SelectionNode<T>;
   }
 }
 
 export namespace TreeSelection {
+  export function fromForest<T extends Traversable<T>>(forest: KeyedForest<T>): TreeSelection<T> {
+    return (forest as unknown as TreeSelection<T>);
+  }
+
   export function empty<T extends Traversable<T>>(base: KeyedForest<T>): TreeSelection<T> {
-    const emptyRoot = {...base.root as Traversable<any>, children: []} as any as SelectionNode<T>;
-    return (base as TreeSelection<T>).setRoot(emptyRoot);
+    const emptyRoot: SelectionNode<T> = {...base.root as SelectionNode<T>, children: []};
+    return fromForest(base).setRoot(emptyRoot);
   }
 
   /**
@@ -54,7 +79,6 @@ export namespace TreeSelection {
   }
 
   export function leafs<T>(selection: TreeSelection<T>) {
-    type MutableNodes = Map<string, Set<SelectionNode<T>>>;
     return selection.nodes
       .map(nodes => nodes.find(isLeaf))
       .filter(node => !(node === undefined || selection.isRoot(node)))
@@ -113,7 +137,7 @@ export namespace TreeSelection {
   }
 
   export function makeTerminal<T>(selection: TreeSelection<T>, key: string): TreeSelection<T> {
-    const removeChildren = () => undefined;
+    const removeChildren = (): undefined => undefined;
     return (selection.nodes.get(key) || Set<SelectionNode<T>>()).reduce(
       (acc, node) => acc.updateChildren(acc.getKeyPath(node), removeChildren),
       selection
@@ -171,7 +195,7 @@ export namespace TreeSelection {
     selection: TreeSelection<T>,
     forest: KeyedForest<T>,
     subtree: T
-  ) {
+  ): TreeSelection<T> {
     const withSubtree = selectTerminal(selection, forest.getNodePath(subtree));
     const parent = forest.getParent(subtree);
     if (forest.isRoot(parent)) {
@@ -204,8 +228,8 @@ export namespace TreeSelection {
 
     const selectionNode = selection.fromKeyPath(parentPath);
     if (selectionNode.children.length === 0 && !options.leaveParentSelected) {
-      const parent = forest.fromKeyPath(parentPath);
-      selection = materializeAndExclude(selection, forest, parent, options);
+      const updatedParent = forest.fromKeyPath(parentPath);
+      selection = materializeAndExclude(selection, forest, updatedParent, options);
     }
     return selection;
   }
@@ -220,7 +244,7 @@ export namespace TreeSelection {
   function materializeTerminalChildren<T extends Traversable<T>>(
     selection: TreeSelection<T>,
     forest: KeyedForest<T>,
-    path: ReadonlyArray<string>,
+    path: ReadonlyArray<string>
   ): TreeSelection<T> {
     if (!selection.fromKeyPath(path)) {
       const parentPath = getParentPath(path);

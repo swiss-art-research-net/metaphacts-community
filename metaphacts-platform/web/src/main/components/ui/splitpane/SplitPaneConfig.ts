@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,11 +37,9 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { has } from 'lodash';
-import { CSSProperties } from 'react';
 
-export interface BaseSplitPaneConfig {
+export interface BaseConfig<T> {
   /**
    * Width of closed sidebar
    */
@@ -40,19 +60,19 @@ export interface BaseSplitPaneConfig {
   /**
    * SplitPane custom style
    */
-  style?: CSSProperties;
+  style?: T;
   /**
-   * Resizer custom style
+   * Resizer custom style, accepts JSON object with camelCased properties
    */
-  resizerStyle?: CSSProperties;
+  resizerStyle?: T;
   /**
-   * Pane1 custom style
+   * Pane1 custom style, accepts JSON object with camelCased properties
    */
-  sidebarStyle?: CSSProperties;
+  sidebarStyle?: T;
   /**
-   * Pane2 custom style
+   * Pane2 custom style, accepts JSON object with camelCased properties
    */
-  contentStyle?: CSSProperties;
+  contentStyle?: T;
   /**
    * Persisting the current size to local storage
    * @default true
@@ -86,7 +106,7 @@ export interface BaseSplitPaneConfig {
   primary?: 'first' | 'second';
 }
 
-export interface SplitPaneConfigWithDock extends BaseSplitPaneConfig {
+export interface ConfigWithDock<T> extends BaseConfig<T> {
   /**
    * Dock mode
    */
@@ -96,6 +116,10 @@ export interface SplitPaneConfigWithDock extends BaseSplitPaneConfig {
    */
   navHeight?: number
 }
+
+export interface BaseSplitPaneConfig extends BaseConfig<any> {}
+
+export interface SplitPaneConfigWithDock extends ConfigWithDock<any> {}
 
 export type SplitPaneConfig = BaseSplitPaneConfig | SplitPaneConfigWithDock;
 

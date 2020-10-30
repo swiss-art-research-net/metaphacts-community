@@ -69,9 +69,9 @@
    
       
        
-   		<bs-tab event-key="2" title="Logging Configuration">
+   		<bs-tab event-key="2" title="Log Profile">
           <div>
-          	<p>Use the following control to activate a different logging profile (e.g. for debugging purposes).</p>
+          	<p>Use the following control to activate a different logging profile (e.g. for debugging purposes). For changing the log levels navigate to the 'Log Levels' tab.</p>
             
             <p><i>Note: the configuration is not permanent and will be reset after restarting the service</i></p>
             
@@ -79,6 +79,12 @@
             
             <mp-logging-profile-selector></mp-logging-profile-selector>
           </div>
+      </bs-tab>
+      <bs-tab event-key="3" title="Log Levels">
+        <div>
+            <p><i>Note: the configuration is not permanent and will be reset after restarting the service</i></p>
+            <mp-logging-level-selector></mp-logging-level-selector>
+        </div>
       </bs-tab>
     </bs-tabs>
     

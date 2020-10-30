@@ -37,23 +37,22 @@
       }"
     }]
   }'>
-    <semantic-search-query-keyword 
+    <semantic-search-query-keyword
       domain='<http://www.w3.org/2000/01/rdf-schema#Resource>'
-      placeholder='Search for ontology elements by label. Type at least three characters to start searching.'                      
+      placeholder='Search for ontology elements by label. Type at least three characters to start searching.'
       query='
-        SELECT ?subject WHERE { 
+        SELECT ?subject WHERE {
           GRAPH ?g {
             ?ontologyIri a owl:Ontology .
-            ?subject a ?class . 
+            ?subject a ?class .
             ?subject rdfs:label ?label .
             FILTER REGEX(STR(?label), ?__token__, "i")
            }
         }
       '
-      tokenize-lucene-query=false
     ></semantic-search-query-keyword>
   <div data-flex-layout="row stretch-stretch">
-    <!-- 
+    <!--
     <div data-flex-self="size-1of3" style="flex: 0 0 20px;">
       <semantic-search-facet value-categories='{
         "<http://www.w3.org/2001/XMLSchema#Decimal>": {
@@ -71,7 +70,7 @@
           "valuesQuery": "
             SELECT ?literal (COUNT(DISTINCT $subject) AS ?count) WHERE {
               $subject ?__relation__ ?literal .
-            } 
+            }
             GROUP BY ?literal
             ORDER BY ?literal
           "
@@ -90,7 +89,7 @@
           </mp-sparql-result-counts>
         </semantic-search-result>
         <semantic-search-result>
-          <semantic-table 
+          <semantic-table
                     id='grid-result'
 										query='SELECT DISTINCT ?subject ?description WHERE {
                                   OPTIONAL { ?subject rdfs:comment ?description  }
@@ -98,7 +97,7 @@
                     number-of-displayed-rows="10"
                     tuple-template='{{> tuple-template}}'
                     options='{"showTableHeading": false, "showFilter":false}'>
-            
+
             			 	<template id="tuple-template">
                       <div style="width:100%;">
                        <mp-panel>
@@ -117,8 +116,8 @@
                       </mp-panel>
                    </div>
                 	</template>
- 		           </semantic-table>          
- 
+ 		           </semantic-table>
+
             </semantic-search-result>
 
       </div>

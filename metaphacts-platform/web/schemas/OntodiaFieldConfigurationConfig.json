@@ -1,108 +1,74 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
-        "FieldConstraint": {
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "validatePattern": {
-                    "type": "string"
-                }
-            },
-            "propertyOrder": [
-                "validatePattern",
-                "message"
-            ],
-            "required": [
-                "message",
-                "validatePattern"
-            ],
-            "type": "object"
-        },
-        "FieldDefinitionProp": {
+        "FieldDefinitionConfig": {
             "properties": {
                 "askPattern": {
+                    "description": "Single constraint (SPARQL ASK query) to to validate values entered by\nthe user against the database.\n\nQuery bindings:\n   * `?value` - validated field value;\n\nIf both `askPattern` and `constraints` are specified then all of them will\nbe evaluated for each validated value.",
                     "type": "string"
                 },
                 "autosuggestionPattern": {
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     # ?value lookup:type :MyType\n   }\n}\n```",
                     "type": "string"
                 },
                 "categories": {
+                    "description": "An unordered set of categories as additional metadata for improved organization.",
                     "items": {
-                        "anyOf": [
-                            {
-                                "$ref": "#/definitions/Iri"
-                            },
-                            {
-                                "type": "string"
-                            }
-                        ]
+                        "type": "string"
                     },
                     "type": "array"
                 },
                 "constraints": {
+                    "description": "Constraints (SPARQL ASK queries) to validate values entered by\nthe user against the database.",
                     "items": {
-                        "$ref": "#/definitions/FieldConstraint"
+                        "$ref": "#/definitions/SingleFieldConstraint"
                     },
                     "type": "array"
                 },
                 "defaultValues": {
+                    "description": "An array of default values (represented as text) assigned to the field\nif subject doesn't contain a value for it.",
                     "items": {
                         "type": "string"
                     },
                     "type": "array"
                 },
                 "deletePattern": {
+                    "description": "SPARQL DELETE query to remove previous value from the database\nbefore inserting a new one.\n\nQuery bindings:\n   * `?subject` - current entity to be created/edited;\n   * `?value` - inserted atomic values, connected to `?subject` through the graph pattern;",
                     "type": "string"
                 },
                 "description": {
+                    "description": "Description of a field, might be rendered e.g. as a tooltip on hover or\nusing an info icon next to the field.",
                     "type": "string"
                 },
                 "domain": {
                     "anyOf": [
                         {
-                            "$ref": "#/definitions/Iri"
-                        },
-                        {
                             "items": {
-                                "anyOf": [
-                                    {
-                                        "$ref": "#/definitions/Iri"
-                                    },
-                                    {
-                                        "type": "string"
-                                    }
-                                ]
+                                "type": "string"
                             },
                             "type": "array"
                         },
                         {
                             "type": "string"
                         }
-                    ]
+                    ],
+                    "description": "Domain restriction on classes this field applicable to."
                 },
                 "id": {
+                    "description": "Unique identifier of the field definition.\n\nIn most cases it will be the IRI of the field definition, but might be an alias as well.",
                     "type": "string"
                 },
                 "insertPattern": {
+                    "description": "SPARQL INSERT query to add new value to the database.\n\nQuery bindings:\n   * `?subject` - current entity to be created/edited;\n   * `?value` - deleted atomic values, connected to `?subject` through the graph pattern;\n   * (optional) `?index` - see `orderedWith` property;",
                     "type": "string"
                 },
                 "iri": {
+                    "description": "IRI of field definition.",
                     "type": "string"
                 },
                 "label": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "$ref": "#/definitions/Literal"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ]
+                    "description": "Label used to refer to field on form (e.g. in validation messages) and\nrendering the field, for example as an HTML input label before the input element.",
+                    "type": "string"
                 },
                 "maxOccurs": {
                     "anyOf": [
@@ -115,7 +81,9 @@
                         {
                             "type": "number"
                         }
-                    ]
+                    ],
+                    "default": "'unbound'",
+                    "description": "XSD schema max cardinality (inclusive) or `'unbound'` (i.e. infinite)."
                 },
                 "minOccurs": {
                     "anyOf": [
@@ -128,56 +96,38 @@
                         {
                             "type": "number"
                         }
-                    ]
+                    ],
+                    "default": "'unbound'",
+                    "description": "XSD schema min cardinality (inclusive) or `'unbound'` (i.e. 0)."
                 },
                 "order": {
-                    "anyOf": [
-                        {
-                            "enum": [
-                                "unbound"
-                            ],
-                            "type": "string"
-                        },
-                        {
-                            "type": "number"
-                        }
-                    ]
+                    "description": "Number used for ordering field definitions.",
+                    "type": "number"
+                },
+                "orderedWith": {
+                    "description": "Enables values ordering. Supported value: `index-property`.\n\n`index-property` means that the `?index` variable in the query will bind a literal value\nof type `xsd:integer` representing the node's index.\n\nThe following conventions apply:\n   * `insertPattern` MUST have an `?index` variable to bind;\n   * `selectPattern` MUST expose an `?index` projection variable;\n   * `maxOccurs` MUST be > 1 or `'unbound'`;\n\nNote that the index must be bound as property to an object resource.\nFor ordering literal values consider adding an intermediate node, i.e.:\n```\n?subj :hasOrderedItem ?itemNode .\n?itemNode :hasItemValue ?value .\n?itemNode :hasIndex ?index .\n```",
+                    "enum": [
+                        "index-property"
+                    ],
+                    "type": "string"
                 },
                 "range": {
                     "anyOf": [
                         {
-                            "$ref": "#/definitions/Iri"
-                        },
-                        {
                             "items": {
-                                "anyOf": [
-                                    {
-                                        "$ref": "#/definitions/Iri"
-                                    },
-                                    {
-                                        "type": "string"
-                                    }
-                                ]
+                                "type": "string"
                             },
                             "type": "array"
                         },
                         {
                             "type": "string"
                         }
-                    ]
+                    ],
+                    "description": "Range restriction on allowed classes of objects for the field values.\nOnly applicable if `xsdDatatype` is `xsd:anyURI`."
                 },
                 "selectPattern": {
+                    "description": "SPARQL SELECT query string to read initial values for the field.\n\nQuery bindings:\n   * `?subject` - current entity to be created/edited;\n\nExposed projection variables:\n   * `?value` - current atomic values, connected to `?subject` through the graph pattern;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n   * (optional) `?index` - see `orderedWith` property;",
                     "type": "string"
-                },
-                "testSubject": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/definitions/Iri"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ]
                 },
                 "treePatterns": {
                     "anyOf": [
@@ -187,20 +137,16 @@
                         {
                             "$ref": "#/definitions/FullTreeConfig"
                         }
-                    ]
+                    ],
+                    "description": "SPARQL configuration to select terms from an hierarchical thesaurus.\nCan be either `simple` or `full` (specified in the `type` attribute)."
                 },
                 "valueSetPattern": {
+                    "description": "SPARQL SELECT query to generate a fixed list (choices) of values\nthat the user may choose from.\n\nExposed projection variables:\n   * `?value` - set of values for user to choose from;\n   * (optional) `?label` - label for `?value`;\n   * (optional) further projection variables might be exposed\n     to format the rendering within the input element;",
                     "type": "string"
                 },
                 "xsdDatatype": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/definitions/Iri"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ]
+                    "description": "A full or prefix XSD IRI datatype identifier as specified\nin [RDF 1.1](https://www.w3.org/TR/rdf11-concepts/#xsd-datatypes)",
+                    "type": "string"
                 }
             },
             "propertyOrder": [
@@ -217,14 +163,15 @@
                 "order",
                 "defaultValues",
                 "selectPattern",
+                "deletePattern",
+                "insertPattern",
                 "askPattern",
                 "constraints",
                 "valueSetPattern",
-                "deletePattern",
-                "insertPattern",
                 "autosuggestionPattern",
                 "treePatterns",
-                "testSubject"
+                "testSubject",
+                "orderedWith"
             ],
             "required": [
                 "id"
@@ -255,20 +202,28 @@
         "FullTreeConfig": {
             "properties": {
                 "childrenQuery": {
-                    "description": "Children query with [?parent] input and [?item, ?label, ?hasChildren] output variables.",
+                    "description": "Children SPARQL query with `[?parent]` input and `[?item, ?label, ?hasChildren]` output\nvariables:\n  - `?parent` - parametrized variable with node IRI to retrieve children for;\n  - `?item` - result child node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display value.",
                     "type": "string"
                 },
+                "escapeLuceneSyntax": {
+                    "description": "A flag determining whether any special Lucene syntax will be escaped.\nWhen `false` lucene syntax in the user input is not escaped.\n\nDeprecated: escaping will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
                 "parentsQuery": {
-                    "description": "Parent nodes query with [?item] inputs through VALUES(...) clause\nand [?item, ?parent, ?parentLabel] outputs.",
+                    "description": "A SPARQL query to recursively compute the parent hierarchy for search results.\nCan be used together with the `search-query` setting.\n\nThe query has `[?item]` inputs through `VALUES(...)` clause\nand `[?item, ?parent, ?parentLabel]` outputs:\n  - `?item` - child node IRI provided with `VALUES(?item) { ... }` clause;\n  - `?parent` - result parent node IRI for `?item` node;\n  - `?parentLabel` (optional) - display label for `?parent` (if not provided the display label\n    is retrieved using the label service);\n\nBe aware to have a distinct association of node and label to not produce any cross products.",
                     "type": "string"
                 },
                 "rootsQuery": {
-                    "description": "Tree roots query with no input and [?item, ?label, ?hasChildren] output variables.",
+                    "description": "Tree roots SPARQL query with no input and `[?item, ?label, ?hasChildren]` output variables:\n  - `?item` - result root node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display label.",
                     "type": "string"
                 },
                 "searchQuery": {
-                    "description": "Search query with [?__token__] input and [?item, ?score, ?label, ?hasChildren] outputs.",
+                    "description": "A SPARQL query to compute a search result for a given user input.\n\nThe query has `[?__token__]` input and `[?item, ?score, ?label, ?hasChildren]` outputs:\n  - `?__token__` - parametrized search input string;\n  - `?item` - search result node IRI;\n  - `?score` (optional) - search result score of `?item` for tree sorting;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nNote that the parent hierarchy is computed recursively using the `parents-query` configuration\nsetting.",
                     "type": "string"
+                },
+                "tokenizeLuceneQuery": {
+                    "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed\nby `*`. E.g. the search for `Hello World` becomes `Hello* World*`.\n\nDeprecated: tokenization will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
                 },
                 "type": {
                     "enum": [
@@ -279,6 +234,8 @@
             },
             "propertyOrder": [
                 "type",
+                "escapeLuceneSyntax",
+                "tokenizeLuceneQuery",
                 "rootsQuery",
                 "childrenQuery",
                 "parentsQuery",
@@ -286,100 +243,8 @@
             ],
             "required": [
                 "childrenQuery",
-                "parentsQuery",
                 "rootsQuery",
-                "searchQuery",
                 "type"
-            ],
-            "type": "object"
-        },
-        "Iri": {
-            "properties": {
-                "_value": {
-                    "type": "string"
-                },
-                "termType": {
-                    "enum": [
-                        "NamedNode"
-                    ],
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            },
-            "propertyOrder": [
-                "termType",
-                "equals",
-                "toString",
-                "toJSON",
-                "_value",
-                "value",
-                "hashCode",
-                "cata",
-                "isIri",
-                "isLiteral",
-                "isBnode"
-            ],
-            "required": [
-                "_value",
-                "termType",
-                "value"
-            ],
-            "type": "object"
-        },
-        "Literal": {
-            "properties": {
-                "_datatype": {
-                    "$ref": "#/definitions/Iri"
-                },
-                "_lang": {
-                    "type": "string"
-                },
-                "_value": {
-                    "type": "string"
-                },
-                "datatype": {
-                    "$ref": "#/definitions/Iri"
-                },
-                "language": {
-                    "type": "string"
-                },
-                "termType": {
-                    "enum": [
-                        "Literal"
-                    ],
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            },
-            "propertyOrder": [
-                "_datatype",
-                "_lang",
-                "termType",
-                "datatype",
-                "language",
-                "toString",
-                "equals",
-                "toJSON",
-                "_value",
-                "value",
-                "hashCode",
-                "cata",
-                "isIri",
-                "isLiteral",
-                "isBnode"
-            ],
-            "required": [
-                "_datatype",
-                "_lang",
-                "_value",
-                "datatype",
-                "language",
-                "termType",
-                "value"
             ],
             "type": "object"
         },
@@ -445,6 +310,27 @@
                 "type"
             ],
             "type": "object"
+        },
+        "SingleFieldConstraint": {
+            "properties": {
+                "message": {
+                    "description": "Error message to display if constraint is violated.",
+                    "type": "string"
+                },
+                "validatePattern": {
+                    "description": "SPARQL ASK pattern to validate if the constraint holds.\n\nQuery bindings:\n   * `?value` - validated field value;",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "validatePattern",
+                "message"
+            ],
+            "required": [
+                "message",
+                "validatePattern"
+            ],
+            "type": "object"
         }
     },
     "properties": {
@@ -484,7 +370,7 @@
         "fields": {
             "description": "Fields to be used in Ontodia instance. Could be populated inline or with backend helper.",
             "items": {
-                "$ref": "#/definitions/FieldDefinitionProp"
+                "$ref": "#/definitions/FieldDefinitionConfig"
             },
             "type": "array"
         },
@@ -498,10 +384,10 @@
         "persistence": {
             "anyOf": [
                 {
-                    "$ref": "#/definitions/FormBasedPersistenceProps"
+                    "$ref": "#/definitions/OntologyPersistenceProps"
                 },
                 {
-                    "$ref": "#/definitions/OntologyPersistenceProps"
+                    "$ref": "#/definitions/FormBasedPersistenceProps"
                 }
             ],
             "default": "{type: \"form\"}",
@@ -513,17 +399,17 @@
         }
     },
     "propertyOrder": [
+        "fields",
+        "children",
         "authoringMode",
         "persistence",
-        "debug",
-        "fields",
         "allowRequestFields",
         "typeIri",
         "defaultLabelIri",
         "defaultImageIri",
         "defaultSubjectTemplate",
         "forceDatatypeFields",
-        "children"
+        "debug"
     ],
     "required": [
         "children",

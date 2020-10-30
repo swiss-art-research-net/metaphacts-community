@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as moment from 'moment';
 import * as uuid from 'uuid';
 import * as _ from 'lodash';
@@ -36,8 +57,9 @@ import {
 
 const XSD_DATE_FORMAT = 'YYYY-MM-DD';
 
-function DEFAULT_QUERY_PATTERN(resultProjectinVar: string) {
-  return `${resultProjectinVar} ?${SEMANTIC_SEARCH_VARIABLES.RELATION_VAR} ?${SEMANTIC_SEARCH_VARIABLES.RESOURCE_VAR} .`;
+function DEFAULT_QUERY_PATTERN(resultProjectionVar: Rdf.Variable) {
+  return `?${resultProjectionVar.value} ` +
+    `?${SEMANTIC_SEARCH_VARIABLES.RELATION_VAR} ?${SEMANTIC_SEARCH_VARIABLES.RESOURCE_VAR} .`;
 }
 
 const DEFAULT_SET_QUERY_PATTERN = `
@@ -51,11 +73,17 @@ function setDisjunct(disjucnct: Model.SetDisjunct) {
   return {[SEMANTIC_SEARCH_VARIABLES.SET_VAR]: disjucnct.value.iri};
 }
 
-function textDisjunct(config: SemanticSearchConfig, conjunct: Model.Conjunct) {
+function textDisjunct(
+  config: SemanticSearchConfig,
+  conjunct: Model.Conjunct,
+  tokenizationDefaults: SparqlUtil.TokenizationDefaults
+) {
   const patternConfig = (getConfigPatternForCategory(config, conjunct.range.iri) || {}) as Text;
   return function(disjunct: Model.TextDisjunct) {
     const val = SparqlUtil.makeLuceneQuery(
-      disjunct.value, patternConfig.escapeLuceneSyntax, patternConfig.tokenizeLuceneQuery,
+      disjunct.value,
+      patternConfig.escapeLuceneSyntax ?? tokenizationDefaults.escapeLucene,
+      patternConfig.tokenizeLuceneQuery ?? tokenizationDefaults.tokenize
     );
     return {[SEMANTIC_SEARCH_VARIABLES.RESOURCE_VAR]: val};
  };
@@ -65,7 +93,7 @@ function textDisjunct(config: SemanticSearchConfig, conjunct: Model.Conjunct) {
 function dateDisjunct(config: PatternConfig) {
   return function(disjunct: Model.DateDisjunct) {
     return {
-      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGING_VAR]: createDateLiteral(disjunct.value, config),
+      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGIN_VAR]: createDateLiteral(disjunct.value, config),
       [SEMANTIC_SEARCH_VARIABLES.DATE_END_VAR]: createDateLiteral(disjunct.value, config),
     };
   };
@@ -74,7 +102,7 @@ function dateDisjunct(config: PatternConfig) {
 function dateRangeDisjunct(config: PatternConfig) {
   return function(disjunct: Model.DateRangeDisjunct) {
     return {
-      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGING_VAR]: createDateLiteral(disjunct.value.begin, config),
+      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGIN_VAR]: createDateLiteral(disjunct.value.begin, config),
       [SEMANTIC_SEARCH_VARIABLES.DATE_END_VAR]: createDateLiteral(disjunct.value.end, config),
     };
   };
@@ -84,7 +112,7 @@ function dateDeviationDisjunct(config: PatternConfig) {
   return function(disjunct: Model.DateDeviationDisjunct) {
     const { date, deviation } = disjunct.value;
     return {
-      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGING_VAR]: createDateLiteral(
+      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGIN_VAR]: createDateLiteral(
         date.clone().subtract(deviation, 'days'), config
       ),
       [SEMANTIC_SEARCH_VARIABLES.DATE_END_VAR]: createDateLiteral(
@@ -101,7 +129,7 @@ function yearDisjunct(config: PatternConfig) {
     const begin = moment({year: yearValue, month: 0, day: 1});
     const end = moment({year: yearValue, month: 11, day: 31});
     return {
-      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGING_VAR]: createDateLiteral(begin, config),
+      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGIN_VAR]: createDateLiteral(begin, config),
       [SEMANTIC_SEARCH_VARIABLES.DATE_END_VAR]: createDateLiteral(end, config),
     };
   };
@@ -115,7 +143,7 @@ function yearRangeDisjunct(config: PatternConfig) {
     const yearEndValue = end.year * (end.epoch === 'AD' ? 1 : -1);
     const endValue = moment({year: yearEndValue, month: 11, day: 31});
     return {
-      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGING_VAR]: createDateLiteral(beginValue, config),
+      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGIN_VAR]: createDateLiteral(beginValue, config),
       [SEMANTIC_SEARCH_VARIABLES.DATE_END_VAR]: createDateLiteral(endValue, config),
     };
   };
@@ -129,7 +157,7 @@ function yearDeviationDisjunct(config: PatternConfig) {
     const begin = yearFullDate.clone().startOf('year').subtract(deviation, 'years');
     const end = yearFullDate.clone().endOf('year').add(deviation, 'years');
     return {
-      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGING_VAR]: createDateLiteral(begin, config),
+      [SEMANTIC_SEARCH_VARIABLES.DATE_BEGIN_VAR]: createDateLiteral(begin, config),
       [SEMANTIC_SEARCH_VARIABLES.DATE_END_VAR]: createDateLiteral(end, config),
     };
   };
@@ -225,7 +253,10 @@ function fixZeroYearIssue(date: moment.Moment) {
 }
 
 function disjunctToVariables(
-  config: SemanticSearchConfig, patternConfig: PatternConfig, conjunct: Model.Conjunct
+  config: SemanticSearchConfig,
+  patternConfig: PatternConfig,
+  conjunct: Model.Conjunct,
+  tokenizationDefaults: SparqlUtil.TokenizationDefaults
 ) {
   return Model.matchDisjunct<Record<string, Rdf.Node>>({
     Resource: resourceDisjunct,
@@ -238,7 +269,7 @@ function disjunctToVariables(
     Year: yearDisjunct(patternConfig),
     YearRange: yearRangeDisjunct(patternConfig),
     YearDeviation: yearDeviationDisjunct(patternConfig),
-    Text: textDisjunct(config, conjunct),
+    Text: textDisjunct(config, conjunct, tokenizationDefaults),
     Distance: distanceDisjunct(patternConfig),
     BoundingBox: boundingBoxDisjunct(patternConfig),
     Literal: literalDisjunct,
@@ -268,7 +299,7 @@ export function tryGetRelationPatterns(
 }
 
 function getMatchingPatternConfig(
-  config: SemanticSearchConfig, projectionVariable: string,
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable,
   conjunct: Model.Conjunct, disjunct: Model.Disjunct
 ): Resource | Set | Hierarchy | DateRange | NumericRange | Text | Literal | Place {
   const range = conjunct.range;
@@ -375,43 +406,49 @@ function getGenericVariables(domain: Model.Category, conjunct: Model.Conjunct) {
   })(conjunct);
 }
 
-function parseQueryPattern(queryPattern: string, projectionVariable: string): SparqlJs.SelectQuery {
+function parseQueryPattern(
+  queryPattern: string, projectionVariable: Rdf.Variable
+): SparqlJs.SelectQuery {
   const query = SparqlUtil.parseQuerySync<SparqlJs.SelectQuery>(`SELECT * {{ ${queryPattern} }}`);
   return rewriteProjectionVariable(query, projectionVariable);
 }
 
 class Randomizer extends QueryVisitor {
-  private variablesMap: {[key: string]: string} = {};
-  private subjectVariable: string;
-  private rewriteSubjectVariable: SparqlJs.Term;
+  private variablesMap: { [key: string]: SparqlJs.VariableTerm } = {};
+  private subjectVariable: SparqlJs.VariableTerm;
+  private rewriteSubjectVariable: SparqlJs.VariableTerm | undefined;
 
-  constructor(subjectVariable: string, rewriteSubjectVariable?: string) {
+  constructor(subjectVariable: Rdf.Variable, rewriteSubjectVariable?: string) {
     super();
     this.subjectVariable = subjectVariable;
-    this.rewriteSubjectVariable = rewriteSubjectVariable as SparqlJs.Term;
+    this.rewriteSubjectVariable = rewriteSubjectVariable
+      ? Rdf.DATA_FACTORY.variable(rewriteSubjectVariable) : undefined;
   }
 
-  variableTerm(variable: SparqlJs.Term): SparqlJs.Term {
-    if (variable === this.subjectVariable) {
+  variableTerm(variable: SparqlJs.VariableTerm): SparqlJs.Term {
+    if (variable.equals(this.subjectVariable)) {
       return this.rewriteSubjectVariable ? this.rewriteSubjectVariable : variable;
     }
 
-    if (!_.has(this.variablesMap, variable)) {
-      this.variablesMap[variable] = variable + '_' + uuid.v4().replace(/-/g, '_');
+    const name = variable.value;
+    if (!_.has(this.variablesMap, name)) {
+      this.variablesMap[name] = Rdf.DATA_FACTORY.variable(
+        name + '_' + uuid.v4().replace(/-/g, '_')
+      );
     }
-    return this.variablesMap[variable] as SparqlJs.Term;
+    return this.variablesMap[name];
   }
 }
 
 function randomizeVariables(
-  query: SparqlJs.SelectQuery, subjectVariable: string, rewriteSubjectVariable?: string
+  query: SparqlJs.SelectQuery, subjectVariable: Rdf.Variable, rewriteSubjectVariable?: string
 ): SparqlJs.SelectQuery {
   (new Randomizer(subjectVariable, rewriteSubjectVariable)).query(query);
   return query;
 }
 
 export function disjunctToQueryPattern(
-  config: SemanticSearchConfig, projectionVariable: string, domain: Model.Category
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable, domain: Model.Category
 ) {
   return function(
     conjunct: Model.RelationConjunct
@@ -431,7 +468,7 @@ export function disjunctToQueryPattern(
 }
 
 function complexDisjunctToQueryPattern(
-  config: SemanticSearchConfig, projectionVariable: string, domain: Model.Category,
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable, domain: Model.Category,
   conjunct: Model.RelationConjunct, disjunct: Model.SearchDisjunct
 ) {
   const nestedQuery = generateSelectQueryPattern(projectionVariable, config, disjunct.value);
@@ -439,7 +476,7 @@ function complexDisjunctToQueryPattern(
 }
 
 function nestedQueryPattern(
-  config: SemanticSearchConfig, projectionVariable: string,
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable,
   domain: Model.Category, nestedQuery: SparqlJs.SelectQuery,
   conjunct: Model.RelationConjunct, disjunct: Model.Disjunct
 ) {
@@ -449,7 +486,7 @@ function nestedQueryPattern(
   const patterns = patternQuery.where;
   patterns.unshift(
     ...randomizeVariables(
-     nestedQuery, projectionVariable, '?' + SEMANTIC_SEARCH_VARIABLES.RESOURCE_VAR
+     nestedQuery, projectionVariable, SEMANTIC_SEARCH_VARIABLES.RESOURCE_VAR
     ).where
   );
   patternQuery.where = [{'type': 'group', patterns: patterns}];
@@ -458,7 +495,7 @@ function nestedQueryPattern(
 
 
 function simpleDisjunctToQueryPattern(
-  config: SemanticSearchConfig, projectionVariable: string,
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable,
   domain: Model.Category, conjunct: Model.RelationConjunct, disjunct: Model.Disjunct
 ) {
   const patternQuery = simpleDisjunctPatternQuery(
@@ -468,7 +505,7 @@ function simpleDisjunctToQueryPattern(
 }
 
 function simpleDisjunctPatternQuery(
-  config: SemanticSearchConfig, projectionVariable: string,
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable,
   domain: Model.Category, conjunct: Model.Conjunct, disjunct: Model.Disjunct
 ): SparqlJs.SelectQuery {
   const patternConfig =
@@ -484,16 +521,20 @@ function simpleDisjunctPatternQuery(
     queryPattern = patternConfig.queryPattern;
   }
   const parsedPattern = parseQueryPattern(queryPattern, projectionVariable);
+  const tokenizationDefaults = SparqlUtil.findTokenizationDefaults(
+    parsedPattern.where,
+    SEMANTIC_SEARCH_VARIABLES.RESOURCE_VAR
+  );
   const parameters =
     _.assign(
       getGenericVariables(domain, conjunct),
-      disjunctToVariables(config, patternConfig, conjunct)(disjunct)
+      disjunctToVariables(config, patternConfig, conjunct, tokenizationDefaults)(disjunct)
     );
   return SparqlClient.setBindings(parsedPattern, parameters);
 }
 
 export function conjunctToQueryPattern(
-  config: SemanticSearchConfig, projectionVariable: string,
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable,
   domain: Model.Category
 ) {
   return function(conjunct: Model.RelationConjunct): SparqlJs.Pattern {
@@ -521,7 +562,7 @@ export function conjunctToQueryPattern(
 }
 
 export function conjunctsToQueryPatterns(
-  config: SemanticSearchConfig, projectionVariable: string,
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable,
   domain: Model.Category, conjuncts: Array<Model.RelationConjunct>
 ): Array<SparqlJs.Pattern> {
   const patterns = _.map(conjuncts, conjunctToQueryPattern(config, projectionVariable, domain));
@@ -537,7 +578,7 @@ export function conjunctsToQueryPatterns(
 }
 
 function generateSelectQueryPattern(
-  projectionVariable: string, config: SemanticSearchConfig, search: Model.Search
+  projectionVariable: Rdf.Variable, config: SemanticSearchConfig, search: Model.StructuredSearch
 ): SparqlJs.SelectQuery {
   const patterns = conjunctsToQueryPatterns(
     config, projectionVariable, search.domain, search.conjuncts as Array<Model.RelationConjunct>
@@ -546,7 +587,7 @@ function generateSelectQueryPattern(
     prefixes: {},
     type: 'query',
     'queryType': 'SELECT',
-    'variables': [projectionVariable as SparqlJs.Term],
+    'variables': [projectionVariable],
     'where': patterns,
   };
 }
@@ -556,13 +597,13 @@ function generateSelectQueryPattern(
  * we need to properly re-write ?subject to actual projection variable from the base query
  */
 export function rewriteProjectionVariable(
-  query: SparqlJs.SelectQuery, projectionVariable: string
+  query: SparqlJs.SelectQuery, projectionVariable: Rdf.Variable
 ): SparqlJs.SelectQuery {
   const result = cloneQuery(query);
   (new class extends QueryVisitor {
-    variableTerm(variable: SparqlJs.Term): SparqlJs.Term {
-      if (variable.substring(1) === SEMANTIC_SEARCH_VARIABLES.PROJECTION_ALIAS_VAR) {
-        return projectionVariable as SparqlJs.Term;
+    variableTerm(variable: SparqlJs.VariableTerm): SparqlJs.Term {
+      if (variable.value === SEMANTIC_SEARCH_VARIABLES.PROJECTION_ALIAS_VAR) {
+        return projectionVariable;
       }
     }
   }).query(result);
@@ -570,9 +611,8 @@ export function rewriteProjectionVariable(
 }
 
 export function generateSelectQuery(
-  config: SemanticSearchConfig, projectionVariableName: string, search: Model.Search
+  config: SemanticSearchConfig, projectionVariable: Rdf.Variable, search: Model.StructuredSearch
 ): SparqlJs.SelectQuery {
-  const projectionVariable = '?' + projectionVariableName;
   const patterns = conjunctsToQueryPatterns(
     config, projectionVariable, search.domain, search.conjuncts as Array<Model.RelationConjunct>
   );
@@ -581,7 +621,7 @@ export function generateSelectQuery(
     type: 'query',
     'queryType': 'SELECT',
     distinct: true,
-    'variables': [projectionVariable as SparqlJs.Term],
+    'variables': [projectionVariable],
     'where': patterns,
     'limit': config.limit,
   };
@@ -591,9 +631,9 @@ export function blazegraphNoOptimizePattern(): SparqlJs.Pattern {
   return {
     type: 'bgp',
     triples: [{
-      subject: 'http://www.bigdata.com/queryHints#Query' as SparqlJs.Term,
-      predicate: 'http://www.bigdata.com/queryHints#optimizer' as SparqlJs.Term,
-      object: '"None"' as SparqlJs.Term,
+      subject: Rdf.iri('http://www.bigdata.com/queryHints#Query'),
+      predicate: Rdf.iri('http://www.bigdata.com/queryHints#optimizer'),
+      object: Rdf.literal('None'),
     }],
   };
 }
@@ -677,7 +717,7 @@ function generateNonFederatedPatternForDataset(
         prefixes: {},
         type: 'query',
         queryType: 'SELECT',
-        variables: ['*'],
+        variables: [new SparqlJs.Wildcard()],
         where: patterns,
       },
       {__dataset__: dataset.iri}
@@ -694,7 +734,7 @@ function wrapIntoService(
 ): SparqlJs.Pattern {
   return {
     type: 'service',
-    name: serviceUrl as SparqlJs.Term,
+    name: Rdf.iri(serviceUrl),
     silent: silent,
     patterns: patterns,
   };

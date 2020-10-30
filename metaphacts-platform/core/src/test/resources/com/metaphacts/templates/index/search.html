@@ -1,0 +1,148 @@
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title="Help" iri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
+  </li>
+  <li>
+    <semantic-link title="Components" iri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
+  </li>
+  <li class="active">Structured Search Component</li>
+</ol>
+
+<div class="page">
+  <div data-flex-layout='row top-center'>
+    <div style='margin: 30px; flex: 0 0 250px; width: 250px'>
+      <ul class='nav'>
+        <li>
+          <mp-anchor to='search-environment' animate='{"offset": -110, "duration": 500}'>
+            Structured Search Environment
+          </mp-anchor>
+        </li>
+        <li>
+          <mp-anchor to='search-profile' animate='{"offset": -110, "duration": 500}'>
+            Search Profile
+          </mp-anchor>
+        </li>
+        <li>
+          <mp-anchor to='search-definition' animate='{"offset": -110, "duration": 500}'>
+            Search Definition
+          </mp-anchor>
+            <ul style='list-style: none'>
+            <li>
+              <mp-anchor to='search-keyword' animate='{"offset": -110, "duration": 500}'>
+                <h5>Keyword Search</h5>
+              </mp-anchor>
+            </li>
+            <li>
+              <mp-anchor to='search-structured' animate='{"offset": -110, "duration": 500}'>
+                <h5>Structured Search</h5>
+              </mp-anchor>
+            </li>
+            <li>
+              <mp-anchor to='search-constant' animate='{"offset": -110, "duration": 500}'>
+                <h5>Constant Search</h5>
+              </mp-anchor>
+            </li>
+            <li>
+              <mp-anchor to='search-formbased' animate='{"offset": -110, "duration": 500}'>
+                <h5>Form-based Search</h5>
+              </mp-anchor>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <mp-anchor to='search-facets' animate='{"offset": -110, "duration": 500}'>
+            Faceted Filtering
+          </mp-anchor>
+        </li>
+        <li>
+          <mp-anchor to='search-visualization' animate='{"offset": -110, "duration": 500}'>
+            Results Visualization
+          </mp-anchor>
+           <ul style='list-style: none'>
+            <li>
+              <mp-anchor to='search-result' animate='{"offset": -110, "duration": 500}'>
+                <h5>Semantic Search Result Component</h5>
+              </mp-anchor>
+            </li>
+             <li>
+              <mp-anchor to='search-result-customization' animate='{"offset": -110, "duration": 500}'>
+                <h5>Result Customization</h5>
+              </mp-anchor>
+            </li>
+           </ul>
+        </li>
+        <li>
+          <mp-anchor to='search-examples' animate='{"offset": -110, "duration": 500}'>
+            Examples
+          </mp-anchor>
+        </li>
+      </ul>
+    </div>
+    <div style='margin: 30px; min-width: 0px'>
+      <section id='search-intro'>
+        <h1> Structured Search Component </h1>
+        <div class="documentation__intro">
+          <div class="documentation__intro__description">
+            Customizable interface for structured search that allows the user to:
+            <ul>
+              <li>define complex information needs in an incremental way</li>
+              <li>refine the set of search results using facets</li>
+              <li>visualize the search results in different ways</li>
+            </ul>
+            <p>Structured search is realized not by means of a single, monolithic component, but as an environment where different functionalities (e.g., query definition, faceted browsing of results, and visualization) can be dynamically composed and exchanged.</p>
+          </div>
+          <div class="documentation__intro__demo">
+            <img src="/images/help/structured-search-life-sciences.png" height=350px />
+          </div>
+        </div>
+        <div style="clear:both;"></div>
+      </section>
+      <section id='search-environment'>
+        <h2> Structured Search Environment </h2>
+        <p>The structured search environment represents the main wrapper component defining the parameters of the whole search scenario. The environment consists of the following sections:</p>
+        <ul>
+          <li><mp-anchor to='search-profile'>Search profile</mp-anchor> overall configuration, defining the search boundaries and categories and relations that are used across other search component</li>
+          <li><mp-anchor to='search-definition'>Search definition</mp-anchor> components that allow the user to express her information need and generate the initial query.</li>
+          <li><mp-anchor to='search-facets'>Faceted filtering</mp-anchor> components which allow the user to further refine the search request by means of different faceted views.</li>
+          <li><mp-anchor to='search-visualization'>Results visualization</mp-anchor> components that visualize the search results in different ways.</li>
+        </ul>
+        <p>
+           Each of these sections can be realized in different ways and there is only loose coupling among the functionality blocks: e.g., search definition can be realized by a simple keyword search component as well as by a much more powerful structured search component.
+           The only requirement is that the chosen components must produce a SPARQL query that would produce initial search results.
+        </p>
+
+        <p>
+          It is possible to use any UI components inside semantic-search, e.g tabs, popups, alerts, etc, but when one strips down all these details, typically <code>semantic-search</code> definition looks like:
+        </p>
+        <mp-code-block>
+      <![CDATA[
+      <semantic-search> <!-- 1. search profile configuration -->
+        <semantic-search-query-builder><!-- 2. search definition --></semantic-search-query-builder>
+
+        <semantic-search-facet><!-- 3. faceting --></semantic-search-facet>
+
+        <semantic-search-result-holder>
+          <semantic-search-result> <!-- 4. result visualization -->
+            <semantic-table id='table'></semantic-table> <!-- it is possible to use any semantic-* visualization component to visualize search results, e.g semantic-table -->
+          </semantic-search-result>
+        </semantic-search-result-holder>
+      </semantic-search>
+      ]]>
+        </mp-code-block>
+      </section>
+
+      <section id='search-profile'>
+      <h2> Search Profile </h2>
+      <p>
+        One of the core concepts behind <code>semantic-search</code> is so called <b>Search Profile</b> - well defined set of <b>Categories</b> and <b>Relations</b> between them.
+      </p>
+       </section>
+       
+       [[!-- content is cut here--]]
+    </div>
+  </div>
+</div>
+

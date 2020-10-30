@@ -28,7 +28,46 @@
     </p>
  
     <hr/>
-		<mp-json-renderer get-url='/rest/admin/apps'></mp-json-renderer>
+		<mp-json-renderer get-url='/rest/admin/apps' template='{{> apps}}'>
+    	<template id='apps'>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>App Id</th>
+              <th>Storage Kind</th>
+              <th>Mutable Storage</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+        	<tbody>
+          {{#each this}}
+            <tr>
+              <td>{{@index}}</td>
+              <td>{{id}}</td>
+              <td>{{storageKind}}</td>
+              <td>{{mutableStorage}}</td>
+              <td>
+                {{#ifCond id "!==" "runtime"}}
+                    <mp-app-remove application-id="{{id}}">
+                      <button style="padding: 0px 12px;"
+                      	class="btn btn-danger btn-sm"
+                      	[[#unless (hasPermission "app:remove")]]
+                        	disabled
+                          title='App removal is not permitted'
+                        [[/unless]]
+                      >
+                        Remove
+                      </button>
+                    </mp-app-remove>
+                {{/ifCond}}
+              </td>
+            </tr>
+          {{/each}}
+          </tbody>
+        </table>
+      </template>
+    </mp-json-renderer>
     <br>
     <mp-overlay-dialog title="Upload & Deploy App" type="modal" bs-size="large">
       <mp-overlay-dialog-trigger><button type="button" class="btn btn-primary">Upload & Deploy App</button></mp-overlay-dialog-trigger>

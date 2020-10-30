@@ -37,7 +37,8 @@ WHERE {}",
  "treePatterns":{
    "type":"simple",
    "schemePattern":"?item a <http://example.com/treeItem>"
- }
+ },
+ "orderedWith": "index-property"
 },
 {
   "order": 1,

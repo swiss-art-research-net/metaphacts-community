@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Queries of this type are processed using Reconciliation Service.",
+    "properties": {
+        "defaultTerm": {
+            "description": "Provides a default query term for the case when keyword is not provided via arguments",
+            "type": "string"
+        },
+        "entityType": {
+            "description": "Filter result by specified entityType. See documentation for Reconciliation API.",
+            "type": "string"
+        },
+        "limit": {
+            "description": "Tells for how much results we are looking for",
+            "type": "number"
+        },
+        "type": {
+            "description": "Type of the query. Should be always \"<b>lookup</b>\" in order to be of a type LookupDataQuery",
+            "enum": [
+                "lookup"
+            ],
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "type",
+        "defaultTerm",
+        "limit",
+        "entityType"
+    ],
+    "required": [
+        "type"
+    ],
+    "type": "object"
+}
+

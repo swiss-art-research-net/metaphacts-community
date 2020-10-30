@@ -7,17 +7,17 @@
     <tr>
       <td>Number Of Distinct Statements</td>
       <td>
-        <semantic-query 
-          query='[[> countQuery var="*"]]' 
+        <semantic-query
+          query='[[> countQuery var="*"]]'
           template='{{#each bindings}}{{number.value}}{{/each}}'
         ></semantic-query>
       </td>
-    </tr> 
+    </tr>
     <tr>
       <td>Number Of Distinct Subjects</td>
       <td>
-        <semantic-query 
-          query='[[> countQuery var="?s"]]' 
+        <semantic-query
+          query='[[> countQuery var="?s"]]'
           template='{{#each bindings}}{{number.value}}{{/each}}'
         ></semantic-query>
       </td>
@@ -25,8 +25,8 @@
     <tr>
       <td>Number Of Distinct Predicates</td>
       <td>
-        <semantic-query 
-          query='[[> countQuery var="?p"]]' 
+        <semantic-query
+          query='[[> countQuery var="?p"]]'
           template='{{#each bindings}}{{number.value}}{{/each}}'
         ></semantic-query>
       </td>
@@ -34,8 +34,8 @@
     <tr>
       <td>Number Of Distinct Object Literals</td>
       <td>
-        <semantic-query 
-          query='[[> countQuery var="?o" filter="FILTER isLiteral(?o)"]]' 
+        <semantic-query
+          query='[[> countQuery var="?o" filter="FILTER isLiteral(?o)"]]'
           template='{{#each bindings}}{{number.value}}{{/each}}'
         ></semantic-query>
       </td>
@@ -43,39 +43,89 @@
     <tr>
       <td>Number Of Distinct Object IRIs</td>
       <td>
-        <semantic-query 
-          query='[[> countQuery var="?o" filter="FILTER isURI(?o)"]]' 
+        <semantic-query
+          query='[[> countQuery var="?o" filter="FILTER isURI(?o)"]]'
           template='{{#each bindings}}{{number.value}}{{/each}}'
         ></semantic-query>
       </td>
     </tr>
   </tbody>
-</table>  
+</table>
 
-<h2> Class Usage </h2>
-<i>The chart is limit to display the top 20 classes only.</i>
-<semantic-chart type="bar" 
-                provider="chartjs" 
-                query='
-                  SELECT ?class (COUNT(DISTINCT ?s) AS ?usage) WHERE { 
-                      GRAPH <[[urlParam "graph"]]> {?s a ?class.}
-                  }
-                  GROUP BY ?class 
-                  ORDER BY DESC(?usage) 
-                  LIMIT 20
-                ' 
-                sets='[{"dataSetName": "Class Usage", "category": "class", "value": "usage"}]'>
-</semantic-chart>
-<h2> Property Usage </h2>
-<i>The chart is limit to display the top 20 properties only.</i>
-<semantic-chart type="bar" 
-                provider="chartjs" 
-                query='
-                  SELECT DISTINCT ?p (COUNT(?p) AS ?usage) WHERE { 
-                      GRAPH <[[urlParam "graph"]]> {?s ?p ?o.}
-                  } 
-                  GROUP BY ?p 
-                  ORDER BY DESC(?usage) 
-                  LIMIT 20' 
-                sets='[{"dataSetName": "Property Usage", "category": "p", "value": "usage"}]'>
-</semantic-chart>
+<h2>Resource Types Usage</h2>
+<bs-tabs id="class-tabs" unmount-on-exit=true>
+  <bs-tab event-key="1" title="Chart">
+    <i>The chart is limit to display the top 20 resource types only.</i>
+    <semantic-chart type="bar" provider="chartjs" query='
+        SELECT ?class (COUNT(DISTINCT ?s) AS ?usage) WHERE {
+          GRAPH <[[urlParam "graph"]]> {?s a ?class.}
+        }
+        GROUP BY ?class
+        ORDER BY DESC(?usage)
+        LIMIT 20
+      ' sets='[{"dataSetName": "Resource Types Usage", "category": "class", "value": "usage"}]'>
+    </semantic-chart>
+  </bs-tab>
+  <bs-tab event-key="2" title="Table">
+    <div>
+      <semantic-table query='SELECT ?class (COUNT(DISTINCT ?s) AS ?usage) WHERE {
+          GRAPH <[[urlParam "graph"]]> {?s a ?class.}
+        } GROUP BY ?class ORDER BY DESC(?usage)'
+        column-configuration='[
+          {"variableName":"class", "displayName":"Class", "cellTemplate":"{{> class}}"},
+          {"variableName":"usage", "displayName":"Usage", "cellTemplate":"{{> usage}}"}
+        ]'>
+        <template id="class">
+          {{#if class.value}}
+            <semantic-link iri='{{class.value}}'>{{class.value}}</semantic-link>
+          {{/if}}
+        </template>
+        <template id="usage">
+          {{#if usage.value}}
+            {{usage.value}}
+          {{/if}}
+        </template>
+      </semantic-table>
+    </div>
+  </bs-tab>
+</bs-tabs>
+
+<h2>Property Usage</h2>
+<bs-tabs id="property-tabs" unmount-on-exit=true>
+  <bs-tab event-key="1" title="Chart">
+    <i>The chart is limit to display the top 20 properties only.</i>
+    <semantic-chart type="bar"
+    provider="chartjs"
+    query='
+      SELECT DISTINCT ?p (COUNT(?p) AS ?usage) WHERE {
+        GRAPH <[[urlParam "graph"]]> {?s ?p ?o.}
+      }
+      GROUP BY ?p
+      ORDER BY DESC(?usage)
+      LIMIT 20'
+    sets='[{"dataSetName": "Property Usage", "category": "p", "value": "usage"}]'>
+  </semantic-chart>
+  </bs-tab>
+  <bs-tab event-key="2" title="Table">
+    <div>
+      <semantic-table query='SELECT ?property (COUNT(?property) AS ?usage) WHERE {
+          GRAPH <[[urlParam "graph"]]> {?s ?property ?o.}
+        } GROUP BY ?property ORDER BY DESC(?usage)'
+        column-configuration='[
+          {"variableName":"property", "displayName":"Property", "cellTemplate":"{{> property}}"},
+          {"variableName":"usage", "displayName":"Usage", "cellTemplate":"{{> usage}}"}
+        ]'>
+        <template id="property">
+          {{#if property.value}}
+            <semantic-link iri='{{property.value}}'>{{property.value}}</semantic-link>
+          {{/if}}
+        </template>
+        <template id="usage">
+          {{#if usage.value}}
+            {{usage.value}}
+          {{/if}}
+        </template>
+      </semantic-table>
+    </div>
+  </bs-tab>
+</bs-tabs>

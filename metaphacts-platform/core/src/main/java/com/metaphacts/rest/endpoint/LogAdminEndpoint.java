@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import java.io.File;
@@ -24,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +65,7 @@ import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -336,6 +359,49 @@ public class LogAdminEndpoint {
     }
 
     /**
+     * Retrieves list of all the loggers, optionally filtered using the
+     * <i>nameFilter</i>
+     * 
+     * @param nameFilter the optional filter. Uses
+     *                   {@link String#contains(CharSequence)} logic
+     * @return the {@link Response}
+     * @see LoggerDetails
+     */
+    @GET()
+    @Path("logs/loggers")
+    @NoCache
+    @RequiresAuthentication
+    @RequiresPermissions(LOGS.PREFIX_CONFIGURE)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllLoggers(@QueryParam("nameFilter") String nameFilter) {
+
+        List<LoggerDetails> list = Lists.newArrayList();
+        String lowerCaseNameFilter = (!StringUtils.isBlank(nameFilter)) ? nameFilter.toLowerCase() : "";
+        for (Logger logger : LoggerContext.getContext(false).getLoggers()) {
+            String loggerName = logger.getName();
+            if (lowerCaseNameFilter.equals("")) {
+                list.add(new LoggerDetails(loggerName, logger.getLevel().toString()));
+            } else if (loggerName.toLowerCase().contains(lowerCaseNameFilter)) {
+                list.add(new LoggerDetails(loggerName, logger.getLevel().toString()));
+            }
+        }
+        Collections.sort(list, (o1, o2) -> {
+            if (o1.logger.startsWith("com.metaphacts") && o2.logger.startsWith("com.metaphacts")) {
+                return o1.logger.compareTo(o2.logger);
+            }
+            if (o1.logger.startsWith("com.metaphacts") && !o2.logger.startsWith("com.metaphacts")) {
+                return -1;
+            }
+            if (!o1.logger.startsWith("com.metaphacts") && o2.logger.startsWith("com.metaphacts")) {
+                return 1;
+            }
+            return o1.logger.compareTo(o2.logger);
+            }
+        );
+        return Response.ok().entity(list).build();
+    }
+
+    /**
      * Resets the log profile configuration to the initial log configuration.
      * 
      * @return the {@link Response}
@@ -381,5 +447,27 @@ public class LogAdminEndpoint {
             return file;
         }
 
+    }
+
+    /**
+     * Structure containing logger details
+     */
+    static class LoggerDetails {
+
+        private final String logger;
+        private final String level;
+
+        public LoggerDetails(String loggerName, String loggerLevel) {
+            this.logger = loggerName;
+            this.level = loggerLevel;
+        }
+
+        public String getLogger() {
+            return logger;
+        }
+
+        public String getLevel() {
+            return level;
+        }
     }
 }

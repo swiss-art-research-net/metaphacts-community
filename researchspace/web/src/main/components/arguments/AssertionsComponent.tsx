@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Panel, Button, Alert } from 'react-bootstrap';
@@ -25,7 +24,7 @@ import * as Maybe from 'data.maybe';
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
 import { ModuleRegistry } from 'platform/api/module-loader';
-import { CapturedContext } from 'platform/api/services/template';
+import { mergeInContextOverride } from 'platform/api/services/template';
 
 import {
   Component, ComponentContext, ComponentChildContext,
@@ -72,13 +71,12 @@ interface State {
   addingNewValue: boolean;
   newValues: Array<Rdf.Node>;
   formTemplate: Data.Maybe<React.ReactNode>;
-  capturedDataContext?: CapturedContext;
 }
 
 export class AssertionsComponent extends Component<AssertionsProps, State> {
   context: ComponentContext & TemplateContext & ArgumentsContext;
 
-  constructor(props: AssertionsProps, context) {
+  constructor(props: AssertionsProps, context: any) {
     super(props, context);
     this.state = {
       addingNewValue: props.quickAssertion || false,
@@ -101,7 +99,6 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
     const superContext = super.getChildContext();
     return {
       ...superContext,
-      templateDataContext: this.state.capturedDataContext,
       changeBelief: this.onBeliefChange,
       removeBelief: this.removeBelief,
       getBeliefValue: this.getBeliefValue,
@@ -110,16 +107,15 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
 
   componentDidMount() {
     const {templateDataContext} = this.context;
-    const capturer = CapturedContext.inheritAndCapture(templateDataContext);
-    this.appliedTemplateScope.compile(this.props.formTemplate).then(
-      template => ModuleRegistry.parseHtmlToReact(
-        template({field: this.props.field}, {capturer, parentContext: templateDataContext})
-      )
-    ).then(formTemplate => {
-      this.setState({
-        formTemplate: Maybe.Just(formTemplate),
-        capturedDataContext: capturer.getResult(),
-      });
+    this.appliedTemplateScope.prepare(this.props.formTemplate).observe({
+      value: compiledTemplate => {
+        const dataContext = mergeInContextOverride(templateDataContext, {field: this.props.field});
+        const nodes = compiledTemplate(dataContext);
+        const renderedTemplate = ModuleRegistry.mapHtmlTreeToReact(nodes);
+        this.setState({
+          formTemplate: Maybe.Just(renderedTemplate),
+        });
+      }
     });
   }
 
@@ -325,10 +321,10 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
         _.filter(entries, entry => !entry.subject.equals(this.props.target));
       return new LdpPersistence()
         .persistModelUpdates(nestedValues[0].subject, nestedValues)
-        .map(() => topLevelFieldValue.inserted);
+        .map(() => topLevelFieldValue.inserted.map(value => value.value));
     } else {
       return Kefir.constant(
-        _.flatten(entries.map(entry => entry.inserted as Array<Rdf.Node>))
+        _.flatten(entries.map(entry => entry.inserted.map(value => value.value)))
       );
     }
   }

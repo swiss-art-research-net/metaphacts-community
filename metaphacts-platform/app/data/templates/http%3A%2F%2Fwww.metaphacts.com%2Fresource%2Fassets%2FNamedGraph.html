@@ -1,0 +1,37 @@
+<div class="page">
+  <div class="page__body">
+    <bs-tabs id="tabs" unmount-on-exit=true>
+      <bs-tab event-key='1' title='Statistics'>
+        <h2> Statement Statistics </h2>
+        [[!-- to be listed in the includes [[>Admin:NamedGraphsStatistics]] --]]
+        <semantic-query query='
+          SELECT (COUNT(DISTINCT *) as ?number) WHERE {
+            GRAPH <[[urlParam "graph"]]>{
+              {
+                SELECT * WHERE {
+                  ?Subject ?Property ?Object
+                } LIMIT 1000000
+              }
+            }
+          } LIMIT 1'
+          template='{{> statistics}}'>
+          <template id='statistics'>
+            {{#each bindings}}
+            {{#ifCond number.value ">=" 1000000}}
+            <bs-alert bs-style="warning">
+              Statics are only available for named graph with less than 1.000.000 statements.
+              However, the absolute number of statements in the graph seems to be larger.
+            </bs-alert>
+            {{else}}
+            <mp-page-loader iri="http://www.metaphacts.com/resource/admin/NamedGraphsStatistics"></mp-page-loader>
+            {{/ifCond}}
+            {{/each}}
+          </template>
+        </semantic-query>
+      </bs-tab>
+      <bs-tab event-key='2' title='Diagrams'>
+        [[> Assets:OntodiaDiagramsTable resource=(urlParam "graph")]]
+      </bs-tab>
+    </bs-tabs>
+  </div>
+</div>

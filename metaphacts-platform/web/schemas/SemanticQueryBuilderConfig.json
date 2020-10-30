@@ -1,26 +1,65 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
-        "ComplexTreePatterns": {
+        "BindSparqlParam": {
+            "description": "Defines a binding input parameters, tells if the parameter is optional or not and what datatype the parameter should have.",
             "properties": {
-                "childrenQuery": {
-                    "description": "Children query with [?parent] input and [?item, ?label, ?hasChildren] output variables.",
+                "datatype": {
+                    "description": "Defines xsd datatype of the parameter",
                     "type": "string"
                 },
-                "parentsQuery": {
-                    "description": "Parent nodes query with [?item] inputs through VALUES(...) clause\nand [?item, ?parent, ?parentLabel] outputs.",
-                    "type": "string"
+                "required": {
+                    "description": "Tells whether the token is required parameter or not",
+                    "type": "boolean"
                 },
-                "rootsQuery": {
-                    "description": "Tree roots query with no input and [?item, ?label, ?hasChildren] output variables.",
-                    "type": "string"
-                },
-                "searchQuery": {
-                    "description": "Search query with [?__token__] input and [?item, ?score, ?label, ?hasChildren] outputs.",
+                "type": {
+                    "description": "Defines the type of parameter",
+                    "enum": [
+                        "bind"
+                    ],
                     "type": "string"
                 }
             },
             "propertyOrder": [
+                "type",
+                "required",
+                "datatype"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
+        "ComplexTreePatterns": {
+            "properties": {
+                "childrenQuery": {
+                    "description": "Children SPARQL query with `[?parent]` input and `[?item, ?label, ?hasChildren]` output\nvariables:\n  - `?parent` - parametrized variable with node IRI to retrieve children for;\n  - `?item` - result child node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display value.",
+                    "type": "string"
+                },
+                "escapeLuceneSyntax": {
+                    "description": "A flag determining whether any special Lucene syntax will be escaped.\nWhen `false` lucene syntax in the user input is not escaped.\n\nDeprecated: escaping will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
+                "parentsQuery": {
+                    "description": "A SPARQL query to recursively compute the parent hierarchy for search results.\nCan be used together with the `search-query` setting.\n\nThe query has `[?item]` inputs through `VALUES(...)` clause\nand `[?item, ?parent, ?parentLabel]` outputs:\n  - `?item` - child node IRI provided with `VALUES(?item) { ... }` clause;\n  - `?parent` - result parent node IRI for `?item` node;\n  - `?parentLabel` (optional) - display label for `?parent` (if not provided the display label\n    is retrieved using the label service);\n\nBe aware to have a distinct association of node and label to not produce any cross products.",
+                    "type": "string"
+                },
+                "rootsQuery": {
+                    "description": "Tree roots SPARQL query with no input and `[?item, ?label, ?hasChildren]` output variables:\n  - `?item` - result root node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display label.",
+                    "type": "string"
+                },
+                "searchQuery": {
+                    "description": "A SPARQL query to compute a search result for a given user input.\n\nThe query has `[?__token__]` input and `[?item, ?score, ?label, ?hasChildren]` outputs:\n  - `?__token__` - parametrized search input string;\n  - `?item` - search result node IRI;\n  - `?score` (optional) - search result score of `?item` for tree sorting;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nNote that the parent hierarchy is computed recursively using the `parents-query` configuration\nsetting.",
+                    "type": "string"
+                },
+                "tokenizeLuceneQuery": {
+                    "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed\nby `*`. E.g. the search for `Hello World` becomes `Hello* World*`.\n\nDeprecated: tokenization will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                }
+            },
+            "propertyOrder": [
+                "escapeLuceneSyntax",
+                "tokenizeLuceneQuery",
                 "rootsQuery",
                 "childrenQuery",
                 "parentsQuery",
@@ -28,13 +67,11 @@
             ],
             "required": [
                 "childrenQuery",
-                "parentsQuery",
-                "rootsQuery",
-                "searchQuery"
+                "rootsQuery"
             ],
             "type": "object"
         },
-        "LightwightTreePatterns": {
+        "LightweightTreePatterns": {
             "properties": {
                 "relationPattern": {
                     "description": "Output bindings: `?item`, `?parent`",
@@ -56,10 +93,44 @@
             ],
             "type": "object"
         },
+        "LookupDataQuery": {
+            "description": "Queries of this type are processed using Reconciliation Service.",
+            "properties": {
+                "defaultTerm": {
+                    "description": "Provides a default query term for the case when keyword is not provided via arguments",
+                    "type": "string"
+                },
+                "entityType": {
+                    "description": "Filter result by specified entityType. See documentation for Reconciliation API.",
+                    "type": "string"
+                },
+                "limit": {
+                    "description": "Tells for how much results we are looking for",
+                    "type": "number"
+                },
+                "type": {
+                    "description": "Type of the query. Should be always \"<b>lookup</b>\" in order to be of a type LookupDataQuery",
+                    "enum": [
+                        "lookup"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "defaultTerm",
+                "limit",
+                "entityType"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
         "ResourceSelectorConfig": {
             "properties": {
                 "defaultQuery": {
-                    "description": "SPARQL Select query that is used for default autosuggestions.\n\nMandatory projection variables:\n   suggestion - should contain suggestion item IRI\n   label - should contain suggestion item label\n\nVariables that will be substituted with user selected value:\n   __token__ - user input represented as string literal\n   __domain__ - search domain category IRI\n   __range__ - conjunct range category IRI\n   __relation__ - conjunct relation IRI",
+                    "description": "SPARQL Select query that is used for default autosuggestions.\n\nMandatory projection variables:\n   suggestion - should contain suggestion item IRI\n    (can be redefined by \"suggestionVariable\" parameter)\n   label - should contain suggestion item label\n\nVariables that will be substituted with user selected value:\n   __token__ - user input represented as string literal\n   __domain__ - search domain category IRI\n   __range__ - conjunct range category IRI\n   __relation__ - conjunct relation IRI",
                     "type": "string"
                 },
                 "escapeLuceneSyntax": {
@@ -72,16 +143,30 @@
                     "type": "string"
                 },
                 "query": {
-                    "description": "SPARQL Select query that is used for autosuggestion.\n\nMandatory projection variables:\n   suggestion - should contain suggestion item IRI\n   label - should contain suggestion item label\n\nVariables that will be substituted with user selected value:\n   __token__ - user input represented as string literal\n   __domain__ - search domain category IRI\n   __range__ - conjunct range category IRI\n   __relation__ - conjunct relation IRI",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/SparqlDataQuery"
+                        },
+                        {
+                            "$ref": "#/definitions/LookupDataQuery"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "description": "SPARQL Select query that is used for autosuggestion.\n\nMandatory projection variables:\n   suggestion - should contain suggestion item IRI\n   label - should contain suggestion item label\n\nVariables that will be substituted with user selected value:\n   __token__ - user input represented as string literal\n   __domain__ - search domain category IRI\n   __range__ - conjunct range category IRI\n   __relation__ - conjunct relation IRI"
                 },
                 "suggestionTupleTemplate": {
                     "description": "Handlebars template that is used to render suggestion items.\nTemplate has access to all SPARQL projection variables from the query.",
                     "type": "string"
                 },
+                "suggestionVariable": {
+                    "description": "Redefines mandatory projection variable",
+                    "type": "string"
+                },
                 "tokenizeLuceneQuery": {
                     "default": true,
-                    "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`. \nE.g. the search for `Hello World` becomes `Hello* World*`.",
+                    "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`.\nE.g. the search for `Hello World` becomes `Hello* World*`.",
                     "type": "boolean"
                 }
             },
@@ -90,6 +175,7 @@
                 "escapeLuceneSyntax",
                 "tokenizeLuceneQuery",
                 "defaultQuery",
+                "suggestionVariable",
                 "noSuggestionsTemplate",
                 "suggestionTupleTemplate"
             ],
@@ -108,6 +194,82 @@
             ],
             "type": "object"
         },
+        "SparqlDataQuery": {
+            "description": "Queries of this types are processed using SparqlClient the same way as ordinary SPARQL queries.",
+            "properties": {
+                "params": {
+                    "additionalProperties": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/BindSparqlParam"
+                            },
+                            {
+                                "$ref": "#/definitions/TokenSparqlParam"
+                            }
+                        ]
+                    },
+                    "description": "Dictionary of input parameters where for each defined input variable there is a corresponding definition.\nThe definition can be one of two types <code>TokenSparqlParam</code> or <code>BindSparqlParam</code>.",
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "query": {
+                    "description": "SPARQL <b>SELECT</b> query",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of the query. Should be always \"<b>sparql</b>\" in order to be of a type SparqlQuery",
+                    "enum": [
+                        "sparql"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "query",
+                "params"
+            ],
+            "required": [
+                "query",
+                "type"
+            ],
+            "type": "object"
+        },
+        "TokenSparqlParam": {
+            "description": "Defines a token input parameters and tells whether it should be escaped and tokenized or not.\nAlso here it's possible to specify if the parameter is optional or not.\nIt's expected that token alway of <code>Literal^^xsd:string</code> type.",
+            "properties": {
+                "escapeLuceneSyntax": {
+                    "description": "Tells whether SparqlClient should escape the search string or not.\n\nDeprecated: escaping will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
+                "required": {
+                    "description": "Tells whether the token is required parameter or not",
+                    "type": "boolean"
+                },
+                "tokenizeLuceneQuery": {
+                    "description": "Tells whether SparqlClient should tokenize lucene query or not.\n\nDeprecated: tokenization will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "Defines the type of parameter",
+                    "enum": [
+                        "token"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "required",
+                "escapeLuceneSyntax",
+                "tokenizeLuceneQuery"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
         "TreeSelectorPatterns": {
             "additionalProperties": {
                 "anyOf": [
@@ -115,7 +277,7 @@
                         "$ref": "#/definitions/ComplexTreePatterns"
                     },
                     {
-                        "$ref": "#/definitions/LightwightTreePatterns"
+                        "$ref": "#/definitions/LightweightTreePatterns"
                     }
                 ]
             },
@@ -164,7 +326,7 @@
                     "$ref": "#/definitions/ComplexTreePatterns"
                 },
                 {
-                    "$ref": "#/definitions/LightwightTreePatterns"
+                    "$ref": "#/definitions/LightweightTreePatterns"
                 }
             ],
             "description": "Default configuration for tree-based autosuggestion, that is used to select values for any relations of 'hierarchy' kind."

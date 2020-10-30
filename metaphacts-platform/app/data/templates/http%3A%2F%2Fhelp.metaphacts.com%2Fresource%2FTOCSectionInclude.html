@@ -1,0 +1,41 @@
+[[!-- include for table of content group (i.e. group for multiple documentation pages, e.g. components) --]]
+<semantic-context repository="platformMetadata">
+    <semantic-tree collapsed=false     
+                roots='[[jsonArrayFromSelect "SELECT DISTINCT ?top {?? skos:broader*|(skos:broader*/(skos:topConceptOf|^skos:hasTopConcept)|(skos:topConceptOf|^skos:hasTopConcept)) ?top. FILTER NOT EXISTS {?top skos:broader|(skos:topConceptOf|^skos:hasTopConcept) ?parent}}"]]'
+                query='PREFIX mpo:  <http://www.metaphacts.com/platform/ontology/> 
+                SELECT DISTINCT ?node ?parent WHERE {
+                  {
+                    ?? skos:broader* ?node.
+                    OPTIONAL{?node skos:broader ?parent }
+                  }UNION{
+                    ?node skos:broader* ??.
+                    OPTIONAL{?node skos:broader ?parent }
+                  }UNION{
+                    ?parent ^skos:topConceptOf|skos:hasTopConcept ?node.
+                    ?? skos:broader* ?node.
+                  }
+                  OPTIONAL { ?node mpo:order ?_order }
+                  BIND(COALESCE(?_order, 500) AS ?order)
+                } ORDER BY ?order ?node'
+                tuple-template='{{> node}}'
+                   >
+      <template id='node'>
+        <semantic-context repository="default">
+          <semantic-link uri="{{node.value}}">
+            <semantic-context repository="platformMetadata">
+              <semantic-query 
+               query='PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        SELECT DISTINCT ?label WHERE {
+            BIND (<{{node.value}}> AS ?item) .
+            OPTIONAL { ?item rdfs:label ?_label }
+            OPTIONAL { ?item skos:preferredLabel ?_skosLabel }
+            BIND(COALESCE(?_skosLabel, ?_label) AS ?label)
+        }'>
+                </semantic-query>
+               </semantic-context>
+              </semantic-link>
+          </semantic-context>
+      </template>
+    </semantic-tree>
+    </semantic-context>

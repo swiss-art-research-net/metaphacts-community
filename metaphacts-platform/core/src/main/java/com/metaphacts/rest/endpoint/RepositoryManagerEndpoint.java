@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -50,6 +71,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.apache.shiro.authz.permission.WildcardPermission;
+import org.eclipse.rdf4j.http.protocol.UnauthorizedException;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
@@ -66,6 +88,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.UnknownConfigurationException;
+import com.metaphacts.lookup.api.LookupServiceManager;
 import com.metaphacts.repository.MpRepositoryVocabulary;
 import com.metaphacts.repository.RepositoryConfigUtils;
 import com.metaphacts.repository.RepositoryManager;
@@ -103,6 +126,8 @@ public class RepositoryManagerEndpoint {
     private PlatformStorage platformStorage;
     @Inject
     private RepositoryManager repositoryManager;
+    @Inject
+    private LookupServiceManager lookupServiceManager;
     @Inject
     private Configuration config;
 
@@ -178,6 +203,7 @@ public class RepositoryManagerEndpoint {
         
         try {
             this.repositoryManager.deleteRepositoryConfig(repId);
+            this.lookupServiceManager.reloadLookupServices();
         } catch (Exception e) {
             String msg = "Cannot delete repository " + repId + ": " + e.getMessage();
             logger.error(msg);
@@ -197,6 +223,15 @@ public class RepositoryManagerEndpoint {
         if (!checkPermission(REPOSITORY_CONFIG.PREFIX_VIEW + repID)) {
             throw new ForbiddenException();
         }
+
+        // special handling to obtain the linkedDefaultRepository
+        if ("linkedDefaultRepository".contentEquals(repID)) {
+            repID = config.getEnvironmentConfig().getLinkedDefaultRepository();
+            if (repID == null) {
+                repID = RepositoryManager.DEFAULT_REPOSITORY_ID;
+            }
+        }
+
         RepositoryConfig repConfig = repositoryManager.getRepositoryConfig(repID);
 
         Map<String, String> resultMap = Maps.newHashMap();
@@ -212,7 +247,7 @@ public class RepositoryManagerEndpoint {
     @Path("validatedefault")
     @Produces(APPLICATION_JSON)
     public String isDefaultRepositoryValid() {
-        boolean isValid = !(repositoryManager.getDefault() instanceof MpMemoryRepository);
+        boolean isValid = !(repositoryManager.getDefaultTargetRepository() instanceof MpMemoryRepository);
         return "{ \"valid\": " + Boolean.toString(isValid) + " }";
     }
 
@@ -332,7 +367,7 @@ public class RepositoryManagerEndpoint {
             try {
                 repositoryManager.validate(config.getRepositoryImplConfig(), repID);
             } catch (Exception e) {
-                String message = "Validation of repository config failed: " + e.getMessage();
+                String message = "Validation of repository config failed: " + getReason(e);
                 logger.debug(message, e);
                 return Response.status(Status.BAD_REQUEST).entity(message).build();
             }
@@ -355,6 +390,7 @@ public class RepositoryManagerEndpoint {
         
         try {
             repositoryManager.reinitializeRepositories(Lists.newArrayList(repID));
+            lookupServiceManager.reloadLookupServices();
             return Response.ok().build();
         } catch (Exception e) {
             String message = "Could not reinitialize the repository manager to apply the changes: "
@@ -364,6 +400,29 @@ public class RepositoryManagerEndpoint {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(message).build();
         }
         
+    }
+
+    /**
+     * Get an as-informative-as-possible reason from the given {@link Throwable}.
+     * 
+     * @param t a {@link Throwable}
+     * @return a reason message, being either the message of t itself, its cause, or if all else fails the error class
+     *         name.
+     */
+    private String getReason(Throwable t) {
+        String reason = t.getMessage();
+        if (reason == null) {
+            Throwable cause = t.getCause();
+            if (cause != null && !t.equals(cause)) {
+                return getReason(cause);
+            }
+
+            if (t instanceof UnauthorizedException) {
+                return "not authorized to access endpoint - check credentials";
+            }
+            return t.getClass().getSimpleName();
+        }
+        return reason;
     }
 
     /**

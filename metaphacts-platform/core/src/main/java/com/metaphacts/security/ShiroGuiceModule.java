@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.security;
 
 import java.util.Arrays;
@@ -42,6 +63,7 @@ import com.metaphacts.config.Configuration;
 import com.metaphacts.security.sso.SSOCallbackFilter;
 import com.metaphacts.security.sso.SSOLogoutFilter;
 import com.metaphacts.security.sso.SSOSecurityFilter;
+import com.metaphacts.services.storage.api.PlatformStorage;
 
 /**
  * @author Artem Kozlov {@literal <ak@metaphacts.com>}
@@ -71,6 +93,9 @@ public class ShiroGuiceModule extends ShiroWebModule {
         //       which brings its own session manager (in which we change the global timeout)
         addFilterChain("/assets/no_auth/**", ANON);
 
+        // supplied for use as a default "you have been logged out" page in SSO setups.
+        addFilterChain("/logged-out/**", ANON);
+
         // these need to be anon access for tableau
         addFilterChain("/assets/api-commons-*-bundle.js", ANON);
         addFilterChain("/assets/tableau-*-bundle.js", ANON);
@@ -87,7 +112,7 @@ public class ShiroGuiceModule extends ShiroWebModule {
             filters = getFiltersFromConfig();
             logger.info("Adding authentication filters to filter chain: " + Arrays.toString(filters));
         } catch (Exception e) {
-            logger.debug("Critical error while configuring the shiro authentication filter: " + e.getMessage());
+            logger.fatal("Critical error while configuring the shiro authentication filter: " + e.getMessage());
             /*
              * STOP SERVLET CONFIGURATION AND START-UP
              * If there are exceptions in getting the (correct
@@ -99,7 +124,7 @@ public class ShiroGuiceModule extends ShiroWebModule {
 
         addFilterChain("/**", filters);
     }
-    
+
     protected void configureRealmBindings(Configuration config) {
         if (config.getEnvironmentConfig().getSecurityConfig(SecurityConfigType.ShiroLDAPConfig).exists()) {
             addLocalLogin(config);
@@ -133,7 +158,7 @@ public class ShiroGuiceModule extends ShiroWebModule {
     protected void bindWebSecurityManager(final AnnotatedBindingBuilder<? super WebSecurityManager>  bind) {
         try {
             bind.toConstructor(MetaphactsSecurityManager.class.getConstructor(Collection.class, Configuration.class,
-                    CacheManager.class)).asEagerSingleton();
+                    CacheManager.class, PlatformStorage.class)).asEagerSingleton();
         } catch (NoSuchMethodException e) {
             throw new ConfigurationException("This is a serious configuration error while setting up the ShiroModule", e);
         }
@@ -171,6 +196,7 @@ public class ShiroGuiceModule extends ShiroWebModule {
 
         oauth2(SSOSecurityFilter.class),
         saml2(SSOSecurityFilter.class),
+        jwt(SSOSecurityFilter.class),
         sso(SSOSecurityFilter.class),
         ssoLogout(SSOLogoutFilter.class),
         ssoCallback(SSOCallbackFilter.class);

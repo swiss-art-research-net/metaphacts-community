@@ -1,4 +1,4 @@
-ARG  JETTY_VERSION=9.4.18-jre8-alpine
+ARG  JETTY_VERSION=9.4.31-jre8
 FROM jetty:${JETTY_VERSION}
 MAINTAINER metaphacts support@metaphacts.com
 
@@ -7,7 +7,19 @@ LABEL maintainer="metaphacts support@metaphacts.com"
 USER root
 
 # install additional packages
-RUN apk --update add vim && rm -rf /var/cache/apk/*
+# Alpine installation:
+#RUN apk --update add vim && rm -rf /var/cache/apk/*
+# Debian installation:
+RUN apt-get update && apt-get install -y --no-install-recommends vim \
+      && rm -rf /var/lib/apt/lists/* \
+      && rm -rf /var/cache/apt/archives/*
+
+# when on Debian, change uid of user jetty to 100 and gid of group jetty to 101
+# note that we delete temporary user _apt which has uid 100 to avoid conflicts
+RUN echo "fixing user and group id for Jetty" \
+	&& userdel -f _apt \
+	&& usermod -u 100 jetty \
+	&& groupmod -g 101 jetty
 
 # add user jetty to group root which is used for most of the permissions
 # user jetty has uid 100
@@ -19,13 +31,13 @@ RUN addgroup jetty root
 # also set same permissions as for owner
 RUN echo "fixing group ownership for Jetty base, home, and temp folders" \
 	&& umask 0002 \
-	&& chgrp -R 0 "$TMPDIR" \
+	&& chown -R 100:0 "$TMPDIR" \
 	&& chmod -R g=u "$TMPDIR" \
 	&& chmod -R g+s "$TMPDIR" \
-	&& chgrp -R 0 "$JETTY_BASE" \
+	&& chown -R 100:0 "$JETTY_BASE" \
 	&& chmod -R g=u "$JETTY_BASE" \
 	&& chmod -R g+s "$JETTY_BASE" \
-	&& chgrp -R 0 "$JETTY_HOME"\
+	&& chown -R 100:0 "$JETTY_HOME"\
 	&& chmod -R g=u "$JETTY_HOME" \
 	&& chmod -R g+s "$JETTY_HOME"
 
@@ -45,6 +57,10 @@ RUN echo "setting up platform, apps, and runtime folders" \
 	&& chown -R 100:0 "/apps" \
 	&& chmod -R g=u "/apps" \
 	&& chmod -R g+ws "/apps" \
+	&& mkdir /bundled \
+	&& chown -R 100:0 "/bundled" \
+	&& chmod -R g=u "/bundled" \
+	&& chmod -R g+ws "/bundled" \
 	&& mkdir /runtime-data \
 	&& mkdir -p /runtime-data/config/repositories \
 	&& mkdir -p /runtime-data/data/repositories \
@@ -64,20 +80,29 @@ COPY --chown=100:0 first-passwd-init.sh /firstStart/
 
 COPY --chown=100:0 ROOT.xml /var/lib/jetty/webapps/ROOT.xml
 COPY --chown=100:0 ROOT.war /var/lib/jetty/webapps/ROOT.war
+COPY --chown=100:0 bundled/apps/ /bundled/apps
 
 COPY --chown=100:0 config/shiro.ini /runtime-data/config/shiro.ini
+
+# create .ssh dir with correct permissions in jetty homedir
+RUN echo "Setting up ssh key storage directory in /home/jetty" \
+        && mkdir -p "/home/jetty/.ssh" \
+        && chown 100:0 "/home/jetty/.ssh" \
+        && chmod 700 "/home/jetty/.ssh"
+
 # one final, recursive change of permissions in /runtime-data
 RUN chmod g+w "/var/lib/jetty/webapps/ROOT.xml" \
 	&& chown -R 100:0 "/runtime-data" \
 	&& chmod -R g=u "/runtime-data" \
 	&& chmod -R g+ws "/runtime-data"
 
-USER jetty
+USER 100
 
 # enable jetty logging configuration module
-RUN java -jar "$JETTY_HOME/start.jar" --add-to-start="logging-jetty"
+RUN java -jar "$JETTY_HOME/start.jar" --approve-all-licenses --add-to-start="https,http2,logging-jetty"
 
 ENV PLATFORM_OPTS=
+ENV PLATFORM_JETTY_OPTS=
 ENV RUNTIME_OPTS "-DruntimeDirectory=/runtime-data -Dcom.metaphacts.config.baselocation=/runtime-data/config -DappsDirectory=/apps -Dconfig.environment.shiroConfig=/runtime-data/config/shiro.ini -Dlog4j.configurationFile=file:///var/lib/jetty/webapps/etc/log4j2.xml -Dorg.eclipse.jetty.server.Request.maxFormContentSize=104857600"
 
 

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as D from 'react-dom-factories';
 import * as _ from 'lodash';
@@ -46,6 +67,10 @@ import {
   SearchProfileStore, createSearchProfileStore,
 } from '../data/profiles/SearchProfileStore';
 
+import {
+  SemanticSearchKnowledgePanelController
+} from './SemanticSearchKnowledgePanelController';
+
 export interface Props extends React.Props<SemanticSearch>, SemanticSearchConfig {}
 interface State {
   domain?: Data.Maybe<Model.Category>
@@ -63,9 +88,7 @@ interface State {
   availableDatasets?: Array<Dataset>
   selectedDatasets?: Array<Dataset>
   selectedAlignment?: Data.Maybe<Alignment>
-  isConfigurationEditable?: boolean
   visualizationContext?: Data.Maybe<Model.Relation>
-  graphScopeStructure?: Data.Maybe<Model.GraphScopeSearch>;
   graphScopeResults?: Data.Maybe<Model.GraphScopeResults>;
 }
 
@@ -112,9 +135,7 @@ export class SemanticSearch extends Component<Props, State> {
       availableDatasets: availableDatasets,
       selectedDatasets: this.getDefaultDatasets(availableDatasets),
       selectedAlignment: this.getDefaultAlignments(availableDatasets),
-      isConfigurationEditable: true,
       visualizationContext: Maybe.Nothing<Model.Relation>(),
-      graphScopeStructure: Maybe.Nothing<Model.GraphScopeSearch>(),
       graphScopeResults: Maybe.Nothing<Model.GraphScopeResults>(),
     };
   }
@@ -149,12 +170,9 @@ export class SemanticSearch extends Component<Props, State> {
       selectedAlignment: this.state.selectedAlignment,
       setSelectedDatasets: this.setSelectedDatasets,
       setSelectedAlignment: this.setSelectedAlignment,
-      isConfigurationEditable: this.state.isConfigurationEditable,
       availableDatasets: this.state.availableDatasets,
       visualizationContext: this.state.visualizationContext,
       setVisualizationContext: this.setVisualizationContext,
-      graphScopeStructure: this.state.graphScopeStructure,
-      setGraphScopeStructure: this.setGraphScopeStructure,
       graphScopeResults: this.state.graphScopeResults,
       setGraphScopeResults: this.setGraphScopeResults,
     };
@@ -176,8 +194,6 @@ export class SemanticSearch extends Component<Props, State> {
             .chain(state => Maybe.fromNullable(state.facet))
             .getOrElse(undefined),
           resultState: savedState.map(state => state.result).getOrElse({}),
-          graphScopeStructure:
-            savedState.map(state => state.graphScopeSearch).getOrElse(s.graphScopeStructure),
         }));
       });
     }
@@ -192,10 +208,14 @@ export class SemanticSearch extends Component<Props, State> {
     _.filter(availableDatasets, d => d.isDefault);
 
   private getDefaultAlignments = (availableDatasets: Array<Dataset>) => {
-    const alignments =
-      _.map(
-        this.getDefaultDatasets(availableDatasets), d => _.find(d.alignments, a => a.isDefault)
-      );
+    const alignments: Array<Alignment> = [];
+    const defaultDatasets = this.getDefaultDatasets(availableDatasets);
+    for (let dataset of defaultDatasets) {
+      const defaultAlignment = _.find(dataset.alignments, a => a.isDefault);
+      if (defaultAlignment) {
+        alignments.push(defaultAlignment);
+      }
+    }
     if (_.isEmpty(alignments)) {
       return Maybe.Nothing<Alignment>();
     } else {
@@ -212,7 +232,7 @@ export class SemanticSearch extends Component<Props, State> {
         const datasetIri = iri || 'http://metaphacts.com/ontology#default';
         return {
           iri: Rdf.iri(datasetIri),
-          alignments: this.mapAlignemnts(alignments),
+          alignments: alignments ? this.mapAlignemnts(alignments) : [],
           silent: silent || false,
           label,
           isDefault
@@ -241,7 +261,6 @@ export class SemanticSearch extends Component<Props, State> {
         hasFacet: query.isJust ? state.hasFacet : false,
         resultQuery: query,
         resultsLoaded: false,
-        isConfigurationEditable: query.isJust ? false : true,
       };
     });
   }
@@ -251,21 +270,25 @@ export class SemanticSearch extends Component<Props, State> {
 
     if (baseQueryStructure.isJust) {
       const queryStructure = _.cloneDeep(baseQueryStructure.get());
+      const searchChanged = (
+        this.state.baseQueryStructure.isJust &&
+        !_.isEqual(this.state.baseQueryStructure.get(), queryStructure)
+      );
+      const resultState = searchChanged ? {} : this.state.resultState;
       this.setState({
         baseQueryStructure: Maybe.Just(queryStructure),
-        resultState: {},
+        resultState,
       });
       this.saveStateIntoHistory({
         search: queryStructure,
         facet: this.state.facetStructure,
-        result: {},
+        result: resultState,
         datasets: this.state.selectedDatasets,
         alignment: this.state.selectedAlignment,
-        graphScopeSearch: this.state.graphScopeStructure,
       });
     } else {
       this.setState({
-        baseQueryStructure: Maybe.Nothing<Model.Search>(), isConfigurationEditable: true
+        baseQueryStructure: Maybe.Nothing<Model.Search>(),
       });
       this.clearCurrentHistoryItem();
     }
@@ -280,7 +303,6 @@ export class SemanticSearch extends Component<Props, State> {
       result: this.state.resultState,
       datasets: this.state.selectedDatasets,
       alignment: this.state.selectedAlignment,
-      graphScopeSearch: this.state.graphScopeStructure,
     });
   }
 
@@ -297,8 +319,8 @@ export class SemanticSearch extends Component<Props, State> {
     this.setState({facetActions: actions});
   }
 
-  private setDomain = (domain: Model.Category) => {
-    this.setState({domain: Maybe.Just(domain)});
+  private setDomain = (domain: Model.Category | undefined) => {
+    this.setState({domain: Maybe.fromNullable(domain)});
   }
 
   private setAvailableDomains = (domains: Model.AvailableDomains) => {
@@ -318,18 +340,6 @@ export class SemanticSearch extends Component<Props, State> {
     this.setState({searchProfileStore: Maybe.Just(profileStore)});
   }
 
-  private setGraphScopeStructure = (graphScopeStructure: Data.Maybe<Model.GraphScopeSearch>) => {
-    this.setState({graphScopeStructure});
-    this.saveStateIntoHistory({
-      search: this.state.baseQueryStructure.getOrElse(undefined),
-      facet: this.state.facetStructure,
-      result: this.state.resultState,
-      datasets: this.state.selectedDatasets,
-      alignment: this.state.selectedAlignment,
-      graphScopeSearch: graphScopeStructure,
-    });
-  }
-
   private setGraphScopeResults = (graphScopeResults: Data.Maybe<Model.GraphScopeResults>) => {
     this.setState({graphScopeResults});
   }
@@ -341,10 +351,17 @@ export class SemanticSearch extends Component<Props, State> {
   }
 
   render() {
+    const knowledgePanelController = React.createElement(
+      SemanticSearchKnowledgePanelController,
+      {
+        searchId: this.props.id,
+        knowledgePanelId: this.props.knowledgePanelId,
+      }
+    );
     return React.createElement(
       SemanticSearchContext.Provider,
       {value: this.makeSearchContext()},
-      D.div({}, this.props.children)
+      D.div({}, this.props.children, knowledgePanelController)
     );
   }
 
@@ -353,7 +370,7 @@ export class SemanticSearch extends Component<Props, State> {
     params: { reload?: boolean } = {}
   ): Data.Maybe<RawState> => {
     const compressed = (params.reload || this.serializedState === undefined)
-      ? getCurrentUrl().query(true)[SAVED_STATE_QUERY_KEY]
+      ? (getCurrentUrl().query(true) as { [key: string]: string })[this.getSavedStateQueryKey()]
       : this.serializedState;
 
     if (typeof compressed === 'string') {
@@ -383,7 +400,7 @@ export class SemanticSearch extends Component<Props, State> {
     const compressed = serializeSearch(
       state.search || previousState.map(s => s.search).getOrElse(undefined),
       state.facet || previousState.map(s => s.facet).getOrElse(undefined),
-      state.result, state.datasets, state.alignment, state.graphScopeSearch,
+      state.result, state.datasets, state.alignment,
     );
 
     if (compressed === this.serializedState) { return; }
@@ -395,8 +412,8 @@ export class SemanticSearch extends Component<Props, State> {
     // when updating query string we need to make sure that we keep all
     // other query parameters, e.g repository
     const currentUrl = getCurrentUrl().clone();
-    currentUrl.removeSearch(SAVED_STATE_QUERY_KEY)
-      .addSearch({[SAVED_STATE_QUERY_KEY]: compressed});
+    currentUrl.removeSearch(this.getSavedStateQueryKey())
+      .addSearch({[this.getSavedStateQueryKey()]: compressed});
     this.savingState.map(
       Kefir.constant(currentUrl)
     ).onValue(url => {
@@ -407,9 +424,9 @@ export class SemanticSearch extends Component<Props, State> {
   private clearCurrentHistoryItem() {
     this.savingState.cancelAll();
     const currentUri = getCurrentUrl();
-    if (SAVED_STATE_QUERY_KEY in currentUri.query(true)) {
+    if (this.getSavedStateQueryKey() in currentUri.query(true)) {
       window.history.replaceState({}, '',
-        currentUri.clone().removeQuery(SAVED_STATE_QUERY_KEY).toString());
+        currentUri.clone().removeQuery(this.getSavedStateQueryKey()).toString());
     }
   }
 
@@ -441,8 +458,15 @@ export class SemanticSearch extends Component<Props, State> {
       result: this.state.resultState,
       datasets: this.state.selectedDatasets,
       alignment: this.state.selectedAlignment,
-      graphScopeSearch: this.state.graphScopeStructure,
     }));
+  }
+
+  private getSavedStateQueryKey = () => {
+    const {id} = this.props;
+    if (id) {
+      return `${SAVED_STATE_QUERY_KEY}-${id}`;
+    }
+    return SAVED_STATE_QUERY_KEY;
   }
 }
 

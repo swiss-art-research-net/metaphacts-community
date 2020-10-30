@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { createFactory, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import * as Kefir from 'kefir';
@@ -42,12 +41,26 @@ import * as block from 'bem-cn';
 
 const b = block('overlay-comparison');
 
-export interface Props {
-  selection: Array<Rdf.Iri | string>;
-  repositories?: Array<string>;
+export interface OverlayComparisonConfig {
+  /**
+   * Images IRIs to be compared.
+   */
+  selection: Array<string>;
+  /**
+   * Pattern to generate image ID from image IRI.
+   */
   imageIdPattern: string;
+  /**
+   * IIIF server URL.
+   */
   iiifServerUrl: string;
+  /**
+   * Repositories to query the image.
+   */
+  repositories?: Array<string>;
 }
+
+export type Props = OverlayComparisonConfig;
 
 interface State {
   loading?: boolean;
@@ -67,14 +80,14 @@ interface LoadedState {
  * @example
  * <div style='width: 50%; height: 600px;'>
  *   <rs-iiif-overlay
- *     compared-images='["http://example.com/bar/image1", "http://example.com/bar/image2"]'
+ *     selection='["http://example.com/bar/image1", "http://example.com/bar/image2"]'
  *     image-id-pattern='BIND(REPLACE(?imageIRI, "^http://example.com/(.*)$", "$1") as ?imageID)'
  *     iiif-server-url='<iiif-server>'>
  *   </rs-iiif-overlay>
  * </div>
  */
 export class OverlayComparison extends KefirComponentBase<Props, State, LoadedState> {
-  constructor(props: Props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = this.updateState({firstImageWeight: 0.5});
   }
@@ -85,8 +98,7 @@ export class OverlayComparison extends KefirComponentBase<Props, State, LoadedSt
 
   loadState(props: Props) {
     const tasks = props.selection
-      .map(iri => typeof iri === 'string' ? Rdf.iri(iri) : iri)
-      .map(iri => queryIIIFImageOrRegion(iri, props.imageIdPattern, props.repositories));
+      .map(iri => queryIIIFImageOrRegion(Rdf.iri(iri), props.imageIdPattern, props.repositories));
     return Kefir.zip(tasks).map(metadata => ({
       metadata: Immutable.List(metadata),
     }));

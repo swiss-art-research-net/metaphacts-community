@@ -43,4 +43,5 @@ WHERE {}""" ];
 	rdfs:comment "Test Field 1 comment" ;
 	rdfs:label "Test Field 1"@en ;
 	rdfs:label "Тестовое Поле 1"@ru ;
-	rdfs:label "Test Feld 1"@de .
+	rdfs:label "Test Feld 1"@de ;
+	field:orderedWith field:indexProperty .

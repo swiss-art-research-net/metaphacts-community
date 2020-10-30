@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 
@@ -43,12 +64,14 @@ import * as ReactBootstrap from 'react-bootstrap';
 import { Controlled as CodeMirror } from 'react-codemirror2';
 import * as codemirror from 'codemirror';
 
-import {
-  navigateToResource, navigationConfirmation, navigateToUrl
-} from 'platform/api/navigation';
+import { navigateToResource, navigateToUrl } from 'platform/api/navigation';
 import { Rdf, vocabularies } from 'platform/api/rdf';
-import { PageService, TemplateContent, TemplateStorageStatus, RevisionInfo } from 'platform/api/services/page';
-import { ResourceLink, ResourceLinkAction } from 'platform/api/navigation/components';
+import {
+  PageService, TemplateContent, TemplateStorageStatus, RevisionInfo
+} from 'platform/api/services/page';
+import {
+  ResourceLink, ResourceLinkAction, navigationConfirmation
+} from 'platform/components/navigation';
 
 import { StorageSelector, chooseDefaultTargetApp } from 'platform/components/admin/config-manager';
 import { getOverlaySystem, OverlayDialog} from 'platform/components/ui/overlay';
@@ -306,7 +329,7 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
     const props = {
       message: 'Do you really want to delete this template?',
       onHide,
-      onConfirm: confirm => {
+      onConfirm: (confirm: boolean) => {
         onHide();
         if (confirm) {
           this.deletePage();
@@ -375,7 +398,7 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
     );
   }
 
-  private loadPageSource = (uri) => {
+  private loadPageSource = (uri: string) => {
     this.setState({loading: true});
 
     const pageSourceTask = PageService.loadTemplateSource(uri);
@@ -547,7 +570,7 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
     }
   }
 
-  private includeLinks(includes: string[]): ReactElement<any> {
+  private includeLinks(includes: ReadonlyArray<{ readonly '@id': string }>): ReactElement<any> {
     if (includes.length === 0) {
       return null;
     } else {

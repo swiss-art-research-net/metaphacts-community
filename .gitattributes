@@ -6,6 +6,7 @@
 *.css    text
 *.js     text
 *.sql    text
+*.svg    text
 
 # Denote all files that are truly binary and should not be modified.
 *.png binary

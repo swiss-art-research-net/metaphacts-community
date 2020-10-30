@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,11 +15,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import { range } from 'lodash';
 import * as assign from 'object-assign';
 import * as _ from 'lodash';
+import * as jquery from 'jquery';
 
 import rso from '../../../data/vocabularies/rso';
 
@@ -38,7 +38,7 @@ interface EmitterMixin extends Mirador.EventEmitter {
 
 function ensureBusExists(emitter: EmitterMixin) {
   if (typeof emitter.bus === 'undefined') {
-    emitter.bus = $({});
+    emitter.bus = jquery({}) as any;
   }
 }
 
@@ -48,12 +48,12 @@ function ensureBusExists(emitter: EmitterMixin) {
  */
 Mirador.EventEmitter.prototype.subscribe = function (this: EmitterMixin, name, handler) {
   ensureBusExists(this);
-  this.bus.on.apply(this.bus, arguments);
+  this.bus.on.apply(this.bus, arguments as any);
   return {name, handler};
 };
 Mirador.EventEmitter.prototype.unsubscribe = function (this: EmitterMixin) {
   ensureBusExists(this);
-  this.bus.off.apply(this.bus, arguments);
+  this.bus.off.apply(this.bus, arguments as any);
 };
 Mirador.EventEmitter.prototype.publish = function (this: EmitterMixin, name) {
   ensureBusExists(this);
@@ -70,7 +70,7 @@ Mirador.EventEmitter.prototype.publish = function (this: EmitterMixin, name) {
     // console.trace();
   }
   this.eventStackDepth++;
-  const result = this.bus.trigger.apply(this.bus, arguments);
+  const result = this.bus.trigger.apply(this.bus, arguments as any);
   this.eventStackDepth--;
   return result;
 };
@@ -85,12 +85,12 @@ function clearAllSubscriptions(emitter: Mirador.EventEmitter) {
 
 Mirador.EventEmitter.debug = false;
 
-Mirador['AdapterAnnotationEndpoint'] = AdapterAnnotationEndpoint;
-Mirador['MetaphactoryAnnotationBodyEditor'] = MetaphactoryAnnotationBodyEditor;
-Mirador['DummyJSONStorage'] = class {
+(Mirador as any)['AdapterAnnotationEndpoint'] = AdapterAnnotationEndpoint;
+(Mirador as any)['MetaphactoryAnnotationBodyEditor'] = MetaphactoryAnnotationBodyEditor;
+(Mirador as any)['DummyJSONStorage'] = class {
   readSync(blobId: string) { return {}; }
   save(blob: any) {
-    const deferred = $.Deferred();
+    const deferred = jquery.Deferred();
     deferred.reject();
     return deferred.promise();
   }
@@ -137,8 +137,8 @@ Mirador.OpenSeadragon = function(options) {
 };
 
 const buildAnnotation = Mirador.MiradorDualStrategy.prototype.buildAnnotation;
-Mirador.MiradorDualStrategy.prototype.buildAnnotation = function (options) {
-  const annotation = buildAnnotation.apply(this, arguments);
+Mirador.MiradorDualStrategy.prototype.buildAnnotation = function (options: any) {
+  const annotation = buildAnnotation.apply(this, arguments as any);
 
   const viewer: OpenSeadragon.Viewer = options.overlay.viewer;
   const viewportBounds = viewer.viewport.getBounds(true);
@@ -155,7 +155,7 @@ function rectangleToFragmentString({x, y, width, height}: OpenSeadragon.Rect) {
 const overlayInit = Mirador.Overlay.prototype.init;
 Mirador.Overlay.prototype.init = function (this: Mirador.Overlay) {
   this.hitOptions.tolerance = 50;
-  overlayInit.apply(this, arguments);
+  overlayInit.apply(this, arguments as any);
 };
 
 let hackTimer: number;
@@ -167,7 +167,7 @@ function applyRedrawHack(
     console.error('Mirador redraw timer already set');
   }
   hackTimer = window.setInterval(() => {
-    if (!_.isEmpty($('.mirador-viewer:visible'))) {
+    if (!_.isEmpty(jquery('.mirador-viewer:visible'))) {
       mirador.viewer.workspace.calculateLayout();
       onInitialized(mirador);
       window.clearInterval(hackTimer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { createElement } from 'react';
 import * as PropTypes from 'prop-types';
@@ -87,7 +86,7 @@ interface State {
   target?: Rdf.Iri
   label?: string
   alert?: AlertConfig
-  editor?: Editor
+  editor?: any;
   state?: any
   isSaving?: boolean
 }
@@ -131,7 +130,7 @@ const ModifiedBackend = (...args: any[]) => {
 
   listeners.forEach(name => {
     const original = instance[name];
-    instance[name] = (e, ...extraArgs) => {
+    instance[name] = (e: DragEvent, ...extraArgs: any[]) => {
       if (!shouldIgnoreTarget(e)) {
         original(e, ...extraArgs);
       }
@@ -268,7 +267,7 @@ export class SemanticNarrativeEditor extends Component<Props, State> {
 
   }
 
-  traverseState(item: object, callback: (link: RdfaLink) => void) {
+  traverseState(item: any, callback: (link: RdfaLink) => void) {
     if (item['cells'] !== undefined) {
       for (const cell of item['cells']) {
         this.traverseState(cell, callback);
@@ -289,7 +288,7 @@ export class SemanticNarrativeEditor extends Component<Props, State> {
   }
 
   collectRdfa(state: ResourceState): RdfaLink[] {
-    let result = [];
+    const result: RdfaLink[] = [];
     this.traverseState(state, (link: RdfaLink) => {
       result.push(link);
     });
@@ -388,7 +387,7 @@ export class SemanticNarrativeEditor extends Component<Props, State> {
         </div>
         <Editable id={state.id}
           editor={editor}
-          onChange={s => {
+          onChange={(s: any) => {
             this.setState({state: s});
           }}
         />

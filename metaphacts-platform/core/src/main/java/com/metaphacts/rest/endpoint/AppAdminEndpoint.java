@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import java.io.BufferedOutputStream;
@@ -34,6 +55,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -47,6 +69,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,6 +81,7 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.authz.permission.WildcardPermission;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.pf4j.PluginWrapper;
 
 import com.google.common.collect.Lists;
 import com.metaphacts.config.Configuration;
@@ -70,8 +94,6 @@ import com.metaphacts.services.storage.api.ObjectStorage;
 import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.services.storage.api.StoragePath;
-
-import ro.fortsoft.pf4j.PluginWrapper;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -119,7 +141,7 @@ public class AppAdminEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response listApps() {
         ArrayList<MetaObject> l = new ArrayList<MetaObject>();
-        for (PluginWrapper p : pluginManager.getPlugins()) {
+        for (PluginWrapper p : pluginManager.getResolvedPlugins()) {
             String appId = p.getPluginId();
             if (checkPermission(APP.PREFIX_CONFIG_VIEW + appId)) {
                 l.add(getStorageMetaOject(appId));
@@ -192,7 +214,37 @@ public class AppAdminEndpoint {
         }
 
     }
-    
+
+    @DELETE()
+    @Path("apps/{appId}")
+    @NoCache
+    @RequiresAuthentication
+    @RequiresPermissions(APP.REMOVE)
+    public Response deleteApp(@PathParam("appId") String pluginId) {
+        try {
+            PluginWrapper plugin = pluginManager.getPlugin(pluginId);
+            if (plugin == null) {
+                return Response.status(Status.NOT_FOUND).type("text/plain").entity(
+                        "Cannot remove application: The application \"" + pluginId + "\" is not found."
+                    ).build();
+            }
+            if (pluginManager.unloadPlugin(pluginId)) {
+                FileUtils.deleteDirectory(plugin.getPluginPath().toFile());
+                return Response.ok().build();
+            } else {
+                return Response.status(Status.NOT_FOUND).type("text/plain")
+                        .entity("Cannot remove application \" + pluginId + \". See logs for more details").build();
+            }
+            
+        } catch(Exception e) {
+            logger.warn("Failed to remove app artifact {}: {}", pluginId, e.getMessage());
+            logger.debug("Details:", e);
+            return Response.serverError().entity(
+                    "Error while removing the app artifact. Please refer to the platform logs for further details.")
+                    .build();
+        }
+    }
+
     private MetaObject getStorageMetaOject(String id){
         ObjectStorage s = storageManager.getStorage(id);
         return new MetaObject(id, s.getClass().getCanonicalName(), s.isMutable() );

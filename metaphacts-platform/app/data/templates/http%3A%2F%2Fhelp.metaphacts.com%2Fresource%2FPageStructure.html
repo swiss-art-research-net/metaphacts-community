@@ -1,0 +1,192 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Page Structure</h1>
+    
+    <p>When building applications, one major part is the composition of the user interface. To support the application developer in this task the platform offers a rich toolset with a particular focus on declarative UI building.</p>
+      
+    <p>The goal of the platform is to provide well-defined out-of-box templates and configurations which allow the user to browse and explore arbitrary knowledge graphs. Going beyond this application developers can use the available UI components to produce domain-specific end-user oriented applications.</p>
+      
+    <p>Below we describe the overall page structure and provide the details on how the UI can be adjusted to create an end-user application. More specific details on UI components, the available frontend and backend templating features as well as advanced topics can be found in the <semantic-link title="Help" uri='[[resolvePrefix "Help:Start"]]'>documentation overview</semantic-link>.</p>
+    <h2>Page Elements</h2>
+    <p>All pages in the platform are constructed from a number of pre-defined and unified elements that can be enabled or disabled depending on a use case in mind. </p>
+
+    <p>Similar to building blocks in construction industry, every page element has its own assigned place on the page, its own purpose, realm of visibility and dedicated means of configuring it. <p>
+
+    <p>The following list summarizes the available page elements:</p>
+    
+    <ul>
+      <li>Platform header</li>
+      <li>Breadcrumbs</li>
+      <li>Developer toolbar</li>
+      <li>Knowledge Graph Bar</li>
+      <li>View content</li>
+    </ul>
+    
+  <p><img src="/images/help/templating/Page-Elements.png" width=950px></p>
+
+  <p>The elements will be described one by one to explain how to control the rendering of a page in the platform.</p>
+    
+  <h3>Platform Header</h3>
+    
+  <p>The <strong>platform header</strong> is always rendered at the top of any page and exposes the means of navigation to the most frequently used platform tools. Visibility of some elements in the header depends on permissions.  For example, the admin menu will be shown only to those users that are in a role granting an access to the Administration area.</p>
+    <p>You can learn more about permissions and user roles in <semantic-link title="Security" uri='[[resolvePrefix "Help:Security"]]'>Security Section</semantic-link>.</p>
+
+  <h3>Breadcrumbs</h3>
+    
+  	<p><strong>Breadcrumbs</strong> are a visual aid for users to keep track and maintain awareness of their locations within the application. Such breadcrumbs and the hierarchy they represent are very much application-specific.</p>
+    
+    <p>In the platform we define breadcrumbs either as part of the content block, or, for more advanced applications, by providing type-based definitions using  <semantic-link title="PageViewConfig" uri='[[resolvePrefix "Help:PageViewConfig"]]'>Page View Configuration</semantic-link>.
+</p>
+    
+    <p>A simple snippet for breadcrumbs embedded in the content block may look as follows:</p>
+
+   <mp-code-block>
+<![CDATA[
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li class="active">
+    <mp-label iri='&#91;&#91;this&#93;&#93;'></mp-label>
+  </li>
+</ol>
+]]>
+  </mp-code-block>
+  
+  <p>Note that such breadcrumbs definitions will be rendered below the Knowledge Graph Bar, i.e. inside the content block (application page itself).
+	</p>
+  
+  
+
+	<h3>Developer Toolbar</h3>
+
+    <p>The <b>Developer Toolbar</b> is another collection of tools specifically targeted to application developers.</p>
+
+    <p>At the moment this toolbar consists of one item, the <i>Edit Page</i> button, which allows to edit the HTML source of a page.</p>
+
+    <p>The <i>Edit Page</i> button is visible, if the user has "write" permissions to the current resource.</p>. To learn how to set permissions please refer to <semantic-link title="PageViewConfig" uri='[[resolvePrefix "Help:PageViewConfig"]]'>Page View Configuration</semantic-link>.
+
+   <h3>Knowledge Graph Bar</h3>
+      
+    <p>The <b>Knowledge Graph Bar</b> is a central user interface component that shows relevant information about the current resource. It is targeted towards <b>knowledge graph expert</b> users as well as <b>application developer</b> users to provide consistent access to all resource information. Typically, the Knowledge Graph Bar is not shown in end-user applications, however, expert users with the required permissions can always toggle it on and off for themselves.</p>
+    
+
+    <p>The default Knowledge Graph Bar consists of the following elements:</p>
+    
+    <ul>
+      <li>Resource label;</li>
+      <li>Resource thumbnail;</li>
+      <li>Resource type;</li>
+      <li>Resource URI;</li>
+      <li>Toggle buttons for switching between the 3 pre-defined resourse views;</li>
+      <li>Collapse / expand chevron to control the show / hide state of the Knowledge Graph Bar. </li>
+    </ul>
+
+    <p><img src="/images/help/templating/KGB-elements.png" width=800px><p>
+
+		<h4>Knowledge Graph Bar Visibility</h4>
+     
+    <p>For a set of the following out-of-box product sections the Knowledge Graph Bar <b>is shown</b> to all users:</p>
+
+    <ul>
+      <li>Named Graphs</li>
+      <li>Vocabularies (SKOS vocabularies and SKOS collections as well as their elements)</li>
+      <li>Ontologies and all their elements (classes, ontology properties, etc.)</li>
+    </ul>
+    
+    <p>The platform is configured to <b>not show</b> the Knowledge Graph Bar:</p>
+      <ul>
+        <li>on static pages (e.g. admin and help pages);</li>
+        <li>by default for user-defined application pages;</li>
+        <li>on applied templates (with the exception of the default <code>rdfs:Resource</code> template)</li>
+    </ul>
+    
+   
+
+    <p>However, as mentioned above, the Knowledge Graph Bar can explicitly be brought into view for all RDF resources by expert users with the respective permissions. For the latter user group the UI offers a button (a blue collapse / expand chevron) in the top-center below the application header to blend in the knowledge graph bar. Details on the permissions can be found in the <semantic-link uri='[[resolvePrefix "Help:Security"]]'>security documentation</semantic-link>  (permission <code>ui:page:knowledge-graph-bar:toggle</code> in the UI permissions section).</p>
+    
+    <p>Thus, a clear distinction is now being drawn between the platform as a product for managing knowledge graphs and the end-user space to be later defined by the application developer.  
+    </p>
+    
+    <p>The following matrix gives a comprehensive overview about Knowledge Graph Bar visibility:</p>
+    
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th><b>Resource / Page</b></th>
+          <th><b>Description</b></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Default RDF resource without a custom application page</td>
+          <td>
+            The knowledge graph bar is <b>shown</b>. The Graph View is rendered by default.
+          </td>  
+        </tr>
+        <tr>
+          <td>Out-of-box product sections (ontologies, vocabularies, etc.)</td>
+          <td>
+            The Knowled Graph Bar is <b>shown</b>. 
+          </td>
+        </tr>
+        <tr>
+          <td>Static product pages (admininistration or help pages)</td>
+          <td>
+            The Knowled Graph Bar is <b>NOT shown</b>.
+          </td>
+        </tr>
+        <tr>
+          <td>RDF resource with application page or template</td>
+          <td>
+            <p>The Knowledge Graph Bar is <b>NOT shown</b>, if not explicitly configured otherwise using .</p>
+            <p>Note that expert users with respective permissions do have the possibility to blend the Knowledge Graph Bar in.</p>  
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <p>As it was mentioned before, the experienced application developers have means of changing the defaults for visibility of the Knwoledge Graph Bar and some other crucial settings of the platform that affect the page elements, but we do not recommend to alter the meaningful defaults without strong need and confidence. For further details on this, please navigate to <semantic-link title="PageViewConfig" uri='[[resolvePrefix "Help:PageViewConfig"]]'>Page View Configuration</semantic-link> section</p>
+
+
+
+    <h2>Resource Views</h2>
+    
+    <p>In case the user has permissions to use the Knowledge Graph Bar, the toggle buttons located on the right side of the Knowledge Graph Bar allow the user to switch between different resource views. Directly below the available views are described in detail.</p>
+    
+    <p>These simple rules explain which view is shown by default:</p>
+    
+    <ul>
+      <li>the <b>Graph View</b> is the default option for any type of resource, i.e. it is shown for the RDF resources, for which no dedicated template or application page exists</li>
+      <li>the <b>HTML View </b> is shown, if the application defines a corresponding template or page for this particular resource type, for example, if a developer has defined a special template page for <code>foaf:Person</code>.</li>
+    </ul>
+    <p>A specific application can fine-tune the views for selected resource types via the <i>Page View Configuration</i>, but the out-of-the-box defaults must suffice in 90% of cases. 
+
+    <h3>Graph View</h3> 
+
+    <p>The <b>Graph View</b> offers an interactive graph visualization to navigate and explore the knowledge graph, starting with the resource in focus.</p>
+    
+    <p>The graph view is shown for RDF resources by default, if there is no specific template or application page defined.</p>
+
+		<p><img src="/images/help/templating/MonaLisa-GraphView.png" width=800px></p>
+
+    <p>Note: whether the diagram can be saved or not depends on the current user's permissions.</p>
+    
+		<h3>Statements View</h3> 
+		
+    <p>The <b>Statements View</b> provides a tabular visualization of the outgoing and incoming statements of the current resource. It is a means for advanced users to display the raw relations of the current resource, as defined in the database. All entries are clickable and can be used for navigation to the linked resources.</p>
+
+		<img src="/images/help/templating/MonaLisa-StatementsView.png" width=800px>
+
+		<h3>HTML / Page View</h3> 
+
+    <p>The <b>HTML or Page View</b> shows the domain specific content (which in other occurancies can be named <i>content block</i>) as defined and designed by the application developer. It can make use of the rich set of UI components as well as templating features. See <semantic-link title="Help" uri='[[resolvePrefix "Help:TemplateAndApplicationPages"]]'>here</semantic-link> for details on templates and application pages.</p>
+      
+    <p>Note that if a page does not yet exist, the platform shows a corresponding message indicating that there is no content defined. Once the application developer provides such content, the rendered sources are presented to the user.</p>
+
+	<p><img src="/images/help/templating/MonaLisa-HTMLView.png" width=800px><p>
+
+    

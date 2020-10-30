@@ -18,16 +18,28 @@
     </div>
   </div>
   <div class='page__body'>
-
+    <h2>Platform Information</h2>
+    <hr/>
+		<mp-json-renderer get-url="/rest/admin/system/platform-info" template='<div style="align: center;margin-bottom:25px;" ><bs-row><bs-col sm="2"><b>Platform Version:</b></bs-col><bs-col> {{[Platform Version].version}}</bs-col></bs-row><bs-row><bs-col sm="2"><b>GIT Hash:</b></bs-col><bs-col> {{[Platform Version].gitHash}}</bs-col></bs-row><bs-row><bs-col sm="2"><b>Build Information:</b></bs-col><bs-col> built on {{[Platform Version].buildTimestamp}} from {{[Platform Version].buildBranch}}</bs-col></bs-row></div>'> </mp-json-renderer>
     [[#if (hasPermission "system:restart")]]
       <mp-restart-wrapper>
         <a class="btn btn-danger" href="#">
-  <i class="fa fa-power-off fa-lg"></i> Restart Platform</a>
+  				<i class="fa fa-power-off fa-lg"></i> Restart Platform
+        </a>
       </mp-restart-wrapper>
 
     [[else]]
     	<i>No permission to restart the platform.</i>
     [[/if]]
 
-  </div>
+		<br><br>
+    <h2>JVM Settings</h2>
+    <hr/>
+	  [[#if (hasPermission "system:jvm-properties")]]
+		  <mp-json-renderer style="align: center;" get-url="/rest/admin/system/jvm-properties"></mp-json-renderer>
+	  [[else]]
+		  <i>No permission to read jvm properties.</i>
+	  [[/if]]
+    
+	</div>
 </div>

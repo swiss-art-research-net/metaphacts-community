@@ -1,0 +1,159 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+
+<div class='page'>
+  <div class='page__body'>
+  	<h1>Keyword Search Component</h1>
+    <p>
+      The Keyword Search Component (<code>semantic-search-query-keyword</code>) complements the <semantic-link iri='[[resolvePrefix "Help:SemanticSearch"]]'>semantic search framework</semantic-link> with a simple facility for keyword search. Keyword search is one of the most simple search definition components available in the platform. It allows to run a single-domain search using the query token.
+    </p>
+    
+    <h2>Configuration</h2>
+    <mp-documentation type="SemanticSearchKeywordConfig"></mp-documentation>
+    
+    <p><code>semantic-search-query-keyword</code> does not have a default configuration for the query. For most use-cases it is recommended to define the query using <semantic-link iri="[[resolvePrefix "Help:LookupService"]]">Lookup Service</semantic-link> technology. This abstraction allows to define the search query independent of the underlying database, i.e. the platform makes sure to select a lookup service implementation optimized for the target database.</p>
+        
+        <mp-code-block>
+        <![CDATA[
+        <semantic-search-query-keyword
+          query='
+            PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
+            SELECT ?subject ?description WHERE {
+              SERVICE Repository:lookup {
+                ?subject lookup:token ?__token__ .
+                # ?subject lookup:type foaf:Person
+              }
+            }'
+        ></semantic-search-query-keyword>
+        ]]>
+          </mp-code-block>
+       
+      <br/>
+      <mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>Show search query patterns for different databases</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+        <table class="table table-striped table-bordered inputs-table">
+          <tbody>
+            <tr>
+              <th>Triplestore</th>
+              <th>Keyword search configuration</th>
+            </tr>
+            <tr>
+              <td>SPARQL 1.1 REGEX (e.g. Amazon Neptune)</td>
+              <td>
+                <mp-code-block>
+        <![CDATA[
+        <semantic-search-query-keyword
+          query='
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT ?subject WHERE {
+              ?subject rdfs:label|skos:prefLabel ?label .
+              FILTER(REGEX(?label, ?__token__, "i"))
+              BIND(STRLEN(?label) as ?length)
+            } ORDER BY DESC(?score) ?length
+          '
+        ></semantic-search-query-keyword>
+        ]]>
+          </mp-code-block>
+              </td>
+            </tr>
+            <tr>
+              <td>Stardog</td>
+              <td>
+                 <mp-code-block>
+        <![CDATA[
+        <semantic-search-query-keyword
+          query='
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT ?subject WHERE {
+              ?subject rdfs:label|skos:prefLabel ?label .
+              (?label ?score) <tag:stardog:api:property:textMatch> ?__token__ .
+              BIND(STRLEN(?label) as ?length)
+            } ORDER BY DESC(?score) ?length
+          '
+        ></semantic-search-query-keyword>
+        ]]>
+          </mp-code-block>
+              </td>
+            </tr>
+          <tr>
+              <td>Blazegraph</td>
+              <td>
+                <mp-code-block>
+        <![CDATA[
+        <semantic-search-query-keyword
+          query='
+            PREFIX bds: <http://www.bigdata.com/rdf/search#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT ?subject WHERE {
+              ?subject rdfs:label|skos:prefLabel ?label .
+              SERVICE bds:search {
+                     ?label bds:search ?__token__ ;
+                     bds:minRelevance "0.5" ;
+                     bds:relevance ?score ;
+                     bds:matchAllTerms "true" .
+              }
+              BIND(STRLEN(?label) as ?length)
+            } ORDER BY DESC(?score) ?length
+          '
+        ></semantic-search-query-keyword>
+        ]]>
+          </mp-code-block>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        </mp-collapsible-div-content>
+    </mp-collapsible-div>
+        <br/>
+
+    
+    <h2>Examples</h2>
+    
+        <p>The most basic search configuration using this component looks as follows:</p>
+        
+        <mp-code-example>
+              <![CDATA[
+<semantic-search> 
+  <semantic-search-query-keyword
+          query='
+            PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
+            SELECT ?subject ?description WHERE {
+              SERVICE Repository:lookup {
+                ?subject lookup:token ?__token__ .
+                # ?subject lookup:type foaf:Person
+              }
+            }'
+  ></semantic-search-query-keyword>
+
+  <semantic-search-result-holder>
+    <semantic-search-result>
+      <semantic-table id='table' query='SELECT ?subject WHERE { } ORDER BY DESC(?score)'></semantic-table>
+    </semantic-search-result>
+  </semantic-search-result-holder>
+</semantic-search>
+]]>
+        </mp-code-example>
+        
+        <p>
+        Besides using SPARQL queries for search, the <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> can be used to look up entities based on the provided search terms. See <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> for details and examples.
+      </p>
+    
+    <h3>Further examples</h3>
+    
+    <ul>
+      <li>
+        <semantic-link iri="[[resolvePrefix "Help:StructuredKeywordSearchExample"]]">Keyword search with facets</semantic-link>
+      </li>
+      <li>
+        <semantic-link iri="[[resolvePrefix "Help:StructuredKeywordSearchExampleWikidata"]]">Keyword search with facets (Wikidata)</semantic-link>
+      </li>      
+    </ul>
+    
+  </div>
+</div>

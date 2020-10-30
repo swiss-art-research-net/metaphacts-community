@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +15,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as classNames from 'classnames';
 
 import Cell from 'ory-editor-core/lib/components/Cell';
-import { ComponetizedRow } from 'ory-editor-core/src/types/editable';
 
 const Inner = ({
   editable,
@@ -30,7 +28,7 @@ const Inner = ({
   blurAllCells,
   editMode,
   containerWidth
-}) => (
+}: any) => (
   <div
     className={classNames('ory-row', {
       'ory-row-is-hovering-this': Boolean(hover),
@@ -52,4 +50,4 @@ const Inner = ({
   </div>
 );
 
-export default Inner
+export default Inner;

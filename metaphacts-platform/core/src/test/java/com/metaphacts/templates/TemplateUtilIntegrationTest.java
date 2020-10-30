@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.templates;
 
 import static org.junit.Assert.assertEquals;
@@ -28,19 +49,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 
-import com.google.common.collect.Lists;
-import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.LabelCache;
-import com.metaphacts.cache.QueryTemplateCache;
-import com.metaphacts.config.NamespaceRegistry;
-import com.metaphacts.config.UnknownConfigurationException;
-import com.metaphacts.junit.*;
-import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.services.fields.FieldDefinitionManager;
-import com.metaphacts.services.fields.FieldsBasedSearch;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.ObjectStorage;
-import com.metaphacts.services.storage.api.PlatformStorage;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -54,12 +62,26 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.github.jknack.handlebars.io.TemplateLoader;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.metaphacts.cache.CacheManager;
+import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.cache.TemplateIncludeCache;
+import com.metaphacts.config.Configuration;
+import com.metaphacts.config.NamespaceRegistry;
+import com.metaphacts.config.UnknownConfigurationException;
+import com.metaphacts.junit.AbstractRepositoryBackedIntegrationTest;
+import com.metaphacts.junit.NamespaceRule;
+import com.metaphacts.junit.PlatformStorageRule;
+import com.metaphacts.junit.TestPlatformStorage;
+import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.services.fields.FieldDefinitionGeneratorChain;
+import com.metaphacts.services.fields.FieldsBasedSearch;
+import com.metaphacts.services.storage.api.PlatformStorage;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -72,18 +94,11 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
 
     @Inject
     @Rule
-    public RepositoryRule repositoryRule;
-
-    @Inject
-    @Rule
     public NamespaceRule namespaceRule;
 
     @Inject
     @Rule
     public PlatformStorageRule platformStorageRule;
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Inject
     private LabelCache labelCache;
@@ -92,7 +107,13 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
     private QueryTemplateCache queryTemplateCache;
     
     @Inject
+    private FieldDefinitionGeneratorChain fieldDefinitionGeneratorChain;
+
+    @Inject
     private CacheManager cacheManager;
+    
+    @Inject
+    private Configuration config;
 
     private MetaphactsHandlebars handlebars;
 
@@ -104,11 +125,15 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
         PlatformStorage platformStorage = platformStorageRule.getPlatformStorage();
         TemplateLoader loader = new TemplateByIriLoader(platformStorage, ns);
         RepositoryManager repositoryManager = repositoryRule.getRepositoryManager();
+        
         this.handlebars = new MetaphactsHandlebars(
             loader,
             new HandlebarsHelperRegistry(
+                config,
+                platformStorage,
+                cacheManager,
                 repositoryManager,
-                new FieldDefinitionManager(repositoryManager, cacheManager),
+                fieldDefinitionGeneratorChain,
                 new FieldsBasedSearch(ns, repositoryManager, labelCache),
                 queryTemplateCache,
                 labelCache
@@ -123,7 +148,8 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
         String content = "This is the person template";
         storeNewRevision(FOAF.PERSON, content);
 
-        assertEquals(content, TemplateUtil.getTemplateSource(this.handlebars.getLoader(), FOAF.PERSON.stringValue()).get().content());
+        assertEquals(content, TemplateUtil.getTemplateSource(this.handlebars.getLoader(), FOAF.PERSON.stringValue())
+                .get().content(StandardCharsets.UTF_8));
 
         assertFalse(TemplateUtil.getTemplateSource(this.handlebars.getLoader(), FOAF.AGENT.stringValue()).isPresent());
     }
@@ -200,7 +226,8 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
         set.add("Template:"+FOAF.AGENT.stringValue());
         Assert.assertThat(
                 set,
-                IsIterableContainingInAnyOrder.containsInAnyOrder(TemplateUtil.getRdfTemplateIncludeIdentifiers(joe, context(joe), includeCache).toArray())
+                IsIterableContainingInAnyOrder.containsInAnyOrder(TemplateUtil
+                        .getRdfTemplateIncludeIdentifiers(joe, context(joe), includeCache).toArray())
                 );
     }
 
@@ -228,7 +255,9 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
         set.add("Template:"+SKOS.CONCEPT.stringValue());
         Assert.assertThat(
                 set,
-                IsIterableContainingInOrder.contains(TemplateUtil.getRdfTemplateIncludeIdentifiers(joe, context(joe), includeCache).toArray())
+                IsIterableContainingInOrder.contains(
+                        TemplateUtil.getRdfTemplateIncludeIdentifiers(joe, context(joe), includeCache)
+                                .toArray())
                 );
     }
 
@@ -241,7 +270,7 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
         assertEquals(
             "This the page testpage123, but the context is: http://www.metaphacts.com/joe",
             com.metaphacts.rest.endpoint.TemplateEndpoint.RenderedTemplate
-                .getCompiledHtml(page, context(joe), handlebars, includeCache)
+                        .getCompiledHtml(page, context(joe), handlebars, includeCache)
         );
     }
 

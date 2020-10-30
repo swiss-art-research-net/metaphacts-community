@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 // @flow
 import * as React from 'react';
 import { Component } from 'react';
@@ -31,7 +30,7 @@ import {
   layoutMode
 } from 'ory-editor-core/lib/actions/display';
 
-const instances = {};
+const instances: { [key: string]: any } = {};
 
 class Draggable extends Component<{}, {}> {
   componentDidMount() {
@@ -41,7 +40,7 @@ class Draggable extends Component<{}, {}> {
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAhCAYAAACbffiEAAAA6UlEQVRYhe2ZQQ6CMBBFX0njHg7ESXTp1p3uvIBewc3Em3AfdelSFwRDCAm01JRO+pa0lP8zzc9kMCKyAa7AFqhIixdwB44WuACHuHq8KWm1vwtgF1lMCPaWkevUNE3Qr9R17XTu1P5uvUdV+IpbG2qMGBH5xBYRAjUVUWPEjj10SS3XRFry3kha/VBTETVGcmqtDTVGFqdWn7k9ku96f88QNRVRYySn1tpQY8QptXz7qinmnpt7rZTIqbU21BgJ2mv1+XfCDVFTETVGjIg8SG8KP+RZ0I7lU+dmgRNgaKfyZVw9znT/R85fOHJJE77U6UcAAAAASUVORK5CYII='
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps: {}, nextState: {}) {
     return shouldPureComponentUpdate;
   }
 
@@ -64,7 +63,7 @@ class Draggable extends Component<{}, {}> {
   }
 }
 
-const mapStateToProps = null;
+const mapStateToProps: any = null;
 
 const mapDispatchToProps = { insertMode, editMode, layoutMode, clearHover };
 

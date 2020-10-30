@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as D from 'react-dom-factories';
 import * as Maybe from 'data.maybe';
@@ -35,7 +34,7 @@ import { AutoCompletionInput, AutoCompletionInputProps } from 'platform/componen
 import { isValidChild } from 'platform/components/utils';
 import {
   TreeSelection, SemanticTreeInput, Node as TreeNode, createDefaultTreeQueries,
-  LightwightTreePatterns, SemanticTreeInputProps,
+  LightweightTreePatterns, SemanticTreeInputProps,
 } from 'platform/components/semantic/lazy-tree';
 
 import * as Model from 'platform/components/semantic/search/data/search/Model';
@@ -105,12 +104,12 @@ interface InnerProps extends SemanticQueryBuilderConfig {
 interface State {
   store?: SearchStore;
   searchState?: SearchState;
-  search?: Data.Maybe<Model.Search>;
+  search?: Data.Maybe<Model.StructuredSearch>;
   isSearchCollapsed?: boolean;
 }
 
 class QueryBuilderInner extends React.Component<InnerProps, State> {
-  static defaultProps = {
+  static defaultProps: Partial<InnerProps> = {
     categoryViewTemplate: SearchDefaults.CategoryViewTemplate,
     relationViewTemplate: SearchDefaults.RelationViewTemplate,
     resourceSelector: {
@@ -119,8 +118,8 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
       noSuggestionsTemplate: SearchDefaults.DefaultResourceSelectorNoSuggestionsTemplate,
     },
     projectionVariable: 'subject',
-    treeSelectorRelations: [],
-    treeSelectorCategories: [],
+    treeSelectorRelations: {},
+    treeSelectorCategories: {},
   };
 
   constructor(props: InnerProps) {
@@ -128,7 +127,7 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
     this.state = {
       store: null,
       searchState: null,
-      search: Maybe.Nothing<Model.Search>(),
+      search: Maybe.Nothing<Model.StructuredSearch>(),
       isSearchCollapsed: false,
     };
   }
@@ -158,9 +157,21 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
           ).getOrElse(false);
 
         if (!searchStore || isExtendedSearch) {
+          let baseQueryStructure: Data.Maybe<Model.StructuredSearch> =
+            Maybe.Nothing<Model.StructuredSearch>();
+          if (context.baseQueryStructure.isJust) {
+            const search = context.baseQueryStructure.get();
+            if (search.kind === Model.SearchKind.Structured) {
+              baseQueryStructure =
+                context.baseQueryStructure as Data.Maybe<Model.StructuredSearch>;
+            }
+          }
           searchStore = new SearchStore(
-            profileStore, context.baseConfig, props.projectionVariable,
-            context.baseQueryStructure, context.extendedSearch
+            profileStore,
+            context.baseConfig,
+            Rdf.DATA_FACTORY.variable(props.projectionVariable),
+            baseQueryStructure,
+            context.extendedSearch
           );
           this.setState({store: searchStore});
 
@@ -237,7 +248,7 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
   }
 
   // pasive clause
-  private renderSearch = (search: Model.Search, searchState: SearchState, isNested = false) => {
+  private renderSearch = (search: Model.StructuredSearch, searchState: SearchState, isNested = false) => {
     let existingClauses =
       _(search.conjuncts).map(conjunct => [
         this.isActiveClause(conjunct.conjunctIndex, searchState as ConjunctStep) ?
@@ -264,7 +275,7 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
     </div>;
   }
 
-  private searchSummary = (search?: Model.Search) => {
+  private searchSummary = (search?: Model.StructuredSearch) => {
     const isSearchCollapsed = this.state.isSearchCollapsed;
     return <div className={styles.searchSummaryHolder}>
       { !_.isUndefined(search) ? <i className={
@@ -281,7 +292,7 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
   private onSearchToggle = () =>
     this.setState(state => ({isSearchCollapsed: !state.isSearchCollapsed}))
 
-  private isNewConjunct(search: Model.Search, searchState?: ConjunctStep) {
+  private isNewConjunct(search: Model.StructuredSearch, searchState?: ConjunctStep) {
     if (searchState) {
       return _.head(search.conjuncts).conjunctIndex.length === searchState.conjunctIndex.length &&
              search.conjuncts.length <= _.last(searchState.conjunctIndex);
@@ -708,10 +719,12 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
     searchState: RelationTermSelection
   ): AutoCompletionInputProps {
     const {
-      query, defaultQuery, noSuggestionsTemplate, suggestionTupleTemplate, escapeLuceneSyntax
+      query, defaultQuery, noSuggestionsTemplate, suggestionVariable,
+      suggestionTupleTemplate, tokenizeLuceneQuery, escapeLuceneSyntax
     } =  this.getResourceSelectorConfigForRelation(searchState.relation);
+    const valueBindingName = suggestionVariable || RESOURCE_SEGGESTIONS_VARIABLES.SUGGESTION_IRI;
     return {
-      query: this.multiDatasetQuery(searchState, query),
+      query: typeof query === 'string' ? this.multiDatasetQuery(searchState, query) : query,
       defaultQuery: defaultQuery ? this.multiDatasetQuery(searchState, defaultQuery) : undefined,
       droppable: this.droppableConfig(searchState),
       templates: {
@@ -719,18 +732,19 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
         suggestion: suggestionTupleTemplate,
         displayKey: binding => binding[RESOURCE_SEGGESTIONS_VARIABLES.SUGGESTION_LABEL].value,
       },
-      valueBindingName: RESOURCE_SEGGESTIONS_VARIABLES.SUGGESTION_IRI,
+      valueBindingName,
       labelBindingName: RESOURCE_SEGGESTIONS_VARIABLES.SUGGESTION_LABEL,
       searchTermVariable: RESOURCE_SEGGESTIONS_VARIABLES.SEARCH_TERM_VAR,
       actions: {
-        onSelected: binding => this.selectResourceTerm('resource')(
-          binding[RESOURCE_SEGGESTIONS_VARIABLES.SUGGESTION_IRI] as Rdf.Iri,
+        onSelected: ((binding: SparqlClient.Binding) => this.selectResourceTerm('resource')(
+          binding[valueBindingName] as Rdf.Iri,
           binding[RESOURCE_SEGGESTIONS_VARIABLES.SUGGESTION_LABEL].value,
           binding[RESOURCE_SEGGESTIONS_VARIABLES.SUGGESTION_LABEL].value,
           binding,
-        ),
+        )) as (binding: SparqlClient.Binding | SparqlClient.Binding[]) => void,
       },
       escapeLuceneSyntax: escapeLuceneSyntax,
+      tokenizeLuceneQuery: tokenizeLuceneQuery,
       allowForceSuggestion: true,
     };
   };
@@ -873,7 +887,7 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
     }
   }
 
-  private isLightweightTreeConfig(config: TreeSelectorConfig): config is LightwightTreePatterns {
+  private isLightweightTreeConfig(config: TreeSelectorConfig): config is LightweightTreePatterns {
     return !_.has(config, 'rootsQuery');
   }
 

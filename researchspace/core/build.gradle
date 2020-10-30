@@ -1,0 +1,16 @@
+project.ext {
+	externalName = 'researchspace'
+}
+
+eclipse.project.name = project.externalName
+jar.archiveFileName = project.externalName + '.jar'
+
+
+dependencies {
+
+	implementation project(':metaphacts-platform:core')	
+	testImplementation project(':metaphacts-platform:core').sourceSets.test.output
+
+	implementation ("com.twelvemonkeys.imageio:imageio-tiff:3.2.1")
+	implementation ("com.twelvemonkeys.imageio:imageio-core:3.2.1")
+}

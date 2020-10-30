@@ -25,8 +25,7 @@ const defaultsFn = require('./defaults');
  */
 module.exports = function (env) {
     const defaults = defaultsFn();
-    var config = require('./webpack.config.js')(defaults);
-    config.mode = 'production';
+    const config = require('./webpack.config.js')(defaults, {buildMode: 'prod'});
 
     //reset source-maps
     delete config.devtool;
@@ -57,13 +56,11 @@ module.exports = function (env) {
     ]
   };
 
-  let tsLoader = config.module.rules[0].use[0];
-
     //enable assets optimizations
     config.plugins.push(
-        defaults.tsHappyPack(tsLoader),
-        defaults.tsTypeCheck(true),
         new webpack.LoaderOptionsPlugin({
+            // for 'css-loader' v0.28.x, should be unnecessary when we'll upgrade to >= v1.0.0:
+            // https://github.com/webpack-contrib/css-loader/blob/master/CHANGELOG.md#100-2018-07-06
             minimize: true
         }),
     );

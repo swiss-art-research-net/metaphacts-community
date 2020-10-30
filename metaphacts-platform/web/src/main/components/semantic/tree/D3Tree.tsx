@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -197,7 +218,7 @@ export class D3Tree extends Component<D3TreeProps, {}> {
 
 interface DendrogramNode {
   name: string;
-  data: SparqlClient.Dictionary<Rdf.Node>;
+  data: SparqlClient.StarBinding;
   children?: DendrogramNode[];
   _children?: DendrogramNode[];
   parent?: DendrogramNode;
@@ -225,7 +246,7 @@ interface SankeyData {
 
 interface SankeyNode {
   key: string;
-  data: SparqlClient.Dictionary<Rdf.Node>;
+  data: SparqlClient.StarBinding;
   label: string;
   name: string;
 }
@@ -294,13 +315,13 @@ function dendrogram(d3: any, tree: DendrogramNode, config: TreeConfig) {
   const links = cluster.links(nodes);
 
   const diagonal = d3.svg.diagonal()
-    .projection(d => [d.y, d.x]);
+    .projection((d: any) => [d.y, d.x]);
 
   svg.selectAll('.link').data(links).enter().append('path').attr('class', 'link')
     .attr('d', diagonal);
 
   const node = svg.selectAll('.node').data(nodes).enter().append('g').attr('class', 'node')
-    .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')');
+    .attr('transform', (d: any) => 'translate(' + d.y + ',' + d.x + ')');
   node.append('circle').attr('class', 'node-circle')
     .attr('r', opts.radius);
   appendDendrogramNode(node, config);
@@ -310,7 +331,7 @@ function appendDendrogramNode(selection: any /* D3 selection */, config: TreeCon
   return selection
     .append((d: DendrogramNode) => createTemplateAsForeignObject(config, d.data))
     .attr('class', 'node-text')
-    .attr('x', d => config.nodeLeftMargin)
+    .attr('x', (d: any) => config.nodeLeftMargin)
     .attr('y', -config.nodeHeight / 2);
 }
 
@@ -356,7 +377,7 @@ function collapsibleDendrogram(d3: any, tree: DendrogramNode, config: TreeConfig
   setFixedNodeDepth(nodes);
 
   const diagonal = d3.svg.diagonal()
-    .projection(d => [d.y, d.x]);
+    .projection((d: any) => [d.y, d.x]);
   const svg = d3.select(opts.selector, 'dendrogram').append('svg')
     .attr('width', size.width)
     .attr('height', size.height);
@@ -376,12 +397,12 @@ function collapsibleDendrogram(d3: any, tree: DendrogramNode, config: TreeConfig
     .enter()
     .append('g')
       .attr('class', 'node')
-      .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')')
+      .attr('transform', (d: any) => 'translate(' + d.y + ',' + d.x + ')')
       .on('click', onClick);
   // circle
   node.append('circle')
     .attr('class', 'node-circle')
-    .attr('r', d => (1 + d.value / 12) * 4 || opts.radius);
+    .attr('r', (d: any) => (1 + d.value / 12) * 4 || opts.radius);
   // node template
   appendDendrogramNode(node, config);
 
@@ -410,45 +431,45 @@ function collapsibleDendrogram(d3: any, tree: DendrogramNode, config: TreeConfig
     // Update the nodes…
     let i = 0;
     const node = rootGroup.selectAll('g.node')
-      .data(layout.nodes, d => { return d.id || (d.id = ++i); });
+      .data(layout.nodes, (d: any) => { return d.id || (d.id = ++i); });
 
     // Enter any new nodes at the parent's previous position.
     const nodeEnter = node.enter().append('g').attr('class', 'node')
-      .attr('transform', d => 'translate(' + source.y0 + ',' + source.x0 + ')')
+      .attr('transform', (d: any) => 'translate(' + source.y0 + ',' + source.x0 + ')')
       .on('click', onClick)
       .on('dblclick', onDoubleClick);
 
     nodeEnter.append('circle')
-      .attr('class', d => d._children ? 'node-circle-children' : 'node-circle')
-      .attr('r', d => (1 + d.value / 12) * 4 || opts.radius);
+      .attr('class', (d: any) => d._children ? 'node-circle-children' : 'node-circle')
+      .attr('r', (d: any) => (1 + d.value / 12) * 4 || opts.radius);
     appendDendrogramNode(nodeEnter, config)
       .style('fill-opacity', 1e-6);
 
     // Transition nodes to their new position.
     const nodeUpdate = node.transition().duration(duration)
-      .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')');
+      .attr('transform', (d: any) => 'translate(' + d.y + ',' + d.x + ')');
     nodeUpdate.select('circle')
-      .attr('class', d => d._children ? 'node-circle-children' : 'node-circle')
-      .attr('r', d => (1 + d.value / 12) * 4 || opts.radius);
+      .attr('class', (d: any) => d._children ? 'node-circle-children' : 'node-circle')
+      .attr('r', (d: any) => (1 + d.value / 12) * 4 || opts.radius);
     nodeUpdate.select('text').attr('text', 'node-text')
       .style('fill-opacity', 1);
 
     // Transition exiting nodes to the parent's new position.
     const nodeExit = node.exit().transition().duration(duration)
-      .attr('transform', d => 'translate(' + source.y + ',' + source.x + ')')
+      .attr('transform', (d: any) => 'translate(' + source.y + ',' + source.x + ')')
       .remove();
     nodeExit.select('circle').attr('class', 'node-circle')
-      .attr('r', d => (1 + d.value / 12) * 4 || opts.radius);
+      .attr('r', (d: any) => (1 + d.value / 12) * 4 || opts.radius);
     nodeExit.select('text').attr('text', 'node-text')
       .style('fill-opacity', 1e-6);
 
     // Update the links…
     const linkPath = rootGroup.selectAll('path.link')
-      .data(layout.links, d => d.target.id);
+      .data(layout.links, (d: any) => d.target.id);
 
     // Enter any new links at the parent's previous position.
     linkPath.enter().insert('path', 'g').attr('class', 'link')
-      .attr('d', d => {
+      .attr('d', (d: any) => {
         const o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});
       });
@@ -459,14 +480,14 @@ function collapsibleDendrogram(d3: any, tree: DendrogramNode, config: TreeConfig
 
     // Transition exiting nodes to the parent's new position.
     linkPath.exit().transition().duration(duration)
-      .attr('d', d => {
+      .attr('d', (d: any) => {
         const o = {x: source.x, y: source.y};
         return diagonal({source: o, target: o});
       })
       .remove();
 
     // Stash the old positions for transition.
-    layout.nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+    layout.nodes.forEach((d: any) => { d.x0 = d.x; d.y0 = d.y; });
   }
 }
 
@@ -599,10 +620,10 @@ function sankey(d3: any, graph: SankeyData, config: TreeConfig) {
   const link = svg.append('g').attr('class', 'links')
     .selectAll('path').data(graph.links).enter().append('path')
     .attr('d', d3.sankeyLinkHorizontal())
-    .attr('stroke-width', d => Math.max(1, d.width));
+    .attr('stroke-width', (d: any) => Math.max(1, d.width));
 
   link.append('title')
-    .text(d => 'no title');
+    .text((d: any) => 'no title');
 
   const node = svg.append('g')
     .attr('class', 'nodes')
@@ -613,26 +634,26 @@ function sankey(d3: any, graph: SankeyData, config: TreeConfig) {
       .attr('class', 'node');
 
   node.append('rect')
-    .attr('x', d => d.x0)
-    .attr('y', d => d.y0)
-    .attr('width', d => d.x1 - d.x0)
-    .attr('height', d => d.y1 - d.y0)
-    .attr('fill', d => color(d.name))
+    .attr('x', (d: any) => d.x0)
+    .attr('y', (d: any) => d.y0)
+    .attr('width', (d: any) => d.x1 - d.x0)
+    .attr('height', (d: any) => d.y1 - d.y0)
+    .attr('fill', (d: any) => color(d.name))
     .attr('opacity', 0.5);
 
   node
     .append((d: SankeyNode) => createTemplateAsForeignObject(config, d.data))
     .attr('class', 'node-text')
-    .attr('x', d => d.x1 + 6)
-    .attr('y', d => ((d.y1 + d.y0) - config.nodeHeight) / 2);
+    .attr('x', (d: any) => d.x1 + 6)
+    .attr('y', (d: any) => ((d.y1 + d.y0) - config.nodeHeight) / 2);
 
   node.append('title')
-    .text(d => 'no title');
+    .text((d: any) => 'no title');
 }
 
 function createTemplateAsForeignObject(
   config: TreeConfig,
-  data: SparqlClient.Dictionary<Rdf.Node>,
+  data: SparqlClient.StarBinding
 ): SVGForeignObjectElement {
   const root = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
   const {nodeWidth, nodeHeight, props} = config;
@@ -645,8 +666,8 @@ function createTemplateAsForeignObject(
 }
 
 interface NodeCellProps {
-  config: TreeConfig,
-  data: SparqlClient.Dictionary<Rdf.Node>,
+  config: TreeConfig;
+  data: SparqlClient.StarBinding;
 }
 
 class NodeCell extends Component<NodeCellProps, {}> {
@@ -658,7 +679,7 @@ class NodeCell extends Component<NodeCellProps, {}> {
     const childContext: { [key: string]: any } = {};
     for (const key in componentContext) {
       if (componentContext.hasOwnProperty(key) && NodeCell.childContextTypes[key]) {
-        childContext[key] = componentContext[key];
+        childContext[key] = componentContext[key as keyof typeof componentContext];
       }
     }
     return childContext as ComponentContext;

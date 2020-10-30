@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * Handlebars doesn't have any meance to use comparison operators in templates.
  * This function provides conditional if function for templates.
@@ -23,7 +44,7 @@
  * Ex.:
  * {{#ifCond value ">=" 0}}<div>some content</div>{{else}}<div>some other content</div>{{/ifCond}}
  */
-function checkCondition(v1, operator, v2) {
+function checkCondition(v1: unknown, operator: string, v2: unknown) {
   switch (operator) {
   case '==':
     // tslint:disable-next-line:triple-equals
@@ -56,7 +77,7 @@ export const GenericFunctions = {
   /**
    * if operator for handlebars templates.
    */
-  ifCond: function (v1, operator, v2, options) {
+  ifCond: function (v1: unknown, operator: string, v2: unknown, options: any) {
     return checkCondition(v1, operator, v2)
         ? options.fn(this)
         : options.inverse(this);
@@ -82,7 +103,11 @@ export const GenericFunctions = {
    * {{/switch}}
    *
    */
-  switch: function(value, options) {
+  switch: function (
+    this: { switchValue?: unknown, switchBreak?: boolean },
+    value: unknown,
+    options: any
+  ) {
     this.switchValue = value;
     this.switchBreak = false;
     let html = options.fn(this);
@@ -91,7 +116,10 @@ export const GenericFunctions = {
     return html;
   },
 
-  case: function (value) {
+  case: function (
+    this: { switchValue?: unknown, switchBreak?: boolean },
+    value: unknown
+  ) {
     let args = Array.prototype.slice.call(arguments);
     let options = args.pop();
 
@@ -105,7 +133,10 @@ export const GenericFunctions = {
     }
   },
 
-  default: function(options) {
+  default: function (
+    this: { switchValue?: unknown, switchBreak?: boolean },
+    options: any
+  ) {
     if (!this.switchBreak) {
       return options.fn(this);
     }
@@ -114,14 +145,14 @@ export const GenericFunctions = {
   /**
    *  object length helper for handlebars templates.
    */
-  objectLength: function(object) {
+  objectLength: function (object: object) {
     return Object.keys(object).length;
   },
 
   /**
    * Raw block for template escaping.
    */
-  raw: function (options) {
+  raw: function (options: any) {
     return options.fn(this);
   },
 };

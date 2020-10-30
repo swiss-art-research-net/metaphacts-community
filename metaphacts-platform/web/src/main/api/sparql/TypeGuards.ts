@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,11 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as SparqlJs from 'sparqljs';
 
-export function isQuery(node: any): node is SparqlJs.Query {
-  return typeof node === 'object' && node.type === 'query';
+export function isQuery(node: unknown): node is SparqlJs.Query {
+  return typeof node === 'object' && (node as Partial<SparqlJs.Query>).type === 'query';
 }
 
 export function isSelectQuery(query: SparqlJs.Query): query is SparqlJs.SelectQuery {
@@ -39,13 +60,17 @@ export function isDescribeQuery(query: SparqlJs.Query): query is SparqlJs.Descri
 }
 
 
-export function isStarProjection(variables: any): variables is ['*'] {
-  return Array.isArray(variables) && variables.length === 1 && variables[0] === '*';
+export function isStarProjection(
+  variables: SparqlJs.SelectQuery['variables']
+): variables is [SparqlJs.Wildcard] {
+  return Array.isArray(variables)
+    && variables.length === 1
+    && (variables[0] as Partial<SparqlJs.Wildcard>).termType === 'Wildcard';
 }
 
-export function isPattern(node: any): node is SparqlJs.Pattern {
+export function isPattern(node: unknown): node is SparqlJs.Pattern {
   if (typeof node === 'object') {
-    switch (node.type) {
+    switch ((node as Partial<SparqlJs.Pattern>).type) {
       case 'bgp':
       case 'optional':
       case 'union':
@@ -83,13 +108,14 @@ export function isBlockPattern(
   }
 }
 
-export function isExpression(node: any): node is SparqlJs.Expression {
-  if (typeof node === 'string') {
-    return true;
-  } else if (Array.isArray(node)) {
+export function isExpression(node: unknown): node is SparqlJs.Expression {
+  if (Array.isArray(node)) {
     return true;
   } else if (typeof node === 'object') {
-    switch (node.type) {
+    if (isTerm(node as LeafNode)) {
+      return true;
+    }
+    switch ((node as { type?: string }).type) {
       // expressions
       case 'operation':
       case 'functionCall':
@@ -107,32 +133,32 @@ export function isQuads(node: any): node is SparqlJs.Quads {
   return (node.type === 'bgp' || node.type === 'graph') && 'triples' in node;
 }
 
+type LeafNode =
+  SparqlJs.Expression |
+  SparqlJs.PropertyPath |
+  SparqlJs.VariableExpression |
+  SparqlJs.Term;
+
 export function isTerm(
-  node:
-    SparqlJs.Expression |
-    SparqlJs.PropertyPath |
-    SparqlJs.VariableExpression |
-    SparqlJs.Term
+  node: LeafNode
 ): node is SparqlJs.Term {
-  return typeof node === 'string';
+  return typeof (node as Partial<SparqlJs.Term>).termType === 'string';
 }
 
-export function isVariable(term: any): term is SparqlJs.Term {
-  return typeof term === 'string' && term.length > 0 && (term[0] === '?' || term[0] === '$');
+export function isVariable(term: LeafNode): term is SparqlJs.VariableTerm {
+  return (term as Partial<SparqlJs.Term>).termType === 'Variable';
 }
 
-export function isLiteral(term: any): term is SparqlJs.Term {
-  return typeof term === 'string' && term.length > 0 && term[0] === '"';
+export function isLiteral(term: LeafNode): term is SparqlJs.LiteralTerm {
+  return (term as Partial<SparqlJs.Term>).termType === 'Literal';
 }
 
-export function isBlank(term: any): term is SparqlJs.Term {
-  return typeof term === 'string' && term.length > 1 && term[0] === '_';
+export function isBlank(term: LeafNode): term is SparqlJs.BlankTerm {
+  return (term as Partial<SparqlJs.Term>).termType === 'BlankNode';
 }
 
-export function isIri(term: any): term is SparqlJs.Term {
-  if (typeof term !== 'string' || term.length === 0) { return false; }
-  const first = term[0];
-  return first !== '?' && first !== '$' && first !== '"' && first !== '_';
+export function isIri(term: LeafNode): term is SparqlJs.IriTerm {
+  return (term as Partial<SparqlJs.Term>).termType === 'NamedNode';
 }
 
 export function isUpdateOperation(update: any) {

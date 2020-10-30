@@ -1,0 +1,70 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ConfirmationOptions": {
+            "properties": {
+                "cancelLabel": {
+                    "description": "Label for the cancel button.",
+                    "type": "string"
+                },
+                "confirmLabel": {
+                    "description": "Label for the confirm button.",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Confirmation question.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "message",
+                "confirmLabel",
+                "cancelLabel"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "confirmationOptions": {
+            "$ref": "#/definitions/ConfirmationOptions",
+            "description": "Options to customize the confirmation dialog. Applies only if `showConfirmation` is set."
+        },
+        "id": {
+            "description": "Used as source id for emitted events.",
+            "type": "string"
+        },
+        "postAction": {
+            "default": "none",
+            "description": "Action to perform after the query was successfully executed.\nCan be either `none`, `reload`, `event` or any IRI string to which to redirect.",
+            "type": "string"
+        },
+        "query": {
+            "description": "SPARQL UPDATE query string.",
+            "type": "string"
+        },
+        "showConfirmation": {
+            "description": "Whether to show a confirmation question before the query is executed.",
+            "type": "boolean"
+        },
+        "variableParams": {
+            "description": "List of all variables in the query that are not required to be set through a parameter.\nThis is to avoid unintended modification of data caused by missing parameters.\nAn error is shown if a variable is found that is not part of this list.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        }
+    },
+    "propertyOrder": [
+        "query",
+        "variableParams",
+        "postAction",
+        "showConfirmation",
+        "confirmationOptions",
+        "id"
+    ],
+    "required": [
+        "query"
+    ],
+    "type": "object"
+}
+

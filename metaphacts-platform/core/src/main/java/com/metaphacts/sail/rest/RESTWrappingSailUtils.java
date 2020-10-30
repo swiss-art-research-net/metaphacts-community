@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.sail.rest;
 
 import java.util.Collection;
@@ -24,6 +45,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Resource;
@@ -48,6 +71,8 @@ import com.metaphacts.sail.rest.AbstractServiceWrappingSailConnection.RESTParame
  */
 public class RESTWrappingSailUtils {
     
+    private static final Logger logger = LogManager.getLogger(RESTWrappingSailUtils.class);
+
     private static final ValueFactory VF = SimpleValueFactory.getInstance();
     
     private RESTWrappingSailUtils() {
@@ -158,8 +183,10 @@ public class RESTWrappingSailUtils {
     }
     
     /**
-     * Retrieves a variable appearing as object of 
-     * <code>propertyIri</code> and (optional) <code>subjectVariable</code>. 
+     * Retrieves a variable appearing as object of <code>propertyIri</code> and
+     * (optional) <code>subjectVariable</code>.
+     * 
+     * Note: the Variable may be bound to {@link Value}
      * 
      * @param statementPatterns
      * @param subjectVariable
@@ -172,8 +199,7 @@ public class RESTWrappingSailUtils {
             IRI propertyIri) {
         return statementPatterns.stream().filter(stmtPattern -> 
             (predicateEquals(stmtPattern, propertyIri)
-                && ((subjectVariable == null) || subjectEquals(stmtPattern, subjectVariable))
-                && isVariable(stmtPattern.getObjectVar()))
+                && ((subjectVariable == null) || subjectEquals(stmtPattern, subjectVariable)))
             ).map(stmtPattern -> stmtPattern.getObjectVar()).findFirst();
     }
     
@@ -217,21 +243,52 @@ public class RESTWrappingSailUtils {
                 addToBindingSet(bs, variableName, objVal, dataType);
             } catch (PathNotFoundException e) {
                 // legit situation: the path not present, we just skip the variable
+                logger.trace("Skipping property {}, value not present in row {}", propertyIri, resMap);
             }
         }
     }
     
+    /**
+     * Method to check whether a given bound output value is part of the JSON
+     * response from the endpoint.
+     * 
+     * @param resMap
+     * @param boundValue
+     * @param dataType
+     * @param jsonPath
+     * @return true if the bound output matches the result
+     */
+    public static boolean boundOutputMatches(Object resMap, Value boundValue, IRI dataType, String jsonPath) {
+
+        try {
+            Object objVal = JsonPath.read(resMap, jsonPath);
+            Value outputValue = toValue(objVal, dataType);
+            return outputValue.equals(boundValue);
+        } catch (PathNotFoundException e) {
+            // legit situation: the path not present, we just skip the variable and assume
+            // it matches
+            return true;
+        }
+    }
+
     private static void addToBindingSet(MapBindingSet bs, String variableName, Object objVal,
             IRI dataType) {
-        Value rdfValue;
-        if (dataType.equals(XMLSchema.ANYURI)) {
-            rdfValue = VF.createIRI(objVal.toString());
-        } else {
-            rdfValue = VF.createLiteral(objVal.toString(), dataType);
+        // support for optional values
+        if (objVal == null) {
+            return;
         }
+        Value rdfValue = toValue(objVal, dataType);
         bs.addBinding(variableName, rdfValue);
     }
     
+    private static Value toValue(Object objVal, IRI dataType) {
+        if (dataType.equals(XMLSchema.ANYURI)) {
+            return VF.createIRI(objVal.toString());
+        } else {
+            return VF.createLiteral(objVal.toString(), dataType);
+        }
+    }
+
     private static boolean predicateEquals(StatementPattern pattern, IRI propertyIri) {
         return pattern.getPredicateVar().hasValue() && pattern.getPredicateVar().getValue().equals(propertyIri);
     }
@@ -263,14 +320,6 @@ public class RESTWrappingSailUtils {
     private static boolean predicateAndSubjectVarMatch(StatementPattern stmtPattern, Var subjectVariable, IRI propertyIri) {
         return predicateEquals(stmtPattern, propertyIri)
                 && ((subjectVariable == null) || subjectEquals(stmtPattern, subjectVariable));
-    }
-    
-    private static boolean isLiteralConstant(Var var) {
-        return var.hasValue() && (var.getValue() instanceof Literal);
-    }
-    
-    private static boolean isResourceConstant(Var var) {
-        return var.hasValue() && (var.getValue() instanceof Resource);
     }
     
     private static boolean isVariable(Var var) {

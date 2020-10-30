@@ -1,7 +1,7 @@
 <style>
   .docs-panel-left {border-bottom-color: grey;  }
   .docs-panel {border-bottom-color: grey;   }
-</style>  
+</style>
 [[#if GettingStarted]]
 
 [[else]]
@@ -20,44 +20,53 @@
   <div class="page__header page__header--no-image"><h2>Documentation</h2></div>
   <div class='page__body' >
     <br>
+    [[> "http://www.metaphacts.com/resource/DocumentationSearchInclude" ]]
     <bs-row>
         <bs-col sm="6">
           <bs-panel class="docs-panel-left">
             <h3>Building Declarative Web Applications </h3>
             <ul>
-              <li>Templates & Templating</li>
-              <ul> 
-                <li><semantic-link uri='[[resolvePrefix "Help:TemplateAndApplicationPages"]]' >Template vs. Page </semantic-link> </li>
+              <li>Templates &amp; Templating</li>
+              <ul>
+                <li><semantic-link uri='[[resolvePrefix "Help:TemplateAndApplicationPages"]]' >Template and Application Pages </semantic-link></li>
+                <li>
+                  <semantic-link uri='[[resolvePrefix "Help:PageStructure"]]'>Page Structure</semantic-link>
+                  <ul>
+                    <li><semantic-link uri='[[resolvePrefix "Help:PageViewConfig"]]'>Page View Configuration</semantic-link></li>
+                  </ul>
+                </li>
                 <li><semantic-link uri='[[resolvePrefix "Help:BackendTemplating"]]'>Backend Templating </semantic-link> </li>
                 <li><semantic-link uri='[[resolvePrefix "Help:FrontendTemplating"]]' >Frontend Templating</semantic-link> </li>
                 <li><semantic-link iri="[[resolvePrefix "Help:EventSystem"]]">Event System</semantic-link></li>
-                
+                <li><semantic-link iri="[[resolvePrefix "Help:KnowledgePanel"]]">Knowledge Panel</semantic-link></li>
+                <li><semantic-link iri="[[resolvePrefix "Help:CSSLayout"]]">CSS Layout</semantic-link></li>
               </ul>
 
-              <li> <semantic-link iri="[[resolvePrefix "Help:CSSLayout"]]">CSS Layout</semantic-link></li>
               <li> <semantic-link  iri="[[resolvePrefix "Help:ReactBootstrap"]]">React Bootstrap Components</semantic-link></li>
               <li> <semantic-link  iri="[[resolvePrefix "Help:MPComponents"]]">Utility Components</semantic-link> </li>
 
 
               <li>Semantic Components</li>
 
-              <ul> 
+              <ul>
                 <semantic-query query='
-SELECT ?link ?title ?level  WHERE {                    
-  VALUES (?link ?title) { 
+SELECT ?link ?title ?level  WHERE {
+  VALUES (?link ?title) {
     (<[[resolvePrefix "Help:SemanticQuery"]]> "Query" )
     (<[[resolvePrefix "Help:SemanticCarousel"]]> "Carousel" )
     (<[[resolvePrefix "Help:SemanticTable"]]> "Table")
     (<[[resolvePrefix "Help:SemanticGraph"]]> "Graph" )
     (<[[resolvePrefix "Help:SemanticTree"]]> "Tree" )
+    (<[[resolvePrefix "Help:SemanticLazyTree"]]> "Lazy Tree" )
     (<[[resolvePrefix "Help:SemanticTimeline"]]> "Timeline" )
     (<[[resolvePrefix "Help:SemanticMap"]]> "Map" )
     (<[[resolvePrefix "Help:SemanticChart"]]> "Chart" )
+    (<[[resolvePrefix "Help:SemanticContext"]]> "Semantic Context" )
     (<[[resolvePrefix "Help:SemanticSimpleSearch"]]> "Keyword Search" )
     (<[[resolvePrefix "Help:SemanticForm"]]> "Form (Data Input / Authoring)")
     (<[[resolvePrefix "Help:Ontodia"]]> "Ontodia")
   }
-}    
+}
 
 ' template='{{> template}}'>
 
@@ -66,67 +75,39 @@ SELECT ?link ?title ?level  WHERE {
                       {{#each bindings}}
                       <li>
                         <semantic-link uri="{{link.value}}">
-                          {{title.value}} 
+                          {{title.value}}
                         </semantic-link>
                       </li>
                       {{/each}}
                     </div>
                   </template>
                 </semantic-query>
-                <li><semantic-link uri="[[resolvePrefix "Help:SemanticSearch"]]">Structured Search</semantic-link> 
-                  
-    
-    <ul>
-      			<li>
-              <semantic-link iri="[[resolvePrefix "Help:StructuredSearchExample"]]">
-              	Example: Structured search
-              </semantic-link>
-						</li>
-          	<li>
-              <semantic-link iri="[[resolvePrefix "Help:StructuredKeywordSearchExample"]]">
-              Example: Keyword search with facets</semantic-link>
-          	</li>
-            <li>
-              <semantic-link iri="[[resolvePrefix "Help:GraphScope"]]">
-              Example: Keyword search in GraphScope</semantic-link> / 
-              <semantic-link iri="[[resolvePrefix "Help:GraphScopeComponents"]]">Components</semantic-link>
-          	</li>
-          	<li>
-            	<semantic-link iri="[[resolvePrefix "Help:StructuredConstantSearchExample"]]">
-              Example: Constant search with facets</semantic-link>
-          		</li>
-            <li> 
-            	<semantic-link  iri="[[resolvePrefix "Help:FormBasedSearch"]]">
-              	Documentation and Example: Form-based search
-              </semantic-link>
-          	</li>
-          </ul>
-    
-
- </li>
+                <li><semantic-link uri="[[resolvePrefix "Help:SemanticSearch"]]">Semantic Search Framework</semantic-link>
+                  <ul>
+                    <li><semantic-link iri="[[resolvePrefix "Help:KeywordSearch"]]">Keyword Search</semantic-link></li>
+                    <li><semantic-link iri="[[resolvePrefix "Help:StructuredSearch"]]">Structured Search</semantic-link></li>
+                    <li><semantic-link iri="[[resolvePrefix "Help:ConstantSearch"]]">Constant Search</semantic-link></li>
+                    <li><semantic-link iri="[[resolvePrefix "Help:FormBasedSearch"]]">Form Based Search</semantic-link></li>
+                  </ul>
+                </li>
               </ul>
-              
+
             </ul>
           </bs-panel>
         </bs-col>
         <bs-col sm="6">
-      
+
             <bs-panel class="docs-panel">
             <h3>Services</h3>
 						<ul>
             <li>
-              <semantic-link title='Data Quality' iri='[[resolvePrefix "Help:DataQuality"]]'>
-                Data Quality
+              <semantic-link title="Lookup Service" iri='[[resolvePrefix "Help:LookupService"]]'>
+                Lookup Service
               </semantic-link>
             </li>
             <li>
-              <semantic-link title='Ephedra' iri='[[resolvePrefix "Help:Ephedra"]]'>
-                Ephedra (Federation with Custom SPARQL Services)
-              </semantic-link>
-            </li>
-            <li>
-              <semantic-link title="Query as a Service (Dynamic Rest APIs)" iri='[[resolvePrefix "Help:QueryAsAService"]]'>
-                Query as a Service (Dynamic Rest APIs)
+              <semantic-link title="Query Catalog" iri='[[resolvePrefix "Help:QueryCatalog"]]'>
+                Query Catalog
               </semantic-link>
             </li>
             <li>
@@ -135,40 +116,35 @@ SELECT ?link ?title ?level  WHERE {
               </semantic-link>
             </li>
             <li>
-              <semantic-link title='LDP Container Operations' iri='[[resolvePrefix "Help:LDP"]]'>
-                LDP Container Operations
-              </semantic-link>
-            </li>
-            <li>
               <semantic-link title="Publishing" iri='[[resolvePrefix "Help:Publishing"]]'>
                 RDF Publishing
               </semantic-link>
-            </li> 
+            </li>
             </ul>
           </bs-panel>
-        
+
             <bs-panel class="docs-panel">
-            <h3>Platform Operations</h3>
+	            <h3>Platform Operations</h3>
             <ul>
-              <li> 
+              <li>
                 <semantic-link iri="[[resolvePrefix "Help:RepositoryManager"]]">Data Repositories Configuration</semantic-link>
               </li>
-              <li> 
+              [[!--<li>
                 <semantic-link iri="[[resolvePrefix "Help:OperationsAndTroubleshooting"]]">Operations & Troubleshooting</semantic-link>
-              </li>
+              </li> --]]
               <li>
         <semantic-link title="Working with Data" iri='[[resolvePrefix "Help:WorkingWithData"]]'>
           Working with Data
         </semantic-link>
       </li>
-              <li> 
+              <li>
                 <semantic-link iri="[[resolvePrefix "Help:BasicSystemConfiguration"]]">Basic Configuration</semantic-link>
               </li>
               <li>
                 <semantic-link title="Security Configuration" uri='[[resolvePrefix "Help:Security"]]'>
                   Security Configuration
                 </semantic-link>
-              </li>  
+              </li>
               <li>
                 <semantic-link title="Authentication Proxy" iri='[[resolvePrefix "Help:AuthenticationProxy"]]'>
                   Authentication Proxy
@@ -179,19 +155,17 @@ SELECT ?link ?title ?level  WHERE {
             <bs-panel class="docs-panel">
             <h3>Installation & App Lifecycle</h3>
             <ul>
-              <li> 
+              <li>
                 <semantic-link iri="[[resolvePrefix "Help:Installation"]]">Deployment & Installation</semantic-link>
-                 <ul>
-          <li><semantic-link iri="[[resolvePrefix "Help:GraphScopeSetup"]]">GraphScope Setup</semantic-link></li>
-        </ul>
               </li>
               <li>
                 <semantic-link title="Apps" iri='[[resolvePrefix "Help:Apps"]]'>
                   App Mechanism (Structure and Bundling)
                 </semantic-link>
                  <ul>
-          <li><semantic-link iri="[[resolvePrefix "Help:AppDeployment"]]">App Deployment</semantic-link></li>
-        </ul>
+		          <li><semantic-link iri="[[resolvePrefix "Help:AppDeployment"]]">App Deployment</semantic-link></li>
+		          <li><semantic-link iri="[[resolvePrefix "Help:AppExtensions"]]">App Extensions</semantic-link></li>
+		        </ul>
               </li>
               <li>
                 <semantic-link title="Storage" iri='[[resolvePrefix "Help:Storage"]]'>
@@ -203,7 +177,6 @@ SELECT ?link ?title ?level  WHERE {
         </bs-col>
 
       </bs-row>
-    
+
   </div>
   </div>
- 

@@ -1,5 +1,5 @@
 <style type='text/css'>
-  .griddle-custom-row {
+  .table-custom-row {
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
@@ -7,7 +7,7 @@
 </style>
 
 [[#*inline "count"]]
-  <semantic-query 
+  <semantic-query
                   query='
 										SELECT (COUNT(DISTINCT *) as ?count) WHERE{ GRAPH ?g { <{{subject.value}}> a owl:Ontology. [[pattern]] FILTER(!isBlank(?item)) .} }
 									'
@@ -27,7 +27,7 @@
   <li>
     <mp-link title="Home" url="/">Home</mp-link>
   </li>
-  <li><semantic-link title="Assets" iri="http://www.metaphacts.com/resource/assets/">Assets</semantic-link></li>
+  <li><semantic-link title="Assets" iri='[[resolvePrefix "Assets:"]]'>Assets</semantic-link></li>
   <li class="active">Ontologies</li>
 </ol>
 
@@ -41,7 +41,7 @@
       <h2>Ontologies</h2>
     </div>
   </div>
-  <div class='page__body'> 
+  <div class='page__body'>
     <div data-flex-layout='column top-stretch'></div>
     <semantic-search selector-mode='dropdown' optimizer='none'
       categories='{
@@ -56,18 +56,18 @@
             }
           }"
         }]
-      }'                          
-                           
+      }'
+
         search-profile='{
             "categories": [
               {"iri": "<http://www.w3.org/2002/07/owl#Ontology>", "label": "Ontology"},
               {"iri": "<http://www.w3.org/2000/01/rdf-schema#Resource>", "label": "Resource"},
-              {"iri": "<http://www.w3.org/2000/01/rdf-schema#Literal>", "label": "Literal"}                       
-                                           
+              {"iri": "<http://www.w3.org/2000/01/rdf-schema#Literal>", "label": "Literal"}
+
             ],
             "relations": [
               {"iri": "<http://purl.org/dc/elements/1.1/creator>", "label": "creator", "hasDomain": "<http://www.w3.org/2002/07/owl#Ontology>", "hasRange": "<http://www.w3.org/2000/01/rdf-schema#Literal>"},
-              {"iri": "<http://purl.org/dc/elements/1.1/contributor>", "label": "contributor", "hasDomain": "<http://www.w3.org/2002/07/owl#Ontology>", "hasRange": "<http://www.w3.org/2000/01/rdf-schema#Literal>"},                        
+              {"iri": "<http://purl.org/dc/elements/1.1/contributor>", "label": "contributor", "hasDomain": "<http://www.w3.org/2002/07/owl#Ontology>", "hasRange": "<http://www.w3.org/2000/01/rdf-schema#Literal>"},
               {"iri": "<http://www.w3.org/2002/07/owl#versionInfo>", "label": "version", "hasDomain": "<http://www.w3.org/2002/07/owl#Ontology>", "hasRange": "<http://www.w3.org/2000/01/rdf-schema#Literal>"},
               {"iri": "<http://www.w3.org/2002/07/owl#imports>", "label": "imports", "hasDomain": "<http://www.w3.org/2002/07/owl#Ontology>", "hasRange": "<http://www.w3.org/2002/07/owl#Ontology>"}
                                            ]
@@ -75,7 +75,6 @@
              <semantic-search-query-keyword
                domain='<http://www.w3.org/2002/07/owl#Ontology>'
                placeholder='Filter your ontologies by name'
-               escape-lucene-syntax=false
                min-search-term-length=2
                query='
                  SELECT ?subject {
@@ -108,7 +107,7 @@
                                  GRAPH ?g {
                                    ?subject a owl:Ontology .
                                  }
-                                 OPTIONAL { ?subject owl:versionInfo ?v } 
+                                 OPTIONAL { ?subject owl:versionInfo ?v }
                                  OPTIONAL { ?subject rdfs:comment ?d }
                                } GROUP BY ?subject LIMIT 100'
                         tuple-template='{{> ontology}}'
@@ -125,16 +124,16 @@
                                       <p style='font-size:10px;'>{{subject.value}}</p>
                                       {{#if description}}
                                         <p>
-                                          <mp-text-truncate lines=4 truncate='...' 
-                                                            expand='<button class="btn btn-link">read more</button>' 
+                                          <mp-text-truncate lines=4 truncate='...'
+                                                            expand='<button class="btn btn-link">read more</button>'
                                                             collapse='<button class="btn btn-link">less</button>'
                                           >
                                             {{description.value}}
                                           </mp-text-truncate>
                                         </p>
                                       {{/if}}
-                                      <semantic-query style='font-style:italic' 
-                                                      query='SELECT ?author WHERE{ GRAPH ?g { <{{subject.value}}>  <http://purl.org/dc/elements/1.1/creator>|<http://purl.org/dc/terms/creator> ?author} }' 
+                                      <semantic-query style='font-style:italic'
+                                                      query='SELECT ?author WHERE{ GRAPH ?g { <{{subject.value}}>  <http://purl.org/dc/elements/1.1/creator>|<http://purl.org/dc/terms/creator> ?author} }'
                                                       template='{{> authors}}'
                                       >
                                         <template id='authors'>
@@ -163,33 +162,27 @@
                                           <i class='fa fa-4x fa-print mp-action' title='Print' aria-hidden='true'></i>
                                         </mp-overlay-dialog-trigger>
                                         <mp-overlay-dialog-content>
-                                          <mp-print pages='["{{subject.value}}"]'></mp-print>
+                                          <mp-print pages='["{{subject.value}}"]' urlqueryparam-printontology="true"></mp-print>
                                         </mp-overlay-dialog-content>
-                                      </mp-overlay-dialog>  
+                                      </mp-overlay-dialog>
                                      </div>
-
-                                     <div class='col-sm-1'>
-                                       <semantic-link iri='http://www.metaphacts.com/resource/assets/OntodiaDiagrams' title='Create / Edit Diagram' urlqueryparam-ontology-iri='{{subject.value}}'>
-                                         <i class='fa fa-4x fa-object-group' title='Diagrams' aria-hidden=true></i>
-                                       </semantic-link>
-                                    </div>
-                                  </div> 
+                                  </div>
                                 </mp-panel-body>
                               </mp-panel>
-                        </template>  
+                        </template>
                       </semantic-table>
                     </semantic-search-result>
                   </div>
                 </semantic-search-result-holder>
             </div>
           </semantic-search>
-    
+
     <mp-resource-link-container uri="http://www.metaphacts.com/resource/admin/DataImportExport">
        <button style="float:left;margin-right:25px;"class="btn btn-primary">Upload Ontology</button>
     </mp-resource-link-container>
-    
+
     <mp-resource-link-container uri="http://www.metaphacts.com/resource/OntologySearch">
       <button class="btn btn-primary">Search for Ontology Elements</button>
-    </mp-resource-link-container>     
+    </mp-resource-link-container>
   </div>
 </div>

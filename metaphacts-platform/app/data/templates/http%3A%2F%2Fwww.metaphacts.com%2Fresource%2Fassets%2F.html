@@ -2,9 +2,6 @@
   <li>
     <mp-link title="Home" url="/">Home</mp-link>
   </li>
-  <li>
-    <semantic-link title="Administration" iri="[[resolvePrefix "Admin:"]]">Administration</semantic-link>
-  </li>
   <li class="active">Assets</li>
 </ol>
 
@@ -12,56 +9,40 @@
 <div class="page">
   <div class="page__header">
     <div class='page__header-thumbnail'>
-      <h2><i class="fa fa-cog fa-2x"></i></h2>
+      <h2><img src="/images/noun_layer_3183388.svg" height="64" /></h2>
     </div>
     <div class='page__header-body'>
       <h2>Assets</h2>
+      <span>You are in the “Assets” space. Here you find the collection of items that allow an expert user to define and inspect data models, data partitioning and data abstractions.</span>
     </div>
   </div>
   <div class='page__body'>
-		  
-    [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:read:any")]]
-      [[>Admin:IconPanelInclude title="Diagrams" faIcon="fa fa-object-group fa-5x" pageLink="http://www.metaphacts.com/resource/assets/OntodiaDiagrams"]]
+    [[>Admin:IconPanelInclude title="Named Graphs" imgIcon="/images/noun_nodes_137606.svg" pageLink=(resolvePrefix "Assets:NamedGraphs")]]
+
+    [[>Admin:IconPanelInclude title="Ontologies" faIcon="fa fa-sitemap fa-5x" pageLink=(resolvePrefix "Assets:Ontologies")]]
+
+    [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#queryTemplateContainer>:read:any")]]
+  	<mp-resource-link-container title="Query Templates" uri="http://www.metaphacts.com/resource/assets/QueryTemplates">    
+  		<div class="text-center panel panel-default admin-icon-panel">
+          <div class="panel-body">      
+            <img src='/images/noun_Query_Tools_3100973.svg' width='60px'>
+          </div>
+          <div class="panel-footer" style="position: relative">
+              <a>
+                Query Templates
+              </a>
+          </div>
+      	</div>
+     </mp-resource-link-container>
     [[/if]]
     
-    [[>Admin:IconPanelInclude title="Ontologies" faIcon="fa fa-sitemap fa-5x" pageLink="http://www.metaphacts.com/resource/assets/Ontologies"]]
-    
-      <style>
-        .fa-stack-1x { top: .25em; }
-        .fa-stack {
-          font-size: 2.5em;
-          vertical-align: -16%;
-        }
-        .filetype-text {
-          font-size: .4em;
-          font-weight: 800;
-        }
-      </style>
-
-      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#queryTemplateContainer>:read:any")]]
-    		<mp-resource-link-container title="Query Templates" uri="http://www.metaphacts.com/resource/assets/QueryTemplates">    
-    			<div class="text-center panel panel-default admin-icon-panel">
-            <div class="panel-body">      
-              <span class="fa-stack">
-                <span class="fa-stack-1x filetype-text">SPIN</span>
-                <i class="fa fa-file-o fa-stack-2x"></i>
-              </span>
-            </div>
-            <div class="panel-footer" style="position: relative">
-                <a>
-                      Query Templates
-                </a>
-            </div>
-        	</div>
-       </mp-resource-link-container>
-      [[/if]]
-    
-      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#fieldDefinitionContainer>:read:any")]]
-        [[>Admin:IconPanelInclude title="Fields" faIcon="fa fa-list-ul fa-5x" pageLink="http://www.metaphacts.com/resource/assets/Fields"]]
-      [[/if]]
-    
-      [[#if (hasPermission "api:ldp:*")]]
-    		[[>Admin:IconPanelInclude title="LDP" faIcon="fa fa-archive fa-5x" pageLink="http://www.metaphacts.com/ontologies/platform#rootContainer" assets="true"]]
-      [[/if]]
+    [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#fieldDefinitionContainer>:read:any")]]
+      [[>Admin:IconPanelInclude title="Fields" faIcon="fa fa-list-ul fa-5x" pageLink="http://www.metaphacts.com/resource/assets/Fields"]]
+    [[/if]]
+  <div style="clear:both;"></div>
+    <hr>
+    [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:read:any")]]
+      [[>Admin:IconPanelInclude title="Diagrams" faIcon="fa fa-object-group fa-5x" pageLink="http://www.metaphacts.com/resource/assets/Diagrams"]]
+    [[/if]]
   </div>
 </div>

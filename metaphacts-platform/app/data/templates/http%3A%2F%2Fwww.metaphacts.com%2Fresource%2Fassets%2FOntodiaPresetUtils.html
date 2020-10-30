@@ -1,0 +1,88 @@
+[[!-- Parameters: graphIri, otherGraphMarkerIri --]]
+[[#*inline "graphOnlyClasses"]]
+provider-settings='{
+  "elementInfoQuery": "
+    CONSTRUCT {
+      ?inst rdf:type ?class .
+      ?inst ?propType ?propValue.
+      ?inst ?propTypeOGR ?propValueOGR.
+      ?inst rdf:type ?otherGraphResource .
+    } WHERE {
+      VALUES (?inst) {${ids}}
+      {
+        GRAPH [[graphIri]] {
+            ?inst rdf:type ?class .
+            OPTIONAL {
+            ${propertyConfigurations}
+            FILTER (isLiteral(?propValue))
+            }
+        }
+      } UNION {
+        GRAPH ?graph {
+            ?inst rdf:type ?class
+            OPTIONAL {
+              ${propertyConfigurations}
+              FILTER (isLiteral(?propValue))
+            }
+        }
+        FILTER (?graph != [[graphIri]])
+        BIND([[otherGraphMarkerIri]] AS ?otherGraphResource)
+        BIND(Platform:namedGraph as ?propTypeOGR)
+        BIND(?graph as ?propValueOGR)
+      }
+    }
+  ",
+  "filterElementInfoPattern": "
+  {
+    {
+      GRAPH [[graphIri]] {
+          OPTIONAL {?inst rdf:type ?foundClass}
+          BIND (coalesce(?foundClass, owl:Thing) as ?class)
+      }
+    } UNION {
+      GRAPH ?graph {
+        ?inst rdf:type ?foundClass .
+      }
+      BIND([[otherGraphMarkerIri]] as ?class)
+      FILTER (?graph != [[graphIri]])
+    }
+  }"
+}'
+[[/inline]]
+
+[[#*inline "show-if-editable"]]
+  [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:read:any")]]
+    [[#if diagramIri]]
+      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:any")]]
+        [[> @partial-block]]
+      [[else]]
+        [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:owner")]]
+          [[> @partial-block ]]
+        [[/if]]
+      [[/if]]
+    [[else]]
+      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:create:any")]]
+        [[> @partial-block]]
+      [[/if]]
+    [[/if]]
+  [[/if]]
+[[/inline]]
+
+[[#*inline "show-if-read-only"]]
+  [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:read:any")]]
+    [[#if diagramIri]]
+      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:any")]]
+      [[else]]
+        [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:owner")]]
+        [[else]]
+          [[> @partial-block]]
+        [[/if]]
+      [[/if]]
+    [[else]]
+      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:create:any")]]
+      [[else]]
+        [[> @partial-block]]
+      [[/if]]
+    [[/if]]
+  [[/if]]
+[[/inline]]

@@ -1,12 +1,4 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li class="active">App Mechanism</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
@@ -41,6 +33,26 @@
               This may involve non-backward compatible changes!
             </p>
           </bs-alert>
+    
+    <h2>App Extensions</h2>
+    <p>
+      Apps can hook into the platform and provide a wide variety of extensions, including:
+    </p>
+    <ul>
+      <li><semantic-link iri="[[resolvePrefix "Help:BasicSystemConfiguration"]]">Configuration settings</semantic-link></li>
+      <li><semantic-link iri="[[resolvePrefix "Help:Security"]]">Custom ACL permissions and user roles</semantic-link></li>
+      <li><semantic-link iri="[[resolvePrefix "Help:RepositoryManager"]]">Repository</semantic-link> configurations</li>
+      <li><semantic-link iri="[[resolvePrefix "Help:AuthenticationProxy"]]">Proxy</semantic-link> configurations</li>
+      <li><semantic-link iri="[[resolvePrefix "Help:QueryAsAService"]]">Query-as-a-Service (QaaS)</semantic-link> definitions</li>
+      <li><semantic-link iri="[[resolvePrefix "Help:Ephedra"]]">Ephedra</semantic-link> custom federation service definitions</li>
+      <li><semantic-link iri="[[resolvePrefix "Help:TemplateAndApplicationPages"]]">HTML pages and templates</li>
+      <li><semantic-link iri="[[resolvePrefix "Help:AppExtensions"]]">Web assets</semantic-link> such as JavaScript files, CSS stylesheets, Web fonts, images, ...</li>
+      <li><semantic-link iri="[[resolvePrefix "Help:BackendTemplating"]]">I18N translation files</li>
+      <li>Java Code libraries may provide a wide range of <semantic-link iri="[[resolvePrefix "Help:AppExtensions"]]">Backend Extensions</semantic-link></li>
+    </ul>
+    
+    <p>Such extensions can be packaged into an app following the folder structure as defined below.</p>
+    
   <h2>Basic Folder Structure</h2>
   
   <p>
@@ -69,24 +81,23 @@
               <li>/my-custom-ephedra.ttl</li>
               <li>/....ttl</li>
           </ul>
-          <li>/page-layout &nbsp; - <i style="color:black;">Entire files will be read or shadowed by files from other apps</i></li>
+          <li>/page-layout &nbsp; - <i style="color:black;">Files marked in red will be read or shadowed by files from other apps, others are merged entirely</i></li>
           <ul>
             <li>/html-head.hbs</li>
             <li>/header.hbs</li>
             <li>/footer.hbs</li>
             <li>/login.hbs</li>
+            <li style="color: black">html-header-resources.hbs</li>
+            <li style="color: black">html-header-resources.hbs</li>
           </ul>
           <li>/ui.prop &nbsp; - <i style="color:black;">Properties will be read selectively or shadowed individually</i></li> 
           <li>/environment.prop &nbsp; - <i style="color:black;">Properties will be read selectively or shadowed individually</i></li>
           <li>/global.prop &nbsp; - <i style="color:black;">Properties will be read selectively or shadowed individually</i></li>
+          <li>/cache.prop &nbsp; - <i style="color:black;">Properties will be read selectively or shadowed individually</i></li>
           <li>/namespace.prop &nbsp; - <i style="color:black;">Properties will be read selectively or shadowed individually</i></li>
           <li>/proxy.prop &nbsp; - <i style="color:black;">Properties will be read selectively or shadowed individually</i></li>
           <li>/shiro.ini &nbsp; - <i style="color:black;">If configure via <code>-Dconfig.environment.securityConfigStorageId=</code>, the entire file will be read</i></li>
-        </ul>
-        <li style="color:red;"><s>/images</s> <i>&nbsp; DEPRECATED, please use /assets/images/</i></li>
-        <ul style="color:red;">
-           <li>/my-app-logo.png</li>
-           <li>...</li>
+          <li style="color: black">/shiro-roles.ini &nbsp; - <i style="color:black;">Roles will be applied as defined <semantic-link title="Security" uri="http://help.metaphacts.com/resource/Security">here</semantic-link></i></li>
         </ul>
         <li style="color:red;">/assets  &nbsp; - <i style="color:black;">Entire files will be read or shadowed by files from other apps. Files will become directly available under http://platform-url.com/assets/my-styles.css</i></li>
         <ul style="color:red;">
@@ -107,23 +118,10 @@
             <li>Template%3Ahttp%3A%2F%2Fxmlns.com%2Ffoaf%2F0.1%2FPerson.html</li>
             <li>...</li>
           </ul>
-        </ul>
-        <li><s>/resources</s> <i>&nbsp; DEPRECATED, please use /config/page-layout</i></li>
-        <ul style="font-style:italic;text-decoration: line-through;">
-          <li>/com</li>
+          <li>/i18n  &nbsp; - <i style="color:black;">Entire files will be read or shadowed by files from other apps. Files should be UTF-8 encoded.</i></li>
           <ul>
-            <li>/metaphacts</li>
-            <ul>
-              <li>/ui</li>
-              <ul>
-                <li>/templates</li>
-                <ul>
-                  <li>/html-head.hbs</li>
-                  <li>/header.hbs</li>
-                  <li>/footer.hbs</li>
-                </ul>
-              </ul>
-            </ul>
+            <li>mybundle.properties</li>
+            <li>...</li>
           </ul>
         </ul>
       </ul>
@@ -142,12 +140,12 @@
   </p>
   <ul>
     <li><code>plugin.properties</code> is the only <b>mandatory</b> file.</li>
-    <li>In the docker distribution the <code>/apps</code> is usually located in the absolute root of the runtime container i.e. <code>/</code>. In the ZIP distribution it is inside the root distribution folder.</li>
+    <li>In the docker distribution the <code>/apps</code> is usually located in the absolute root of the runtime container i.e. <code>/</code>.</li>
     <li>Even though not recommended, it is possible to have several app folder within apps. One folder makes one app (storage). The <code>plugin.dependencies</code> can be used to define basic dependency order, i.e. order in which apps and respective java classes from the <code>/lib</code> folder will be loaded. It also influences the delegation order for the app storages (c.f. <semantic-link iri="[[resolvePrefix "Help:Storage"]]">Help:Storage</semantic-link>).</li>
-    <li>Files placed within <code>/data/templates/*.html</code>,<code>/config/**/*.prop|ttl</code> and <code>/assets</code> will be read from the <semantic-link iri="[[resolvePrefix "Help:Storage"]]">storage abstraction</semantic-link> and might be shadowed by the runtime storage or other apps (c.f. <semantic-link iri="[[resolvePrefix "Help:Storage"]]">Help:Storage</semantic-link>)</li>
+    <li>Files <span style="color:red;">marked in red above</span> will be read from the <semantic-link iri="[[resolvePrefix "Help:Storage"]]">storage abstraction</semantic-link> and might be shadowed by the runtime storage or other apps (c.f. <semantic-link iri="[[resolvePrefix "Help:Storage"]]">Help:Storage</semantic-link>)</li>
     <li>The <code>*.hbs</code> template files within <code>/config/page-layout</code> are being compiled and cached i.e. changes require a restart of the platform to take affect.</li>
     <li>Changes in the configuration files (in particular service and repository configurations) will require a restart.</li>
-    <li>Files in <code>/data/templates/*.html</code> and <code>/assets</code>will be available immediately, all other files require a restart to be recognized/loaded. </li>
+    <li>Files in <code>/data/templates/*.html</code>,<code>/data/i18n/*.properties</code> and <code>/assets</code>will be available immediately, all other files require a restart to be recognized/loaded. </li>
     <li><code>*.jar</code> libraries from the <code>/lib</code> folder are loaded using an isolated class path loader and initialized using the service loaders of the respective plugin interface, e.g. to initialized additional REST endpoints, Ephedra services or to load JDBC drivers.  </li>
   </ul>
   

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,18 +37,20 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -49,14 +73,14 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.SimpleAccount;
 import org.apache.shiro.authc.credential.PasswordService;
 import org.apache.shiro.authz.Permission;
-import org.apache.shiro.authz.SimpleRole;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.subject.Subject;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.github.jsonldjava.shaded.com.google.common.collect.Sets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.metaphacts.config.NamespaceRegistry;
@@ -65,6 +89,7 @@ import com.metaphacts.repository.MpRepositoryProvider;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.rest.feature.CacheControl.MaxAgeCache;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
+import com.metaphacts.security.AccountManager;
 import com.metaphacts.security.AnonymousUserFilter;
 import com.metaphacts.security.LDAPRealm;
 import com.metaphacts.security.MetaphactsSecurityManager;
@@ -74,12 +99,14 @@ import com.metaphacts.security.Permissions.PERMISSIONS;
 import com.metaphacts.security.Permissions.ROLES;
 import com.metaphacts.security.PermissionsDocGroup;
 import com.metaphacts.security.PermissionsParameterInfo;
+import com.metaphacts.security.PlatformRoleManager;
+import com.metaphacts.security.PlatformRoleManager.PlatformRole;
 import com.metaphacts.security.SecurityService;
-import com.metaphacts.security.ShiroTextRealm;
 
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
+import io.swagger.v3.oas.annotations.Hidden;
 /**
  * @author Johannes Trame <jt@metaphacts.com>
  */
@@ -160,7 +187,7 @@ public class SecurityEndpoint {
 
     }
 
-    private static class RoleDefinition{
+    static class RoleDefinition {
         //empty constructor is need for jackson
         public RoleDefinition(){}
 
@@ -176,8 +203,26 @@ public class SecurityEndpoint {
             return permissions;
         }
 
+        public boolean isMutable() {
+            return mutable;
+        }
+
+        public void setMutable(boolean mutable) {
+            this.mutable = mutable;
+        }
+
+        public boolean isDeletable() {
+            return deletable;
+        }
+
+        public void setDeletable(boolean deletable) {
+            this.deletable = deletable;
+        }
+
         public String roleName;
         public List<String> permissions;
+        private boolean mutable;
+        private boolean deletable;
     }
 
     @GET()
@@ -204,10 +249,11 @@ public class SecurityEndpoint {
            if(StringUtils.isBlank(account.getPassword()))
                throw new IllegalArgumentException("Password can not be null or empty.");
 
-           if(getShiroTextRealm().accountExists(account.getPrincipal()))
+            if (getAccountManager().accountExists(account.getPrincipal()))
                    throw new IllegalArgumentException("Principal with name "+account.getPrincipal()+" does already exists.");
 
-           getShiroTextRealm().addAccount(account.getPrincipal(), passwordService.encryptPassword(account.getPassword()), roles);
+            getAccountManager().addAccount(account.getPrincipal(),
+                    passwordService.encryptPassword(account.getPassword()), roles);
         }catch(IllegalArgumentException e){
             throw new CustomIllegalArgumentException(e.getMessage());
         }
@@ -234,10 +280,12 @@ public class SecurityEndpoint {
     @RequiresPermissions({ROLES.QUERY, PERMISSIONS.QUERY})
     public List<RoleDefinition> getAllAvailableRoles() {
         List<RoleDefinition> roleDefinitions = Lists.newArrayList();
-        for(SimpleRole role :getShiroTextRealm().getRoles().values()) {
+        for (PlatformRole role : getPlatformRoleManager().getAllAvailableRoles()) {
             RoleDefinition roleDefinition = new RoleDefinition();
             roleDefinition.permissions = new ArrayList<String>();
             roleDefinition.setRoleName(role.getName());
+            roleDefinition.setMutable(role.isMutable());
+            roleDefinition.setDeletable(role.isDeletable());
             for(Permission individualPermission : role.getPermissions()) {
                 roleDefinition.permissions.add(individualPermission.toString());
             }
@@ -252,29 +300,42 @@ public class SecurityEndpoint {
     @RequiresAuthentication
     @RequiresPermissions(ROLES.EDIT)
     public Response updateRoleDefinitions(RoleDefinition[] roles) throws Exception {
-        Map<String, List<String>> map = Maps.newHashMap();
-        boolean isPermissionValid = true;
+        Map<String, List<String>> updateMap = Maps.newHashMap();
+        Set<String> deleteRoles = Sets.newHashSet();
         try {
             for(RoleDefinition role : roles) {
                 String roleName = role.roleName;
                 List<String> permissions = new ArrayList<String>();
                 for(String permission : role.getPermissions()) {
-                    isPermissionValid = PermissionUtil.isPermissionValid(permission);
+                    boolean isPermissionValid = PermissionUtil.isPermissionValid(permission);
                     if(isPermissionValid) {
                         permissions.add(PermissionUtil.normalizePermission(permission));
                     } else {
-                        throw new Exception("Something went wrong while saving \"" + permission.toUpperCase() + "\". Please update it.");
+                        throw new IllegalArgumentException(
+                                "Permission \"" + permission + "\" could not be validated. Please update it.");
                     }
                 }
-                map.put(roleName, permissions);
-                //throw new Exception("Please enter a valid permission.");
+                updateMap.put(roleName, permissions);
             }
-            getShiroTextRealm().updateRoles(map);
+
+            PlatformRoleManager roleManager = getPlatformRoleManager();
+
+            // determine set of delete roles:
+            Set<String> allRoles = roleManager.getAllAvailableRoles().stream().map(p -> p.getName())
+                    .collect(Collectors.toSet());
+            deleteRoles.addAll(allRoles);
+            deleteRoles.removeAll(updateMap.keySet());
+
+            getPlatformRoleManager().updateRoles(updateMap, deleteRoles);
+
+            return Response.ok().build();
+
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         } catch (Exception e) {
-            logger.error("The user entred permission is invalid.");
-            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+            logger.debug("Error while updating role definitions: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
-        return Response.ok().build();
     }
 
     @DELETE()
@@ -286,7 +347,7 @@ public class SecurityEndpoint {
             if(StringUtils.isBlank(userPrincipal))
                 throw new IllegalArgumentException("User principal can not be null.");
 
-            getShiroTextRealm().deleteAccount(userPrincipal);
+            getAccountManager().deleteAccount(userPrincipal);
         }catch(IllegalArgumentException e){
             throw new CustomIllegalArgumentException(e.getMessage());
         }
@@ -307,7 +368,7 @@ public class SecurityEndpoint {
             String[] roles = account.getRoles().split(",");
 
             String password= account.getPassword()!=null ? passwordService.encryptPassword(account.getPassword()) : null;
-            getShiroTextRealm().updateAccount(account.getPrincipal(), password, roles);
+            getAccountManager().updateAccount(account.getPrincipal(), password, roles);
         }catch(IllegalArgumentException e){
             throw new CustomIllegalArgumentException(e.getMessage());
         }
@@ -319,6 +380,7 @@ public class SecurityEndpoint {
     @Path("getAllPermissionsDoc")
     @Produces(MediaType.APPLICATION_JSON)
     @RequiresAuthentication
+    @Hidden
     public Map<String, ArrayList<PermissionsParameterInfo>> getAllPermissionsDoc() {
         PermissionsParameterInfo permissionParameters = new PermissionsParameterInfo();
         ArrayList<PermissionsParameterInfo> permissions = Lists.newArrayList();
@@ -343,6 +405,22 @@ public class SecurityEndpoint {
     }
 
     
+    /**
+     * Returns the roles for the current user (thread context) Does not have /
+     * require any further permission checks, i.e. every user can view/list his
+     * own roles.
+     * 
+     * @return list of role names (strings)
+     */
+    @GET()
+    @NoCache
+    @Path("getPersonalRoles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RequiresAuthentication
+    public Collection<String> getPersonalRoles() {
+        return getCurrentUserRoles();
+    }
+
     @GET()
     @NoCache
     @Path("getAllAccounts")
@@ -351,9 +429,9 @@ public class SecurityEndpoint {
     @RequiresPermissions(ACCOUNTS.QUERY)
     public List<Account> getAllAcounts() {
         ArrayList<Account> accounts = Lists.newArrayList();
-        ShiroTextRealm r = getShiroTextRealm();
+        AccountManager r = getAccountManager();
 
-        for(Entry<String, SimpleAccount> user : r.getUsers().entrySet()){
+        for (Entry<String, org.apache.shiro.authc.Account> user : r.getAccounts().entrySet()) {
             Account account = new Account();
       
             account.setPrincipal(user.getKey());
@@ -382,6 +460,7 @@ public class SecurityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @RequiresAuthentication
+    @Hidden
     public Response hasPermissions(final JsonParser jp) throws IOException {
         final JsonUtil.JsonFieldProducer processor = (jGenerator, input) -> {
             try {
@@ -416,6 +495,7 @@ public class SecurityEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @RequiresAuthentication
     @RequiresPermissions(ACCOUNTS.LDAP_SYNC)
+    @Hidden
     public boolean getLdapUsersMetadata() throws NamingException, Exception {
         MetaphactsSecurityManager securityManager = (MetaphactsSecurityManager) SecurityUtils.getSecurityManager();
         LDAPRealm realm = securityManager.getLDAPRealm();
@@ -425,8 +505,37 @@ public class SecurityEndpoint {
         return true;
     }
 
-    private ShiroTextRealm getShiroTextRealm(){
-        return ((MetaphactsSecurityManager) SecurityUtils.getSecurityManager()).getShiroTextRealm();
+    /**
+     * Returns the current users roles by iterating over all roles and checking if
+     * the user is in the given role.
+     * <p>
+     * Note that there is no generic API method to retrieve all roles from a given
+     * {@link Subject}
+     * </p>
+     * 
+     * @return the current user's roles
+     */
+    private List<String> getCurrentUserRoles() {
+
+        final Subject currentUser = SecurityUtils.getSubject();
+        if (currentUser == null) {
+            return Collections.emptyList();
+        }
+        List<String> roles = Lists.newArrayList();
+        for (PlatformRole role : getPlatformRoleManager().getAllAvailableRoles()) {
+            if (SecurityUtils.getSubject().hasRole(role.getName())) {
+                roles.add(role.getName());
+            }
+        }
+        return roles;
+    }
+
+    private PlatformRoleManager getPlatformRoleManager() {
+        return ((MetaphactsSecurityManager) SecurityUtils.getSecurityManager()).getPlatformRoleManager();
+    }
+
+    private AccountManager getAccountManager() {
+        return ((MetaphactsSecurityManager) SecurityUtils.getSecurityManager()).getAccountManager();
     }
 
     /**

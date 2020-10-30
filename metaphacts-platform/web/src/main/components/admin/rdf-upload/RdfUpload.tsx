@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +37,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { FormEvent, CSSProperties } from 'react';
 import * as _ from 'lodash';
 import { ProgressBar, FormControl, Button, Panel, Checkbox, Tab, Tabs } from 'react-bootstrap';
-import * as maybe from 'data.maybe';
+
 import * as moment from 'moment';
 import * as Kefir from 'kefir';
 import * as SparqlJs from 'sparqljs';
@@ -28,7 +49,7 @@ import * as classnames from 'classnames';
 
 import { Component } from 'platform/api/components';
 import { Cancellation } from 'platform/api/async';
-import { refresh} from 'platform/api/navigation';
+import { navigateToResource, refresh} from 'platform/api/navigation';
 import { Rdf } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
@@ -39,8 +60,10 @@ import {
 
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
 import { Dropzone } from 'platform/components/ui/dropzone';
+import { FileRejection, DropEvent} from 'react-dropzone';
 import { ErrorPresenter } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
+import { TemplateItem } from 'platform/components/ui/template';
 
 import { RdfUploadExtension } from './extensions';
 
@@ -48,16 +71,70 @@ import './RdfUpload.scss';
 
 interface State {
   messages?: ReadonlyArray<AlertConfig>;
-  progress?: Data.Maybe<number>;
-  progressText?: Data.Maybe<string>;
-  targetGraph?: Data.Maybe<string>;
+  progress?: number;
+  progressText?: string;
+  targetGraph?: string;
   keepSourceGraphs?: boolean;
   showOptions?: boolean;
   remoteFileUrl?: string;
   repositoryType?: RepositoryType;
 }
 
+interface PlaceholderTemplateData { targetGraph?:string }
+
+// TODO unify across forms etc
+export type PostAction = 'reload' | 'redirect' | string;
+
 export interface Props {
+  /**
+   * Optional IRI string (without brackets) of the target named graph to load the data into. 
+   * By default this is undefined and supposed to be either provided by the user at runtime or generated automatically.
+   * @default undefined
+   */
+  targetGraph?: string;
+  /**
+   * Whether the NamedGraphs from the source serialization should be preserved (only applicable to .trig and .nq files)
+   */
+  keepSourceGraphs?: boolean;
+  /**
+   * A handlebars template string to shown as placeholder in the drop area.
+   * As default context object it will get an object with elements from the current state ( {targetGraph: string} )
+   */
+  placeholderTemplate?: string;
+  /**
+   * Whether advanced options (specifying target named graph, keep source named graphs) 
+   * should be displayed to the user.
+   * @default true
+   */
+  showAdvancedOptions?: boolean;
+  /**
+   * Whether the option/input to load data by URL should be displayed to the user.
+   * @default true
+   */
+  showLoadByUrl: boolean;
+  /**
+   * Accepted file types. If set, the field will only allow to drop or select the 
+   * specified file types.
+   * See https://github.com/okonet/attr-accept for more
+   * information. Keep in mind that mime type determination is not reliable across 
+   * platforms. CSV files, for example, are reported as text/plain under macOS but as 
+   * application/vnd.ms-excel under Windows. In some cases there might not be a 
+   * mime type set at all. Instead of specifying the mime type, you can also specify file endings.
+   * Can be either a string or an array of strings.
+   * @default undefined - any file type is allowed
+   * @example 
+   *  accept='application/rdf+xml'
+   *  accept='["application/rdf+xml" ".ttl"]'
+   */
+  accept?: string | string[] ;
+  /**
+   * Action to perform after the data has been uploaded successfully. 
+   * By default the page will refresh. Other options:
+   * - 'redirect': will navigate to Assets:NamedGraph?graph=<iri of the generated graph>
+   * - 'iri string': will navigate to the resource IRI
+   * @default refresh
+   */
+  postAction: PostAction,
   className?: string;
   style?: CSSProperties;
   contentType?: string;
@@ -75,14 +152,25 @@ const noteClass = `${CLASS_NAME}__note`;
 export class RdfUpload extends Component<Props, State> {
   private readonly cancellation = new Cancellation();
 
+  static defaultProps: Partial<Props> = {
+    showAdvancedOptions: true,
+    showLoadByUrl: true,
+    keepSourceGraphs: false,
+    placeholderTemplate: `
+      <div><i style="color:#d4d4d4;" class="fa fa-cloud-upload fa-4x"></i><br>  
+        <span style="font-size:150%">Drag & Drop your RDF file(s) here</span><br>
+        <span style="font-size:75%">OR</span><br>
+        <button type="button" style="width:100px;" class="btn btn-light">Browse Files</button><br>
+      </div>
+    `,
+  }
+
   constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       messages: [],
-      progress: maybe.Nothing<number>(),
-      progressText: maybe.Nothing<string>(),
-      targetGraph: maybe.Nothing<string>(),
-      keepSourceGraphs: false,
+      targetGraph: props.targetGraph,
+      keepSourceGraphs: props.keepSourceGraphs,
       showOptions: false,
     };
   }
@@ -107,16 +195,16 @@ export class RdfUpload extends Component<Props, State> {
 
     this.setState({
       messages: [],
-      progress: maybe.Nothing<number>(),
+      progress: undefined,
     });
 
     const uploads = files.map((file: File, fileNumber: number) => {
       const contentType = _.isEmpty(this.props.contentType)
         ? SparqlUtil.getMimeType(SparqlUtil.getFileEnding(file))
         : this.props.contentType;
-      const targetGraph = this.state.targetGraph.isJust
-        ? this.state.targetGraph.get()
-        : `file://${file.name}-${createTimestamp()}`;
+      const targetGraph = this.state.targetGraph
+        ? this.state.targetGraph
+        : `file:///${file.name}-${createTimestamp()}`;
 
       const upload = RDFGraphStoreService.createGraphFromFile({
         targetGraph: Rdf.iri(encodeURI(targetGraph)),
@@ -124,8 +212,8 @@ export class RdfUpload extends Component<Props, State> {
         file,
         contentType,
         onProgress: (percent) => this.setState({
-          progress: maybe.Just<number>(((fileNumber / files.length) + (percent / 100)) * 100),
-          progressText: maybe.Just<string>(fileNumber + '/' + files.length + ' Files'),
+          progress: ((fileNumber / files.length) + (percent / 100)) * 100,
+          progressText: fileNumber + '/' + files.length + ' Files',
         }),
         repository,
       });
@@ -133,7 +221,6 @@ export class RdfUpload extends Component<Props, State> {
       this.cancellation.map(upload).observe({
         value: () => this.appendUploadMessage('File: ' + file.name + ' uploaded.'),
         error: error => {
-          console.error(error);
           this.appendUploadMessage('File: ' + file.name + ' failed.', error);
         },
       });
@@ -141,7 +228,16 @@ export class RdfUpload extends Component<Props, State> {
     });
 
     this.cancellation.map(Kefir.combine(uploads)).observe({
-      value: () => setTimeout(() => refresh(), 2000),
+      value: () => setTimeout(() => this.postAction(), 2000),
+    });
+  }
+
+
+  private onRejected = (fileRejections: FileRejection[], event: DropEvent) => {
+    fileRejections.map(({ file, errors }) => {
+      errors.map(e =>
+        this.appendUploadMessage('File: ' + file.name + ' can not be uploaded.', e.message)
+      );
     });
   }
 
@@ -162,14 +258,26 @@ export class RdfUpload extends Component<Props, State> {
     e.preventDefault();
     const val = (e.target as any).value.trim();
     if (!_.isEmpty(val)) {
-      this.setState({ targetGraph: maybe.Just(val) });
+      this.setState({ targetGraph: val });
     } else {
-      this.setState({ targetGraph: maybe.Nothing() });
+      this.setState({ targetGraph: undefined });
     }
   }
 
   private onChangeKeepSourceGraphs = (e: FormEvent<ReactBootstrap.FormControl>) => {
     this.setState({ keepSourceGraphs: (e.target as any).checked });
+  }
+
+  private postAction = () => {
+    const {postAction} = this.props
+    if (!postAction || postAction === 'reload') {
+      refresh();
+    } else if (postAction === 'redirect' && this.state.targetGraph) {
+      const ngIri = Rdf.iri(this.state.targetGraph);
+      navigateToResource(Rdf.iri('http://www.metaphacts.com/resource/assets/NamedGraph'), {'graph': ngIri.value}).observe({});
+    } else if(this.props.postAction) {
+      navigateToResource(Rdf.iri(this.props.postAction)).observe({});
+    }
   }
 
   render() {
@@ -179,54 +287,67 @@ export class RdfUpload extends Component<Props, State> {
     const {className, style} = this.props;
 
     const messages = this.state.messages.map((config, index) => <Alert key={index} {...config} />);
-    const progressBar = this.state.progress.map(progress => (
+    const progressBar = this.state.progress ? (
       <ProgressBar active min={0} max={100}
-        now={progress} label={this.state.progressText.getOrElse('Uploading Files')}
+        now={this.state.progress} label={this.state.progressText ?? 'Uploading Files'}
       />
-    )).getOrElse(null);
+    ) : null;
 
-    const isInProcess = Boolean(this.state.progress.getOrElse(0));
+    const isInProgress = typeof this.state.progress === "number";
 
+    // extracting parts of the state
+    const {targetGraph} = this.state;
+    const templateOptions: PlaceholderTemplateData = {targetGraph};
+    
+    const uploadTabContent = (
+      <>
+        {progressBar}
+        <Dropzone 
+          onDropAccepted={this.onDrop} 
+          accept={this.props.accept} 
+          onDropRejected={this.onRejected} 
+          className={`${CLASS_NAME}__rdf-dropzone-content`} >
+            <TemplateItem template={{ source: this.props.placeholderTemplate, options: templateOptions} } />
+        </Dropzone>
+        {messages}
+      </>
+    )
+
+    const showAdvancedOptions=this.props.showAdvancedOptions;
+
+    // if it is neither neptune nor url upload enabled, show simply the upload dnd field
+    if (!this.props.showLoadByUrl) {
+      return (
+        <div className={classnames(CLASS_NAME, className)} style={style}>
+          {showAdvancedOptions ? this.renderAdvancedOptions() : null}
+          {uploadTabContent}
+        </div>);
+    }
     return (
       <div className={classnames(CLASS_NAME, className)} style={style}>
-        <a onClick={() => this.setState({showOptions: !this.state.showOptions})}>
-          Advanced Options
-        </a>
-        {this.renderAdvancedOptions()}
+        {showAdvancedOptions ? this.renderAdvancedOptions() : null}
         <Tabs id='rdf-upload-tabs' unmountOnExit={true}>
           {this.renderTabExtensions()}
-          <Tab eventKey={1} className={tabClass} title='File Upload' disabled={isInProcess}>
-            {progressBar}
-            <div className={noteClass}>
-              RDF files can be uploaded using the drag&amp;drop field below.
-              Clicking into the field will open the browser's default file selector.
-            </div>
-            <Dropzone onDrop={this.onDrop}>
-              <div className={`${CLASS_NAME}__rdf-dropzone-content`}>
-                Please drag&amp;drop your RDF file(s) here.
-              </div>
-            </Dropzone>
-            {messages}
+          <Tab eventKey={1} className={tabClass} title='File Upload' disabled={isInProgress}>
+            {uploadTabContent}
           </Tab>
           {/* load by URL doesn't make any sense for Neptune repository */}
           {this.state.repositoryType !== NeptuneRepositoryType ?
             <Tab eventKey={2} className={tabClass} title='Load by HTTP/FTP/File URL'
-                disabled={isInProcess}>
+                disabled={isInProgress}>
               {progressBar}
-              <div className={noteClass}>
-                Please note: Loading via HTTP/FTP/File URL depends on the database backend
-                i.e. it must support the SPARQL LOAD command and must allow outgoing
-                network connections to the publicly accessible HTTP/FTP URLs or must have
-                access to the File URL respectively.
-              </div>
               <FormControl type='text' value={this.state.remoteFileUrl || ''}
                 placeholder='Please enter publicly accessible HTTP/FTP URL'
                 onChange={e => this.setState({
                   remoteFileUrl: (e.currentTarget as any as HTMLInputElement).value,
                 })}
               />
+              <div className={noteClass}>
+                The database must support the SPARQL LOAD command and must allow outgoing
+                network connections to the publicly accessible HTTP/FTP URLs or must have access to the File URL respectively (files must be available in the database file system).
+              </div>
               <Button bsStyle='primary' className={`${CLASS_NAME}__load-button`}
-                disabled={!this.state.remoteFileUrl || isInProcess}
+                disabled={!this.state.remoteFileUrl || isInProgress}
                 onClick={this.onClickLoadByUrl}>
                 Load by URL
               </Button>
@@ -262,24 +383,40 @@ export class RdfUpload extends Component<Props, State> {
   }
 
   private renderAdvancedOptions() {
+    
+    const {showOptions, keepSourceGraphs} = this.state ;
+    const clName = `fa fa-angle-${showOptions? 'up' : 'down'}`
     return (
-      <Panel className='' collapsible expanded={this.state.showOptions}>
-        <FormControl type='text' label='Target NamedGraph'
-          placeholder='URI of the target NamedGraph. Will be generated automatically if empty.'
-          onChange={this.onChangeTargetGraph}
-        />
-        <Checkbox label='Keep source NamedGraphs'
-          onChange={this.onChangeKeepSourceGraphs}>
-          Keep source NamedGraphs
-        </Checkbox>
-      </Panel>
+      <>
+        <Panel>
+          <h4>
+            <a onClick={() => this.setState({ showOptions: !showOptions })}>
+              <i className={clName} style={{ marginRight: '10px' }}></i>
+              Advanced Options
+            </a>
+          </h4>
+          {showOptions ?
+            <div>
+              <FormControl type='text' label='Target NamedGraph'
+                placeholder='URI of the target NamedGraph. Will be generated automatically if empty.'
+                disabled={this.state.keepSourceGraphs}
+                onChange={this.onChangeTargetGraph}
+              />
+              <Checkbox label='Keep source NamedGraphs'
+                defaultChecked={keepSourceGraphs}
+                onChange={this.onChangeKeepSourceGraphs}>
+                Keep source NamedGraphs (.trig and .nq files)
+              </Checkbox>
+            </div> : null}
+        </Panel>
+      </>
     );
   }
 
   private onClickLoadByUrl = () => {
     this.setState({
       messages: [],
-      progress: maybe.Nothing<number>(),
+      progress: undefined,
     });
 
     const {remoteFileUrl, targetGraph} = this.state;
@@ -287,7 +424,7 @@ export class RdfUpload extends Component<Props, State> {
     try {
       updateQuery = makeLoadQuery(remoteFileUrl, targetGraph);
     } catch (error) {
-      const message = targetGraph.isJust
+      const message = targetGraph
         ? 'Error constructing update query (probably invalid file or named graph URL?)'
         : 'Error constructing update query (probably invalid file URL?)';
       this.appendUploadMessage(message, error);
@@ -295,8 +432,8 @@ export class RdfUpload extends Component<Props, State> {
     }
 
     this.setState({
-      progress: maybe.Just<number>(100),
-      progressText: maybe.Just<string>('Database is processing the LOAD command'),
+      progress: 100,
+      progressText: 'Database is processing the LOAD command',
     });
 
     const {semanticContext} = this.context;
@@ -305,25 +442,24 @@ export class RdfUpload extends Component<Props, State> {
     ).observe({
       value: () => {
         this.appendUploadMessage('File from URL successfully loaded.');
-        setTimeout(() => refresh() , 2000);
+        setTimeout(() => this.postAction() , 2000);
       },
       error: error => {
-        console.error(error);
         this.appendUploadMessage('Failed to load file from URL.', error);
       },
       end: () => {
         this.setState({
-          progress: maybe.Nothing<number>(),
-          progressText: maybe.Nothing<string>(),
+          progress: undefined,
+          progressText: undefined,
         });
       },
     });
   }
 }
 
-function makeLoadQuery(remoteFileUrl: string, targetGraph: Data.Maybe<string>): SparqlJs.Update {
-  const targetGraphIri = targetGraph.isJust
-    ? targetGraph.get()
+function makeLoadQuery(remoteFileUrl: string, targetGraph: string): SparqlJs.Update {
+  const targetGraphIri = targetGraph
+    ? targetGraph
     : `${remoteFileUrl}-${createTimestamp()}`;
 
   const query = `LOAD <${encodeURI(remoteFileUrl)}> INTO GRAPH <${encodeURI(targetGraphIri)}>`;

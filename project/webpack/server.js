@@ -16,13 +16,14 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-// @ts-nocheck
-
+// @ts-ignore
 process.env.BUNDLE_HIGHCHARTS = true;
 
 const path = require('path');
 const compress = require('koa-compress');
+/** @type {any} - wrong type due to old webpack-serve version */
 const serve = require('webpack-serve');
+const WebSocket = require('ws');
 const devConfig = require('./webpack.dev.config');
 const defaults = require('./defaults.js');
 
@@ -33,6 +34,7 @@ const devServer = serve({
   hot: false,
   port: 3000,
   content: [__dirname, path.join(__dirname, "assets", "no_auth"), path.join(__dirname, "assets")],
+  clipboard: false,
   dev: {
     publicPath: 'http://localhost:3000/assets/',
     filename: config.output.filename,
@@ -78,18 +80,35 @@ const devServer = serve({
   }
 });
 
-devServer.then((server) => {
+devServer.then(server => {
+  /** @type {WebSocket.Server} */
+  let socketServer;
+  const stopServer = () => {
+    console.log('Received stop request. Attempting to terminate webpack process.');
+    socketServer.close();
+    server.close();
+    process.exit(0);
+  };
+
   server.on('listening', ({ server, options }) => {
-    console.log('Listening at localhost:3000');
+    console.log('Webpack server listening at localhost:3000');
+
+    socketServer = new WebSocket.Server({port: 3001});
+    console.log('Socket server listening on localhost:3001');
+    socketServer.on('connection', ws => {
+      ws.on('message', message => {
+        if (message === 'stop') {
+          stopServer();
+        }
+      });
+    });
   });
 
-  process.stdin.on('data', function(chunk) {
-    if(chunk === 'stop') {
-      server.close();
-      process.exit(0);
+  process.stdin.on('data', chunk => {
+    if (chunk === 'stop') {
+      stopServer();
     }
   });
-
 });
 
 process.stdin.resume();

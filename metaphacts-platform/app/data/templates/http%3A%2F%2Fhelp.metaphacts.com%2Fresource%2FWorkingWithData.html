@@ -1,12 +1,4 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" iri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li class="active">Working with Data</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
@@ -63,6 +55,12 @@
             </th>
             <th scope="row"><a href="http://www.w3.org/TR/rdf-sparql-query/" target="_blank">SPARQL Query Language (v1.0)</a>, <a href="http://www.w3.org/TR/sparql11-query/" target="_blank">SPARQL Query Language Extensions (v1.1)</a>, <a href="http://www.w3.org/TR/sparql11-update/" target="_blank">SPARQL 1.1 Update</a></th>
           </tr>
+          <tr>
+            <th scope="row">RDF*</th>
+            <th scope="row">RDF* and its companion SPARQL* are community-driven extensions of the RDF model to allow expressing properties over full statements (similar to "edge properties" in property graph-based models). Although not fully standardized, metaphactory has support for the use of RDF* to annotate data. See <semantic-link iri="[[resolvePrefix "Help:RdfStar"]]">RDF* and SPARQL*</semantic-link> for more information.
+            </th>
+            <th scope="row"><a href="https://lists.w3.org/Archives/Public/public-rdf-star/" target="_blank">archives of the RDF* public discussion group</a></th>
+          </tr>
         </tbody>
       </table> 
     </div>
@@ -113,7 +111,7 @@ INSERT {
 } WHERE {}
 ]]>
 </mp-code-block>
-    It can be executed either from the from the SPARQL editor with "Run Query" button or using a different client, for example, by posting the query via CURL directly against the <code >/sparql</code> interface. Since the SPARQL Update query string needs to be encoded in the POST body of the HTTP(S) request, it is recommened to move the query to a file, for example, <code>insert.sq</code> and then post the file via CURL:
+    It can be executed either from the SPARQL editor with "Run Query" button or using a different client, for example, by posting the query via CURL directly against the <code >/sparql</code> interface. Since the SPARQL Update query string needs to be encoded in the POST body of the HTTP(S) request, it is recommened to move the query to a file, for example, <code>insert.sq</code> and then post the file via CURL:
 <mp-code-block mode='text/x-sh'>
 curl 'http://127.0.0.1:10214/sparql' -u admin:admin -H 'Content-Type: application/sparql-update; charset=UTF-8' -H 'Accept: text/boolean' -d @insert.sq
 </mp-code-block>
@@ -165,7 +163,7 @@ DELETE {
 
     The concept of extending the notion of RDF triples to quads is usually called <b>Named Graphs</b> (c.f. <a href="http://patterns.dataincubator.org/book/named-graphs.html" target="_blank">Linked Data Patterns book</a> ). The "quad" (the fourth element) is used for organization of triples into collections of triples, which formally can be treated as sub-graphs within the entire data repository. These sub-graphs can be identified and addressed using URIs and therefore are called Named Graphs. Named Graphs might come in handy for managing collection of triples, i.e. uploading, deleting or downloading an entire set of triples without the need to enumerate triples individually. While Named Graphs do not have any formal model theoretic interpretation, they can be useful for implementing solutions around challenges such as provenance management, replication, versioning or even access control on the application level.<br>
     <p>
-      Two perform operation on Named Graphs, there are two options:
+      To perform operations on Named Graphs, there are two options:
     </p>
     <ol>
       <li>Using SPARQL Update operations scoped to Named Graphs and executed over the <code>/sparql</code> interface</li>
@@ -190,11 +188,11 @@ INSERT {
     <JohnDoe> a foaf:Person.
     <JohnDoe> rdfs:label "John Doe".
   }
-  GRPAH <JaneDoeGraph> {
+  GRAPH <JaneDoeGraph> {
     <JaneDoe> a foaf:Person.
     <JaneDoe>  rdfs:label "Jane Doe".
   }
-  GRPAH <RelationshipGraph> {
+  GRAPH <RelationshipGraph> {
     <JaneDoe> foaf:knows <JohnDoe>.
     <JohnDoe> foaf:knows <JaneDoe>.
   }
@@ -202,14 +200,14 @@ INSERT {
 ]]>
     </mp-code-block>   
     <p>
-      This way, it is possible, for example, to easily remove (or update) all relationsships without touching the graphs of the entities itself:
+      This way, it is possible, for example, to easily remove (or update) all relationships without touching the graphs of the entities itself:
     </p>  
     <mp-code-block mode='application/sparql-query'>
 <![CDATA[
 DELETE { 
   ?s ?p ?o.
 } WHERE {
-  GRPAH <RelationshipGraph> {
+  GRAPH <RelationshipGraph> {
     ?s ?p ?p.
   }
 }
@@ -239,51 +237,6 @@ curl -v -u admin:admin -X POST -H 'Content-Type: application/xml' --data-binary 
     </mp-code-block>
 
     Please, refer to the <semantic-link iri="[[resolvePrefix "Help:GraphStoreAPI"]]">Graph Store API documentation</semantic-link> for more extensive usage examples.
-
-    <h2>Data Loading from the Host Filesystem</h2>
-
-    Independently of whether you are using the SPARQL or the <semantic-link iri="[[resolvePrefix "Help:GraphStoreAPI"]]">Graph Store API</semantic-link> directly, all communication with the metaphacts platform and the database backend respectively is done over HTTP(S)/SPARQL. Depending on your scenario and deployment environment, there might be parameters that need to be adjusted: for instance, the maximum body size a client may post against the webserver is typically limited (e.g. the tomcat, jetty or nginx default configurations are usually around 2 MBs - c.f. <a href="http://www.eclipse.org/jetty/documentation/current/setting-form-size.html" target="_blank">Setting form size in Jetty</a>). However, <b>for ingesting larger datasets it is generally recommended to load the data from the filesystem</b>, e.g. using SPARQL Update or dedicated (but usually proprietary) graph database APIs. 
-
-    <h3>Data Loading via SPARQL Update</h3>
-
-    To load data directly from the filesystem into the database, the RDF files must be accessible from the database host system.
-    <mp-code-block mode='application/sparql-query'>
-<![CDATA[
-LOAD <file:///datasets/bio2rdf/drugbank/bio2rdf-drugbank.nq>
-INTO GRAPH <file:///datasets/bio2rdf/drugbank/bio2rdf-drugbank.nq>
-]]>
-    </mp-code-block>
-
-    Again, the same query can be executed using, for example, CURL:
-    <mp-code-block mode='text/x-sh'>
-curl 'http://127.0.0.1:10214/sparql' -u admin:admin -H 'Content-Type: application/sparql-update; charset=UTF-8' -H 'Accept: text/boolean' -d @load_into.sq
-    </mp-code-block>
-
-    <p>
-      This way it is possible, for example, to trigger nightly (re)loads of data from a mounted file system through a remote call. In principle, it is also possible to use several load commands within one Update operation (just enumerate several <code mode='application/sparql-query'>LOAD &lt;&gt; INTO GRAPH&lt;&gt;; </code> commands, separated by a semincolon). However, most triples stores will execute this in one transaction and as such may lead to higher memory presure. Moreover, most graph database vendors also support loading remote files from a HTTP location or to load (g)zip compressed files.
-    </p>
-    <h3>Data Loading via dedicated graph database APIs</h3>
-
-    Major graph database vendors provide dedicated, but usually proprietary (bulk) data loading tools and APIs. Compare, for example:
-    <ul>
-        <li>
-    		<a href="https://wiki.blazegraph.com/wiki/index.php/Bulk_Data_Load" target="_blank">Blazegraph DataLoader utility</a>
-    	</li>
-    	<li>
-    		 <a href="https://www.stardog.com/docs/man/db-create.html" target="_blank">Stardog DB creation</a>
-    	</li>
-    	<li>
-    		<a href="http://vos.openlinksw.com/owiki/wiki/VOS/VirtBulkRDFLoader" target="_blank">Virtuoso BulkRDFLoader</a>
-    	</li>
-    	<li>
-    		<a href="https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html" target="_blank">Amazon Neptune Loader</a>
-    	</li>
-    	<li>
-    		...
-    	</li>
-    </ul> 
-   The advantage of those tools is that they provide a much higher degree of flexibility in specifying the most performant configuration w.r.t to the environment and data anomalies (i.e. configuring the buffer size, flushing buffers, disabling expensive indicis etc.). 
-   However, at the same time they require a fairly high level of (technical) understanding, while being proprietary as well as environment specific.
 
     <h2>Querying & Retrieving Data </h2>
 
@@ -341,7 +294,39 @@ curl 'http://127.0.0.1:10214/sparql' -u admin:admin -H 'Content-Type: applicatio
 curl -u admin:admin -H 'Accept: text/turtle' -X GET http://127.0.0.1:10214/rdf-graph-store?graph=http%3A%2F%2Fexample.org%2FJaneDoeGraph
     </mp-code-block>
     <br>
+    
+    
+    <h3>Supported RDF Formats</h3>
+    
+    <p>In the platform the <a href="https://rdf4j.org/" target="_BLANK">RDF4J framework</a> is used for interoperating with RDF. For querying this means that all registered parsers and writers available through RDF4J are supported.</p>
 
+    <p>The following listing gives an overview about available RDF formats and their MIME types as well as default extensions.</p>
+    
+    <ul>
+      <li>N-Triples (mimeTypes=application/n-triples, text/plain; ext=nt)</li>
+      <li>RDF/XML (mimeTypes=application/rdf+xml, application/xml, text/xml; ext=rdf, rdfs, owl, xml)</li>
+      <li>Turtle (mimeTypes=text/turtle, application/x-turtle; ext=ttl)</li>
+      <li>TriG (mimeTypes=application/trig, application/x-trig; ext=trig)</li>
+      <li>N-Quads (mimeTypes=application/n-quads, text/x-nquads, text/nquads; ext=nq)</li>
+      <li>TriX (mimeTypes=application/trix; ext=xml, trix)</li>
+      <li>JSON-LD (mimeTypes=application/ld+json; ext=jsonld)</li>
+      <li>RDF4J Binary format (mimeTypes=application/x-binary-rdf, extension .brf)</li>
+    </ul>
+
+    <p>Using the MIME type specification (i.e. as <i>Content-Type</i> or <i>Accept</i> header passed via CurL or other tools) all above formats can be supplied.</p>
+    
+    <p>Note that the drag &amp; drop functionality in the <semantic-link iri="[[resolvePrefix "Admin:DataImportExport"]]">RDF import UI</semantic-link> attempts to determine the RDF format from the file extension as well as partially by inspecting the content. Here the platform explicitly supports N-Triples (.nt), RDF/XML (.owl or .rdf), Turtle (.ttl), Trig (.trig) and N-Quads (.nq).</p>
+    
+    <p>For tuple query results the platform supports the following formats:</p>
+    
+    <ul>
+      <li>SPARQL/CSV (mimeTypes=text/csv, ext=csv)</li>
+      <li>SPARQL/JSON (mimeTypes=application/sparql-results+json, application/json; ext=srj, json)</li>
+      <li>SPARQL/XML (mimeTypes=application/sparql-results+xml; ext=srx, xml)</li>
+      <li>SPARQL/TSV (mimeTypes=text/tab-separated-values; ext=tsv)</li>
+    </ul>
+    <br/><br/>
+    
     <h2>Connecting from a Programming Library</h2>
     The following code snippet provides an example on how to connect to the SPARQL interface via a programming library like <a href="http://rdf4j.org" target="_blank">RDF4j</a>. Examples in <a href="https://jena.apache.org/documentation/query/app_api.html">Jena</a> or other programming languages, for example, python-based libraries will look similar.
     <mp-code-block mode="text/x-java">

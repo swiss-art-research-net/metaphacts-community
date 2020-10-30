@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { expect } from 'chai';
 
 import { Rdf } from 'platform/api/rdf';
@@ -24,7 +45,7 @@ import { ObjectGraph } from 'platform/api/rdf';
 
 const {JsonUndefined} = persist;
 
-const EXAMPLE_JS = [{
+const EXAMPLE_JS: unknown = [{
   abc: [123, 3.14, 'str'],
   def: 'abc',
 }, {
@@ -63,7 +84,7 @@ const exampleGraph = Rdf.graph([
 ]);
 
 
-function checkObjectToGraphAndBack(example) {
+function checkObjectToGraphAndBack(example: unknown) {
   const graph = ObjectGraph.serialize(example, BASE_NAMESPACE);
   /* Comment this line with // for tests update
   turtle.serialize.serializeGraph(graph.graph).onValue(value => {
@@ -117,7 +138,7 @@ describe('JsObjectGraph', () => {
   });
 
   it('omits entries with undefined values from plain objects', () => {
-    const data = {
+    const data: unknown = {
       bar: {
         k1: 'A',
         k2: null,
@@ -125,7 +146,7 @@ describe('JsObjectGraph', () => {
       },
       qux: undefined,
     };
-    const expected = {
+    const expected: unknown = {
       bar: {
         k1: 'A',
         k2: null,

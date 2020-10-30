@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
   createFactory,
   createElement,
@@ -27,7 +48,7 @@ import * as D from 'react-dom-factories';
 
 import * as bem from 'bem-cn';
 import * as ReactBootstrap from 'react-bootstrap';
-import ReactSelectComponent from 'react-select';
+import ReactSelectComponent, { OnChangeHandler } from 'react-select';
 import TextareaAutosize from 'react-textarea-autosize';
 import {Just, Nothing} from 'data.maybe';
 import * as classnames from 'classnames';
@@ -48,8 +69,9 @@ import { CopyToClipboardComponent } from 'platform/components/copy-to-clipboard'
 
 import row from './FieldEditorRow';
 import {
-  State, Value, LocalizedValue, getFieldDefitionState, createFieldDefinitionGraph, unwrapState,
-  ValidatedTreeConfig,
+  State, Value, LocalizedValue, getFieldDefinitionState,
+  createFieldDefinitionGraph, unwrapState,
+  ValidatedTreeConfig, OrderedWith,
 } from './FieldEditorState';
 import { TreePatternsEditor } from './TreePatternsEditor';
 import * as Validation from './Validation';
@@ -100,11 +122,32 @@ const DEFAULT_VALUE_SET = `SELECT ?value ?label WHERE {
   ?value a ?anyType ;
     rdfs:label ?label .
 }`;
-const DEFAULT_AUTOSUGGESTION = `SELECT ?value ?label WHERE {
-  ?value a ?anyType ;
-    rdfs:label ?label .
-  FILTER REGEX(STR(?label), "?token")
-} LIMIT 10`;
+const DEFAULT_AUTOSUGGESTION =
+`PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
+SELECT ?value ?label WHERE {
+  SERVICE Repository:lookup {
+    ?value lookup:token ?__token__ .
+    # ?value lookup:type :MyType
+  }
+}`;
+
+const ORDERED_WITH_VALUES: Array<{ value: OrderedWith; label: string }> =
+  [{value: 'index-property', label: 'index-property'}];
+
+const {xsd, rdf} = vocabularies;
+
+const DATATYPE_VALUES: Array<{ value: string; label: string; disabled?: boolean }> = [
+  {value: xsd.anyURI.value, label: 'xsd:anyURI'},
+  {value: xsd.integer.value, label: 'xsd:integer'},
+  {value: xsd.date.value, label: 'xsd:date'},
+  {value: xsd.dateTime.value, label: 'xsd:dateTime'},
+  {value: xsd._string.value, label: 'xsd:string'},
+  {value: 'http://www.w3.org/2001/XMLSchema#langString', label: 'xsd:langString', disabled: true},
+  {value: rdf.langString.value, label: 'rdf:langString'},
+  {value: xsd.boolean.value, label: 'xsd:boolean'},
+  {value: xsd.double.value, label: 'xsd:double'},
+  {value: xsd.decimal.value, label: 'xsd:decimal'},
+];
 
 class FieldEditorComponent extends Component<Props, State> {
   static readonly defaultProps: Partial<Props> = {
@@ -139,6 +182,7 @@ class FieldEditorComponent extends Component<Props, State> {
       valueSetPattern: Nothing<Value>(),
       autosuggestionPattern: Nothing<Value>(),
       treePatterns: Nothing<ValidatedTreeConfig>(),
+      orderedWith: Nothing<{ value: OrderedWith; error: Error }>(),
 
       isLoading: this.isEditMode(),
       isValid: false,
@@ -152,9 +196,15 @@ class FieldEditorComponent extends Component<Props, State> {
     // from backend and de-serialize it back to the component state.
     if (this.isEditMode()) {
       const fieldIri = Rdf.iri(this.props.fieldIri);
-      getFieldDefitionState(fieldIri).observe({
+      getFieldDefinitionState(fieldIri).observe({
         value: state => this.setState(state),
       });
+    }
+  }
+
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (prevState.isLoading && !this.state.isLoading) {
+      this.updateValues({xsdDatatype: this.state.xsdDatatype}, Validation.validateDatatype);
     }
   }
 
@@ -202,6 +252,7 @@ class FieldEditorComponent extends Component<Props, State> {
       label.push({value: validatedLabel, lang: lang || ''});
       this.updateState({label});
     };
+    const orderedWithValue = this.state.orderedWith.map(v => v.value).getOrElse(undefined);
     return D.div({},
       row({
         label: 'Label*',
@@ -295,8 +346,10 @@ class FieldEditorComponent extends Component<Props, State> {
           multi: false,
           clearable: false,
           placeholder: 'Please select any XSD datatype',
-          options: vocabularies.xsd.LIST_TYPES,
-          onChange: (e: Value) => this.updateValues({xsdDatatype: Just({value: e.value})}),
+          options: DATATYPE_VALUES,
+          onChange: (
+            (e: Value) => this.updateValues({xsdDatatype: Just({value: e.value})})
+          ) as OnChangeHandler<any>,
           labelKey: 'label',
           valueKey: 'value',
         }),
@@ -344,17 +397,22 @@ class FieldEditorComponent extends Component<Props, State> {
       row({
         label: 'Max. Cardinality',
         expanded: this.state.max.isJust,
-        onExpand: () => this.updateValues(
-          {max: Just({value: '1'})},
-          Validation.validateMax,
-        ),
+        onExpand: () => this.updateState({
+          max: Just(
+            Validation.validateMax(orderedWithValue ? 'unbound' : '1', orderedWithValue)
+          ),
+        }),
         onCollapse: () => this.updateValues({max: nothing}),
         error: this.state.max.map(v => v.error).getOrElse(undefined),
         element: input({
           className: block('max-input').toString(),
           type: 'text',
           placeholder: 'Any positive number from 1 to n. \"unbound\" for unlimited.',
-          onChange: e => this.updateValues({max: getFormValue(e)}, Validation.validateMax),
+          onChange: e => this.updateState({
+            max: Just(
+              Validation.validateMax((e.target as HTMLInputElement).value, orderedWithValue)
+            ),
+          }),
           value: this.state.max.map(v => v.value).getOrElse(undefined),
         }),
       }),
@@ -415,16 +473,18 @@ class FieldEditorComponent extends Component<Props, State> {
         label: 'Insert Pattern*',
         expanded: this.state.insertPattern.isJust,
         expandOnMount: true,
-        onExpand: () => this.updateValues(
-          {insertPattern: Just({value: DEFAULT_INSERT})},
-          Validation.validateInsert,
-        ),
+        onExpand: () => this.updateState({
+          insertPattern: Just(
+            Validation.validateInsert(DEFAULT_INSERT, orderedWithValue)
+          ),
+        }),
         error: this.state.insertPattern.map(v => v.error).getOrElse(undefined),
         element: createElement(SparqlEditor, {
-          onChange: e => this.updateValues(
-            {insertPattern: Just({value: e.value})},
-            Validation.validateInsert,
-          ),
+          onChange: e => this.updateState({
+            insertPattern: Just(
+              Validation.validateInsert(e.value, orderedWithValue)
+            ),
+          }),
           syntaxErrorCheck: false,
           query: this.state.insertPattern.map(v => v.value).getOrElse(''),
         }),
@@ -432,17 +492,19 @@ class FieldEditorComponent extends Component<Props, State> {
       row({
         label: 'Select Pattern',
         expanded: this.state.selectPattern.isJust,
-        onExpand: () => this.updateValues(
-          {selectPattern: Just({value: DEFAULT_SELECT})},
-          Validation.validateSelect,
-        ),
+        onExpand: () => this.updateState({
+          selectPattern: Just(
+            Validation.validateSelect(DEFAULT_SELECT, orderedWithValue)
+          ),
+        }),
         onCollapse: () => this.updateValues({selectPattern: nothing}),
         error: this.state.selectPattern.map(v => v.error).getOrElse(undefined),
         element: createElement(SparqlEditor, {
-          onChange: e => this.updateValues(
-            {selectPattern: Just({value: e.value})},
-            Validation.validateSelect,
-          ),
+          onChange: e => this.updateState({
+            selectPattern: Just(
+              Validation.validateSelect(e.value, orderedWithValue)
+            ),
+          }),
           syntaxErrorCheck: false,
           query: this.state.selectPattern.map(v => v.value).getOrElse(''),
         }),
@@ -534,6 +596,22 @@ class FieldEditorComponent extends Component<Props, State> {
             const validated = Validation.validateTreeConfig(config);
             this.updateState({treePatterns: Just(validated)});
           },
+        }),
+      }),
+      row({
+        label: 'Ordered With',
+        expanded: this.state.orderedWith.isJust,
+        onExpand: () => this.updateOrderedWithValue(ORDERED_WITH_VALUES[0].value),
+        onCollapse: () => this.updateOrderedWithValue(undefined),
+        error: this.state.orderedWith.map(v => v.error).getOrElse(undefined),
+        element: select({
+          value: orderedWithValue,
+          options: ORDERED_WITH_VALUES,
+          placeholder: 'Please select ordered with mode',
+          clearable: false,
+          onChange: (
+            (e: {value: OrderedWith}) => this.updateOrderedWithValue(e.value)
+          ) as OnChangeHandler<any>,
         }),
       }),
       bsrow({},
@@ -663,7 +741,7 @@ class FieldEditorComponent extends Component<Props, State> {
     const validatedValues = Object.keys(values).reduce<Partial<State>>((acc, key) => {
       const original = values[key];
       const validated = original.map<Value>(v => validate ? validate(v.value) : {value: v.value});
-      acc[key] = validated;
+      (acc as any)[key] = validated;
       return acc;
     }, {});
 
@@ -737,6 +815,25 @@ class FieldEditorComponent extends Component<Props, State> {
         })
         .onValue(v => v);
      }
+  }
+
+  private updateOrderedWithValue(orderedWith: OrderedWith | undefined) {
+    const state: Partial<State> = {
+      orderedWith: orderedWith ? Just({value: orderedWith}) : Nothing(),
+    };
+    const max = this.state.max.map(v => v.value).getOrElse(undefined);
+    if (max) {
+      state.max = Just(Validation.validateMax(max, orderedWith));
+    }
+    const insertPattern = this.state.insertPattern.map(v => v.value).getOrElse(undefined);
+    if (insertPattern) {
+      state.insertPattern = Just(Validation.validateInsert(insertPattern, orderedWith));
+    }
+    const selectPattern = this.state.selectPattern.map(v => v.value).getOrElse(undefined);
+    if (selectPattern) {
+      state.selectPattern = Just(Validation.validateSelect(selectPattern, orderedWith));
+    }
+    this.updateState(state);
   }
 }
 

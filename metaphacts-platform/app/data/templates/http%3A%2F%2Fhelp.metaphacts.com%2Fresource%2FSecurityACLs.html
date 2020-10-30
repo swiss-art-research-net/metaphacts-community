@@ -1,0 +1,50 @@
+    <h3> Login Protection </h3>
+    By default the platform requires authentication for all resources below the root /** URL. <br/>
+    For security reasons it is not possible to disable authentication entirely,
+    however, one can grant access to anonymous/guest user by enabling a special "anon" authentication filter (c.f. general system properties section).
+
+    To activate the filter, the following configuration property needs to be set in environment.prop
+<pre>
+<code>
+  shiroAuthenticationFilter=authcBasic,anon,authc
+</code></pre>
+
+    <bs-alert bs-style="info"><strong>Please Note:</strong><br/>
+      For the special anonymous filter ("anon") a static user with the user principal <b>"anonymous"</b> (and any dummy password) must be configured
+      i.e. must granted access to the respective resource and operations by assigning the respective roles (c.f. Basic ACLs section below).
+    </bs-alert>
+    <h3> ACL Permissions </h3>
+    ACL permission strings are used to restrict certain actions or behavior, which are typically exposed through REST interfaces.<br>
+    Permissions are <b>whitelist based</b>, i.e. they need to be assigned explicitly to users through respective roles.
+
+    <mp-json-renderer style="align: center;" get-url='/rest/security/getAllPermissionsDoc' template='{{> acl-table}}'>
+      <template id='acl-table'>      
+        <div>
+          {{#each this as |group|}} 
+          <h3>{{@key}}</h3>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Acl</th>
+                <th>Description</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {{#each group as |element|}}
+              <tr>
+                <td>{{element.acl}}</td>
+                <td>{{element.description}}</td>
+                <td>{{{element.example}}}</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+          {{/each}}   
+        </div>
+      </template>
+    </mp-json-renderer>
+    <p>
+      The permissions from above are pre-defined to restrict actions on core platform functionality to certain user roles. On top, (domain specific) applications may add/define own permission strings and define new user roles, for example, in order to control certain user interface behaviour.
+    </p>

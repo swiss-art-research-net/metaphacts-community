@@ -1,0 +1,267 @@
+@prefix : <http://www.metaphacts.com/resource/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix Help: <http://help.metaphacts.com/resource/> .
+@prefix mpo:  <http://www.metaphacts.com/platform/ontology/> .
+
+
+
+
+# file to be loaded into platform metadata repository
+# ordering model:
+# 1-99 : top level category
+# 100-999 : top level documentation pages
+# 1000-9999 : second level documentation pages
+# >= 10000 : third and higher level documentation pages
+
+
+# categories
+
+Help:BuildingDeclarativeWebApplications a skos:Concept ;
+  skos:preferredLabel "Building Declarative Web Applications" ;
+  mpo:order 1 .
+
+Help:Services a skos:Concept ;
+  skos:preferredLabel "Services" ;
+  mpo:order 3 .
+
+Help:PlatformOperations a skos:Concept ;
+  skos:preferredLabel "Platform Operations" ;
+  mpo:order 3 .
+
+Help:InstallationAndAppLifecycle a skos:Concept ;
+  skos:preferredLabel "Installation & App Lifecycle" ;
+  mpo:order 4 .
+
+
+# semantic components
+
+
+Help:HTML5Components a mpo:HelpPage ;
+  skos:preferredLabel "Semantic Components" ;
+  skos:broader Help:BuildingDeclarativeWebApplications ;
+  mpo:order 150 .
+
+Help:SemanticQuery a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticCarousel a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticTable a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticGraph a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticTree a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticLazyTree a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticTimeline a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticMap a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticChart a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticContext a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticSimpleSearch a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:Ontodia a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticForm a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:SemanticFormDependenciesConstraints a mpo:HelpPage ;
+  skos:broader Help:SemanticForm .
+  
+Help:SemanticUpdate a mpo:HelpPage ;
+  skos:broader Help:MPComponents ;
+  mpo:order 1100 .
+
+Help:SemanticAutoForm a mpo:HelpPage ;
+  skos:broader Help:SemanticForm .
+
+Help:SemanticSearch a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
+Help:KeywordSearch a mpo:HelpPage ;
+  skos:broader Help:SemanticSearch ;
+  mpo:order 1100 .
+  
+Help:KeywordTypeSearch a mpo:HelpPage ;
+  skos:broader Help:SemanticSearch ;
+  mpo:order 1200 .
+
+Help:StructuredSearch a mpo:HelpPage ;
+  skos:broader Help:SemanticSearch ;
+  mpo:order 1300 .
+
+Help:ConstantSearch a mpo:HelpPage ;
+  skos:broader Help:SemanticSearch ;
+  mpo:order 1400 .
+
+Help:FormBasedSearch a mpo:HelpPage ;
+  skos:broader Help:SemanticSearch ;
+  mpo:order 1500 .
+
+Help:StructuredSearchExample a mpo:HelpPage ;
+  skos:broader Help:StructuredSearch ;
+  mpo:order 10000 .
+
+Help:StructuredKeywordSearchExample a mpo:HelpPage ;
+  skos:broader Help:KeywordSearch ;
+  mpo:order 10000 .
+
+Help:GraphScopeComponents a mpo:HelpPage ;
+  skos:broader Help:SemanticSearch ;
+  mpo:order 1600 .
+
+Help:StructuredConstantSearchExample a mpo:HelpPage ;
+  skos:broader Help:ConstantSearch ;
+  mpo:order 10000 .
+
+
+
+
+
+
+# templates and templating
+
+Help:TemplatesAndTemplating a mpo:HelpPage ;
+  skos:preferredLabel "Templates and Templating" ;
+  skos:broader Help:BuildingDeclarativeWebApplications ;
+  mpo:order 100 .
+
+Help:TemplateAndApplicationPages a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1000 .
+
+
+Help:PageStructure a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1100 .
+
+
+Help:PageViewConfig a mpo:HelpPage ;
+  skos:broader Help:PageStructure ;
+  mpo:order 10100 .
+
+Help:BackendTemplating a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1200 .
+
+Help:FrontendTemplating a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1300 .
+
+Help:EventSystem a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1400 .
+
+Help:CSSLayout a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1500 .
+
+Help:KnowledgePanel a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1600 .
+
+
+
+# react bootstrap
+
+Help:ReactBootstrap a mpo:HelpPage ;
+  skos:preferredLabel "React Bootstrap Components" ;
+  skos:broader Help:BuildingDeclarativeWebApplications ;
+  mpo:order 120 .
+
+
+# utilty mp components
+
+Help:MPComponents a mpo:HelpPage ;
+  skos:preferredLabel "Utility Components" ;
+  skos:broader Help:BuildingDeclarativeWebApplications ;
+  mpo:order 130 .
+
+
+
+
+
+# services
+
+Help:QueryCatalog a mpo:HelpPage ;
+  skos:preferredLabel "Query Catalog" ;
+  skos:broader Help:Services .
+
+Help:LDPAssetsManagement a mpo:HelpPage ;
+  skos:preferredLabel "LDP Assets Management" ;
+  skos:broader Help:Services .
+
+Help:Publishing a mpo:HelpPage ;
+  skos:preferredLabel "RDF Publishing" ;
+  skos:broader Help:Services .
+
+
+
+# platform operations
+
+Help:RepositoryManager a mpo:HelpPage ;
+  skos:broader Help:PlatformOperations .
+
+Help:OperationsAndTroubleshooting a mpo:HelpPage ;
+  skos:broader Help:PlatformOperations .
+
+Help:DataLoading a mpo:HelpPage ;
+  skos:broader Help:PlatformOperations .
+
+Help:WorkingWithData a mpo:HelpPage ;
+  skos:broader Help:PlatformOperations .
+
+Help:RdfStar a mpo:HelpPage ;
+  skos:broader Help:WorkingWithData ;
+  mpo:order 1500 .
+
+Help:BasicSystemConfiguration a mpo:HelpPage ;
+  skos:broader Help:PlatformOperations .
+
+Help:Security a mpo:HelpPage ;
+  skos:broader Help:PlatformOperations .
+
+Help:AuthenticationProxy a mpo:HelpPage ;
+  skos:broader Help:PlatformOperations .
+
+
+
+# installation & apps
+
+Help:Installation a mpo:HelpPage ;
+  skos:broader Help:InstallationAndAppLifecycle .
+
+Help:GraphScopeSetup a mpo:HelpPage ;
+  skos:broader Help:Installation .
+
+Help:Apps a mpo:HelpPage ;
+  skos:broader Help:InstallationAndAppLifecycle .
+
+Help:AppDeployment a mpo:HelpPage ;
+  skos:broader Help:Apps .
+
+Help:AppExtensions a mpo:HelpPage ;
+  skos:broader Help:Apps .
+
+Help:CustomPageLayout a mpo:HelpPage ;
+  skos:broader Help:Apps .
+
+Help:Storage a mpo:HelpPage ;
+  skos:broader Help:InstallationAndAppLifecycle .

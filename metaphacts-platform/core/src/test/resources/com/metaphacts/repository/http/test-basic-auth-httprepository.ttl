@@ -1,0 +1,9 @@
+[] a <http://www.openrdf.org/config/repository#Repository> ;
+	<http://www.openrdf.org/config/repository#repositoryID> "test-http-basic-auth-repository" ;
+	<http://www.w3.org/2000/01/rdf-schema#label> "Test HTTP Basic Auth Description" ;
+	<http://www.openrdf.org/config/repository#repositoryImpl> [
+		<http://www.openrdf.org/config/repository#repositoryType> "metaphactory:BasicAuthHTTPRepository" ;
+		<http://www.openrdf.org/config/repository/http#repositoryURL> <http://localhost:8080/rdf4j-server/repositories/test> ;
+		<http://www.metaphacts.com/ontologies/platform/repository#username> "testuser" ;
+		<http://www.metaphacts.com/ontologies/platform/repository#password> "testpassword"
+	].

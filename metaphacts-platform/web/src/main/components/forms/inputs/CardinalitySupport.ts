@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { uniqueId } from 'lodash';
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
@@ -36,18 +57,21 @@ import {
   isValidChild, componentHasType, hasBaseDerivedRelationship, universalChildren,
 } from 'platform/components/utils';
 
+import { ReorderableList, Ordering } from 'platform/components/ui/reorderable-list';
+
 import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import {
-  FieldValue, EmptyValue, CompositeValue, DataState, ErrorKind, FieldError, mergeDataState
+  FieldState, FieldValue, EmptyValue, CompositeValue, DataState, ErrorKind, FieldError,
+  mergeDataState,
 } from '../FieldValues';
 
-import { SingleValueInput, SingleValueInputProps, SingleValueHandler } from './SingleValueInput';
+import {
+  SingleValueInput, SingleValueInputProps, SingleValueHandler, SingleValueInputGroup,
+} from './SingleValueInput';
 import {
   MultipleValuesInput, MultipleValuesProps, MultipleValuesHandler, MultipleValuesHandlerProps,
   ValuesWithErrors, checkCardinalityAndDuplicates,
 } from './MultipleValuesInput';
-import { CompositeInput } from './CompositeInput';
-import { FormSwitch } from './FormSwitch';
 
 export interface CardinalitySupportProps extends MultipleValuesProps {
   children?: ReactNode;
@@ -90,12 +114,9 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
       previous.renderHeader === nextProps.renderHeader &&
       previous.definition === nextProps.definition &&
       previous.dataState === nextProps.dataState &&
-      previous.errors === nextProps.errors &&
-      (
-        previous.values === nextProps.values ||
-        previous.values.size === nextProps.values.size &&
-        previous.values.every((item, index) => item === nextProps.values.get(index))
-      )
+      previous.dependencyContext === nextProps.dependencyContext &&
+      shallowEqualArrays(previous.values, nextProps.values) &&
+      shallowEqualArrays(previous.errors, nextProps.errors)
     );
   }
 
@@ -106,16 +127,23 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
     const dataState = this.props.dataState;
     this.lastRenderedDataState = this.dataState();
 
-    const size = this.props.values.size;
+    const size = this.props.values.length;
     const canEdit = dataState === DataState.Ready || dataState === DataState.Verifying;
     const canAddValue = canEdit && size < definition.maxOccurs;
     const canRemoveValue = canEdit && size > definition.minOccurs && size > 0;
     const fieldLabel = (getPreferredLabel(definition.label) || 'value').toLowerCase();
+    const children = this.renderChildren(canRemoveValue);
 
     return D.div(
       {className: COMPONENT_NAME},
-
-      this.renderChildren(canRemoveValue),
+      definition.orderedWith
+        ? createElement(ReorderableList, {
+            ordering: Ordering.empty,
+            onOrderChanged: this.onOrderChanged,
+            dragByHandle: true,
+            itemClass: `${COMPONENT_NAME}__reorderable-list-item`,
+          }, children)
+        : children,
 
       canAddValue ? (
         D.a({
@@ -130,8 +158,15 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
     );
   }
 
+  private onOrderChanged = (order: Ordering) => {
+    this.onValuesChanged(values => {
+      this.valueKeys = order.apply(this.valueKeys);
+      return order.apply(values);
+    });
+  }
+
   private renderChildren(canRemoveValue: boolean) {
-    this.ensureValueKeys(this.props.values.size);
+    this.ensureValueKeys(this.props.values.length);
 
     const childIsInputGroup = isInputGroup(this.props.children);
     const className = childIsInputGroup
@@ -146,7 +181,9 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
         value,
         this.valueKeys[index],
         reducer => {
-          this.onValuesChanged(values => values.update(index, reducer));
+          this.onValuesChanged(values =>
+            FieldState.setValueAtIndex(values, index, reducer(values[index]))
+          );
         },
         (key, inputIndex, input) => {
           let refs = this.inputs.get(key);
@@ -172,16 +209,16 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
   }
 
   private addNewValue = () => {
-    this.onValuesChanged(() => this.props.values.push(FieldValue.empty));
+    this.onValuesChanged(() => [...this.props.values, FieldValue.empty]);
   }
 
   private removeValue = (valueIndex: number) => {
     this.valueKeys.splice(valueIndex, 1);
-    this.onValuesChanged(() => this.props.values.remove(valueIndex));
+    this.onValuesChanged(() => FieldState.deleteValueAtIndex(this.props.values, valueIndex));
   }
 
   private onValuesChanged(
-    reducer: (previous: Immutable.List<FieldValue>) => Immutable.List<FieldValue>
+    reducer: (previous: ReadonlyArray<FieldValue>) => ReadonlyArray<FieldValue>
   ) {
     const handler = this.getHandler();
     this.props.updateValues(previous => {
@@ -215,6 +252,15 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
   }
 }
 
+function shallowEqualArrays<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {
+  if (a === b) { return true; }
+  if (a.length !== b.length) { return false; }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) { return false; }
+  }
+  return true;
+}
+
 function renderChildInputs(this: void,
   inputProps: CardinalitySupportProps,
   inputHandler: CardinalitySupportHandler,
@@ -224,7 +270,7 @@ function renderChildInputs(this: void,
   onInputMount: (key: string, inputIndex: number, input: ChildInput | null) => void
 ) {
   let nextIndex = 0;
-  function mapChildren(this: void, children: ReactNode) {
+  function mapChildren(children: ReactNode): ReactNode {
     return universalChildren(Children.map(children, child => {
       if (isValidChild(child)) {
         const element = child as ReactElement<any>;
@@ -244,6 +290,7 @@ function renderChildInputs(this: void,
             handler,
             definition: inputProps.definition,
             dataState: inputProps.dataState,
+            dependencyContext: inputProps.dependencyContext,
             value: value,
             updateValue,
             ref: input => onInputMount(key, inputIndex, input),
@@ -281,7 +328,7 @@ class CardinalitySupportHandler implements MultipleValuesHandler {
     {values, errors}: ValuesWithErrors,
     validateByChildInput = true
   ) {
-    const otherErrors = errors.filter(e => e.kind !== ErrorKind.Input).toList();
+    const otherErrors = errors.filter(e => e.kind !== ErrorKind.Input);
     const cardinalityErrors = this.validateCardinality(values);
     return {
       values: validateByChildInput
@@ -302,13 +349,13 @@ class CardinalitySupportHandler implements MultipleValuesHandler {
     return validated;
   }
 
-  private validateCardinality(values: Immutable.List<FieldValue>): Immutable.List<FieldError> {
+  private validateCardinality(values: ReadonlyArray<FieldValue>): ReadonlyArray<FieldError> {
     let preparedValues = values;
     for (const handler of this.handlers) {
       if (handler.finalizeSubject) {
         preparedValues = values.map(v => {
           // finalize subject to distinguish composites
-          return FieldValue.isComposite(v) ? handler.finalizeSubject(FieldValue.empty, v) : v;
+          return FieldValue.isComposite(v) ? handler.finalizeSubject(v, FieldValue.empty) : v;
         });
       }
     }
@@ -316,19 +363,17 @@ class CardinalitySupportHandler implements MultipleValuesHandler {
   }
 
   finalize(
-    values: Immutable.List<FieldValue>,
+    values: ReadonlyArray<FieldValue>,
     owner: EmptyValue | CompositeValue
-  ): Kefir.Property<Immutable.List<FieldValue>> {
+  ): Kefir.Property<ReadonlyArray<FieldValue>> {
     let finalizing = Kefir.constant(values);
     for (const handler of this.handlers) {
       finalizing = finalizing.flatMap(intermediates => {
-        const tasks = intermediates.map(value => handler.finalize(value, owner)).toArray();
+        const tasks = intermediates.map(value => handler.finalize(value, owner));
         if (tasks.length > 0) {
-          return Kefir.zip(tasks)
-            .map(properties => Immutable.List(properties))
-            .toProperty();
+          return Kefir.zip(tasks).toProperty();
         } else {
-          return Kefir.constant(Immutable.List<FieldValue>());
+          return Kefir.constant(FieldState.empty.values);
         }
       }).toProperty();
     }
@@ -365,8 +410,9 @@ function isInputGroup(children: ReactNode) {
   if (!isValidChild(child)) {
     return true;
   }
-  return componentHasType(child, CompositeInput)
-    || componentHasType(child, FormSwitch)
+  const {inputGroupType} = child.type as Partial<SingleValueInputGroup>;
+  return inputGroupType === 'composite'
+    || inputGroupType === 'switch'
     || !componentHasType(child, SingleValueInput as any);
 }
 

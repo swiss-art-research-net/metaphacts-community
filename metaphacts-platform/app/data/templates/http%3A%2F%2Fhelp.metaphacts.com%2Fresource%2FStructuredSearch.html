@@ -1,0 +1,111 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+
+<div class='page'>
+  <div class='page__body'>
+  	<h1>Structured Search</h1>
+    <p>The platform provides a powerful mechanism for expressing the user’s request in an incremental way: structured search based on fundamental categories and relations (<code>semantic-search-query-builder</code>). Structured search assumes that the user wants to search for data instances classified into some fundamental categories: the most representative concepts within the domain.</p>
+              
+      
+    <h2>Configuration</h2>
+    <mp-documentation type="SemanticQueryBuilderConfig"></mp-documentation>
+        
+      <p><code>semantic-search-query-builder</code> defines the default <b>resource-selector</b> configuration using <semantic-link iri="[[resolvePrefix "Help:LookupService"]]">Lookup Service</semantic-link> technology. This abstraction allows database independent configuration of the search for the default case, i.e. the platform makes sure to select a lookup service implementation optimized for the target database.</p>
+        
+        <mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>Show resource-selector configuration for different databases</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+        <table class="table table-striped table-bordered inputs-table">
+          <tbody>
+            <tr>
+              <th>Triplestore</th>
+              <th>Resource selector configuration</th>
+            </tr>
+            <tr>
+              <td>Starog</td>
+              <td>
+                <mp-code-block>
+        <![CDATA[
+         <semantic-search-query-builder
+      resource-selector='{
+        "query":"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+               PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+               SELECT DISTINCT ?suggestion ?label WHERE {
+                ?subject a ?__domain__.
+                ?suggestion a ?__range__.
+                ?suggestion rdfs:label ?label.
+                (?label ?score) <tag:stardog:api:property:textMatch> ?__token__ .
+               }ORDER BY desc(?score)",
+        "suggestionTupleTemplate": "<span title=\"{{label.value}}\">{{label.value}} </span>",
+        "noSuggestionsTemplate": "<div class=\"suggestion-no-matches\">no matches found</div>"
+      }'
+    ></semantic-search-query-builder>
+        ]]>
+          </mp-code-block>
+              </td>
+            </tr>
+        </tbody>
+        </table>
+        </mp-collapsible-div-content>
+    </mp-collapsible-div>
+        <br/>
+    
+    
+    
+    <h2>Examples</h2>
+    
+  	 <p>The most basic search configuration using this component looks as follows:</p>
+        
+        <mp-code-example>
+              <![CDATA[
+        <semantic-search id="search2"
+      search-profile='{
+        "categories": [{
+          "iri": "<http://xmlns.com/foaf/0.1/Person>",
+          "label": "Person"
+        }, {
+        	"iri": "<http://www.wikidata.org/entity/Q3305213>",
+          "label": "Painting"
+        }],
+        "relations": [{
+          "hasDomain": "<http://xmlns.com/foaf/0.1/Person>",
+          "iri": "<http://xmlns.com/foaf/0.1/knows>",
+          "hasRange": "<http://xmlns.com/foaf/0.1/Person>",
+          "label": "knows"
+        }, {
+          "hasDomain": "<http://xmlns.com/foaf/0.1/Person>",
+          "iri": "<http://xmlns.com/foaf/0.1/topic_interest>",
+          "hasRange": "<http://www.wikidata.org/entity/Q3305213>",
+          "label": "interest"
+        }]
+      }'>
+   <semantic-search-query-builder>
+   </semantic-search-query-builder>
+                              
+
+   <semantic-search-result-holder>
+    <semantic-search-result>
+      <semantic-table id='table2' query='SELECT ?subject WHERE { } ORDER BY DESC(?score)'></semantic-table>
+    </semantic-search-result>
+   </semantic-search-result-holder>
+</semantic-search
+]]>
+        </mp-code-example>
+      
+    
+    <h3>Further Examples</h3>
+
+    <ul>
+      <li>
+        <semantic-link iri="[[resolvePrefix "Help:StructuredSearchExample"]]">Structured search with Facets</semantic-link>
+      </li>
+      <li>
+        <semantic-link iri="[[resolvePrefix "Help:StructuredSearchExampleWikidata"]]">Structured search (Wikidata)</semantic-link>
+      </li>
+    </ul>
+
+  </div>
+</div>
+    

@@ -1,8 +1,8 @@
   <li>
-    <semantic-link title="Assets" iri="http://www.metaphacts.com/resource/assets/">Assets</semantic-link>
+    <semantic-link title="Assets" iri='[[resolvePrefix "Assets:"]]'>Assets</semantic-link>
   </li>
   <li>
-    <semantic-link title="Ontologies" iri="http://www.metaphacts.com/resource/assets/Ontologies">Ontologies</semantic-link>
+    <semantic-link title="Ontologies" iri='[[resolvePrefix "Assets:Ontologies"]]'>Ontologies</semantic-link>
   </li>
   <semantic-query 
                   query='SELECT ?ontology { GRAPH ?g { ?ontology a owl:Ontology. <[[this]]> a ?type } } LIMIT 1'

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>{{deploymentTitle}}</title>
+    <link href="{{assetsMap.basic_styling}}" rel="stylesheet" title="Default Style">
+    <style>
+      body {
+        height: 100%!important;
+        padding-bottom: 0!important;
+      }
+      p.custom-paragraph {
+        padding: 0px 5px;
+        text-align: justify;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row" >
+        <div class="col-md-6 col-md-offset-3 text-center" style="margin-top:10vh;margin-bottom:5vh;">
+          <h1>{{deploymentTitle}}</h1>
+        </div>
+        <div class="col-md-6 col-md-offset-3">
+
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <div class="alert alert-info" style="text-align: justify; margin-bottom: 10px;">
+                  <p>
+                    <strong>
+                      It looks like you are using a browser that is not supported by the platform.
+                    </strong>
+                  </p>
+              </div>
+              <p class="custom-paragraph">
+                We have specifically retired support for <b>Microsoft Internet Explorer 11</b> and older.
+              </p>
+              <p class="custom-paragraph">
+                In our products we are aiming to take advantage of modern web standards to deliver the best possible user experience.
+                Please use a modern browser like Chrome, Firefox, Safari or Edge.
+              </p>
+              <p class="custom-paragraph">
+                If you think you are seeing this message in error please contact your system administrator or the metaphacts <a href="mailto:support@metaphacts.com">support team</a>.
+              </p>
+            </div>
+          </div>
+          <div class="text-center" style="font-size:8px;">
+            metaphacts semantic platform by <br><br>
+            <a href="http://www.metaphacts.com"><img src="/metaphacts/branding/metaphacts-logo.png" alt="Metaphacts" style="width: 30%;"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

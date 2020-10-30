@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Component, CSSProperties, ReactElement, ReactNode, HTMLProps } from 'react';
 import * as D from 'react-dom-factories';
 import * as styles from './HighlightComponent.scss';
+import { escapeRegExp } from 'lodash';
 
 
 export interface Props {
@@ -33,11 +55,17 @@ export interface Props {
   /**
    * Substring to highlight
    */
-  highlight?: string;
+  highlight?: string | number;
   /**
    * Props for highlighted substring span
    */
   highlightProps?: HTMLProps<HTMLSpanElement>;
+
+  /**
+   * Whether to split the highlight term into individual tokens / words.
+   * If active, highlighting is done on matched words.
+   */
+  splitToken?: boolean;
 }
 
 /**
@@ -51,33 +79,51 @@ export class HighlightComponent extends Component<Props, {}> {
     }
     const label = this.props.children;
     const {className, style} = this.props;
+    const highlightedString = String(this.props.highlight);
+    const highlightedTerms = this.props.splitToken
+      ? highlightedString.split(' ').map(t => t.trim())
+      : [highlightedString];
     return D.span(
       {className, style},
-      ...highlight(label, this.props.highlight, this.props.highlightProps)
+      ...highlight(label, highlightedTerms, this.props.highlightProps)
     );
   }
 }
 
 function highlight(
   sourceText: string,
-  highlightedTerm: string,
+  highlightedTerms: ReadonlyArray<string>,
   highlightProps: HTMLProps<HTMLSpanElement> = {className: styles.highlight}
 ): ReactNode[] {
-  if (highlightedTerm) {
-    const highlightedTermLower = highlightedTerm.toLowerCase();
-    const startIndex = sourceText.toLowerCase().indexOf(highlightedTermLower);
-    if (startIndex >= 0) {
-      const endIndex = startIndex + highlightedTermLower.length;
-      return [
-        sourceText.substring(0, startIndex),
-        D.span(
-          highlightProps,
-          sourceText.substring(startIndex, endIndex)),
-        sourceText.substring(endIndex),
-      ];
+  const alternatives: string[] = [];
+  for (const term of highlightedTerms) {
+    if (term) {
+      alternatives.push(escapeRegExp(term));
     }
   }
-  return [sourceText];
+  if (alternatives.length === 0) {
+    return [sourceText];
+  } else {
+    const termRegexp = new RegExp(alternatives.join('|'), 'ig');
+
+    const parts: ReactNode[] = [];
+    let nextIndex = 0;
+    while (true) {
+      const match = termRegexp.exec(sourceText);
+      if (!match) {
+        break;
+      }
+      if (nextIndex < match.index) {
+        parts.push(sourceText.substring(nextIndex, match.index));
+      }
+      parts.push(D.span(highlightProps, match[0]));
+      nextIndex = termRegexp.lastIndex;
+    }
+    if (nextIndex < sourceText.length) {
+      parts.push(sourceText.substring(nextIndex));
+    }
+    return parts;
+  }
 }
 
 export default HighlightComponent;

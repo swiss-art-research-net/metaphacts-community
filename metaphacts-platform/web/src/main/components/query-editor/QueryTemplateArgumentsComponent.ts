@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,15 +37,13 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Component, createFactory, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
-import { Left, Right } from 'data.either';
 
 import { getOverlaySystem, OverlayDialog } from 'platform/components/ui/overlay';
 
-import { Argument } from './QueryTemplateTypes';
+import { Argument, CheckedArgument } from './QueryTemplateTypes';
 import { QueryTemplateEditArgument } from './QueryTemplateEditArgument';
 
 const Well = createFactory(ReactBootstrap.Well);
@@ -35,11 +55,11 @@ const Button = createFactory(ReactBootstrap.Button);
 const ButtonToolbar = createFactory(ReactBootstrap.ButtonToolbar);
 
 export interface Props {
-  args: Data.Either<Argument, Argument>[];
+  args: ReadonlyArray<CheckedArgument>;
   variables: string[];
-  onAdd: (arg: Data.Either<Argument, Argument>) => void;
+  onAdd: (arg: CheckedArgument) => void;
   onDelete: (index: number) => void;
-  onChange: (arg: Data.Either<Argument, Argument>, index: number) => void;
+  onChange: (arg: CheckedArgument, index: number) => void;
 }
 
 export interface State {
@@ -66,11 +86,11 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
     };
 
     this.setState({activeKey: this.props.args.length}, () => {
-      this.props.onAdd(Left<Argument, Argument>(emptyArgument));
+      this.props.onAdd({argument: emptyArgument, valid: false});
     });
   }
 
-  private handleDeleteArgument = index => {
+  private handleDeleteArgument = (index: number) => {
     const title = 'Delete Argument';
     const body = D.div({style: {textAlign: 'center'}},
       D.h5({style: {margin: '0 0 20px'}}, 'Are You Sure?'),
@@ -96,10 +116,8 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
     );
   }
 
-  private handleChangeArgument = (arg: Argument, index, isValid) => {
-    const argument = isValid ? Right<Argument, Argument>(arg) : Left<Argument, Argument>(arg);
-
-    this.props.onChange(argument, index);
+  private handleChangeArgument = (arg: Argument, index: number, isValid: boolean) => {
+    this.props.onChange({argument: arg, valid: isValid}, index);
   }
 
   private renderArgument = (argument: Argument, index: number, isValid: boolean) => {
@@ -110,11 +128,11 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
     });
 
     const notAvailableLabels = filteredArgs.map(arg => {
-      return arg.fold(item => item.label, item => item.label);
+      return arg.argument.label;
     });
 
     const notAvailableVariables = filteredArgs.map(arg => {
-      return arg.fold(item => item.variable, item => item.variable);
+      return arg.argument.variable;
     });
 
     return Panel(
@@ -122,7 +140,7 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
         key: index,
         header: argument.label.length ? argument.label : 'No Label',
         eventKey: index,
-        onSelect: key => this.setState({activeKey: key}),
+        onSelect: (key: any) => this.setState({activeKey: key}),
         bsStyle: isValid ? 'default' : 'danger',
       },
       createElement(QueryTemplateEditArgument, {
@@ -149,10 +167,7 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
         this.props.args.length
           ? PanelGroup({activeKey: activeKey, accordion: true},
             this.props.args.map((item, index) => {
-              return item.fold(
-                arg => this.renderArgument(arg, index, false),
-                arg => this.renderArgument(arg, index, true)
-              );
+              return this.renderArgument(item.argument, index, item.valid);
             })
           )
           : null,
@@ -162,7 +177,4 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
   }
 }
 
-export type component = QueryTemplateArgumentsComponent;
-export const component = QueryTemplateArgumentsComponent;
-export const factory = createFactory(component);
-export default component;
+export default QueryTemplateArgumentsComponent;

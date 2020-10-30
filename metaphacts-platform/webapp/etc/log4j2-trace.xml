@@ -27,12 +27,12 @@
       <AppenderRef ref="STDOUT"/>
     </Logger>
     
-    <!-- additional platform specific loggers that can be switched on individually (INFO) -->
+    <!-- additional platform specific loggers that can be switched on individually -->
     <Logger name="platform.logging" level="OFF" additivity="false">
       <AppenderRef ref="LOGFILE"/>
       <AppenderRef ref="STDOUT"/>
     </Logger>
-    <Logger name="platform.logging.ephedra.QueryPlanLogger" level="INFO" additivity="true" />
+    <Logger name="platform.logging.ephedra.QueryPlanLogger" level="TRACE" additivity="true" />
 
     <!-- https://issues.apache.org/jira/browse/BEANUTILS-477 -->
     <Logger name="org.apache.commons.beanutils.FluentPropertyBeanIntrospector" level="error" additivity="false">

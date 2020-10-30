@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Mike Kelly <mkelly@britishmuseum.org>
  */
@@ -24,10 +23,13 @@ import * as React from 'react';
 import { Navbar, Nav, NavItem, MenuItem, NavDropdown } from 'react-bootstrap';
 import * as URI from 'urijs';
 import * as _ from 'lodash';
+
+import { Rdf } from 'platform/api/rdf';
 import { resolveResourceIri } from 'platform/api/navigation';
-import {clearPersistedRecentPages, MemoryHistory, resetMemoryHistory}
-from 'platform/api/navigation/PersistentHistory';
-import { ResourceLinkComponent } from 'platform/api/navigation/components/ResourceLinkComponent';
+import {
+  clearPersistedRecentPages, MemoryHistory, resetMemoryHistory
+} from 'platform/api/navigation/PersistentHistory';
+import { ResourceLinkComponent } from 'platform/components/navigation/ResourceLinkComponent';
 
 import './BrowseHistoryComponent.scss';
 
@@ -52,7 +54,7 @@ interface State {
 
 export class BrowseHistoryComponent extends React.Component<Props, State> {
 
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       links: [],
@@ -87,7 +89,7 @@ export class BrowseHistoryComponent extends React.Component<Props, State> {
   /**
    * If the uri is surrounded by tags, remove them
    */
-  private removeTagsFromUri(uri) {
+  private removeTagsFromUri(uri: Rdf.Iri) {
     const regex = /^<(.*)>$/g;
     const strippedUri = regex.exec(uri.toString());
     return strippedUri.length > 1 ? strippedUri[1] : uri.toString();
@@ -108,7 +110,7 @@ export class BrowseHistoryComponent extends React.Component<Props, State> {
     this.getMemoryEntries();
   }
 
-  private dropdownToggle = (newValue) => {
+  private dropdownToggle = (newValue: boolean) => {
     this.setState({ menuOpen: newValue });
   }
 

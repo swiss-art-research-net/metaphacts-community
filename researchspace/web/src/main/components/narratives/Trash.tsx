@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +15,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 // @flow
 import * as React from 'react';
 import { DropTarget as dropTarget } from 'react-dnd';
 import Delete from 'material-ui/svg-icons/action/delete';
 import FloatingActionButton from 'material-ui/FloatingActionButton';
-import { Editor } from 'ory-editor-core/lib';
 import { connect } from 'react-redux';
 import * as classNames from 'classnames';
 import { removeCell } from 'ory-editor-core/lib/actions/cell/core';
@@ -90,7 +88,7 @@ const Raw = ({ isLayoutMode, connectDropTarget, isOverCurrent }: any) =>
     </div>
   );
 
-const types = ({ editor }: { editor: Editor }) => {
+const types = ({ editor }: { editor: any }) => {
   const plugins = [
     ...Object.keys(editor.plugins.plugins.layout),
     ...Object.keys(editor.plugins.plugins.content),

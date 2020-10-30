@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.repository;
 
 import static org.junit.Assert.assertEquals;
@@ -26,10 +47,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Map;
 
-import com.metaphacts.junit.AbstractIntegrationTest;
-import com.metaphacts.junit.PlatformStorageRule;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.SizedStream;
+import javax.inject.Inject;
+
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
@@ -55,9 +74,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import com.metaphacts.junit.AbstractIntegrationTest;
+import com.metaphacts.junit.PlatformStorageRule;
 import com.metaphacts.junit.TestUtils;
-
-import javax.inject.Inject;
+import com.metaphacts.services.storage.api.SizedStream;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -107,6 +127,7 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
         RepositoryConfigUtils.createRepositoryConfig(new LinkedHashModel());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testCreateRepositoryConfigFromModelFail2() throws Exception{
         final Model model = new LinkedHashModel();
@@ -161,6 +182,7 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
         return repConfig;
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testWriteMemorySailRepositoryConfigToFile() throws Exception {
         final RepositoryConfig repConfig = createTestMemorySailRepositoryConfig("test-sail-memory-repository");
@@ -177,6 +199,7 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
         assertTrue(Models.isomorphic(fileModel, model));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testWriteNativeSailRepositoryConfigToFile() throws Exception {
         final RepositoryConfig repConfig = createTestNativeSailRepositoryConfig("test-sail-native-repository");
@@ -213,6 +236,7 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
         assertMemorySailTestConfig(repConfig);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testReadInvalidRepositoryConfigurationFile() throws Exception {
         final Model model = new LinkedHashModel();

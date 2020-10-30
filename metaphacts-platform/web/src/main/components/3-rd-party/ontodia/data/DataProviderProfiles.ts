@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,123 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { SparqlDataProviderSettings } from 'ontodia';
-
-export const WikidataSettings: SparqlDataProviderSettings = {
-  linkConfigurations: [],
-  propertyConfigurations: [],
-
-  defaultPrefix:
-`PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-PREFIX wd: <http://www.wikidata.org/entity/>
-PREFIX owl:  <http://www.w3.org/2002/07/owl#>
-\n`,
-
-  schemaLabelProperty: 'rdfs:label',
-  dataLabelProperty: 'rdfs:label',
-
-  fullTextSearch: {
-      prefix: 'PREFIX bds: <http://www.bigdata.com/rdf/search#>\n',
-      queryPattern:
-`?inst rdfs:label ?searchLabel.
-SERVICE bds:search {
-  ?searchLabel bds:search "\${text}*" ;
-    bds:minRelevance '0.5' ;
-    bds:matchAllTerms 'true' .
-}
-BIND(IF(STRLEN(?strInst) > 33,
-  0-<http://www.w3.org/2001/XMLSchema#integer>(SUBSTR(?strInst, 33)),
-  -10000
-) as ?score)
-`,
-  },
-
-  classTreeQuery:
-`SELECT distinct ?class ?parent WHERE {
-  { ?class wdt:P279 wd:Q35120. }
-    UNION
-  { ?parent wdt:P279 wd:Q35120.
-    ?class wdt:P279 ?parent. }
-    UNION
-  { ?parent wdt:P279/wdt:P279 wd:Q35120.
-    ?class wdt:P279 ?parent. }
-}`,
-
-  linksInfoQuery:
-`SELECT ?source ?type ?target WHERE {
-  \${linkConfigurations}
-  VALUES (?source) {\${ids}}
-  VALUES (?target) {\${ids}}
-}`,
-
-  elementInfoQuery:
-`CONSTRUCT {
-  ?inst rdf:type ?class .
-  ?inst ?propType ?propValue.
-} WHERE {
-  VALUES (?inst) {\${ids}}
-  OPTIONAL {
-    ?inst wdt:P31 ?class
-  }
-  OPTIONAL {
-    \${propertyConfigurations}
-    FILTER (isLiteral(?propValue))
-  }
-}`,
-
-  imageQueryPattern:
-`{ ?inst ?linkType ?fullImage } UNION { ?inst wdt:P163/wdt:P18 ?fullImage }
-BIND(CONCAT("https://commons.wikimedia.org/w/thumb.php?f=",
-  STRAFTER(STR(?fullImage), "Special:FilePath/"), "&w=200") AS ?image)
-`,
-
-  linkTypesOfQuery:
-`SELECT DISTINCT ?link WHERE {
-  \${linkConfigurations}
-  ?claim <http://wikiba.se/ontology#directClaim> ?link .
-}`,
-
-  linkTypesStatisticsQuery:
-`SELECT (\${linkId} as ?link) (COUNT(?outObject) AS ?outCount) (COUNT(?inObject) AS ?inCount)
-WHERE {
-  {
-    {
-      SELECT DISTINCT ?outObject WHERE {
-        \${linkConfigurationOut}
-        FILTER(ISIRI(?outObject))
-        ?outObject ?someprop ?someobj.
-      }
-      LIMIT 101
-    }
-  } UNION {
-    {
-      SELECT DISTINCT ?inObject WHERE {
-        \${linkConfigurationIn}
-        FILTER(ISIRI(?inObject))
-        ?inObject ?someprop ?someobj.
-      }
-      LIMIT 101
-    }
-  }
-}`,
-
-  filterRefElementLinkPattern: '?claim <http://wikiba.se/ontology#directClaim> ?link .',
-  filterTypePattern: `?inst wdt:P31 ?instType. ?instType wdt:P279* ?class`,
-  filterAdditionalRestriction:
-`FILTER ISIRI(?inst)
-BIND(STR(?inst) as ?strInst)
-FILTER EXISTS { ?inst ?someprop ?someobj }
-`,
-
-  filterElementInfoPattern:
-`OPTIONAL { ?inst wdt:P31 ?foundClass }
-BIND (COALESCE(?foundClass, owl:Thing) as ?class)
-OPTIONAL { ?inst rdfs:label ?label }
-`,
-};
 
 export const OwlNoStatsSettings: SparqlDataProviderSettings = {
   linkConfigurations: [],
@@ -167,20 +73,18 @@ BIND(0 as ?score)
 
   linksInfoQuery:
 `SELECT ?source ?type ?target WHERE {
-  \${linkConfigurations}
   VALUES (?source) {\${ids}}
   VALUES (?target) {\${ids}}
+  \${linkConfigurations}
 }`,
 
   elementInfoQuery:
 `CONSTRUCT {
   ?inst rdf:type ?class .
-  ?inst rdfs:label ?label .
   ?inst ?propType ?propValue.
 } WHERE {
   VALUES (?inst) {\${ids}}
   OPTIONAL { ?inst a ?class }
-  OPTIONAL { ?inst \${dataLabelProperty} ?label }
   OPTIONAL {
     \${propertyConfigurations}
     FILTER (isLiteral(?propValue))
@@ -221,30 +125,7 @@ UNION
   filterElementInfoPattern:
 `OPTIONAL { ?inst rdf:type ?foundClass }
 BIND (COALESCE(?foundClass, owl:Thing) as ?class)
-OPTIONAL { ?inst \${dataLabelProperty} ?label }
 `,
 
   filterAdditionalRestriction: '',
-};
-
-export const OwlStatsSettings: SparqlDataProviderSettings = {
-  ...OwlNoStatsSettings,
-
-  classTreeQuery:
-`SELECT ?class ?instcount ?label ?parent WHERE {
-  {
-    SELECT ?class (count(?inst) as ?instcount)
-    WHERE {
-      ?inst rdf:type ?class.
-      FILTER ISIRI(?class)
-    }
-    GROUP BY ?class
-  }
-  UNION
-  { ?class rdf:type rdfs:Class }
-  UNION
-  { ?class rdf:type owl:Class }
-  OPTIONAL { ?class rdfs:label ?label }
-  OPTIONAL { ?class rdfs:subClassOf ?parent. FILTER ISIRI(?parent) }
-}`,
 };

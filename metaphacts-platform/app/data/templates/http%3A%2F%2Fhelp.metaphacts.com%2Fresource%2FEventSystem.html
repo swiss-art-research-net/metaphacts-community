@@ -1,8 +1,4 @@
 <style>
-  .ontodia-navigator--expanded {
-    display:none;
-  }
-
   .ontodia-paper-area__area {
       overflow: hidden;
   }
@@ -22,15 +18,7 @@
 	</template>
 [[/inline]]
 
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li class="active">Event System</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
@@ -67,27 +55,27 @@
 
     <h3>Trigger component</h3>
     <p>
-      <code><mp-event-trigger /></code> - triggers an event by click on the child component.
+      <code><mp-event-trigger /></code> - triggers an event upon the click on the child component. 
     </p>
     <mp-documentation type="EventTriggerConfig"></mp-documentation>
 
     <h3>Proxy component</h3>
     <p>
-      <code><mp-event-proxy /></code> - listens to a specified event, and when it happens triggers some other event, could be used in case one need to produce some action after another one, e.g. to refresh a component after data saving.
+      <code><mp-event-proxy /></code> - listens to a specified event, and when it occurs, triggers some other event. This component can be used, when one needs to produce some action after another one, e.g. to refresh a component after data saving.
     </p>
     <mp-documentation type="EventProxyConfig"></mp-documentation>
 
     <h3>Target components</h3>
     <p>
-      <code><mp-event-target-refresh /></code> - refreshes the child component when receiving the <code>Component.Refresh</code> event.
+      <code><mp-event-target-refresh /></code> - refreshes the child component upon receiving the <code>Component.Refresh</code> event.
     </p>
     <mp-documentation type="EventTargetRefreshConfig"></mp-documentation>
     <p>
-      <code><mp-event-target-template-render /></code> - refreshes the template component and passes it new properties when receiving the <code>Component.TemplateUpdate</code> event.
+      <code><mp-event-target-template-render /></code> - refreshes the template component and passes it the new properties, when receiving the <code>Component.TemplateUpdate</code> event.
     </p>
     <mp-documentation type="EventTargetTemplateRenderConfig"></mp-documentation>
     <p>
-      <code><mp-event-target-redirect/></code> - Component which provides redirect feature. In response to the event <code>RedirectAction.perform</code> component perform redirect/reload operation where the IRI of the target resource can be passed via parameters or together with event.
+      <code><mp-event-target-redirect/></code> - a component, which provides a redirect feature. In response to the event <code>RedirectAction.perform</code> the component performs a redirect/reload operation where the IRI of the target resource can be passed via parameters or together with the event.
     </p>
     <mp-event-target-redirect
       id='redirect-to-resource'
@@ -97,12 +85,12 @@
 
     <bs-alert bs-style='info'>
       <strong>Info!</strong>
-      Besides the generic events and components, the platform provides specialized ones for different use cases that will be documented here in the future.
+      Besides the generic events and components, the platform provides some specialized ones for different use cases that will be documented here in the future.
     </bs-alert>
 
     <h2>Examples</h2>
     <p>
-      NOTE: In order for this examples to work, please download the <a href="/metaphacts/samples/sample.ttl">sample data</a> (simple right click and save as). You can now load this data into the backing store via the <semantic-link uri="[[resolvePrefix "Admin:DataImportExport"]]"> data import and export</semantic-link> administration page.
+      NOTE: In order for these examples to work, please download the <a href="/metaphacts/samples/sample.ttl">sample data</a> (simple right click and save as). You can now load this data into the backing store via the <semantic-link uri="[[resolvePrefix "Admin:DataImportExport"]]"> data import and export</semantic-link> administration page.
     </p>
     <p>
       [[#if (ask "ASK {  <http://example.org/bob#me> a <http://xmlns.com/foaf/0.1/Person>  }") ]]
@@ -125,6 +113,7 @@
     </mp-code-example>
 
     <h3>Re-render a template with new data using the Component.TemplateUpdate event</h3>
+    <p>This particular example serves also as a good illustration of how you can weave two components (in this case Ontodia and semantic-table) to work together accommodating to a certain use case. Here when the user clicks the node on the graph vizualization or on an item in the table, the platform reacts by rendering the properties of the selected entity in the box to the right.</p>  
     <mp-code-example>
     <![CDATA[
 			<div style='display: flex;'>
@@ -133,9 +122,6 @@
             <bs-tab event-key='1' title='Graph'>
 							<div style='height: 500px'>
                 <ontodia
-                  settings=nostats
-                  hide-panels=true
-                  hide-toolbar=true
                   hide-navigation-confirmation=true
                   query='
                     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -147,9 +133,15 @@
                       }
                     }
                   '
-                  default-node-template='{{> default}}'
 								>
-                  [[> inlineTemplate]]
+									<ontodia-canvas default-node-template='{{> default}}'>
+										[[> inlineTemplate]]
+                    <ontodia-halo></ontodia-halo>
+                    <ontodia-halo-link></ontodia-halo-link>
+                    <ontodia-navigator></ontodia-navigator>
+                    <ontodia-snaplines></ontodia-snaplines>
+                    <ontodia-selection></ontodia-selection>
+									</ontodia-canvas>
                 </ontodia>
 							</div>
           	</bs-tab>
@@ -249,6 +241,7 @@
     </mp-code-example>
 
     <h3>Redirect to the resource after the form has been submitted</h3>
+    <p>This is quite a typical desired behavior of the form in real-world applications: upon saving changes made to the resource via the authoring form to redirect the user to the page where the resource properties are being rendered for the purpose of checking how the changes will look like for other users.</p>
     <mp-code-example>
     <![CDATA[
       <semantic-form
@@ -271,7 +264,7 @@
         <button name='submit'>Create</button>
         <button name='reset'>Reset</button>
       </semantic-form>
-      <mp-event-proxy id='form-resource-created' on-event-type='Form.ResourceUpdated'
+      <mp-event-proxy id='form-resource-created' on-event-type='Form.ResourceCreated'
         proxy-event-type='RedirectAction.perform' proxy-targets='["redirect-to-resource"]'>
       </mp-event-proxy>
       <mp-event-target-redirect
@@ -283,65 +276,7 @@
 
     <h2>Ontodia Events</h2>
     <p>
-    	Ontodia Component supports the following events:
+      See supported events <semantic-link uri='[[resolvePrefix "Help:Ontodia"]]' fragment='interaction'>here</semantic-link>.
     </p>
-    <mp-documentation type="OntodiaEventData" disable-transform-attributes=true hide-required-label=true></mp-documentation>
-    <h3>Example: Focus on an element</h3>
-    <mp-code-example>
-<![CDATA[
-<bs-row>
-	<bs-col md='6'>
-    <semantic-table
-      query='
-          PREFIX person: <http://example.com/person/>
-
-          SELECT ?person WHERE {
-            VALUES (?person) {
-              (person:alice)
-              (person:carol)
-              (person:mike)
-              (person:bob)
-            }
-          }'
-      options='{"showFilter": false}'
-      column-configuration='[{"variableName": "person", "displayName": "Person", "cellTemplate": "{{> template}}"}]'
-    >
-      <template id='template'>
-        <mp-event-trigger id='demo-ontodia-focus' type='Ontodia.FocusOnElement' targets='["demo-ontodia"]' data='{"iri": "{{person.value}}"}'>
-          <a href='{{person.value}}'><mp-label iri='{{person.value}}'></mp-label></a>
-        </mp-event-trigger>
-      </template>
-    </semantic-table>
-  </bs-col>
-  <bs-col md='6' style='height: 500px;'>
-    <ontodia id='demo-ontodia'
-			settings='nostats'
-			query='
-        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX person: <http://example.com/person/>
-
-        CONSTRUCT {
-          ?s ?p ?o
-        } WHERE {
-          {
-            SELECT ?s ?p ?o WHERE {
-              VALUES (?s ?p ?o)
-              {
-                (person:alice foaf:knows person:bob)
-                (person:alice foaf:knows person:carol)
-                (person:carol foaf:knows person:mike)
-                (person:mike foaf:knows person:carol)
-                (person:bob foaf:knows person:carol)
-                (person:alice foaf:knows person:mike)
-              }
-            }
-          }
-  			}
-      '
-    ></ontodia>
-  </bs-col>
-</bs-row>
-]]>
-      </mp-code-example>
   </div>
 </div>

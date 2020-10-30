@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +37,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
-  ReactElement, createElement, ReactNode, Children, Props as ReactProps,
+  ReactElement, createElement, ReactNode, Children, ClassAttributes,
 } from 'react';
 import * as D from 'react-dom-factories';
 import { findDOMNode } from 'react-dom';
-import { List } from 'immutable';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 import { Overlay, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
@@ -38,33 +58,35 @@ import { ClearableInput, ClearableInputProps, RemovableBadge } from 'platform/co
 import { Spinner } from 'platform/components/ui/spinner';
 import { Droppable } from 'platform/components/dnd';
 
-import { KeyedForest, KeyPath } from './KeyedForest';
+import { KeyedForest, KeyPath, Traversable } from './KeyedForest';
 import { TreeSelection, SelectionNode } from './TreeSelection';
 import { SingleFullSubtree, MultipleFullSubtrees } from './SelectionMode';
 import { TreeNode, ForestChange, queryMoreChildren } from './NodeModel';
-import { Node, SparqlNodeModel, sealLazyExpanding } from './SparqlNodeModel';
+import { Node, SparqlNodeModel, TreeQueryPatterns, sealLazyExpanding } from './SparqlNodeModel';
 import { LazyTreeSelector, LazyTreeSelectorProps } from './LazyTreeSelector';
 
 import * as styles from './SemanticTreeInput.scss';
 
-export interface ComplexTreePatterns {
+export interface ComplexTreePatterns extends TreeQueryPatterns {
   /**
-   * Tree roots query with no input and [?item, ?label, ?hasChildren] output variables.
+   * A flag determining whether any special Lucene syntax will be escaped.
+   * When `false` lucene syntax in the user input is not escaped.
+   *
+   * Deprecated: escaping will be applied automatically based on SPARQL query.
+   *
+   * @deprecated Escaping will be applied automatically based on SPARQL query.
    */
-  rootsQuery: string;
+   escapeLuceneSyntax?: boolean;
+
   /**
-   * Children query with [?parent] input and [?item, ?label, ?hasChildren] output variables.
+   * A flag determining whether the user input is tokenized by whitespace into words postfixed
+   * by `*`. E.g. the search for `Hello World` becomes `Hello* World*`.
+   *
+   * Deprecated: tokenization will be applied automatically based on SPARQL query.
+   *
+   * @deprecated Tokenization will be applied automatically based on SPARQL query.
    */
-  childrenQuery: string;
-  /**
-   * Parent nodes query with [?item] inputs through VALUES(...) clause
-   * and [?item, ?parent, ?parentLabel] outputs.
-   */
-  parentsQuery: string;
-  /**
-   * Search query with [?__token__] input and [?item, ?score, ?label, ?hasChildren] outputs.
-   */
-  searchQuery: string;
+   tokenizeLuceneQuery?: boolean;
 }
 
 export interface SemanticTreeInputProps extends ComplexTreePatterns {
@@ -188,26 +210,22 @@ interface SearchResult {
  * '
  *
  * search-query='
- *   prefix bds: <http://www.bigdata.com/rdf/search#>
  *   prefix skos: <http://www.w3.org/2004/02/skos/core#>
  *   select distinct ?item ?score ?label ?hasChildren where {
- *     SERVICE <http://www.bigdata.com/rdf/search#search> {
- *       ?label bds:search ?__token__ ;
- *         bds:relevance ?score .
- *     }
  *     ?item a <http://www.cidoc-crm.org/cidoc-crm/E53_Place> .
- *     ?item skos:prefLabel ?label
+ *     ?item skos:prefLabel ?label .
+ *     FILTER(REGEX(STR(?label), ?__token__, \"i\"))
  *     OPTIONAL {
  *       ?child skos:broader ?item .
  *       ?child a <http://www.cidoc-crm.org/cidoc-crm/E53_Place>
  *     }
  *     BIND(bound(?child) as ?hasChildren)
- *   } order by ?score limit 100
+ *   } order by ?label limit 100
  * '></semantic-tree-input>
  */
 export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> {
   private readonly cancellation = new Cancellation();
-  private search = this.cancellation.derive();
+  private search = new Cancellation();
 
   private overlayHolder: HTMLElement;
   private textInput: ClearableInput;
@@ -276,7 +294,7 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
       return this.restoreTreeFromLeafNodes(bindings);
     }).observe({
       value: forest => {
-        const confirmedSelection = forest as TreeSelection<Node>;
+        const confirmedSelection = TreeSelection.fromForest(forest);
         this.setState({confirmedSelection});
       },
       error: error => console.error('Failed to restore initial tree selection', error),
@@ -285,6 +303,7 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
 
   componentWillUnmount() {
     this.cancellation.cancelAll();
+    this.search.cancelAll();
   }
 
   render() {
@@ -300,9 +319,9 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
         },
         D.div({className: styles.inputAndButtons},
           this.renderTextField(),
-          this.renderBrowseButton(),
+          this.renderBrowseButton()
         ),
-        this.renderOverlay(),
+        this.renderOverlay()
       );
       if (this.props.droppable) {
         return createElement(Droppable,
@@ -325,10 +344,10 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
   }
 
   private setValue(iri: Rdf.Iri) {
-    this.cancellation.map(LabelsService.getLabel(iri)).onValue(label => {
+    this.cancellation.map(this.state.model.loadNode(iri)).onValue(node => {
       const newSelection = TreeSelection.setToSingleTerminal(
         TreeSelection.empty(this.state.forest),
-        {iri, label: Rdf.literal(label)}
+        node
       );
       this.setState({
         mode: {type: 'collapsed'},
@@ -345,7 +364,7 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
   }
 
   private renderTextField() {
-    const textFieldProps: ClearableInputProps & ReactProps<ClearableInput> = {
+    const textFieldProps: ClearableInputProps & ClassAttributes<ClearableInput> = {
       ref: input => this.textInput = input,
       className: styles.textInput,
       inputClassName: styles.input,
@@ -410,7 +429,8 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
           mode: {type: 'search', selection: this.state.confirmedSelection},
         });
 
-        this.search = this.cancellation.deriveAndCancel(this.search);
+        this.search.cancelAll();
+        this.search = new Cancellation();
         this.search.map(this.performSearch(text)).observe({
           value: searchResult => this.setState({searchResult, searching: false}),
           error: error => this.setState({searchResult: {error}, searching: false}),
@@ -434,10 +454,18 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
   }
 
   private performSearch(text: string) {
-    const parametrized = SparqlClient.setBindings(
-      this.state.searchQuery, {'__token__': SparqlUtil.makeLuceneQuery(text)});
+    // tslint:disable-next-line: deprecation
+    const {escapeLuceneSyntax, tokenizeLuceneQuery} = this.props;
+    const defaults = SparqlUtil.findTokenizationDefaults(this.state.searchQuery.where, '__token__');
+    const parametrized = SparqlClient.setBindings(this.state.searchQuery, {
+      '__token__': SparqlUtil.makeLuceneQuery(
+        text,
+        escapeLuceneSyntax ?? defaults.escapeLucene,
+        tokenizeLuceneQuery ?? defaults.tokenize
+      ),
+    });
     return Kefir.later(SEARCH_DELAY_MS, {})
-      .flatMap<SparqlClient.SparqlSelectResult>(() => SparqlClient.select(parametrized))
+      .flatMap(() => SparqlClient.selectStar(parametrized))
       .flatMap<SearchResult>(result =>
         this.restoreTreeFromLeafNodes(result.results.bindings)
         .map(forest => ({
@@ -600,7 +628,7 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
         bsStyle: 'success',
         disabled: !enableSelectionSave,
         onClick: () => this.closeDropdown({saveSelection: true}),
-      }, 'Select'),
+      }, 'Select')
     );
   }
 
@@ -641,7 +669,10 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
         ));
       },
     };
-    return createElement(LazyTreeSelector, config);
+    return createElement(
+      LazyTreeSelector,
+      config as unknown as LazyTreeSelectorProps<Traversable<Node>>
+    );
   }
 
   private renderItem(node: Node, highlightedTerm: string) {
@@ -664,7 +695,7 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
 
     return D.span({
       title: node.iri.value,
-      className: node.error ? styles.error : undefined,
+      className: (node.error || node.dataError) ? styles.error : undefined,
     }, ...parts);
   }
 
@@ -683,16 +714,17 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
   }
 
   private restoreTreeFromLeafNodes(
-    searchResult: SparqlClient.Bindings
+    searchResult: SparqlClient.StarBindings
   ): Kefir.Property<KeyedForest<Node>> {
     const leafs = searchResult.map(
       ({item, score = Rdf.literal('0'), label, hasChildren}): Node => {
-        if (!(item.isIri() && label.isLiteral())) { return undefined; }
-        const certainlyLeaf = hasChildren.isLiteral() && hasChildren.value === 'false';
+        if (!Rdf.isIri(item)) { return undefined; }
+        const certainlyLeaf = Rdf.isLiteral(hasChildren) && hasChildren.value === 'false';
         return {
           iri: item,
-          label: label,
-          score: parseFloat(score.isLiteral() ? score.value : ''),
+          data: {},
+          label: label && Rdf.isLiteral(label) ? label : undefined,
+          score: parseFloat(Rdf.isLiteral(score) ? score.value : ''),
           children: [],
           reachedLimit: certainlyLeaf,
         };

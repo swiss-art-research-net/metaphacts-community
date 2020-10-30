@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,24 +37,28 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { each } from 'lodash';
 import * as SparqlJs from 'sparqljs';
 import { Just } from 'data.maybe';
 
+import { WrappingError } from 'platform/api/async';
 import { Rdf, XsdDataTypeValidation, vocabularies } from 'platform/api/rdf';
-import { SparqlUtil, SparqlClient } from 'platform/api/sparql';
+import {
+  SparqlUtil, SparqlClient, QueryVisitor, VariableBinder, PatternBinder, SparqlTypeGuards,
+} from 'platform/api/sparql';
 
 import { isValidChild } from 'platform/components/utils';
 
 import {
-  SemanticForm, CompositeValue, FieldDefinitionProp, FieldValue, DataState, readyToSubmit,
-  FieldDefinition, normalizeFieldDefinition, FieldError, ErrorKind,
+  SemanticForm, SemanticFormProps, FieldDefinition, FieldDefinitionConfig, FieldDefinitionProp,
+  AtomicValue, CompositeValue, FieldValue, DataState, FieldState, FieldError, ErrorKind,
+  EmptyValue, FieldDependency, MultipleFieldConstraint, normalizeFieldDefinition, readyToSubmit,
 } from 'platform/components/forms';
 
 import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 import { setSearchDomain } from '../commons/Utils';
+import * as Model from 'platform/components/semantic/search/data/search/Model';
 
 export interface SemanticFormBasedQueryConfig {
   /**
@@ -49,21 +75,35 @@ export interface SemanticFormBasedQueryConfig {
    * - `minOccurs` will be overridden to 0 or 1 depending on whether
    * corresponding query argument is optional or not.
    */
-  fields: FieldDefinitionProp[];
+  fields: ReadonlyArray<FieldDefinitionConfig>;
+  /**
+   * An array of multi-field constraints on field values.
+   */
+  fieldConstraints?: ReadonlyArray<MultipleFieldConstraint>;
+  /**
+   * Definitions for dependencies between field values.
+   */
+  fieldDependencies?: ReadonlyArray<FieldDependency>;
 
   /**
    * Specifies the search domain category IRI (full IRI enclosed in <>).
    * Required, if component is used together with facets.
    */
-  domain?: string
+  domain?: string;
 
-  domainField?: string
+  domainField?: string;
 
   /**
    * Enables multi-value injection.
-   * If set to `true`, VALUES clause will be used to parametrize the base query for arguments with more than one value.
-   * If set to `false`, the first value will be used to parametrize the base query by replacement of the binding variable.
-   * To disable multi-value parameterization for particular variables, one can explicitly set `maxOccurs: 1` for corresponding fields.
+   *
+   * If set to `true`, VALUES clause will be used to parametrize
+   * the base query for arguments with more than one value.
+   *
+   * If set to `false`, the first value will be used to parametrize
+   * the base query by replacement of the binding variable.
+   *
+   * To disable multi-value parameterization for particular variables,
+   * one can explicitly set `maxOccurs: 1` for corresponding fields.
    *
    * @default false
    */
@@ -74,16 +114,22 @@ export interface QueryTemplate {
   /**
    * The SPARQL query string, which is supposed to be parameterized, i.e. the query must
    * have query variables as listed in the arguments maps.
+   *
+   * For composite arguments the query should use `FILTER(?argumentId)` as a marker to indicate
+   * where to insert parametrized patterns.
    */
   queryString: string;
   /**
    * A map of query arguments.
-   * The key of every map entry must be equal to the query variable in the SPARQL queryString.
+   *
+   * Each entry key corresponds to the query variable in the SPARQL queryString.
    */
   arguments: { [id: string]: QueryTemplateArgument };
 }
 
-export interface QueryTemplateArgument {
+export type QueryTemplateArgument = AtomicTemplateArgument | CompositeTemplateArgument;
+
+export interface AtomicTemplateArgument {
   /**
    * The RDF datatype of the expected value, i.e. xsd:anyURI, xsd:string, xsd:integer etc.
    */
@@ -93,6 +139,34 @@ export interface QueryTemplateArgument {
    * @default false
    */
   optional?: boolean;
+}
+
+export interface CompositeTemplateArgument {
+  /**
+   * Determines whether parametrized patterns should be combined:
+   *  - `or`: with UNION clause;
+   *  - `and`: nested group intersection;
+   */
+  operator: 'or' | 'and';
+  /**
+   * SPARQL pattern parametrized with nested composite input state.
+   *
+   * To insert parametrized patterns use `FILTER(?argumentId)` marker statement.
+   */
+  pattern: string;
+  /**
+   * Set of variable names to preserve, i.e. do not transform during pattern parameterization.
+   *
+   * In addition, any variable specified or referenced in the projection clause of the base query
+   * is also automatically preserve it's name.
+   */
+  projectedVariables?: ReadonlyArray<string>;
+  /**
+   * A map of query arguments.
+   *
+   * Each entry key corresponds to the query variable in the SPARQL pattern.
+   */
+  arguments: { [id: string]: QueryTemplateArgument };
 }
 
 /**
@@ -150,40 +224,76 @@ interface InnerProps extends SemanticFormBasedQueryConfig {
 }
 
 interface State {
-  readonly definitions?: ReadonlyArray<FieldDefinition>;
+  readonly definitions: ReadonlyArray<FieldDefinition>;
   readonly model?: CompositeValue;
   readonly modelState?: DataState;
+  readonly appliedStructure: boolean;
+  readonly version: number;
+  readonly formHandlers: FormHandlers;
+  readonly isLoading?: boolean;
 }
+
+type FormHandlers = Pick<SemanticFormProps, 'onChanged' | 'onUpdateState'>;
 
 class FormQueryInner extends React.Component<InnerProps, State> {
   private form: SemanticForm;
 
+  private isFirstExecution: boolean;
+
   constructor(props: InnerProps) {
     super(props);
+    const version = 1;
     this.state = {
       definitions: adjustDefinitionsToTemplate({
         queryTemplate: this.props.queryTemplate,
         defs: this.props.fields,
         multi: this.props.multi,
       }),
+      appliedStructure: false,
+      version,
+      formHandlers: this.makeHandlers(version),
+      isLoading: true,
     };
   }
 
-  componentWillReceiveProps(props: InnerProps) {
-    const {context} = props;
-    if (context.searchProfileStore.isJust && context.domain.isNothing) {
-      setSearchDomain(props.domain, context);
+  componentWillReceiveProps(nextProps: InnerProps) {
+    const {context} = this.props;
+    const {context: nextContext} = nextProps;
+    if (nextContext.searchProfileStore.isJust && nextContext.domain.isNothing) {
+      setSearchDomain(nextProps.domain, nextContext);
+    }
+    if (nextContext.baseQueryStructure.isJust &&
+      context.baseQueryStructure.isNothing &&
+      !this.state.isLoading &&
+      !this.isFirstExecution
+    ) {
+      this.setState(state => {
+        const model = applyBaseQueryStructure(
+          state.model, nextContext.baseQueryStructure.get()
+        );
+        const newVersion = state.version + 1;
+        return {
+          model,
+          appliedStructure: true,
+          version: newVersion,
+          formHandlers: this.makeHandlers(newVersion),
+          isLoading: true,
+        };
+      });
     }
   }
 
   render() {
+    const {fieldConstraints, fieldDependencies} = this.props;
+    const {version, definitions, formHandlers, model} = this.state;
     return (
-      <SemanticForm ref={this.setFormRef}
-        fields={this.state.definitions}
-        model={this.state.model || FieldValue.fromLabeled({value: PLACEHOLDER_SUBJECT})}
-        onChanged={this.onFormChanged}
-        onLoaded={this.onFormLoaded}
-        onUpdated={this.onFormStateChanged}>
+      <SemanticForm key={version}
+        ref={this.setFormRef}
+        fields={definitions}
+        fieldConstraints={fieldConstraints}
+        fieldDependencies={fieldDependencies}
+        model={model || FieldValue.fromLabeled({value: PLACEHOLDER_SUBJECT})}
+        {...formHandlers}>
         <div onKeyDown={this.onKeyDown}>
           {this.mapChildren(this.props.children)}
         </div>
@@ -193,6 +303,7 @@ class FormQueryInner extends React.Component<InnerProps, State> {
 
   private onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.keyCode === 13) {
+      e.preventDefault();
       this.executeSearch();
     }
   }
@@ -201,28 +312,66 @@ class FormQueryInner extends React.Component<InnerProps, State> {
     this.form = form;
   }
 
-  private onFormChanged = (model: CompositeValue) => {
-    this.setState({model});
-  }
+  private makeHandlers(version: number): FormHandlers {
+    return {
+      onChanged: model => {
+        this.setState(state => {
+          if (state.version !== version) { return null; }
+          return {model};
+        });
+      },
+      onUpdateState: (modelState, loadedModel) => {
+        if (loadedModel) {
+          let executeSearch = false;
+          this.setState((state, props) => {
+            if (state.version !== version) { return null; }
 
-  private onFormLoaded = (model: CompositeValue) => {
-    const {queryTemplate} = this.props;
+            const {queryTemplate, context} = props;
 
-    const validationErrors: FieldError[] = [];
-    each(queryTemplate.arguments, (argument, argumentId) => {
-      const field = model.definitions.get(argumentId);
-      validateArgumentAndField(argumentId, argument, field, validationErrors);
-    });
+            const validationErrors: FieldError[] = [];
+            each(queryTemplate.arguments, (argument, argumentId) => {
+              const field = loadedModel.definitions.get(argumentId);
+              validateArgumentAndField(argumentId, argument, field, validationErrors);
+            });
+            let model = CompositeValue.set(loadedModel, {
+              errors: loadedModel.errors.concat(validationErrors),
+            });
 
-    this.setState({
-      model: CompositeValue.set(model, {
-        errors: model.errors.concat(validationErrors),
-      })
-    });
-  }
-
-  private onFormStateChanged = (modelState: DataState) => {
-    this.setState({modelState});
+            if (context.baseQueryStructure.isJust && !state.appliedStructure) {
+              model = applyBaseQueryStructure(model, context.baseQueryStructure.get());
+              const newVersion = state.version + 1;
+              return {
+                model,
+                modelState,
+                appliedStructure: true,
+                version: newVersion,
+                formHandlers: this.makeHandlers(newVersion),
+                isLoading: true,
+              };
+            } else {
+              executeSearch = state.appliedStructure;
+              return {
+                model,
+                modelState,
+                appliedStructure: state.appliedStructure,
+                version: state.version,
+                formHandlers: state.formHandlers,
+                isLoading: false
+              };
+            }
+          }, () => {
+            if (executeSearch) {
+              this.executeSearch();
+            }
+          });
+        } else {
+          this.setState(state => {
+            if (state.version !== version) { return null; }
+            return {modelState};
+          });
+        }
+      }
+    };
   }
 
   private mapChildren = (children: React.ReactNode): React.ReactNode => {
@@ -253,19 +402,32 @@ class FormQueryInner extends React.Component<InnerProps, State> {
 
     if (!this.canSubmit(model)) { return; }
 
-    if (this.props.domainField) {
+    const {domainField, queryTemplate, context} = this.props;
+    if (domainField) {
       setSearchDomain(
         '<' + FieldValue.asRdfNode(
-          model.fields.get(this.props.domainField).values.first()
-        ).value + '>', this.props.context
+          FieldState.getFirst(model.fields.get(domainField).values)
+        ).value + '>',
+        context
       );
     }
 
-    const parametrized = parametrizeQueryFromForm(
-      this.props.queryTemplate, model
-    );
+    const parsedQuery = SparqlUtil.parseQuery(queryTemplate.queryString);
+    if (parsedQuery.type !== 'query' || parsedQuery.queryType !== 'SELECT') {
+      throw new Error('Query must be SELECT SPARQL query');
+    }
+    bindQueryArguments(parsedQuery, queryTemplate.arguments, model);
 
-    return this.props.context.setBaseQuery(Just(parametrized));
+    this.isFirstExecution = context.baseQueryStructure.isNothing;
+
+    context.setBaseQuery(Just(parsedQuery));
+    context.setBaseQueryStructure(
+      Just({
+        kind: Model.SearchKind.FormBased,
+        model: model,
+        domain: context.domain.getOrElse(undefined),
+      })
+    );
   }
 
   private canSubmit(model: CompositeValue) {
@@ -274,17 +436,21 @@ class FormQueryInner extends React.Component<InnerProps, State> {
   }
 }
 
+function isAtomicArgument(arg: QueryTemplateArgument): arg is AtomicTemplateArgument {
+  return !(arg as Partial<CompositeTemplateArgument>).pattern;
+}
+
 function adjustDefinitionsToTemplate(
   {queryTemplate, defs, multi}: {
     queryTemplate: QueryTemplate;
-    defs: FieldDefinitionProp[];
+    defs: ReadonlyArray<FieldDefinitionProp>;
     multi: boolean;
   }
 ) {
   return defs.map(normalizeFieldDefinition)
     .map<FieldDefinition>(def => {
       const argument = queryTemplate.arguments[def.id];
-      if (!argument) { return def; }
+      if (!(argument && isAtomicArgument(argument))) { return def; }
       return {...def, maxOccurs: multi ? def.maxOccurs : 1, minOccurs: argument.optional ? 0 : 1};
     });
 }
@@ -313,69 +479,228 @@ function validateArgumentAndField(
     return;
   }
 
-  const argumentType = XsdDataTypeValidation.parseXsdDatatype(argument.type);
-  if (argumentType) {
-    if (!XsdDataTypeValidation.sameXsdDatatype(argumentType.iri, field.xsdDatatype)) {
+  if (isAtomicArgument(argument)) {
+    const argumentType = XsdDataTypeValidation.parseXsdDatatype(argument.type);
+    if (argumentType) {
+      if (!XsdDataTypeValidation.sameXsdDatatype(argumentType.iri, field.xsdDatatype)) {
+        validationErrors.push({
+          kind: ErrorKind.Configuration,
+          message:
+            `Mismatched argument type ${argumentType.iri} and field type ${field.xsdDatatype}`,
+        });
+      }
+    } else {
       validationErrors.push({
         kind: ErrorKind.Configuration,
-        message: `Mismatched argument type ${argumentType.iri} and field type ${field.xsdDatatype}`,
+        message: `Invalid XSD datatype '${argument.type}' for argument '${argumentId}'`,
       });
     }
-  } else {
-    validationErrors.push({
-      kind: ErrorKind.Configuration,
-      message: `Invalid XSD datatype '${argument.type}' for argument '${argumentId}'`,
-    });
   }
 }
 
-function parametrizeQueryFromForm(
-  queryTemplate: QueryTemplate, model: CompositeValue
-): SparqlJs.SelectQuery {
-  let parsedQuery = SparqlUtil.parseQuery(queryTemplate.queryString);
-  if (parsedQuery.type !== 'query' || parsedQuery.queryType !== 'SELECT') {
-    throw new Error('Query must be SELECT SPARQL query');
+function bindQueryArguments(
+  query: SparqlJs.SelectQuery,
+  queryArguments: { [argumentId: string]: QueryTemplateArgument },
+  model: CompositeValue
+) {
+  const bindContext: BindArgumentContext = {
+    prefixes: query.prefixes,
+    projectedVariables: VariableCollector.findProjectedVariables(query),
+  };
+  bindPatternArguments(query, '', queryArguments, model, bindContext);
+}
+// export only for tests
+export const _bindQueryArguments = bindQueryArguments;
+
+class VariableCollector extends QueryVisitor {
+  constructor(readonly foundVariables: Set<string>) {
+    super();
   }
-  const queryArguments = queryTemplate.arguments;
+
+  variableTerm(variable: SparqlJs.VariableTerm): undefined {
+    const name = variable.value;
+    this.foundVariables.add(name);
+    return undefined;
+  }
+
+  static findProjectedVariables(query: SparqlJs.SelectQuery): Set<string> {
+    const visitor = new VariableCollector(new Set<string>());
+    if (!SparqlTypeGuards.isStarProjection(query.variables)) {
+      for (const variable of query.variables) {
+        if (SparqlTypeGuards.isVariable(variable)) {
+          visitor.variableTerm(variable);
+        } else {
+          visitor.expression(variable.expression);
+        }
+      }
+    }
+    return visitor.foundVariables;
+  }
+}
+
+interface BindArgumentContext {
+  readonly prefixes: { [prefix: string]: string };
+  readonly projectedVariables: ReadonlySet<string>;
+}
+
+function bindPatternArguments(
+  target: SparqlJs.BlockPattern | SparqlJs.SelectQuery,
+  variablePostfix: string,
+  blockArguments: { [argumentId: string]: QueryTemplateArgument },
+  model: CompositeValue,
+  context: BindArgumentContext
+): void {
+  const targetBlock: SparqlJs.BlockPattern = target.type === 'query'
+    ? {type: 'group', patterns: target.where}
+    : target;
+
   const bindings: SparqlClient.Dictionary<Rdf.Node> = {};
 
-  parsedQuery = Object.keys(queryArguments).reduce((query, argumentId) => {
-    const argument = queryArguments[argumentId];
+  for (const argumentId of Object.keys(blockArguments)) {
+    const argument = blockArguments[argumentId];
 
     const {values} = model.fields.get(argumentId);
     const {maxOccurs} = model.definitions.get(argumentId);
 
-    if (values.size === 0) {
-      if (argument.optional) { return query; }
-      throw new Error(`No field value for query argument ${argumentId}`);
-    }
-
-    // use variable replacement if an argument has cardinality equals 1 or it has only one value
-    if (maxOccurs === 1 || values.size === 1) {
-      const rdfNode = FieldValue.asRdfNode(values.first());
-      if (!rdfNode) {
-        if (argument.optional) { return query; }
-        throw new Error(`Empty field value for query argument ${argumentId}`);
+    if (isAtomicArgument(argument)) {
+      if (values.length === 0) {
+        if (!argument.optional) {
+          throw new Error(`No field value for query argument '${argumentId}'`);
+        }
+      } else if (maxOccurs === 1 || values.length === 1) {
+        // use variable replacement if an argument has
+        // cardinality === 1 or it has only one value
+        const rdfNode = FieldValue.asRdfNode(FieldState.getFirst(values));
+        if (!rdfNode) {
+          if (!argument.optional) {
+            throw new Error(`Empty field value for query argument '${argumentId}'`);
+          }
+        }
+        bindings[argumentId] = rdfNode;
+      } else {
+        const parameters: SparqlClient.Dictionary<Rdf.Node>[] = [];
+        values.forEach(value => {
+          const rdfNode = FieldValue.asRdfNode(value);
+          if (!rdfNode) {
+            if (argument.optional) { return; }
+            throw new Error(`Empty field value for query argument '${argumentId}'`);
+          }
+          parameters.push({[argumentId]: rdfNode});
+        });
+        SparqlClient.prependValuesClause(targetBlock.patterns, parameters);
       }
-      bindings[argumentId] = rdfNode;
-
-      return query;
+    } else {
+      bindCompositeArgument(targetBlock, variablePostfix, argumentId, argument, values, context);
     }
+  }
 
-    const parameters: SparqlClient.Dictionary<Rdf.Node>[] = [];
-    values.forEach(value => {
-      const rdfNode = FieldValue.asRdfNode(value);
-      if (!rdfNode) {
-        if (argument.optional) { return; }
-        throw new Error(`Empty field value for query argument ${argumentId}`);
-      }
-      parameters.push({[argumentId]: rdfNode});
-    });
+  const binder = new VariableBinder(bindings);
+  if (target.type === 'query') {
+    binder.select(target);
+  } else {
+    binder.pattern(targetBlock);
+  }
+}
 
-    return SparqlClient.prepareParsedQuery(parameters)(query);
-  }, parsedQuery);
+function bindCompositeArgument(
+  targetBlock: SparqlJs.BlockPattern,
+  variablePostfix: string,
+  argumentId: string,
+  argument: CompositeTemplateArgument,
+  values: ReadonlyArray<FieldValue>,
+  context: BindArgumentContext
+): void {
+  const preservedVariables = new Set<string>(argument.projectedVariables || []);
+  context.projectedVariables.forEach(v => preservedVariables.add(v));
 
-  return SparqlClient.setBindings(parsedQuery, bindings);
+  const nestedGroups: SparqlJs.BlockPattern[] = [];
+  values.forEach((value, index) => {
+    if (!FieldValue.isComposite(value)) {
+      throw new Error(
+        `Failed to parametrize composite argument '${argumentId}' by non-composite value`
+      );
+    }
+    if (isDeeplyEmptyValue(value)) {
+      // skip completely empty composite (e.g. each field has no actual values)
+      return;
+    }
+    let patterns: SparqlJs.Pattern[];
+    try {
+      patterns = SparqlUtil.parsePatterns(argument.pattern, context.prefixes);
+    } catch (err) {
+      throw new WrappingError(`Failed to parse SPARQL pattern for argument '${argumentId}'`, err);
+    }
+    const nestedGroup: SparqlJs.BlockPattern = {type: 'group', patterns};
+    const newPostfix = `${variablePostfix}_${index}`;
+    bindPatternArguments(nestedGroup, newPostfix, argument.arguments, value, context);
+    if (nestedGroup.patterns.length > 0) {
+      new VariablePostfixBinder(newPostfix, preservedVariables).pattern(nestedGroup);
+      nestedGroups.push(nestedGroup);
+    }
+  });
+
+  let resultPatterns: SparqlJs.Pattern[];
+  if (argument.operator === 'or') {
+    const union: SparqlJs.BlockPattern = {
+      type: 'union',
+      patterns: nestedGroups.map(
+        group => group.patterns.length === 1 ? group.patterns[0] : group
+      )
+    };
+    resultPatterns = [union];
+  } else {
+    resultPatterns = nestedGroups;
+  }
+
+  new PatternBinder(argumentId, resultPatterns).pattern(targetBlock);
+}
+
+class VariablePostfixBinder extends QueryVisitor {
+  constructor(
+    private readonly postfix: string,
+    private readonly except: ReadonlySet<string>
+  ) {
+    super();
+  }
+
+  variableTerm(variable: SparqlJs.VariableTerm) {
+    const name = variable.value;
+    if (this.except.has(name)) {
+      return undefined;
+    }
+    return Rdf.DATA_FACTORY.variable(name + this.postfix);
+  }
+}
+
+function isDeeplyEmptyValue(value: FieldValue): boolean {
+  switch (value.type) {
+    case EmptyValue.type:
+      return true;
+    case AtomicValue.type:
+      return false;
+    case CompositeValue.type:
+      return value.fields.every(
+        state => state.values.every(isDeeplyEmptyValue)
+      );
+  }
+  FieldValue.unknownFieldType(value);
+}
+
+function applyBaseQueryStructure(model: CompositeValue, search: Model.Search): CompositeValue {
+  // Do not apply the state of another search
+  // if there are multiple form based searches on the same page
+  if (search.kind !== Model.SearchKind.FormBased ||
+    model.definitions.size !== search.model.fields.size) {
+    return model;
+  }
+  for (const definition of model.definitions.toArray()) {
+    if (!search.model.fields.has(definition.id)) {
+      return model;
+    }
+  }
+  return CompositeValue.set(model, {
+    fields: search.model.fields,
+  });
 }
 
 export default FormQuery;

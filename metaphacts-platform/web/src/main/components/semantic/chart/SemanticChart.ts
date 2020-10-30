@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,8 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import { createElement, Props } from 'react';
+import { createElement, Props, HTMLAttributes } from 'react';
 import * as D from 'react-dom-factories';
 import { Dictionary, find } from 'lodash';
 import * as Kefir from 'kefir';
@@ -190,7 +211,7 @@ export class SemanticChart extends Component<SemanticChartProps, State> {
       const rootProps = {
         className: CLASS_NAME,
         'data-type': this.state.selectedType,
-        ref: root => { this.root = root; },
+        ref: (root: HTMLDivElement | null) => { this.root = root; },
       };
       return D.div(
         rootProps,
@@ -214,12 +235,12 @@ export function buildData(
   const dataPoints = queryResult.results.bindings;
 
   const dataSets: DataSet[] = config.multiDataSet
-    ? _(dataPoints).map(point => {
+    ? _(dataPoints).map((point: DataPoint) => {
         const node = point[config.multiDataSet.dataSetVariable];
         return {
           id: node.value,
-          iri: node.isIri() ? node : null,
-          name: node.isLiteral() ? node.value : null,
+          iri: Rdf.isIri(node) ? node : null,
+          name: Rdf.isLiteral(node) ? node.value : null,
           mapping: config.multiDataSet,
         };
       }).uniqBy(set => set.id).sortBy(set => set.id).value()
@@ -246,7 +267,9 @@ export function buildData(
   }
 }
 
-function buildCategorialDataInPlace(dataPoints: DataPoint[], dataSets: DataSet[]): BuiltData {
+function buildCategorialDataInPlace(
+  dataPoints: ReadonlyArray<DataPoint>, dataSets: DataSet[]
+): BuiltData {
   const categories: Rdf.Node[] = [];
   const groupedByKey: { [key: string]: DataPoint[] } = {};
 
@@ -289,13 +312,13 @@ function fetchLabels(data: BuiltData): Kefir.Property<Dictionary<string>> {
     for (const point of set.points) {
       if (point) {
         const key = extractKey(set, point);
-        if (key && key.isIri()) { iris.push(key); }
+        if (key && Rdf.isIri(key)) { iris.push(key); }
       }
     }
   }
   if (data.categories) {
     for (const category of data.categories) {
-      if (category.isIri()) { iris.push(category); }
+      if (Rdf.isIri(category)) { iris.push(category); }
     }
   }
   return getLabels(iris).map(labels => labels.mapKeys(k => k.value).toObject());

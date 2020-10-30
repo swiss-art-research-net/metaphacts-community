@@ -1,0 +1,50 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "height": {
+            "description": "Fits image in the respective height.",
+            "type": [
+                "string",
+                "number"
+            ]
+        },
+        "iiifServerUrl": {
+            "description": "IIIF server URL.",
+            "type": "string"
+        },
+        "imageIdPattern": {
+            "description": "Pattern to generate image ID from image IRI.",
+            "type": "string"
+        },
+        "imageOrRegion": {
+            "description": "Image or region IRI.",
+            "type": "string"
+        },
+        "preserveImageSize": {
+            "description": "Preserves aspect ratio of the image.",
+            "type": "boolean"
+        },
+        "width": {
+            "description": "Fits image in the respective width.",
+            "type": [
+                "string",
+                "number"
+            ]
+        }
+    },
+    "propertyOrder": [
+        "imageOrRegion",
+        "imageIdPattern",
+        "iiifServerUrl",
+        "width",
+        "height",
+        "preserveImageSize"
+    ],
+    "required": [
+        "iiifServerUrl",
+        "imageIdPattern",
+        "imageOrRegion"
+    ],
+    "type": "object"
+}
+

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { map, reduce, filter, every, some, cloneDeep } from 'lodash';
 import { Set, Map } from 'immutable';
 import * as Kefir from 'kefir';
@@ -30,14 +51,15 @@ import {
   SemanticGraphConfig, configWithHidePredicates, configWithShowPredicates, Stylesheets,
 } from './Config';
 
-const DEFAULT_THUMBNAIL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const DEFAULT_THUMBNAIL =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 /**
  * Mapping from Node to parent Node. It is used to construct compound nodes in Cytoscape.
  *
  * Typically it is mapping from some Iri to corresponding named graph Iri.
  */
-type GroupsMap = Map<Rdf.Node, Set<Rdf.Node>>;
+type GroupsMap = Map<Rdf.Term, Set<Rdf.Node>>;
 
 interface ResourceDataDefinition {
   node: Rdf.Node;
@@ -150,7 +172,7 @@ function fetchLabels(context?: QueryContext) {
     return fetchLabelsForResources(elements, context).map(
       labels => getLabelsForLiterals(elements).merge(labels)
     );
-  }
+  };
 }
 
 /**
@@ -159,7 +181,7 @@ function fetchLabels(context?: QueryContext) {
 function getLabelsForLiterals(
   elements: ResourceCytoscapeElement[]
 ): Map<Rdf.Node, string> {
-  const elementsWithLiterals = elements.filter(e => e.data.node.isLiteral);
+  const elementsWithLiterals = elements.filter(e => Rdf.isLiteral(e.data.node));
   return Map(
     map<ResourceCytoscapeElement, [Rdf.Node, string]>(
       elementsWithLiterals, e => [e.data.node, e.data.node.value]
@@ -173,7 +195,7 @@ function getLabelsForLiterals(
 function fetchLabelsForResources(
   elements: ResourceCytoscapeElement[], context?: QueryContext
 ): Kefir.Property<Map<Rdf.Iri, string>> {
-  const elementsWithIri = filter(elements, e => e.data.node.isIri());
+  const elementsWithIri = filter(elements, e => Rdf.isIri(e.data.node));
   const iris = map(elementsWithIri, e => e.data.node as Rdf.Iri);
   return getLabels(iris, {context});
 }
@@ -185,7 +207,7 @@ function fetchThumbnails(context?: QueryContext) {
   return function(
     elements: ResourceCytoscapeElement[]
   ): Kefir.Property<Map<Rdf.Node, string>> {
-    const elementsWithIri = filter(elements, e => e.group === 'nodes' && e.data.node.isIri());
+    const elementsWithIri = filter(elements, e => e.group === 'nodes' && Rdf.isIri(e.data.node));
     const iris = map(elementsWithIri, e => e.data.node as Rdf.Iri);
     return getThumbnails(iris, {context});
   };
@@ -197,7 +219,7 @@ function fetchThumbnails(context?: QueryContext) {
  */
 export function getGraphData(
   config: SemanticGraphConfig,
-  context: QueryContext,
+  context: QueryContext
 ): Kefir.Property<ResourceCytoscapeElement[]> {
   return SparqlClient.construct(config.query, {context}).map(
     prepareGraphData(config)
@@ -211,8 +233,8 @@ export function getGraphData(
  */
 export function prepareGraphData(
   config: SemanticGraphConfig
-): (triples: Rdf.Triple[]) => ResourceCytoscapeElement[] {
-  return (triples: Rdf.Triple[]): ResourceCytoscapeElement[] => {
+): (triples: Rdf.Quad[]) => ResourceCytoscapeElement[] {
+  return (triples: Rdf.Quad[]): ResourceCytoscapeElement[] => {
     const triplesToShow = filter(triples, getTriplesFilterFunction(config));
     const groups = getGroups(config, triples);
     const nodes = buildNodes(triplesToShow, triples, groups);
@@ -230,7 +252,7 @@ export function prepareGraphData(
  * @see constructGroups
  */
 function getGroups(
-  config: SemanticGraphConfig, triples: Rdf.Triple[]
+  config: SemanticGraphConfig, triples: Rdf.Quad[]
 ): GroupsMap {
   if (config.groupBy) {
     return constructGroups(triples, Rdf.fullIri(config.groupBy));
@@ -245,13 +267,14 @@ function getGroups(
  * @see GroupsMap
  */
 function constructGroups(
-  triples: Rdf.Triple[], groupByPredicate: Rdf.Iri
+  triples: Rdf.Quad[], groupByPredicate: Rdf.Iri
 ): GroupsMap {
   const groupByStatements =
     filter(triples, triple => triple.p.equals(groupByPredicate));
   return reduce(
     groupByStatements,
-    (map: GroupsMap, triple: Rdf.Triple) => {
+    (map: GroupsMap, triple: Rdf.Quad) => {
+      if (!Rdf.isNode(triple.o)) { return map; }
       const groups = map.has(triple.s) ? map.get(triple.s) : Set<Rdf.Node>();
       return map.set(triple.s, groups.add(triple.o));
     },
@@ -262,19 +285,19 @@ function constructGroups(
 
 function getTriplesFilterFunction(
   config: SemanticGraphConfig
-): (triple: Rdf.Triple) => boolean {
+): (triple: Rdf.Quad) => boolean {
   // Order is important because property hidePredicates has default value.
   // configWithHidePredicates(config) is always true.
   // So if change the order then the second part will not be executed.
   if (configWithShowPredicates(config)) {
     // Function to filter only triples which use predicates from 'showPredicates' array.
     const showPredicates = map(config.showPredicates, Rdf.fullIri);
-    return (triple: Rdf.Triple) =>
+    return (triple: Rdf.Quad) =>
       some(showPredicates, predicate => predicate.equals(triple.p));
   } else if (configWithHidePredicates(config)) {
     const hidePredicates = map(config.hidePredicates, Rdf.fullIri);
     // Function to filter only triples which do not use predicates from 'hidePredicates' array.
-    return (triple: Rdf.Triple) =>
+    return (triple: Rdf.Quad) =>
       every(hidePredicates, predicate => predicate.equals(triple.p) === false);
   } else {
     return () => true;
@@ -282,10 +305,17 @@ function getTriplesFilterFunction(
 }
 
 function buildNodes(
-  triplesToShow: Rdf.Triple[], allTriples: Rdf.Triple[], groupsMap: GroupsMap
+  triplesToShow: Rdf.Quad[], allTriples: Rdf.Quad[], groupsMap: GroupsMap
 ): ResourceCytoscapeNode[] {
-  const addNode =
-    (acc: Set<Rdf.Node>, triple: Rdf.Triple) => acc.add(triple.s).add(triple.o);
+  const addNode = (acc: Set<Rdf.Node>, triple: Rdf.Quad) => {
+    if (Rdf.isNode(triple.s)) {
+      acc = acc.add(triple.s);
+    }
+    if (Rdf.isNode(triple.o)) {
+      acc = acc.add(triple.o);
+    }
+    return acc;
+  };
   const resources = reduce(triplesToShow, addNode, Set<Rdf.Node>());
 
   const groups =
@@ -299,15 +329,15 @@ function buildNodes(
 }
 
 function buildEgdes(
-  triplesToShow: Rdf.Triple[], allTriples: Rdf.Triple[], groupsMap: GroupsMap
+  triplesToShow: Rdf.Quad[], allTriples: Rdf.Quad[], groupsMap: GroupsMap
 ): ResourceCytoscapeEdge[] {
   return Set(triplesToShow).flatMap(
-    (triple: Rdf.Triple) => createGraphResourceEdges(triple, allTriples, groupsMap)
+    (triple: Rdf.Quad) => createGraphResourceEdges(triple, allTriples, groupsMap)
   ).toArray();
 }
 
 function createGraphResourceNodes(
-  node: Rdf.Node, triples: Rdf.Triple[],  nodeGroups: Set<Rdf.Node> | undefined, groupsMap: GroupsMap
+  node: Rdf.Node, triples: Rdf.Quad[],  nodeGroups: Set<Rdf.Node> | undefined, groupsMap: GroupsMap
 ): Set<ResourceCytoscapeNode> {
   return nodeGroups ? nodeGroups.map(
     group => createGraphNode(node, triples, groupsMap, group)
@@ -315,7 +345,7 @@ function createGraphResourceNodes(
 }
 
 function createGraphNode(
-  node: Rdf.Node, triples: Rdf.Triple[],
+  node: Rdf.Node, triples: Rdf.Quad[],
   groupsMap: GroupsMap, nodeGroup: Rdf.Node | undefined = undefined
 ): ResourceCytoscapeNode {
   /**
@@ -333,23 +363,23 @@ function createGraphNode(
       parent: nodeGroup ? createNodeId(nodeGroup, nodeGroupGroup) : undefined,
       node: node,
       resource: node.toString(),
-      isIri: node.isIri(),
-      isLiteral: node.isLiteral(),
-      isBnode: node.isBnode(),
+      isIri: Rdf.isIri(node),
+      isLiteral: Rdf.isLiteral(node),
+      isBnode: Rdf.isBnode(node),
     },
   };
   return addPropertiesToTheElementData(triples, cytoscapeNode);
 }
 
-function createNodeId(node: Rdf.Node, nodeGroup: Rdf.Node | undefined = undefined): string {
+function createNodeId(node: Rdf.Term, nodeGroup: Rdf.Term | undefined = undefined): string {
   return nodeGroup && !nodeGroup.equals(GLOBAL_GROUP) ?
     nodeGroup.toString() + node.toString() : node.toString();
 }
 
-
 function createGraphResourceEdges(
-  triple: Rdf.Triple, triples: Rdf.Triple[], groupsMap: GroupsMap
+  triple: Rdf.Quad, triples: Rdf.Quad[], groupsMap: GroupsMap
 ): Set<ResourceCytoscapeEdge> {
+  if (!isGroundedQuad(triple)) { return Set.of(); }
   if (groupsMap.isEmpty()) {
     // when we don't have any compound nodes, generate simple single edge.
     return Set.of(
@@ -360,6 +390,11 @@ function createGraphResourceEdges(
   }
 }
 
+type GroundedQuad = Rdf.Quad & { readonly p: Rdf.Iri };
+function isGroundedQuad(quad: Rdf.Quad): quad is GroundedQuad {
+  return Rdf.isIri(quad.p);
+}
+
 /*
  * When we have compound nodes, situation is a little bit tricky, because node can be
  * part of multiple groups, so we need to make sure that it is properly visualized in
@@ -368,7 +403,7 @@ function createGraphResourceEdges(
  * We duplicate node in all compound nodes that it belongs to.
  */
 function createEdgesWithGroups(
-  triple: Rdf.Triple, triples: Rdf.Triple[], groupsMap: GroupsMap
+  triple: GroundedQuad, triples: Rdf.Quad[], groupsMap: GroupsMap
 ): Set<ResourceCytoscapeEdge> {
   const subjectGroups = groupsMap.has(triple.s) ? groupsMap.get(triple.s) : NO_GROUP_SET;
   const objectGroups = groupsMap.has(triple.o) ? groupsMap.get(triple.o) : NO_GROUP_SET;
@@ -395,7 +430,7 @@ function createEdgesWithGroups(
 }
 
 function createGraphEdge(
-  subjectNodeId: string, objectNodeId: string, predicate: Rdf.Node, triples: Rdf.Triple[]
+  subjectNodeId: string, objectNodeId: string, predicate: Rdf.Node, triples: Rdf.Quad[]
 ): ResourceCytoscapeEdge {
   const cytoscapeEdge: ResourceCytoscapeEdge = {
     group: 'edges',
@@ -411,11 +446,11 @@ function createGraphEdge(
 }
 
 function addPropertiesToTheElementData<T extends ResourceCytoscapeElement>(
-  triples: Rdf.Triple[], cytoscapeElement: T
+  triples: Rdf.Quad[], cytoscapeElement: T
 ): T {
   return reduce(
     triples,
-    (resultingNode: T, triple: Rdf.Triple) => {
+    (resultingNode: T, triple: Rdf.Quad) => {
       if (triple.s.equals(resultingNode.data.node)) {
         return updateElementPropertyValue(resultingNode, triple);
       } else {
@@ -426,11 +461,16 @@ function addPropertiesToTheElementData<T extends ResourceCytoscapeElement>(
 }
 
 function updateElementPropertyValue<T extends ResourceCytoscapeElement>(
-  node: T, triple: Rdf.Triple
+  node: T, triple: Rdf.Quad
 ): T {
-  const propertyValues: Array<Rdf.Node> = node.data[triple.p.toString()] || [];
+  if (!Rdf.isNode(triple.o)) {
+    return node;
+  }
+  type ByPredicateNodeMap = { [key: string]: Rdf.Node[] };
+  const propertyValues =
+    (node.data as ByPredicateNodeMap)[triple.p.toString()] || [];
   propertyValues.push(triple.o);
-  node.data[triple.p.toString()] = propertyValues;
+  (node.data as ByPredicateNodeMap)[triple.p.toString()] = propertyValues;
 
   /*
    * For all outgoing RDF properties we generate special data properties for cytoscape: "->URI".
@@ -438,6 +478,7 @@ function updateElementPropertyValue<T extends ResourceCytoscapeElement>(
    * E.g to select all nodes which have rdf:type owl:Thing:
    * '-><http://www.w3.org/1999/02/22-rdf-syntax-ns#type>'*='<http://www.w3.org/2002/07/owl#Thing>'
    */
-  node.data['->' + triple.p.toString()] = propertyValues.join(' ');
+  type BySelectorMap = { [key: string]: string };
+  (node.data as BySelectorMap)['->' + triple.p.toString()] = propertyValues.join(' ');
   return node;
 }

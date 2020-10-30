@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as _ from 'lodash';
 import * as Kefir from 'kefir';
 import * as maybe from 'data.maybe';
@@ -75,7 +74,7 @@ export function queryIIIFImageOrRegion(
     .flatMap(bindings => {
       const binding = bindings[0];
       const {type, imageIRI, imageID} = binding;
-      if (!type || !imageIRI.isIri()) {
+      if (!type || !Rdf.isIri(imageIRI)) {
         return Kefir.constantError<any>(`Image or region ${imageOrRegion} not found.`);
       } else if (!imageID || imageID.value.indexOf('/') >= 0) {
         return Kefir.constantError<any>(
@@ -116,7 +115,7 @@ function searchRepositoriesForImage(
 ) {
   return Kefir.combine(
     repositories.map(repository => getImageBindings(imageOrRegion, imageIdPattern, repository))
-  ).flatMap(
+  ).flatMap<SparqlClient.Bindings>(
     images => {
       const imageBindings = _.filter(images, bindigs => !SparqlUtil.isSelectResultEmpty(bindigs));
       if (_.isEmpty(imageBindings)) {

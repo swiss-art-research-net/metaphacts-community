@@ -1,0 +1,101 @@
+[[!--
+To use this set of presets copy following line to your file:
+[[> "http://www.metaphacts.com/resource/assets/OntodiaVocabularyViewPreset"]]
+--]]
+
+[[#*inline "VocabularyGraphBreadcrumbs"]]
+[[!-- Parameters: diagramIri and vocabularyIri (from settings) --]]
+  <semantic-context repository='default'>
+    <ol class="page-breadcrumb">
+      <li>
+        <mp-link title="Home" url="/">Home</mp-link>
+      </li>
+      <li>
+        <semantic-link iri='[[resolvePrefix "Assets:"]]'>Assets</semantic-link>
+      </li>
+      <li>
+        <semantic-link iri='[[resolvePrefix "Assets:Vocabularies"]]'>Vocabularies</semantic-link>
+      </li>
+      [[#if diagramIri]]
+      <li>
+        <semantic-link iri='{{vocabularyIri.value}}' urlqueryparam-view="page"></semantic-link>
+      </li>
+      <semantic-context repository='assets'>
+        <li class="active"><mp-label iri="[[diagramIri]]"></mp-label></li>
+      </semantic-context>
+      [[else]]
+      <li class="active">
+        <mp-label iri='{{vocabularyIri.value}}'></mp-label>
+      </li>
+      [[/if]]
+    </ol>
+  </semantic-context>
+[[/inline]]
+
+[[#*inline "VocabularyGraphSettings"]]
+[[!-- Parameters: (diagramIri or vocabularyIri) --]]
+[[!-- Output: graphIri, vocabularyIri --]]
+  <semantic-context repository='assets'>
+    <semantic-query query='SELECT ?vocabularyIri WHERE {
+        [[#if diagramIri]]
+          <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramForVocabulary> ?vocabularyIri .
+        [[else]]
+          BIND (<[[vocabularyIri]]> as ?vocabularyIri) .
+        [[/if]]
+      } LIMIT 1'
+      template='{{> vocabularyIriTemplate
+        vocabularyIri=bindings.0.vocabularyIri}}'>
+        <template id='vocabularyIriTemplate'>
+          <semantic-context repository='default'>
+            <semantic-query query='SELECT ?graphIri WHERE {
+                GRAPH ?graphIri {
+                  ?subj ?pred {{vocabularyIri}}.
+                }
+              } LIMIT 1'
+              template='{{> vocabularyGraphTemplate
+                graphIri=bindings.0.graphIri
+                vocabularyIri=vocabularyIri}}'>
+                <template id='vocabularyGraphTemplate'>
+                  [[> @partial-block]]
+                </template>
+            </semantic-query>
+          </semantic-context>
+        </template>
+    </semantic-query>
+  </semantic-context>
+[[/inline]]
+
+[[#*inline "VocabularyGraphBody"]]
+[[!-- Parameters: (diagramIri or vocabularyIri), optionally id --]]
+  <ontodia
+    id='[[#if id]][[id]][[/if]]'
+    metadata='<> <http://www.metaphacts.com/ontologies/platform#diagramForVocabulary> {{vocabularyIri}} .
+    <> <http://www.metaphacts.com/ontologies/platform#diagramKind> <http://www.metaphacts.com/ontologies/platform#VocabularyDiagram> .'
+    [[#if diagramIri]]diagram="[[diagramIri]]"[[else]]
+    [[> NewVocabularyGraphParameters]]
+    [[/if]]
+    request-links-on-init='false'
+    [[> "http://www.metaphacts.com/resource/assets/OntodiaGlobalSettings" ]]
+    [[> OntodiaClassAndLinksCustomization ]]
+    >
+    <ontodia-data-providers>
+      <ontodia-sparql-provider
+        [[> graphOnlyClasses graphIri="{{{graphIri}}}" otherGraphMarkerIri="Platform:foreign-node"]]>
+      </ontodia-sparql-provider>
+    </ontodia-data-providers>
+    [[#> show-if-editable]]
+      [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace"
+        databaseTabTitle='Vocabulary classes'
+        skosLayoutAsMain=true
+        focusView=true
+      ]]
+    [[/show-if-editable]]
+    [[#> show-if-read-only]]
+      [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace"
+        databaseTabTitle='Vocabulary classes'
+        readonly=true
+        skosLayoutAsMain=true
+      ]]
+    [[/show-if-read-only]]
+  </ontodia>
+[[/inline]]

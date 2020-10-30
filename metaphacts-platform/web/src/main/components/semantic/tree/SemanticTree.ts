@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as _ from 'lodash';
 import { Props as ReactProps, createElement } from 'react';
 import * as D from 'react-dom-factories';
@@ -25,6 +46,7 @@ import { BuiltInEvents, trigger } from 'platform/api/events';
 import { Rdf }  from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Component } from 'platform/api/components';
+import { Cancellation } from 'platform/api/async';
 
 import { breakGraphCycles, findRoots } from 'platform/components/semantic/lazy-tree';
 import { ErrorNotification } from 'platform/components/ui/notification';
@@ -75,14 +97,12 @@ export interface SemanticTreeConfig {
    * which is used to render every tree node. Template has access to all projection
    * variables for a single result tuple.
    * By default `<semantic-link>` component is used for node visualization.
-   * **The template MUST have a single HTML root element.**
    */
   tupleTemplate?: string;
 
   /**
    * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>
    * which is applied when the query returns no results.
-   * **The template MUST have a single HTML root element.**
    */
   noResultTemplate?: string;
 
@@ -102,7 +122,7 @@ export interface SemanticTreeConfig {
 
   /**
    * SPARQL Select projection variable name that is used to represent
-   * **child** value in parent-child relation.
+   * **child** value in parent-child relation
    * @default 'node'
    */
   nodeBindingName?: string;
@@ -145,14 +165,13 @@ export interface ProviderProps {
   tupleTemplate: string;
   onNodeClick?: (node: TreeNode) => void;
   nodeData: ReadonlyArray<TreeNode>;
-  nodeKey?: string;
   collapsed: boolean;
   keysOpened: ReadonlyArray<string>;
 }
 
 export interface TreeNode {
   readonly key: string;
-  readonly data: SparqlClient.Binding;
+  readonly data: SparqlClient.StarBinding;
   readonly children: ReadonlyArray<TreeNode>;
 }
 
@@ -163,13 +182,13 @@ interface State {
 }
 
 export class SemanticTree extends Component<Props, State> {
+  private fetchOperation = Cancellation.cancelled;
   static readonly defaultProps: Partial<Props> = {
     provider: 'html',
     parentBindingName: 'parent',
     nodeBindingName: 'node',
     roots: [],
     keysOpened: [],
-    tupleTemplate: '<semantic-link iri="{{node.value}}"></semantic-link>',
   };
 
   constructor(props: Props, context: any) {
@@ -180,21 +199,33 @@ export class SemanticTree extends Component<Props, State> {
     };
   }
 
-  public componentDidMount() {
+  componentDidUpdate(prevProps: Props) {
+    if (this.props.query !== prevProps.query) {
+      this.fetchData();
+    }
+  }
+
+  private fetchData = () => {
+    this.setState({
+      isLoading: true,
+    });
     const context = this.context.semanticContext;
-    const stream = SparqlClient.select(this.props.query, {context});
-    stream
-      .onError(
-        errorMessage => this.setState({isLoading: false, errorMessage: maybe.Just(errorMessage)})
-      )
-      .onValue(
-        this.processSparqlResult
-      )
-      .onEnd(() => {
+    const stream = SparqlClient.selectStar(this.props.query, {context});
+    this.fetchOperation.cancelAll();
+    this.fetchOperation = new Cancellation();
+    this.fetchOperation.map(
+     stream
+    ).observe({
+      value: this.processSparqlResult,
+      error: errorMessage => this.setState({
+        isLoading: false, errorMessage: maybe.Just(errorMessage)
+      }),
+      end: () => {
         if (this.props.id) {
           trigger({eventType: BuiltInEvents.ComponentLoaded, source: this.props.id});
         }
-      });
+      }
+    });
 
     if (this.props.id) {
       trigger({
@@ -203,6 +234,14 @@ export class SemanticTree extends Component<Props, State> {
         data: stream,
       });
     }
+  }
+
+  componentWillUnmount() {
+    this.fetchOperation.cancelAll();
+  }
+
+  public componentDidMount() {
+    this.fetchData();
   }
 
   public render() {
@@ -219,10 +258,9 @@ export class SemanticTree extends Component<Props, State> {
     }
 
     const providerProps: ProviderProps = {
-      tupleTemplate: this.handleDeprecatedLayout(),
+      tupleTemplate: this.getTupleTemplate(),
       onNodeClick: this.onNodeClick,
       nodeData: data,
-      nodeKey: 'key',
       collapsed: this.props.collapsed,
       keysOpened: this.props.keysOpened,
     };
@@ -245,7 +283,7 @@ export class SemanticTree extends Component<Props, State> {
     return D.div({}, createElement(Tree, providerProps));
   }
 
-  private processSparqlResult = (res: SparqlClient.SparqlSelectResult): void => {
+  private processSparqlResult = (res: SparqlClient.SparqlStarSelectResult): void => {
     if (SparqlUtil.isSelectResultEmpty(res)) {
         this.setState({data: [], isLoading: false});
         return;
@@ -295,15 +333,22 @@ export class SemanticTree extends Component<Props, State> {
       console.warn(
         'layout property in semantic-tree is deprecated, please use flat properties instead'
       );
-      return this.props['layout']['tupleTemplate'];
+      return (this.props as any)['layout']['tupleTemplate'];
     }
-    return this.props.tupleTemplate;
+    return undefined;
+  }
+
+  private getTupleTemplate(): string {
+    const { nodeBindingName, tupleTemplate } = this.props;
+    const deprecatedTemplate = this.handleDeprecatedLayout();
+    const defaultTemplate = `<semantic-link iri="{{${nodeBindingName}.value}}"></semantic-link>`;
+    return tupleTemplate || deprecatedTemplate || defaultTemplate;
   }
 }
 
 interface MutableNode {
   key: string;
-  data: SparqlClient.Binding;
+  data: SparqlClient.StarBinding;
   /**
    * Children are kept in insertion order from the query result.
    * The collection is represented by Set to be compatible with graph algorithms.
@@ -317,7 +362,7 @@ interface MutableGraph {
 }
 
 function transformBindingsToGraph(params: {
-  bindings: SparqlClient.Bindings;
+  bindings: SparqlClient.StarBindings;
   nodeBindingName: string;
   parentBindingName: string;
 }): MutableGraph {

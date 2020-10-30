@@ -7,3 +7,5 @@ export const editValue: string;
 export const valuesEditor: string;
 export const propertyApps: string;
 export const propertyApp: string;
+export const propertyName: string;
+export const propertyRestartRequired: string;

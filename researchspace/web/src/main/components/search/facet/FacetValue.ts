@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Denis Ostapenko
@@ -109,7 +108,7 @@ export class FacetValueComponent extends Component<FacetValueProps, FacetValueSt
     // Event is fired twice, because we have input element inside label element.
     // so we need to trigger action only once.
     // The idea is to trigger it only for checkbox element.
-    if (event.target['tagName'] === 'INPUT') {
+    if ((event.target as HTMLElement)['tagName'] === 'INPUT') {
       this.setState({
         selected: (event.target as HTMLInputElement).checked,
         isLoading: true

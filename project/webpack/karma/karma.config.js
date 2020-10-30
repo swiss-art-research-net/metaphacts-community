@@ -25,23 +25,11 @@ var webpack = require('webpack'),
  * @returns {import('karma').ConfigOptions}
  */
 module.exports = function (defaults) {
-    const webpackConfig = webpackConfigFn(defaults);
+    const webpackConfig = webpackConfigFn(defaults, {buildMode: 'test'});
     delete webpackConfig.entry;
-
-    webpackConfig.mode = 'development';
-
-    // karma webpack plugin is not compatible with CommonsChunkPlugin and DllReferencePlugin,
-    // so need to remove it in tests
-    webpackConfig.plugins.splice(2, 1);
-
-    // enable happypack for ts
-    webpackConfig.plugins.push(defaults.tsHappyPack(webpackConfig.module.rules[0].use[0]));
 
     // add test dependencies to webpack module resolution path
     webpackConfig.resolve.modules.push(path.join(__dirname, '../node_modules'));
-
-    // add alias for test directory from metaphacts-platform web project
-    webpackConfig.resolve.alias['platform-tests'] = defaults.METAPHACTORY_DIRS.test;
 
     // exclude Highcharts from tests
     webpackConfig.plugins.push(
@@ -78,7 +66,16 @@ module.exports = function (defaults) {
                 hash: false,
                 timings: false,
                 chunks: false,
-                chunkModules: false
+                chunkModules: false,
+                warningsFilter: warning => {
+                  if (warning.indexOf('node_modules/@angular/core/src/linker/system_js_ng_module_factory_loader.js')) {
+                    // Filter out Angular-based Graphscope warnings:
+                    // "Critical dependency: the request of a dependency is an expression"
+                    // "System.import() is deprecated and will be removed soon. Use import() instead."
+                    return true;
+                  }
+                  return false;
+                },
             }
         },
         browsers: ['ChromiumHeadlessNoSandbox'],

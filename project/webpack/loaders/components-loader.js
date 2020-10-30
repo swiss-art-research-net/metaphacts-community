@@ -19,20 +19,31 @@
 const _ = require('lodash');
 
 module.exports.default = function(input) {
-  const ifs =
-        _.reduce(JSON.parse(input), (acc, file, component) => {
-          const snipet = `
-            if(tagName === '${component}') {
-              return import(/* webpackChunkName: "${component}"*/'${file}').then(
-                function(comp) {
-                  onLoaded(comp);
-                  return comp;
-                }
-              );
-            }
-          `;
-          return acc + snipet;
-        }, '');
+  const cases = _.reduce(JSON.parse(input), (acc, entry, component) => {
+    let path, metadata;
+    if (typeof entry === 'string') {
+      path = entry;
+      metadata = null;
+    } else {
+      path = entry.path;
+      metadata = {...entry};
+      delete metadata.path;
+    }
+
+    const snippet = `
+      case '${component}': return {
+        loader: function() {
+          return import(/* webpackChunkName: "${component}"*/'${path}')
+            .then(function(comp) {
+              onLoaded(comp);
+              return comp;
+            });
+        },
+        metadata: ${JSON.stringify(metadata)}
+      };
+    `;
+    return acc + snippet;
+  }, '');
 
   return `module.exports = function(tagName) {
     function onLoaded(comp) {
@@ -41,6 +52,9 @@ module.exports.default = function(input) {
       }
       comp.default.__htmlTag = tagName;
     }
-    ${ifs}
+    switch (tagName) {
+      ${cases}
+    }
+    return null;
   };`;
 };

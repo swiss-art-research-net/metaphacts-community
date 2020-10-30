@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,15 +37,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
 
-import * as turtle from '../rdf/formats/turtle';
-
 import { QueryVisitor } from './QueryVisitor';
-import { isTerm } from './TypeGuards';
+import { isTerm, isVariable } from './TypeGuards';
 
 /**
  * Replaces variables with IRIs or literals.
@@ -45,15 +64,11 @@ export class VariableBinder extends QueryVisitor {
 
   private tryReplace(termValue: string) {
     const replacement = this.replacements[termValue];
-    if (replacement !== undefined) {
-      return turtle.serialize.nodeToN3(replacement) as SparqlJs.Term;
-    } else {
-      return undefined;
-    }
+    return replacement;
   }
 
-  variableTerm(variable: SparqlJs.Term) {
-    const name = variable.substring(1);
+  variableTerm(variable: SparqlJs.VariableTerm) {
+    const name = variable.value;
     return this.tryReplace(name);
   }
 }
@@ -88,9 +103,9 @@ export class PropertyPathBinder extends QueryVisitor {
     super();
   }
 
-  variableTerm(variable: SparqlJs.Term): SparqlJs.Term | SparqlJs.PropertyPath {
+  variableTerm(variable: SparqlJs.VariableTerm): SparqlJs.Term | SparqlJs.PropertyPath {
     if (this.currentMember === 'predicate') {
-      const propertyPath = this.replacements[variable.substring(1)];
+      const propertyPath = this.replacements[variable.value];
       return PropertyPathBinder.normalize(propertyPath);
     }
   }
@@ -123,10 +138,13 @@ export class TextBinder extends QueryVisitor {
     super();
   }
 
-  literal(literal: SparqlJs.Term): SparqlJs.Term {
+  literal(literal: SparqlJs.LiteralTerm): SparqlJs.Term {
     for (const {test, replace} of this.replacements) {
-      if (test.test(literal)) {
-        return literal.replace(test, replace) as SparqlJs.Term;
+      if (test.test(literal.value)) {
+        const newValue = literal.value.replace(test, replace);
+        return literal.language
+          ? Rdf.langLiteral(newValue, literal.language)
+          : Rdf.literal(newValue, literal.datatype);
       }
     }
     return undefined;
@@ -145,18 +163,18 @@ export class TextBinder extends QueryVisitor {
  * query === parseQuery('SELECT * WHERE { ?s ?p ?o }')
  */
 export class PatternBinder extends QueryVisitor {
-  private readonly placeholder: SparqlJs.Term;
+  private readonly placeholder: SparqlJs.VariableTerm;
   private readonly patterns: ReadonlyArray<SparqlJs.Pattern>;
   private placeholderFound = false;
 
   constructor(filterPlaceholder: string, patterns: ReadonlyArray<SparqlJs.Pattern>) {
     super();
-    this.placeholder = ('?' + filterPlaceholder) as SparqlJs.Term;
+    this.placeholder = Rdf.DATA_FACTORY.variable(filterPlaceholder);
     this.patterns = patterns;
   }
 
   filter(pattern: SparqlJs.FilterPattern): SparqlJs.Pattern {
-    if (isTerm(pattern.expression) && pattern.expression === this.placeholder) {
+    if (isVariable(pattern.expression) && pattern.expression.equals(this.placeholder)) {
       this.placeholderFound = true;
       return undefined;
     } else {
@@ -188,12 +206,12 @@ export class PatternBinder extends QueryVisitor {
 export class VariableRenameBinder extends QueryVisitor {
   constructor(
     private fromVariable: string,
-    private toVariable: string,
+    private toVariable: string
   ) { super(); }
 
-  variableTerm(variable: SparqlJs.Term) {
-    if (variable.substring(1) === this.fromVariable) {
-      return ('?' + this.toVariable) as SparqlJs.Term;
+  variableTerm(variable: SparqlJs.VariableTerm) {
+    if (variable.value === this.fromVariable) {
+      return Rdf.DATA_FACTORY.variable(this.toVariable);
     }
   }
 }

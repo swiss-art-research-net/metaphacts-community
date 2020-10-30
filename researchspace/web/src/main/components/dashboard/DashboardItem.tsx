@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 
 import { Row, Col} from 'react-bootstrap';
@@ -38,8 +37,9 @@ export interface DashboardViewConfig {
    */
   id: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is used to render the view when users drop a resource on it. Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code> (or a variable specified in <code>frameVariable</code>) as context variables.
-   * **The template MUST have a single HTML root element.**
+   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is used to render the view
+   * when users drop a resource on it. Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code>
+   * (or a variable specified in <code>frameVariable</code>) as context variables.
    */
   template: string;
   /**
@@ -72,13 +72,17 @@ export interface DashboardViewConfig {
    */
   frameVariable?: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the label of a frame, it is used in the frame controller. By default the <code><mp-label></mp-label></code> component is used. Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code> (or a variable specified in <code>frameVariable</code>) as context variables.
-   * **The template MUST have a single HTML root element.**
+   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the label of a frame, it is used in the frame controller.
+   * By default the <code><mp-label></mp-label></code> component is used.
+   * Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code>
+   * (or a variable specified in <code>frameVariable</code>) as context variables.
    */
   itemLabelTemplate?: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the body of a frame item. If it is specified, it will applied to the contents of the frame item displayed as dropdown of the frame controller. Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code> (or a variable specified in <code>frameVariable</code>) as context variables.
-   * **The template MUST have a single HTML root element.**
+   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the body of a frame item.
+   * If it is specified, it will applied to the contents of the frame item displayed as dropdown
+   * of the frame controller. Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code>
+   * (or a variable specified in <code>frameVariable</code>) as context variables.
    */
   itemBodyTemplate?: string;
 }

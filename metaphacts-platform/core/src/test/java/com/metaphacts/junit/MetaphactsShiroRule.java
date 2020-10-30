@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +37,16 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.junit;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -32,6 +57,7 @@ import org.apache.shiro.util.ThreadContext;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 
+import com.github.jsonldjava.shaded.com.google.common.collect.Maps;
 import com.github.sdorra.shiro.ShiroRule;
 import com.github.sdorra.shiro.SubjectAware;
 import com.github.sdorra.shiro.internal.SubjectAwareDescriptor;
@@ -40,6 +66,9 @@ import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.security.MetaphactsSecurityManager;
 import com.metaphacts.security.MetaphactsSecurityTestUtils;
+import com.metaphacts.security.PlatformRoleManager;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.PlatformStorage;
 
 /**
  * Extension of {@link ShiroRule} which uses {@link MetaphactsSecurityManager}
@@ -50,6 +79,8 @@ import com.metaphacts.security.MetaphactsSecurityTestUtils;
 public class MetaphactsShiroRule extends ShiroRule {
     
     
+    private static final String DEFAULT_PLATFORM_STORAGE_ID = "metaphacts-platform";
+
     private Supplier<Configuration> configurationSupplier;
 
     /**
@@ -58,6 +89,12 @@ public class MetaphactsShiroRule extends ShiroRule {
     private Supplier<Collection<Realm>> realms;
     
     private Supplier<CacheManager> cacheManagerSupplier;
+
+    private Supplier<PlatformStorageRule> platformStorageRuleSupplier;
+
+    private Consumer<MetaphactsShiroRule> initializer;
+
+    private Map<String, List<String>> platformRoles = Maps.newHashMap();
 
     /**
      * Note: Realm needs to be provided with {@link SubjectAware} annotation
@@ -81,6 +118,21 @@ public class MetaphactsShiroRule extends ShiroRule {
     
     public MetaphactsShiroRule withCacheManager(Supplier<CacheManager> cacheManagerSupplier) {
         this.cacheManagerSupplier = cacheManagerSupplier;
+        return this;
+    }
+
+    public MetaphactsShiroRule withPlatformStorageRule(Supplier<PlatformStorageRule> platformStorageRuleSupplier) {
+        this.platformStorageRuleSupplier = platformStorageRuleSupplier;
+        return this;
+    }
+
+    public MetaphactsShiroRule withInitalizer(Consumer<MetaphactsShiroRule> initializer) {
+        this.initializer = initializer;
+        return this;
+    }
+
+    public MetaphactsShiroRule withPlatformRole(String role, List<String> permissions) {
+        this.platformRoles.put(role, permissions);
         return this;
     }
 
@@ -117,6 +169,10 @@ public class MetaphactsShiroRule extends ShiroRule {
     }
 
     protected void before(SubjectAwareDescriptor descriptor) {
+        initializePlatformRoles();
+        if (initializer != null) {
+            initializer.accept(this);
+        }
         initializeSecurityManager(descriptor);
         loginSubject(descriptor);
     }
@@ -125,11 +181,12 @@ public class MetaphactsShiroRule extends ShiroRule {
     private void initializeSecurityManager(SubjectAwareDescriptor subjectAware) {
 
         SecurityManager securityManager = null;
+        PlatformStorage platformStorage = platformStorageRuleSupplier.get().getPlatformStorage();
 
         // if realms are set explicitly use these
         if (realms != null) {
             securityManager = MetaphactsSecurityTestUtils.createInstance(realms.get(),
-                    configurationSupplier.get(), cacheManagerSupplier.get());
+                    configurationSupplier.get(), cacheManagerSupplier.get(), platformStorage);
         }
 
         if (subjectAware.isMerged()) {
@@ -141,7 +198,7 @@ public class MetaphactsShiroRule extends ShiroRule {
     
             if (cfg.length() > 0) {
                 securityManager = MetaphactsSecurityTestUtils.createInstance(cfg,
-                        configurationSupplier.get(), cacheManagerSupplier.get());
+                        configurationSupplier.get(), cacheManagerSupplier.get(), platformStorage);
             }
         }
 
@@ -150,6 +207,35 @@ public class MetaphactsShiroRule extends ShiroRule {
         }
 
         SecurityUtils.setSecurityManager(securityManager);
+    }
+
+    private void initializePlatformRoles() {
+
+        if (platformStorageRuleSupplier == null) {
+            throw new IllegalStateException("Tests using MetapachtsShiroRule require a PlatformStorageRule. "
+                    + "Make sure to inject it to the test class and supply it to the MetaphactsShiroRule.");
+        }
+
+        final PlatformStorageRule platformStorageRule = platformStorageRuleSupplier.get();
+        
+        platformStorageRule.getPlatformStorage()
+                .addStorage(DEFAULT_PLATFORM_STORAGE_ID);
+        
+        storeRoles(platformRoles, DEFAULT_PLATFORM_STORAGE_ID);
+    }
+
+    public void storeRoles(Map<String, List<String>> roles, String storageId) {
+        final PlatformStorageRule platformStorageRule = platformStorageRuleSupplier.get();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("[roles]\n");
+        roles.forEach((role, perms) -> {
+            sb.append(role).append(" = ").append(StringUtils.join(perms, ", ")).append("\n");
+        });
+
+        platformStorageRule.storeContent(
+                ObjectKind.CONFIG.resolve(PlatformRoleManager.SHIRO_ROLES_FILE),
+                sb.toString(), storageId);
     }
 
     private void loginSubject(SubjectAwareDescriptor subjectAware) {

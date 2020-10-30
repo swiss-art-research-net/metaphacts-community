@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,28 +37,33 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
-import { getCurrentResource } from 'platform/api/navigation';
-import { ConfigHolder } from 'platform/api/services/config-holder';
 
-import { isQuery, isTerm, isIri } from './TypeGuards';
+import { isQuery, isTerm, isIri, isVariable } from './TypeGuards';
+import { QueryVisitor } from './QueryVisitor';
 
 // by default we initialized parser without prefixes so we don't need
 // to initialize it explicitly in all tests, but the expectation is that
 // in production run init is called on the system startup
-let Parser: SparqlJs.SparqlParser = new SparqlJs.Parser();
+let Parser: SparqlJs.SparqlParser = new SparqlJs.Parser({
+  factory: Rdf.DATA_FACTORY,
+  sparqlStar: true,
+});
 export let RegisteredPrefixes: { [key: string]: string } = {};
 export function init(registeredPrefixes: { [key: string]: string }) {
   RegisteredPrefixes = registeredPrefixes;
-  Parser = new SparqlJs.Parser(registeredPrefixes);
+  Parser = new SparqlJs.Parser({
+    prefixes: registeredPrefixes,
+    factory: Rdf.DATA_FACTORY,
+    sparqlStar: true,
+  });
 }
 
-const Generator = new SparqlJs.Generator();
+const Generator = new SparqlJs.Generator({sparqlStar: true});
 
 export type RDFResultFormat = 'application/ld+json'
   | 'application/n-quads'
@@ -54,6 +81,7 @@ export type RDFResultFormat = 'application/ld+json'
   | 'text/plain'
   | 'text/rdf+n3'
   | 'text/turtle'
+  | 'text/x-turtlestar'
   | 'text/x-nquads';
 
 export type TupleResultFormat = 'application/json'
@@ -102,6 +130,8 @@ export function getMimeType(fileEnding: String): RDFResultFormat {
         return 'application/rdf+xml';
     case 'ttl':
         return 'text/turtle';
+    case 'ttls':
+        return 'text/x-turtlestar';
     case 'trig':
         return 'application/x-trig';
     case 'trix':
@@ -173,15 +203,20 @@ export function Sparql(
   return parseQuerySync(strings.raw[0]);
 }
 
+let legacyCurrentResource: Rdf.Iri | undefined;
+export function __unsafe__setLegacyCurrentResource(resource: Rdf.Iri) {
+  legacyCurrentResource = resource;
+}
+
 function replaceQueryParams(query: string): string {
   // TODO, for legacy purpose only. Bind ?? to current resource
-  if (typeof getCurrentResource() === 'undefined') {
+  if (typeof legacyCurrentResource === 'undefined') {
     return query;
   } else {
     // replace special Template: prefix which is not substitued by the NS service
-    const contextResource = getCurrentResource().value.startsWith('Template:')
-      ? '<' + getCurrentResource().value.substr('Template:'.length) + '>'
-      : getCurrentResource().toString();
+    const contextResource = legacyCurrentResource.value.startsWith('Template:')
+      ? '<' + legacyCurrentResource.value.substr('Template:'.length) + '>'
+      : legacyCurrentResource.toString();
     return query.replace(/\?\?/g, contextResource).replace(
         /\$_this/g, contextResource
     );
@@ -212,17 +247,93 @@ const LUCENE_ESCAPE_REGEX = /([+\-&|!(){}\[\]^"~*?:\\])/g;
 export function makeLuceneQuery(
   inputText: string,
   escape = true,
-  tokenize = true,
+  tokenize: boolean | 'regex' = true
 ): Rdf.Literal {
   const words = inputText.split(' ')
     .map(w => w.trim())
     .filter(w => w.length > 0)
     .map(w => {
       if (escape) { w = w.replace(LUCENE_ESCAPE_REGEX, '\\$1'); }
-      if (tokenize) { w += '*'; }
+      if (tokenize) {
+        w += tokenize === 'regex' ? '.*' : '*';
+      }
       return w;
     }).join(' ');
   return Rdf.literal(words);
+}
+
+export interface TokenizationDefaults {
+  escapeLucene: boolean | undefined;
+  tokenize: undefined | boolean | 'regex';
+}
+
+const BDS_TOKEN_PREDICATE = 'http://www.bigdata.com/rdf/search#search';
+const WIKIDATA_TOKEN_PREDICATE = 'http://www.metaphacts.com/ontology/hasWikidataSearchToken';
+const LOOKUP_TOKEN_PREDICATE =
+  'http://www.metaphacts.com/ontologies/platform/repository/lookup#token';
+
+export function findTokenizationDefaults(
+  patterns: ReadonlyArray<SparqlJs.Pattern>,
+  tokenVariableName: string
+): TokenizationDefaults {
+  let type: 'bds' | 'wikidata' | 'regex' | 'lookup' | 'mixed' | undefined;
+
+  const setType = (foundType: typeof type) => {
+    type = (!type || type === foundType) ? foundType : 'mixed';
+  };
+
+  const regexArgumentVisitor = new class extends QueryVisitor {
+    variableTerm(variableTerm: SparqlJs.VariableTerm) {
+      if (variableTerm.value === tokenVariableName) {
+        setType('regex');
+      }
+      return super.variableTerm(variableTerm);
+    }
+  };
+
+  const mainVisitor = new class extends QueryVisitor {
+    operation(operation: SparqlJs.OperationExpression) {
+      if (operation.operator === 'regex' && operation.args.length >= 2) {
+        // use regex defaults if REGEX() second argument contains token variable inside
+        // so it would handle both:
+        //   REGEX(.., ?__token__, ..),
+        //   REGEX(.., LCASE(?__token__), ..)
+        const secondArg = operation.args[1];
+        regexArgumentVisitor.expression(secondArg);
+      }
+      return super.operation(operation);
+    }
+
+    triple(triple: SparqlJs.Triple) {
+      if (isIri(triple.predicate)
+        && isVariable(triple.object)
+        && triple.object.value === tokenVariableName
+      ) {
+        if (triple.predicate.value === BDS_TOKEN_PREDICATE) {
+          setType('bds');
+        } else if (triple.predicate.value === WIKIDATA_TOKEN_PREDICATE) {
+          setType('wikidata');
+        } else if (triple.predicate.value === LOOKUP_TOKEN_PREDICATE) {
+          setType('lookup');
+        }
+      }
+      return super.triple(triple);
+    }
+  };
+  patterns.forEach(p => mainVisitor.pattern(p));
+
+  switch (type) {
+    case 'lookup':
+      return {escapeLucene: false, tokenize: false};
+    case 'regex':
+      return {escapeLucene: false, tokenize: 'regex'};
+    case 'bds':
+    case 'wikidata':
+      return {escapeLucene: true, tokenize: true};
+    case 'mixed':
+    default:
+      return {escapeLucene: undefined, tokenize: undefined};
+  }
 }
 
 export function parsePatterns(
@@ -230,7 +341,7 @@ export function parsePatterns(
 ): SparqlJs.Pattern[] {
   const wrappedPattern = `SELECT * WHERE { ${patterns} }`;
   const parser = prefixes
-    ? new SparqlJs.Parser(prefixes)
+    ? new SparqlJs.Parser({prefixes, factory: Rdf.DATA_FACTORY})
     : Parser;
   const query = parser.parse(
     encodeLegacyVars(replaceQueryParams(wrappedPattern))
@@ -238,7 +349,7 @@ export function parsePatterns(
   return query.where;
 }
 
-export function parsePropertyPath(propertyPath: string): SparqlJs.Term | SparqlJs.PropertyPath {
+export function parsePropertyPath(propertyPath: string): SparqlJs.IriTerm | SparqlJs.PropertyPath {
   const query = Parser.parse(`SELECT * WHERE { ?s ${propertyPath} ?o }`);
   if (query.type === 'query' && query.where.length === 1) {
     const pattern = query.where[0];
@@ -257,7 +368,9 @@ export function parsePropertyPath(propertyPath: string): SparqlJs.Term | SparqlJ
  * when empty result have one empty binding.
  * e.g for query like 'SELECT ?s ?p ?o WHERE { }'
  */
-export function isSelectResultEmpty(result: {results: {bindings: {}[]}}): boolean {
+export function isSelectResultEmpty(
+  result: { results: { bindings: ReadonlyArray<unknown> } }
+): boolean {
   const bindings = result.results.bindings;
   return _.isEmpty(bindings) || bindings.length === 1 && _.isEmpty(bindings[0]);
 }
@@ -272,7 +385,7 @@ export function resolveIris(iris: string[]): Rdf.Iri[] {
   // using initialized Sparql.js parser to resolve IRIs
   const parsed = parseQuery<SparqlJs.SelectQuery>(
     `SELECT * WHERE {} VALUES (?iri) { ${serializedIris} }`);
-  return parsed.values.map(row => Rdf.iri(row['?iri']));
+  return parsed.values.map(row => row['?iri'] as Rdf.Iri);
 }
 
 // see SPARQL 1.1 grammar for all allowed characters:

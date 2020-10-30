@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as maybe from 'data.maybe';
@@ -222,7 +221,6 @@ export interface TimelineOptions {
   groupOrder?: string;
   /**
    * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the groups contents.
-   * **The template MUST have a single HTML root element.**
    * The variables that available in the template are following:
    * <pre>
    * {
@@ -472,12 +470,10 @@ interface SemanticTimelineConfigBase {
   query: string;
   /**
    * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.
-   * **The template MUST have a single HTML root element.**
    */
   noResultTemplate?: string;
   /**
    * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the items contents.
-   * **The template MUST have a single HTML root element.**
    * @default {{start.value}} - {{end.value}}
    */
   tupleTemplate?: string;
@@ -487,7 +483,6 @@ interface SemanticTimelineConfigBase {
   tupleTemplateHeight?: number | string;
   /**
    * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> of a loading which is applied when items are drawn.
-   * **The template MUST have a single HTML root element.**
    */
   loadingTemplate?: string;
   /**

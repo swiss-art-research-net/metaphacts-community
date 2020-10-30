@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Allows displaying data in `ontodia` that don't exist in the database.",
+    "properties": {
+        "provisionGraph": {
+            "description": "Graph data to display result of the query.",
+            "type": "string"
+        },
+        "provisionQuery": {
+            "description": "SPARQL query to store data that do not exist in the database.",
+            "type": "string"
+        },
+        "provisionRepository": {
+            "description": "Repository ID.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "provisionQuery",
+        "provisionGraph",
+        "provisionRepository"
+    ],
+    "type": "object"
+}
+

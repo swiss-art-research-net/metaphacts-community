@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.cache;
 
 import java.lang.reflect.Field;
@@ -62,7 +83,7 @@ import com.metaphacts.junit.AbstractRepositoryBackedIntegrationTest;
 import com.metaphacts.junit.NamespaceRule;
 import com.metaphacts.junit.PlatformStorageRule;
 import com.metaphacts.junit.TestPlatformStorage;
-import com.metaphacts.sparql.renderer.MpSparqlQueryRenderer;
+import com.metaphacts.util.QueryUtil;
 
 /**
  * Test cases for {@link LabelCache} functionality.
@@ -521,12 +542,12 @@ public class LabelCacheTest extends AbstractRepositoryBackedIntegrationTest {
 
         List<IRI> iris = Lists.newArrayList(asIRI(IRI1), asIRI(IRI2));
 
-        MpSparqlQueryRenderer renderer = new MpSparqlQueryRenderer();
         NamespaceRegistry namespaceRegistry = namespaceRule.getNamespaceRegistry();
 
         List<PropertyPattern> preferredLabels = Lists
             .newArrayList(RDFS.LABEL, SKOS.ALT_LABEL).stream()
-            .map(label -> PropertyPattern.parse(renderer.renderValue(label), namespaceRegistry))
+                .map(label -> PropertyPattern.parse(QueryUtil.toSPARQL(label),
+                        namespaceRegistry))
             .collect(Collectors.toList());
 
         final String query = ResourcePropertyCache.constructPropertyQuery(iris, preferredLabels);
@@ -627,8 +648,7 @@ public class LabelCacheTest extends AbstractRepositoryBackedIntegrationTest {
         addStatement(vf.createStatement(intermediate1, SKOS.PREF_LABEL, intermediate2));
         addStatement(vf.createStatement(intermediate2, SKOS.PREF_LABEL, vf.createLiteral(IRI1_LABEL_NOLANG)));
 
-        MpSparqlQueryRenderer renderer = new MpSparqlQueryRenderer();
-        String propertyPath = renderer.renderValue(RDFS.LABEL) + "/" + renderer.renderValue(SKOS.PREF_LABEL) + "+";
+        String propertyPath = QueryUtil.toSPARQL(RDFS.LABEL) + "/" + QueryUtil.toSPARQL(SKOS.PREF_LABEL) + "+";
         setUIConfigurationParameter("preferredLabels", propertyPath);
 
         Optional<Literal> label = labelCache.getLabel(asIRI(IRI1), repositoryRule.getRepository(), null);
@@ -644,10 +664,9 @@ public class LabelCacheTest extends AbstractRepositoryBackedIntegrationTest {
         addStatement(vf.createStatement(intermediate1, SKOS.PREF_LABEL, intermediate2));
         addStatement(vf.createStatement(intermediate2, SKOS.PREF_LABEL, vf.createLiteral(IRI1_LABEL_NOLANG)));
 
-        MpSparqlQueryRenderer renderer = new MpSparqlQueryRenderer();
         String propertyPattern =
-            "{?subject " + renderer.renderValue(RDFS.LABEL) + "?some ." +
-            "?some " + renderer.renderValue(SKOS.PREF_LABEL) + "+ ?value .}";
+                "{?subject " + QueryUtil.toSPARQL(RDFS.LABEL) + "?some ." +
+                        "?some " + QueryUtil.toSPARQL(SKOS.PREF_LABEL) + "+ ?value .}";
         setUIConfigurationParameter("preferredLabels", propertyPattern);
 
         Optional<Literal> label = labelCache.getLabel(asIRI(IRI1), repositoryRule.getRepository(), null);
@@ -658,15 +677,17 @@ public class LabelCacheTest extends AbstractRepositoryBackedIntegrationTest {
     @Test
     @Ignore
     public void testPerformance() throws Exception {
-        
         String endpoint = "https://query.wikidata.org/sparql";
-//        String endpoint = "https://wikidata.metaphacts.com/bigdata/sparql";
-
-        // optionally activate more complex preferredLabels
-//        List<String> preferredLabels = Lists.newArrayList("<http://www.w3.org/2000/01/rdf-schema#label>",
-//                "^<http://wikiba.se/ontology#directClaim>/<http://www.w3.org/2000/01/rdf-schema#label>");
-//        setUIConfigurationParameter("preferredLabels", preferredLabels);
-
+        /*
+        For more complex benchmark use following endpoint:
+            String endpoint = "https://wikidata.metaphacts.com/bigdata/sparql";
+        Optionally activate more complex preferredLabels:
+            List<String> preferredLabels = Lists.newArrayList(
+                "<http://www.w3.org/2000/01/rdf-schema#label>",
+                "^<http://wikiba.se/ontology#directClaim>/<http://www.w3.org/2000/01/rdf-schema#label>"
+            );
+            setUIConfigurationParameter("preferredLabels", preferredLabels);
+        */
         System.out.println("Running benchmark on " + endpoint);
 
         for (int nResources : Lists.newArrayList(10, 100, 1000, 5000, 10000, 50000)) {
@@ -682,15 +703,15 @@ public class LabelCacheTest extends AbstractRepositoryBackedIntegrationTest {
 
         Repository repo = new SPARQLRepository(endpoint);
         repo.init();
-        
+
         Set<IRI> resources = Sets.newHashSet();
         try (RepositoryConnection conn = repo.getConnection()) {
             TupleQuery tq = conn.prepareTupleQuery(
-                            "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" + 
+                            "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" +
                             "PREFIX wd: <http://www.wikidata.org/entity/>\n"
                             + "SELECT ?person WHERE { ?person wdt:P31 wd:Q5 . } LIMIT " + nResources
                     );
-            
+
             try (TupleQueryResult tqr = tq.evaluate()) {
                 while (tqr.hasNext()) {
                     BindingSet b = tqr.next();
@@ -698,11 +719,11 @@ public class LabelCacheTest extends AbstractRepositoryBackedIntegrationTest {
                 }
             }
         }
-        
+
         System.out.println("Benchmark with " + resources.size() + " resources");
-        
+
         Stopwatch watch = Stopwatch.createStarted();
-        
+
         labelCache.getLabels(resources, repo, "en");
         System.out.println("Duration [Labels Retrieved]: " + watch.elapsed(TimeUnit.MILLISECONDS) + "ms");
 
@@ -736,16 +757,14 @@ public class LabelCacheTest extends AbstractRepositoryBackedIntegrationTest {
     }
 
     void setPreferredLabelRdfsLabel() {
-        MpSparqlQueryRenderer renderer = new MpSparqlQueryRenderer();
-        String preferredLabel = renderer.renderValue(RDFS.LABEL);
+        String preferredLabel = QueryUtil.toSPARQL(RDFS.LABEL);
         setUIConfigurationParameter("preferredLabels", preferredLabel);
     }
 
     void setPreferredLabelRdfsLabelSkosLabelCustomLabel() {
-        MpSparqlQueryRenderer renderer = new MpSparqlQueryRenderer();
         IRI mynsLabel = vf.createIRI(CUSTOM_LABEL);
         List<String> preferredLabels = Stream.of(RDFS.LABEL, SKOS.ALT_LABEL, mynsLabel)
-            .map(renderer::renderValue)
+                .map(QueryUtil::toSPARQL)
             .collect(Collectors.toList());
         setUIConfigurationParameter("preferredLabels", preferredLabels);
     }

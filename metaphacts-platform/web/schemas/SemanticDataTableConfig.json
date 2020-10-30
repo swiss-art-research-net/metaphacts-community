@@ -1,0 +1,412 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "anyOf": [
+        {
+            "$ref": "#/definitions/TableBaseConfig"
+        },
+        {
+            "$ref": "#/definitions/TableColumnConfig"
+        },
+        {
+            "$ref": "#/definitions/TableRowConfig"
+        }
+    ],
+    "definitions": {
+        "ColumnAggregateConfigurationType": {
+            "enum": [
+                "average",
+                "concat",
+                "count",
+                "default",
+                "median",
+                "sum",
+                "uniqueCount"
+            ],
+            "type": "string"
+        },
+        "ColumnFilterConfigurationType": {
+            "enum": [
+                "default",
+                "multiselect",
+                "number",
+                "select",
+                "slider"
+            ],
+            "type": "string"
+        },
+        "GroupingOptions": {
+            "properties": {
+                "defaultAggregation": {
+                    "$ref": "#/definitions/ColumnAggregateConfigurationType",
+                    "description": "Aggregation to use if no aggregation is specified for a column."
+                },
+                "defaultAggregationCellTemplate": {
+                    "default": "aggregation specific default",
+                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for aggregated values to use, if no template is specified for a column.\nThis is only applied if the `defaultAggregation` is used.\nThe aggregated value is available with the `value` variable. Its type depends on the type of aggregation.\nThe variable `rows` is an array containing the bindings of the aggregated rows.",
+                    "type": "string"
+                },
+                "expandByDefault": {
+                    "default": false,
+                    "description": "Whether or not grouped rows configured with `groupedBy` should be expanded by default.",
+                    "type": "boolean"
+                },
+                "groupedBy": {
+                    "description": "Groups rows by default by the provided column IDs. The ID of a column is its `variableName` by default.\nCan also be used if interactive grouping is disabled.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "showOnlyAggregatedValue": {
+                    "default": false,
+                    "description": "If this is enabled, only the aggregated values are shown for grouped rows.\nRemoves the ability for users to expand grouped rows.",
+                    "type": "boolean"
+                }
+            },
+            "propertyOrder": [
+                "groupedBy",
+                "defaultAggregation",
+                "defaultAggregationCellTemplate",
+                "expandByDefault",
+                "showOnlyAggregatedValue"
+            ],
+            "type": "object"
+        },
+        "SemanticColumnConfiguration": {
+            "properties": {
+                "aggregation": {
+                    "$ref": "#/definitions/ColumnAggregateConfigurationType",
+                    "description": "Type of aggregation to use for this column."
+                },
+                "aggregationCellTemplate": {
+                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for aggregated values.\nThe aggregated value is available with the `value` variable. Its type depends on the type of aggregation.\nThe variable `rows` is an array containing the bindings of the aggregated rows.",
+                    "type": "string"
+                },
+                "cellTemplate": {
+                    "description": "Custom cell visualization <semantic-link\n   uri='http://help.metaphacts.com/resource/FrontendTemplating'>template</semantic-link>.\nTemplate has access to all projection variables for a single result tuple.",
+                    "type": "string"
+                },
+                "displayName": {
+                    "description": "Cell heading label override.",
+                    "type": "string"
+                },
+                "filterType": {
+                    "$ref": "#/definitions/ColumnFilterConfigurationType",
+                    "default": "auto detection",
+                    "description": "Type of column filter to use."
+                },
+                "id": {
+                    "description": "Optional ID to reference this column from other options. If unset the ID is the variable name.",
+                    "type": "string"
+                },
+                "showFilter": {
+                    "default": false,
+                    "description": "Whether column filtering should be enabled for this column.",
+                    "type": "boolean"
+                },
+                "variableName": {
+                    "description": "SPARQL projection variable name that this column is bind to.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "displayName",
+                "variableName",
+                "cellTemplate",
+                "showFilter",
+                "filterType",
+                "aggregation",
+                "aggregationCellTemplate",
+                "id"
+            ],
+            "required": [
+                "displayName"
+            ],
+            "type": "object"
+        },
+        "SemanticDataTableOptions": {
+            "properties": {
+                "enableGrouping": {
+                    "default": false,
+                    "description": "Whether or not to enable interactive grouping of rows.",
+                    "type": "boolean"
+                },
+                "enableSort": {
+                    "default": true,
+                    "description": "Determines if sorting is enabled",
+                    "type": "boolean"
+                },
+                "groupingOptions": {
+                    "$ref": "#/definitions/GroupingOptions"
+                },
+                "showFilter": {
+                    "default": true,
+                    "description": "Whether or not to display table filter",
+                    "type": "boolean"
+                },
+                "showTableHeading": {
+                    "default": true,
+                    "description": "Determines if the table heading should be displayed",
+                    "type": "boolean"
+                },
+                "sorting": {
+                    "$ref": "#/definitions/SortDefinition",
+                    "description": "Default sorting to apply."
+                },
+                "styleHeader": {
+                    "default": false,
+                    "description": "Whether or not to use a styled table header pre-defined color scheme (true | false). Can also specify the color to be used for the header, e.g. `gray` or `#DDDDDD`.",
+                    "type": [
+                        "string",
+                        "boolean"
+                    ]
+                }
+            },
+            "propertyOrder": [
+                "enableGrouping",
+                "groupingOptions",
+                "sorting",
+                "styleHeader",
+                "showFilter",
+                "showTableHeading",
+                "enableSort"
+            ],
+            "required": [
+                "sorting"
+            ],
+            "type": "object"
+        },
+        "SortDefinition": {
+            "additionalProperties": {
+                "enum": [
+                    "asc",
+                    "desc"
+                ],
+                "type": "string"
+            },
+            "description": "Contains a single key referring to the ID of the column to sort.\nE.g. `{\"subject\": \"asc\"}`",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "TableBaseConfig": {
+            "description": "The simplest table configuration can be used to show all SPARQL result set projection variables.\nThe SPARQL projection variable name is used as column header. IRIs will be rendered as resolvable links using the `<semantic-link>` component or as a simple string otherwise.",
+            "properties": {
+                "currentPage": {
+                    "description": "In controlled mode sets current page in the table;\nin uncontrolled mode only sets initial page.",
+                    "type": "number"
+                },
+                "id": {
+                    "description": "ID for issuing component events.",
+                    "type": "string"
+                },
+                "linkParams": {
+                    "description": "Add parameters to URLs. This option is applicable only to default cell templates.",
+                    "properties": {
+                    },
+                    "type": "object"
+                },
+                "noResultTemplate": {
+                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.",
+                    "type": "string"
+                },
+                "numberOfDisplayedRows": {
+                    "default": 10,
+                    "description": "Number of rows to show on the one page",
+                    "type": "number"
+                },
+                "options": {
+                    "$ref": "#/definitions/SemanticDataTableOptions",
+                    "description": "various ui options."
+                },
+                "prefetchLabels": {
+                    "default": true,
+                    "description": "Prefetches labels for all resource IRIs in the data to support sorting and filtering\nby resource labels.",
+                    "type": "boolean"
+                },
+                "query": {
+                    "description": "SPARQL Select query.",
+                    "type": "string"
+                },
+                "showLabels": {
+                    "default": true,
+                    "description": "Determines if the table should automatically fetch and display labels for resource IRIs.",
+                    "type": "boolean"
+                },
+                "showLiteralDatatype": {
+                    "default": false,
+                    "description": "Enable displaying datatypes of literals. This option is applicable only to default cell templates.",
+                    "type": "boolean"
+                }
+            },
+            "propertyOrder": [
+                "options",
+                "query",
+                "numberOfDisplayedRows",
+                "noResultTemplate",
+                "id",
+                "showLabels",
+                "prefetchLabels",
+                "showLiteralDatatype",
+                "linkParams",
+                "currentPage"
+            ],
+            "required": [
+                "options",
+                "query"
+            ],
+            "type": "object"
+        },
+        "TableColumnConfig": {
+            "description": "More advanced configuration that can be used to restrict the set of columns to be visualized, to modify the column headings or to provide custom cell visualization templates",
+            "properties": {
+                "columnConfiguration": {
+                    "description": "List of columns to display. If specified table shows only columns explicitly specified in the configuration",
+                    "items": {
+                        "$ref": "#/definitions/SemanticColumnConfiguration"
+                    },
+                    "type": "array"
+                },
+                "currentPage": {
+                    "description": "In controlled mode sets current page in the table;\nin uncontrolled mode only sets initial page.",
+                    "type": "number"
+                },
+                "id": {
+                    "description": "ID for issuing component events.",
+                    "type": "string"
+                },
+                "linkParams": {
+                    "description": "Add parameters to URLs. This option is applicable only to default cell templates.",
+                    "properties": {
+                    },
+                    "type": "object"
+                },
+                "noResultTemplate": {
+                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.",
+                    "type": "string"
+                },
+                "numberOfDisplayedRows": {
+                    "default": 10,
+                    "description": "Number of rows to show on the one page",
+                    "type": "number"
+                },
+                "options": {
+                    "$ref": "#/definitions/SemanticDataTableOptions",
+                    "description": "various ui options."
+                },
+                "prefetchLabels": {
+                    "default": true,
+                    "description": "Prefetches labels for all resource IRIs in the data to support sorting and filtering\nby resource labels.",
+                    "type": "boolean"
+                },
+                "query": {
+                    "description": "SPARQL Select query.",
+                    "type": "string"
+                },
+                "showLabels": {
+                    "default": true,
+                    "description": "Determines if the table should automatically fetch and display labels for resource IRIs.",
+                    "type": "boolean"
+                },
+                "showLiteralDatatype": {
+                    "default": false,
+                    "description": "Enable displaying datatypes of literals. This option is applicable only to default cell templates.",
+                    "type": "boolean"
+                }
+            },
+            "propertyOrder": [
+                "columnConfiguration",
+                "options",
+                "query",
+                "numberOfDisplayedRows",
+                "noResultTemplate",
+                "id",
+                "showLabels",
+                "prefetchLabels",
+                "showLiteralDatatype",
+                "linkParams",
+                "currentPage"
+            ],
+            "required": [
+                "options",
+                "query"
+            ],
+            "type": "object"
+        },
+        "TableRowConfig": {
+            "description": "The most advanced table configuration that provides the ability to customize the rendering of an entire table row via tuple templates.",
+            "properties": {
+                "currentPage": {
+                    "description": "In controlled mode sets current page in the table;\nin uncontrolled mode only sets initial page.",
+                    "type": "number"
+                },
+                "id": {
+                    "description": "ID for issuing component events.",
+                    "type": "string"
+                },
+                "linkParams": {
+                    "description": "Add parameters to URLs. This option is applicable only to default cell templates.",
+                    "properties": {
+                    },
+                    "type": "object"
+                },
+                "noResultTemplate": {
+                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.",
+                    "type": "string"
+                },
+                "numberOfDisplayedRows": {
+                    "default": 10,
+                    "description": "Number of rows to show on the one page",
+                    "type": "number"
+                },
+                "options": {
+                    "$ref": "#/definitions/SemanticDataTableOptions",
+                    "description": "various ui options."
+                },
+                "prefetchLabels": {
+                    "default": true,
+                    "description": "Prefetches labels for all resource IRIs in the data to support sorting and filtering\nby resource labels.",
+                    "type": "boolean"
+                },
+                "query": {
+                    "description": "SPARQL Select query.",
+                    "type": "string"
+                },
+                "showLabels": {
+                    "default": true,
+                    "description": "Determines if the table should automatically fetch and display labels for resource IRIs.",
+                    "type": "boolean"
+                },
+                "showLiteralDatatype": {
+                    "default": false,
+                    "description": "Enable displaying datatypes of literals. This option is applicable only to default cell templates.",
+                    "type": "boolean"
+                },
+                "tupleTemplate": {
+                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the whole table row. Can be used to have visualizations different from the standard, e.g grid of thumbnails.\nThe template has access to all projection variables for a single result tuple.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "tupleTemplate",
+                "options",
+                "query",
+                "numberOfDisplayedRows",
+                "noResultTemplate",
+                "id",
+                "showLabels",
+                "prefetchLabels",
+                "showLiteralDatatype",
+                "linkParams",
+                "currentPage"
+            ],
+            "required": [
+                "options",
+                "query",
+                "tupleTemplate"
+            ],
+            "type": "object"
+        }
+    }
+}
+

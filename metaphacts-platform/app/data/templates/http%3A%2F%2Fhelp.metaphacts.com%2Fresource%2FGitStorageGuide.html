@@ -16,12 +16,12 @@
     </p>
 
     <br/>
-    <h3>Step 1: Setup GIT SSH keys</h3>
+    <h3>Step 1: Setup GIT SSH keys (required only if a remote is configured)</h3>
 
     <p>Create a folder 'git-keys' (e.g. in the docker-compose service template folder) containing 3 files:</p>
 
     <ul>
-      <li><code>id_rsa</code> Your private SSH key (e.g. id_rsa) for the GIT repository
+      <li><code>id_rsa</code> Your private SSH key (e.g. id_rsa) for the GIT repository. The public key of the pair should be available on the remote (e.g. see <a href="https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account">how to add an SSH key to your Github account</a>).
         <ul>
           <li>requires to be in the classic OPENSSH format. It should NOT start with <code>----- BEGIN OPENSSH PRIVATE KEY -----</code>, but with <code>----- BEGIN RSA PRIVATE KEY -----</code>
           </li>
@@ -77,6 +77,8 @@ Host github.com
     <code>git clone git@github.com:path/myrepo.git ./mylocalrepo </code>
 
     <p>The folder 'mylocalrepo' will be used as runtime folder.</p>
+    
+    <p>Note: if you want to have a local repository only, a fresh Git repository can be initialized (<code>git init</code> and an initial commit being added (<code>git add readme.md</code> followed by <code>git commit -m 'Initial readme'</code>).</p>
 
     <br/>
     <h3>Step 3: Adjust the mount points in the docker-compose definitions</h3> 
@@ -105,9 +107,27 @@ Host github.com
 </pre>
     
     <br/><br/>
-    <h3>Step 5: Set file permissions for the keys </h3> 
+    <h3>Step 5: Set file permissions for the mounted Git folder</h3> 
+    
+     <p>After starting the platform using <code>docker-compose up -d </code> the file permissions of the mounted Git folder need to be adjusted for the platform process to allow accessing it.</p>
+    
+    <code>docker-compose exec -u root metaphactory sh -c "chown -R jetty:root /git-runtime-data"</code>
+    
+    <p>Note: above command may need to executed each time the Git repository is modified on the host machine (e.g. when switching branches).</p>
+    
+    <p>
+      This step can also be performed outside the container on the host using the following command:
+    </p>
+    <code>chown -R 100:0 ./mylocalrepo</code>
+    <p>
+      Note: user and group are specified using numeric ids as they need to match the users as identified within the container. The user and group names on the host might be different.
+    </p>
+    
+    
+    <br/><br/>
+    <h3>Step 6: Set file permissions for the SSH keys</h3> 
 
-    <p>After starting the platform <code>docker-compose up -d </code>, set the file permission for the keys within the platform container</p>
+    <p>The file permissions for the keys within the platform container also need to be adjusted.</p>
     
     <code>docker-compose exec -u root metaphactory sh -c "chown -R jetty:root /home/jetty/.ssh/ && chmod -R go-rwx /home/jetty/.ssh/" </code>
 

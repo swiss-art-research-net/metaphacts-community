@@ -2,8 +2,50 @@
   <semantic-context repository="assets">
     <ontodia 
              diagram="{{iri.value}}"
-             readonly=true
              [[> rsp:CidocOntodiaConfig ]]
-  ></ontodia>
+  	>
+      [[> rsp:CidocOntodiaDataProviders ]]
+
+  		<mp-workspace-layout>
+    		<mp-workspace-row>
+          <mp-workspace-column default-size=275 default-collapsed=true>
+            <mp-workspace-item id='classes' heading='Classes'>
+              <ontodia-class-tree></ontodia-class-tree>
+            </mp-workspace-item>
+            <mp-workspace-item id='instances' heading='Instances'>
+              <ontodia-instances-search></ontodia-instances-search>
+            </mp-workspace-item>
+          </mp-workspace-column>
+          <mp-workspace-item id='paper'>
+            <ontodia-canvas node-templates='{
+               "http://www.ics.forth.gr/isl/CRMinf/I2_Belief": "{{> rsp:BeliefOntodiaTemplate}}",
+               "http://www.researchspace.org/ontology/Place": "{{> rsp:ItemOntodiaTemplate }}",
+               "http://www.researchspace.org/ontology/Thing": "{{> rsp:ItemOntodiaTemplate }}"
+             }'>
+              <ontodia-toolbar>
+                <div class='btn-group btn-group-sm'>
+                  <button name='forceLayout' class='btn btn-default'><i class='fa fa-snowflake-o'></i></button>
+                  <button name='clearAll' class='btn btn-default'><i class='fa fa-trash'></i> Clear All</button>
+                  <button name='zoomIn' class='btn btn-default' title='Zoom in'><i class='fa fa-search-plus'></i></button>
+                  <button name='zoomOut' class='btn btn-default' title='Zoom out'><i class='fa fa-search-minus'></i></button>
+                  <button name='zoomToFit' class='btn btn-default' title='Fit to screen'><i class='fa fa-arrows-alt'></i></button>
+                  <button name='exportPng' class='btn btn-default' title='Export diagram as PNG'><i class='fa fa-picture-o'></i> PNG</button>
+                  <button name='exportSvg' class='btn btn-default' title='Export diagram as SVG'><i class='fa fa-picture-o'></i> SVG</button>
+                  <button name='print' class='btn btn-default' title='Print diagram'><i class='fa fa-print'></i></button>
+                </div>
+              </ontodia-toolbar>
+              <ontodia-halo></ontodia-halo>
+              <ontodia-halo-link></ontodia-halo-link>
+              <ontodia-navigator></ontodia-navigator>
+            </ontodia-canvas>
+          </mp-workspace-item>
+          <mp-workspace-column default-size=275 default-collapsed=true>
+            <mp-workspace-item id='connections' heading='Connections'>
+              <ontodia-connections></ontodia-connections>
+            </mp-workspace-item>
+          </mp-workspace-column>
+    		</mp-workspace-row>
+    	</mp-workspace-layout>
+    </ontodia>
   </semantic-context>
 </div>

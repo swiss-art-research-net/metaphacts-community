@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
@@ -29,7 +28,7 @@ import { getRepositoryStatus } from 'platform/api/services/repository';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { getLabels } from 'platform/api/services/resource-label';
 import { Component } from 'platform/api/components';
-import { ResourceLinkComponent } from 'platform/api/navigation/components/ResourceLinkComponent';
+import { ResourceLinkComponent } from 'platform/components/navigation/ResourceLinkComponent';
 import {
   TypedSelectionActionComponent
 } from 'platform/components/sets/TypedSelectionActionComponent';
@@ -91,7 +90,7 @@ export class SimpleAssertion extends React.Component<SimpleAssertionConfig, void
 export default SimpleAssertion;
 
 interface State {
-  targetOptions: Options;
+  targetOptions: Options<string>;
   targetValue?: Option<string>;
   targetTypes: Array<Rdf.Iri>;
   valueTypes: Array<Rdf.Iri>;
@@ -102,7 +101,7 @@ interface State {
 }
 
 class SimpleAssertionDialog extends Component<SimpleAssertionConfig, State> {
-  constructor(props, context) {
+  constructor(props: SimpleAssertionConfig, context: any) {
     super(props, context);
     this.state = {
       showAssertionDialog: false,
@@ -233,7 +232,7 @@ class SimpleAssertionDialog extends Component<SimpleAssertionConfig, State> {
         ).map(
           _.flatten
         ).map(
-          types => _.intersectionBy(types, t => t.value)
+          types => _.intersectionBy(types, (t: Rdf.Iri) => t.value)
         ).toProperty();
 
       this.getTypes(Rdf.iri(targetValue.value)).flatMap(
@@ -281,7 +280,7 @@ class SimpleAssertionDialog extends Component<SimpleAssertionConfig, State> {
       repos => Kefir.combine(repos.map(r => this.getTypesFromRepository(r, resource)))
     ).map(_.flatten)
     .map(
-      types => _.uniqWith(types, (a, b) => a.equals(b))
+      types => _.uniqWith(types, (a: Rdf.Iri, b: Rdf.Iri) => a.equals(b))
     ).toProperty();
 
   private TYPES_QUERY = SparqlUtil.Sparql`SELECT DISTINCT ?type WHERE { ?__resource__ a ?type }`;

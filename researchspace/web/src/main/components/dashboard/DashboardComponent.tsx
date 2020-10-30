@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +15,9 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { uniqueId } from 'lodash';
-import { WorkspaceLayout, WorkspaceLayoutNode, WorkspaceLayoutType } from 'ontodia';
+import { WorkspaceLayout, WorkspaceRow, WorkspaceColumn, WorkspaceItem } from 'ontodia';
 
 import { Component } from 'platform/api/components';
 import { TemplateItem } from 'platform/components/ui/template';
@@ -354,49 +353,44 @@ export class DashboardComponent extends Component<Props, State> {
 
   render() {
     const {items} = this.state;
-    const layout: WorkspaceLayoutNode = {
-      type: WorkspaceLayoutType.Row,
-      children: [{
-        type: WorkspaceLayoutType.Column,
-        children: [{
-          id: 'items',
-          type: WorkspaceLayoutType.Component,
-          content: <div className={styles.itemsContainer}>
-            {this.renderItems()}
-          </div> as React.ReactElement<any>,
-          heading: <div>
-            Thinking Frames&nbsp;
-            <button className={`btn btn-link btn-xs pull-right ${styles.addItemButton}`}
-              onClick={e => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.onAddNewItem();
-              }}>
-              <i className='fa fa-plus'/> Add frame
-            </button>
-          </div>,
-        }, {
-          id: 'thought-board',
-          type: WorkspaceLayoutType.Component,
-          content: React.Children.only(this.props.children) as React.ReactElement<any>,
-          heading: 'Thought Board',
-        }],
-        defaultSize: 300,
-      }, {
-        type: WorkspaceLayoutType.Column,
-        children: items.map(item => ({
-          id: item.id,
-          type: WorkspaceLayoutType.Component,
-          content: this.renderView(item) as React.ReactElement<any>,
-          heading: this.renderLabel(item),
-          minSize: this.props.frameMinSize,
-        })),
-        undocked: true,
-      }],
-    };
-    return <WorkspaceLayout layout={layout} _onResize={() =>
+    const heading = (
+      <div>
+        Thinking Frames&nbsp;
+        <button className={`btn btn-link btn-xs pull-right ${styles.addItemButton}`}
+          onClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.onAddNewItem();
+          }}>
+          <i className='fa fa-plus'/> Add frame
+        </button>
+      </div>
+    );
+    return <WorkspaceLayout _onResize={() =>
       window.dispatchEvent(new Event('resize'))
-    } />;
+    }>
+      <WorkspaceRow>
+        <WorkspaceColumn defaultSize={300}>
+          <WorkspaceItem id='items' heading={heading}>
+            <div className={styles.itemsContainer}>
+              {this.renderItems()}
+            </div>
+          </WorkspaceItem>
+          <WorkspaceItem id='thought-board' heading='Thought Board'>
+            {React.Children.only(this.props.children) as React.ReactElement<any>}
+          </WorkspaceItem>
+        </WorkspaceColumn>
+        <WorkspaceColumn undocked={true}>
+          {items.map(item =>
+            <WorkspaceItem id={item.id}
+              heading={this.renderLabel(item)}
+              minSize={this.props.frameMinSize}>
+              {this.renderView(item) as React.ReactElement<any>}
+            </WorkspaceItem>
+          )}
+        </WorkspaceColumn>
+      </WorkspaceRow>
+    </WorkspaceLayout>;
   }
 }
 

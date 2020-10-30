@@ -1,0 +1,440 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        },
+        "EdgeStyle": {
+            "properties": {
+                "editable": {
+                    "type": "boolean"
+                },
+                "linkStyle": {
+                    "$ref": "#/definitions/LinkStyle"
+                },
+                "markerSource": {
+                    "$ref": "#/definitions/LinkMarkerStyle"
+                },
+                "markerTarget": {
+                    "$ref": "#/definitions/Partial<LinkMarkerStyle>"
+                }
+            },
+            "propertyOrder": [
+                "markerSource",
+                "markerTarget",
+                "linkStyle",
+                "editable"
+            ],
+            "type": "object"
+        },
+        "JSX.Element": {
+            "type": "object"
+        },
+        "LinkLabel": {
+            "properties": {
+                "attrs": {
+                    "properties": {
+                        "rect": {
+                            "properties": {
+                                "fill": {
+                                    "type": "string"
+                                },
+                                "stroke": {
+                                    "type": "string"
+                                },
+                                "stroke-width": {
+                                    "type": "number"
+                                }
+                            },
+                            "propertyOrder": [
+                                "fill",
+                                "stroke",
+                                "stroke-width"
+                            ],
+                            "type": "object"
+                        },
+                        "text": {
+                            "properties": {
+                                "fill": {
+                                    "type": "string"
+                                },
+                                "font-family": {
+                                    "type": "string"
+                                },
+                                "font-size": {
+                                    "type": [
+                                        "string",
+                                        "number"
+                                    ]
+                                },
+                                "font-weight": {
+                                    "anyOf": [
+                                        {
+                                            "enum": [
+                                                "bold",
+                                                "bolder",
+                                                "lighter",
+                                                "normal"
+                                            ],
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "number"
+                                        }
+                                    ]
+                                },
+                                "stroke": {
+                                    "type": "string"
+                                },
+                                "stroke-width": {
+                                    "type": "number"
+                                },
+                                "text": {
+                                    "items": {
+                                        "$ref": "#/definitions/Literal"
+                                    },
+                                    "type": "array"
+                                }
+                            },
+                            "propertyOrder": [
+                                "fill",
+                                "stroke",
+                                "stroke-width",
+                                "font-family",
+                                "font-size",
+                                "font-weight",
+                                "text"
+                            ],
+                            "type": "object"
+                        }
+                    },
+                    "propertyOrder": [
+                        "rect",
+                        "text"
+                    ],
+                    "type": "object"
+                },
+                "position": {
+                    "type": "number"
+                },
+                "title": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "position",
+                "title",
+                "attrs"
+            ],
+            "type": "object"
+        },
+        "LinkMarkerStyle": {
+            "properties": {
+                "d": {
+                    "type": "string"
+                },
+                "fill": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "number"
+                },
+                "stroke": {
+                    "type": "string"
+                },
+                "strokeWidth": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "d",
+                "width",
+                "height"
+            ],
+            "required": [
+                "d",
+                "fill",
+                "height",
+                "width"
+            ],
+            "type": "object"
+        },
+        "LinkStyle": {
+            "properties": {
+                "connection": {
+                    "properties": {
+                        "fill": {
+                            "type": "string"
+                        },
+                        "stroke": {
+                            "type": "string"
+                        },
+                        "stroke-dasharray": {
+                            "type": "string"
+                        },
+                        "stroke-width": {
+                            "type": "number"
+                        }
+                    },
+                    "propertyOrder": [
+                        "fill",
+                        "stroke",
+                        "stroke-width",
+                        "stroke-dasharray"
+                    ],
+                    "type": "object"
+                },
+                "connector": {
+                    "properties": {
+                        "args": {
+                            "properties": {
+                            },
+                            "type": "object"
+                        },
+                        "name": {
+                            "type": "string"
+                        }
+                    },
+                    "propertyOrder": [
+                        "name",
+                        "args"
+                    ],
+                    "type": "object"
+                },
+                "label": {
+                    "$ref": "#/definitions/LinkLabel"
+                },
+                "properties": {
+                    "items": {
+                        "$ref": "#/definitions/LinkLabel"
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "connection",
+                "label",
+                "properties",
+                "connector"
+            ],
+            "type": "object"
+        },
+        "Literal": {
+            "properties": {
+                "datatype": {
+                    "$ref": "#/definitions/NamedNode<string>",
+                    "description": "A NamedNode whose IRI represents the datatype of the literal."
+                },
+                "hashCode": {
+                    "description": "Only for compatibility with external hash-based collections (e.g. Immutable.js);\nuse Rdf.hashTerm() instead.",
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "language": {
+                    "description": "the language as lowercase BCP47 string (examples: en, en-gb)\nor an empty string if the literal has no language.",
+                    "type": "string"
+                },
+                "termType": {
+                    "description": "Contains the constant \"Literal\".",
+                    "enum": [
+                        "Literal"
+                    ],
+                    "type": "string"
+                },
+                "value": {
+                    "description": "The text value, unescaped, without language or type (example: Brad Pitt).",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "termType",
+                "value",
+                "language",
+                "datatype",
+                "equals",
+                "hashCode"
+            ],
+            "required": [
+                "datatype",
+                "language",
+                "termType",
+                "value"
+            ],
+            "type": "object"
+        },
+        "NamedNode<string>": {
+            "description": "Contains an IRI.",
+            "properties": {
+                "termType": {
+                    "description": "Contains the constant \"NamedNode\".",
+                    "enum": [
+                        "NamedNode"
+                    ],
+                    "type": "string"
+                },
+                "value": {
+                    "description": "The IRI of the named node (example: `http://example.org/resource`)",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "termType",
+                "value",
+                "equals"
+            ],
+            "required": [
+                "termType",
+                "value"
+            ],
+            "type": "object"
+        },
+        "Partial<LinkMarkerStyle>": {
+            "description": "Make all properties in T optional",
+            "properties": {
+                "d": {
+                    "type": "string"
+                },
+                "fill": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "number"
+                },
+                "stroke": {
+                    "type": "string"
+                },
+                "strokeWidth": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "fill",
+                "stroke",
+                "strokeWidth",
+                "d",
+                "width",
+                "height"
+            ],
+            "type": "object"
+        },
+        "ZoomOptions": {
+            "properties": {
+                "fitPadding": {
+                    "type": "number"
+                },
+                "max": {
+                    "type": "number"
+                },
+                "maxFit": {
+                    "type": "number"
+                },
+                "min": {
+                    "type": "number"
+                },
+                "requireCtrl": {
+                    "type": "boolean"
+                },
+                "step": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "min",
+                "max",
+                "step",
+                "maxFit",
+                "fitPadding",
+                "requireCtrl"
+            ],
+            "type": "object"
+        }
+    },
+    "description": "Renders graph, allows navigating through data.",
+    "properties": {
+        "autoZoom": {
+            "description": "If true zoomToFit to call on each addElements event.",
+            "type": "boolean"
+        },
+        "children": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSX.Element"
+                },
+                {
+                    "items": {
+                        "$ref": "#/definitions/JSX.Element"
+                    },
+                    "type": "array"
+                }
+            ],
+            "description": "Canvas widgets."
+        },
+        "defaultEdgeStyle": {
+            "$ref": "#/definitions/EdgeStyle",
+            "description": "Default custom style of the links."
+        },
+        "defaultNodeTemplate": {
+            "description": "Default custom template of the elements.",
+            "type": "string"
+        },
+        "edgeStyles": {
+            "additionalProperties": {
+                "$ref": "#/definitions/EdgeStyle"
+            },
+            "description": "Custom styles of the links.",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "id": {
+            "description": "Unique ID.",
+            "type": "string"
+        },
+        "nodeTemplates": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "description": "Custom templates of the elements.",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "CSS classes for ontodia Canvas."
+        },
+        "useKnowledgePanel": {
+            "description": "Defines whether the info icon (to open the resource's knowledge panel)\nis shown inside the node. Note that this setting only applies to\ndefault templates.",
+            "type": "boolean"
+        },
+        "zoomOptions": {
+            "$ref": "#/definitions/ZoomOptions",
+            "default": "{min: 0.002, maxFit: 1}",
+            "description": "Zoom options."
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "autoZoom",
+        "style",
+        "zoomOptions",
+        "nodeTemplates",
+        "defaultNodeTemplate",
+        "edgeStyles",
+        "defaultEdgeStyle",
+        "children",
+        "useKnowledgePanel"
+    ],
+    "type": "object"
+}
+

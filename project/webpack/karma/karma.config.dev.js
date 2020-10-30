@@ -16,7 +16,6 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-const assign = require('object-assign');
 const defaultsFn = require('../defaults.js');
 
 /**
@@ -26,10 +25,16 @@ module.exports = function (config) {
   const defaults = defaultsFn();
   const karmaConfig = require('./karma.config.js')(defaults);
 
-  config.set(assign({}, karmaConfig, {
+  config.set({
+    ...karmaConfig,
     logLevel: config.LOG_INFO,
     autoWatch: true,
-    reporters: [ 'mocha' ],
+    browsers: ['Chrome'],
+    reporters: ['mocha'],
+    // @ts-ignore
+    mochaReporter: {
+      showDiff: true
+    },
     // Fix for tests run twice
     // https://github.com/nikku/karma-browserify/issues/67#issuecomment-84281528
     files: [
@@ -38,16 +43,12 @@ module.exports = function (config) {
         watched: false,
         served: true
       },
-      ... defaults.TEST_DIRS.map(testDir => ({
+      ...defaults.TEST_DIRS.map(testDir => ({
         pattern: testDir + '/**/*.test.ts',
         watched: false,
         included: true,
         served: true
-
       }))
     ],
-    mochaReporter: {
-      showDiff: true
-    }
-  }));
+  });
 };

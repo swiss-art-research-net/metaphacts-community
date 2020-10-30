@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Alexey Morozov
@@ -25,6 +24,7 @@ import * as React from 'react';
 import { Component } from 'react';
 import * as assign from 'object-assign';
 
+import { SparqlClient } from 'platform/api/sparql';
 import { AutoCompletionInput } from 'platform/components/ui/inputs';
 
 import {SelectedArea, OLMapSelection, ZoomToOptions} from './OLMapSelection';
@@ -60,14 +60,14 @@ export class MapSelectionOverlay extends Component<MapSelectionProps, MapSelecti
       query: this.props.suggestionConfig.query,
       templates: {},
       actions: {
-        onSelected: (binding) => {
+        onSelected: ((binding: SparqlClient.Binding) => {
           this.setState(assign({}, this.state, {
             zoomToOptions: {
               lat: Number(binding['lat'].value),
               long: Number(binding['long'].value),
               zoomLevel: 10},
             }));
-          },
+          }) as (selected: SparqlClient.Binding | SparqlClient.Binding[]) => void,
       },
       placeholder: 'Search for place',
     });

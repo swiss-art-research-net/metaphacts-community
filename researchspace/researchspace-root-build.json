@@ -1,6 +1,10 @@
 {
+  "distribution": "researchspace",
+  "distributionTitle": "ResearchSpace",
   "includeProjects": ["metaphacts-platform", "researchspace"],
+  "ontodiaDist": "metaphacts-platform/ontodia",
   "bundleAppsFrom": ["metaphacts-platform", "researchspace"],
+  "mainWebapp": "metaphacts-platform/webapp",
   "applyThemeFrom": "researchspace",
   "license": {
     "licenseFile": "researchspace/LICENSE.txt",

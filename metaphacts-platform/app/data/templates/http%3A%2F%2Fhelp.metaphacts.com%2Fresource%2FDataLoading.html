@@ -1,0 +1,137 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Data Loading</h1>
+
+    <p>
+      Loading data can become a frustrating task, if you choose the wrong tooling and/or are constrained by the technical environment. <br>
+      Below we outline some high-level options and recommendations assuming you already have RDF data in place.
+    </p>
+    Consider:
+    <ul>
+      <li>Option 1, if you have small files and require fast turnarounds during development / prototyping.</li>
+      <li>Option 2, if you do not have access to the databases directly (e.g. for security/infrastructure reasons). </li>
+      <li>Option 3, if you have access to the database and respective CLI. Most efficient (time and resource consumption) and greatest flexibility for larger data.</li>
+    </ul>
+    
+    <h2>Option 1: Data Import via Drag &amp; Drop (HTTP RDF GraphStore Protocol)</h2>
+    
+    <p>
+      Simple things should be simple. Use <semantic-link iri="[[resolvePrefix "Admin:DataImportExport"]]">Data Import &amp; Export UI</semantic-link>.
+    </p>
+    <p>  
+    If you are getting started with your knowledge graph journey, have small files and/or want to do one time imports, then use the UI to ingest your RDF files via simple drag &amp; drop.
+    </p>
+
+    <h4>Caveats</h4>
+    <p>
+      <b>Data Import via Drag &amp; Drop works only well for smaller files (maximum ~50-100 mb):</b>
+    </p>
+    <ul>
+      <li> 
+        All communication is done via HTTP. This is typically limited by the maximum body size a client may post against the webserver, i.e. tomcat, jetty or nginx default configuration is usually around 2 MBs. <br> We have increased this default limit:
+        <ul>
+          <li> 
+						Jetty (platform's default webserver): The body size set to 100mb via environment variables<code>PLATFORM_OPTS="-Dorg.eclipse.jetty.server.Request.maxFormContentSize=104857600"</code>.
+          </li>
+ 					<li> 
+						nginx (proxy): In our standard <a href="https://github.com/metaphacts/metaphactory-docker-compose/#setup" target="_blank">docker-compose</a> setup (c.f. Step 9), the <code>client_max_body_size 100m;</code> of the nginx proxy is increased to 100MB.
+          </li>
+           <li> 
+						Other infrastructure or corporate specific proxies. Please consult with your infrastructure team, i.e. there might be corporate proxies that have additional constraints or, for example, additional load balancer settings that manipulate headers or filter traffic. 
+          </li>
+       </ul>
+      </li>
+      <li>
+        You might be able to stretch the limits slightly, however, there is a certain threshold where it becomes inefficient and the costs are not well balanced. GraphStore operations are translated to plain SPARQL Update transaction internally and may result into huge queries, which are naturally more costly to process than reading data streamingly from a sequential data file.
+      </li>
+    </ul>
+
+    <b>For ingesting larger datasets it is generally recommended to load the data from the filesystem</b>, e.g. using the SPARQL LOAD command or dedicated graph database APIs (c.f. below). 
+    <h2>Option 2: Data Loading from the Host Filesystem (SPARQL Update LOAD command)</h2>
+    <p>
+    Many database vendors support through the <a href="https://www.w3.org/TR/sparql11-update/#load" target="_blank">SPARQL 1.1 Update protocol</a> loading files from HTTP (http://) or File URL (file://) locations.<br>
+    
+    This way, you can instruct the database to load a file natively from the file system without needing access to the database CLI and without posting the data via HTTP.
+    </p>
+      <p>
+    Often it is a viable option to mount a external volume into the database container or into the virtual machine. In some settings it is possible to then get shared network access to that volume and as such make files available to the database. Alternatively, a specific data loading zone could be implemented that synchronizes the files from a location that is accessible to you (for example, a S3 bucket) with the database dataset volume.
+    </p>
+
+    <p>
+      To load data directly from the filesystem into the database, the RDF files must be accessible from the database's host file system.
+    </p>
+    You can either enter the File URL into the <semantic-link iri="[[resolvePrefix "Admin:DataImportExport"]]">Data Import &amp; Export UI</semantic-link> (Tab "Load by HTTP/FTP/File URL") and trigger the load from there or execute the load as plain SPARQL Update command: 
+
+    <mp-code-block mode='application/sparql-query'>
+      <![CDATA[
+LOAD <file:///datasets/bio2rdf/drugbank/bio2rdf-drugbank.nq>
+INTO GRAPH <file:///datasets/bio2rdf/drugbank/bio2rdf-drugbank.nq>
+]]>
+    </mp-code-block>
+ 
+    <h4>Caveats</h4>
+    <p>
+      <b>SPARQL 1.1 Update operations are synchronous</b> (c.f. <a href="https://github.com/w3c/sparql-12/issues/7">SPARQL 1.2 discussion</a>), which means that you may run into different kind of timeouts:
+    </p>
+    <ul>
+      <li>HTTP connection timeouts - All HTTP proxies in-front of the platform and in-front of the database must be configured to allow long lasting conenctions.
+      </li>
+      <li>
+        Database query timeouts - Different databases support different modes of global query timeouts. Thus the database may terminate your update operation.
+      </li>
+    </ul>
+    <h2>Option 3: Data Loading via dedicated graph database APIs</h2>
+
+    Major graph database vendors provide dedicated, but usually proprietary (bulk) data loading tools and APIs. Compare, for example:
+    <ul>
+      <li>
+        <a href="https://wiki.blazegraph.com/wiki/index.php/Bulk_Data_Load" target="_blank">Blazegraph DataLoader utility</a>
+      </li>
+      <li>
+        <a href="https://www.stardog.com/docs/man/db-create.html" target="_blank">Stardog DB creation</a>
+      </li>
+      <li>
+        <a href="http://vos.openlinksw.com/owiki/wiki/VOS/VirtBulkRDFLoader" target="_blank">Virtuoso BulkRDFLoader</a>
+      </li>
+      <li>
+        <a href="https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load.html" target="_blank">Amazon Neptune Loader</a>
+      </li>
+      <li>
+        <a href="http://graphdb.ontotext.com/documentation/standard/loading-data.html" target="_blank">Ontotext GraphDB</a>
+      </li>
+    </ul> 
+    The advantage of those tools is that they provide a much higher degree of flexibility in specifying the most performant configuration w.r.t to the environment and data anomalies (i.e. configuring the buffer size, flushing buffers, disabling expensive indicies etc.). 
+    However, at the same time they require a fairly high level of (technical) understanding, while being proprietary as well as environment specific.
+
+
+    <h2>Additional Remarks</h2>
+    Automate processes as early as possible. Consult with your devops and infrastructure team for available options. Option 1 and 2 can, for example, be executed via REST calls. Below you will find two examples.
+    <h4>Example: Post an RDF file to the RDFGraphStore endpoint</h4>
+    You can upload your RDF file, for example, <code>foaf.rdf</code> with a single CURL command into a Named Graph with the graph identifier <code mode='application/sparql-query'>&lt;http://my.foaf.graph/&gt;</code>:
+    <mp-code-block mode='text/x-sh'>
+<![CDATA[
+curl -v -u admin:admin -X POST -H 'Content-Type: application/xml' --data-binary '@foaf.rdf' 'http://127.0.0.1:10214/rdf-graph-store?graph=http%3A%2F%2Fmy.foaf.graph%2F'
+]]>
+    </mp-code-block>
+    <h4>Example: Execute a SPARQL Update command via CURL to load a file from File URL</h4>
+    You may save your SPARQL Update Load command <code>LOAD &lt;file:///datasets/bio2rdf/drugbank/bio2rdf-drugbank.nq&gt;
+    INTO GRAPH &lt;file:///datasets/bio2rdf/drugbank/bio2rdf-drugbank.nq&gt;</code>  into a file <code>load_into.sq</code>.
+    This then can be executed in the SPARQL endpoint using, for example, CURL:
+    <mp-code-block mode='text/x-sh'>
+<![CDATA[
+curl 'http://127.0.0.1:10214/sparql' -u admin:admin -H 'Content-Type: application/sparql-update; charset=UTF-8' -H 'Accept: text/boolean' -d @load_into.sq
+]]>
+    </mp-code-block>
+
+    <p>
+      This way it is possible, for example, to trigger nightly (re)loads of data from a mounted file system through a remote call. 
+      In principle, it is also possible to use several load commands within a single update operation 
+      (just enumerate several <code mode='application/sparql-query'>LOAD &lt;&gt; INTO GRAPH&lt;&gt;; </code> commands, separated by a semicolon). 
+      However, most triples stores will execute this in one transaction and as such may lead to higher memory presure. 
+      Moreover, most graph database vendors also support loading remote files from a HTTP location or to load (g)zip compressed files.
+    </p>
+    
+  </div>
+</div>

@@ -24,23 +24,9 @@ const ProgressBarPlugin = require('progress-bar-webpack-plugin');
  * @param {ReturnType<import('./defaults')>} defaults
  */
 module.exports = function(defaults) {
-  const config = require('./webpack.config.js')(defaults);
-  // enable sourceMaps for ts loader
-
-  let tsLoader = config.module.rules[0].use[0];
-  const tsOptions = tsLoader.options;
-  tsOptions.compilerOptions = {
-    sourceMap: true
-  };
-
-  if (!defaults.ROOT_BUILD_CONFIG.noTsCheck) {
-    config.plugins.push(defaults.tsTypeCheck(false));
-  }
-
-  config.mode = 'development';
+  const config = require('./webpack.config.js')(defaults, {buildMode: 'dev'});
 
   config.plugins.push(
-    defaults.tsHappyPack(tsLoader),
     new webpack.DefinePlugin({
       BUNDLE_HIGHCHARTS: process.env.BUNDLE_HIGHCHARTS
     }),

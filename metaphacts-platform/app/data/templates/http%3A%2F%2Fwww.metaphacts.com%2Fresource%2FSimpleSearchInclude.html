@@ -1,6 +1,6 @@
   [[!--
     To include this page within you application, you can optionally pass in the following parameters:
-    
+
     searchPattern="?subject rdfs:label|skos:prefLabel ?label . ?label bds:search ?__token__ ;"
 		searchPlaceholder="Type to search for X"
     searchLimit="100"
@@ -52,8 +52,8 @@
     <semantic-search limit=[[#if searchLimit]][[searchLimit]][[else]]10[[/if]]>
       [[!-- heuristics to check whether we have a blazegraph instance and can apply bds search --]]
       [[#if (ask "ASK {  <http://www.bigdata.com/queryHints#Query> <http://www.bigdata.com/queryHints#optimizer> 'None' . ?x ?y ?z . }") ]]
-        <semantic-search-query-keyword 
-          [[#if searchPlaceholder]]placeholder='[[searchPlaceholder]]'[[/if]]                                 
+        <semantic-search-query-keyword
+          [[#if searchPlaceholder]]placeholder='[[searchPlaceholder]]'[[/if]]
           domain='<http://www.w3.org/2000/01/rdf-schema#Resource>'
           query='
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -62,7 +62,7 @@
             SELECT ?subject WHERE {
               [[#if searchPattern]]
                 [[searchPattern]]
-              [[else]]                      
+              [[else]]
                 ?subject rdfs:label|skos:prefLabel ?label .
                 ?label bds:search ?__token__ ;
                   bds:minRelevance "0.5" ;
@@ -74,10 +74,9 @@
           '
         ></semantic-search-query-keyword>
       [[else]]
-        <semantic-search-query-keyword 
-          [[#if searchPlaceholder]]placeholder='[[searchPlaceholder]]'[[/if]]                          
+        <semantic-search-query-keyword
+          [[#if searchPlaceholder]]placeholder='[[searchPlaceholder]]'[[/if]]
           domain='<http://www.w3.org/2000/01/rdf-schema#Resource>'
-          escape-lucene-syntax='false'
           query='
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 						PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -118,7 +117,7 @@
                           <h4><semantic-link uri="{{subject.value}}"></semantic-link></h4>
                         </div>
                       </div>
-                      
+
                     </div>
                   </mp-panel-body>
                   <mp-panel-footer>
@@ -130,7 +129,7 @@
                   </mp-panel-footer>
                 </mp-panel>
             </template>
-					</semantic-table>          
+					</semantic-table>
 				</semantic-search-result>
       </div>
     </semantic-search-result-holder>

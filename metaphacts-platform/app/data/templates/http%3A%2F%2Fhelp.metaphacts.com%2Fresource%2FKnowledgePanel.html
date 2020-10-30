@@ -1,0 +1,326 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class='page'>
+  <div class='page__body'>
+    <h1>Knowledge Panel</h1>
+    <h2>Purpose</h2>
+    <p>
+      The Knowledge Panel component allows to display a quick structured summary of knowledge graph resources as a smaller alternative to the general page. Users do not need to leave the current context nor navigate away to a dedicated page in order to get more details about a particular resource.
+    </p>
+    <p>
+    <h2>Configuration</h2>
+      <p>The recommended way of embedding the Knowledge Panel into a page is to use the <code>mp-knowledge-panel-trigger</code> and <code>mp-knowledge-panel-frame</code> components with their default configurations. A simple demo example (working with the <semantic-link uri="[[resolvePrefix "Help:Tutorial"]]">tutorial</semantic-link> sample data) is presented below:
+    </p>
+    <mp-code-example show-code-by-default='true'>
+      <![CDATA[
+<div data-flex-layout='row stretch-stretch'>
+   <div data-flex-self='md-full'>
+     <mp-knowledge-panel-trigger iri='http://example.org/alice#me'></mp-knowledge-panel-trigger>
+    </div>
+    <mp-knowledge-panel-frame></mp-knowledge-panel-frame>
+</div>
+      ]]>
+    </mp-code-example>
+    <br />
+    <p>
+      The <code>mp-knowledge-panel-trigger</code> component instructs the <code>mp-knowledge-panel-frame</code> to open the Knowledge Panel frame for the passed resource. The <code>mp-knowledge-panel-trigger</code> accepts the following configuration options:
+    </p>
+    <mp-documentation type='KnowledgePanelTriggerConfig'></mp-documentation>
+    <br />
+    <p>
+      The <code>mp-knowledge-panel-frame</code> component defines the position of the Knowledge Panel on the page. When triggered, it displays the Knowledge Panel frame for the received resource. This component accepts the following configuration options:
+    </p>
+    <mp-documentation type='KnowledgePanelFrameConfig'></mp-documentation>
+
+    <h3>Knowledge Panel trigger options</h3>
+    <p>
+      By default the <code>knowledge-panel-trigger</code> renders a <code>semantic-link</code> with an additional <i class="fa fa-info-circle" aria-hidden="true"></i> icon, where the <i class="fa fa-info-circle" aria-hidden="true"></i> icon only appears when the user hovers the resource. This provides the ability for the user to either click a link and navigate to the resource's page, or to click the <i class="fa fa-info-circle" aria-hidden="true"></i> icon to open the Knowledge Panel. If in a particular use-case this behavior leads to users unwillingly navigating away, the <code>knowledge-panel-trigger</code> can be customized so clicking on the label also opens the Knowledge Panel. This can be done by setting the <code>mode</code> to <code>full</code>.
+    </p>
+
+     <mp-code-example show-code-by-default='true'>
+      <![CDATA[
+<div data-flex-layout='row stretch-stretch'>
+  <div data-flex-self='md-full'>
+    <mp-knowledge-panel-trigger iri='http://example.org/alice#me' mode='full'>
+    </mp-knowledge-panel-trigger>
+  </div>
+    <mp-knowledge-panel-frame></mp-knowledge-panel-frame>
+</div>
+      ]]>
+    </mp-code-example>
+
+    <h3>Knowledge Panel integration with Search</h3>
+
+    <p>
+      The main use case for using the Knowledge Panel in the platform is that of <semantic-link uri="[[resolvePrefix "Help:SemanticSearch"]]">Search</semantic-link>. It allows users to see details about search results without navigating away from the current search context. The user opens the Knowledge Panel for a particular search result by clicking the <i class="fa fa-info-circle" aria-hidden="true"></i> icon (which by default appears when hovering a resource in the table).
+    </p>
+    <p>
+The Knowledge Panel and search components are integrated with each other such that when the user changes search input or adds constraining facets, the search will dismiss the already opened Knowledge Panel, if the search result does not match the new search query.
+
+    </p>
+
+    <p>
+      NOTE: for the following examples to work, please download the <a href="/metaphacts/samples/sample.ttl">sample data</a> (simple right click and save as). You can now load this data into the backing store via the <semantic-link uri="[[resolvePrefix "Admin:DataImportExport"]]"> data import and export</semantic-link> administration page.
+    </p>
+    <p>
+      [[#if (ask "ASK {  <http://example.org/bob#me> a <http://xmlns.com/foaf/0.1/Person>  }") ]]
+      <span style="color:green;font-weight: bold; ">Check: It seems that you have already correctly loaded the sample data.</span>
+      [[else]]
+      <span style="color:red;font-weight: bold; ">Check: It seems that you have not yet loaded the sample data.</span>
+      [[/if]]
+    </p>
+    <p>
+      Try to type <i>alice</i> to search for all people that know her. Then click the <i class="fa fa-info-circle" aria-hidden="true"></i> icon right next to the result to know more about it from the Knowledge Panel.
+    </p>
+    <mp-code-example>
+    <![CDATA[
+    <semantic-search
+			search-profile='{
+    		"categories": [{
+    	  	  "iri": "<http://xmlns.com/foaf/0.1/Person>",
+    	  	  "label": "Person"
+    	  	}],
+    	  "relations": [{
+    	  	  "iri": "<http://xmlns.com/foaf/0.1/knows>",
+    	  	  "label": "knows",
+    	  	  "hasDomain": "<http://xmlns.com/foaf/0.1/Person>",
+    	  	  "hasRange": "<http://xmlns.com/foaf/0.1/Person>"
+    	  	}]
+    	}'
+			knowledge-panel-id='knowledge-panel'
+  	>
+      <semantic-search-query-keyword
+        domain='<http://xmlns.com/foaf/0.1/Person>'
+        query='
+          PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+          SELECT ?subject WHERE {
+            ?subject foaf:knows ?friend.
+            ?friend rdfs:label ?label .
+            FILTER REGEX(STR(?label), ?__token__, "i")
+          }
+        '
+      ></semantic-search-query-keyword>
+			<div data-flex-layout='row stretch-stretch'>
+				<semantic-search-result-holder>
+  				<div data-flex-self='md-full'>
+						<semantic-search-result>
+              <semantic-table id='results-table'
+                query='SELECT * WHERE {}'
+                column-configuration='[{
+                    "variableName": "subject",
+                    "displayName": "Subject",
+                    "cellTemplate": "{{> template iri=subject.value}}"
+                  }
+                ]'
+                options='{"showFilter": false}'
+              >
+                <template id='template'>
+                  <mp-knowledge-panel-trigger
+                    iri='{{iri}}'
+                    target='knowledge-panel-1'
+                  >
+									</mp-knowledge-panel-trigger>
+                </template>
+              </semantic-table>
+						</semantic-search-result>
+					</div>
+				</semantic-search-result-holder>
+				<mp-knowledge-panel-frame id='knowledge-panel-1'></mp-knowledge-panel-frame>
+			</div>
+		</semantic-search>
+    ]]>
+    </mp-code-example>
+    <p>
+      Note: In the example above a unique ID is specified for <code>mp-knowledge-panel-frame</code>. This is only required if multiple Knowledge Panels are used on the same page (like in this documentation). The <code>knowledge-panel-id</code> attribute in the <code>semantic-search</code> component is required to connect the <semantic-link uri="[[resolvePrefix "Help:SemanticSearch"]]">search framework</semantic-link> with a specific Knowledge Panel. In a real use case we recommend to delete the unique ID and use only a single Knowledge Panel on a given page.
+    </p>
+
+  <h3>Knowledge Panel Contents</h3>
+    <p>
+      The platform provides a default template for resources when displayed in the Knowledge Panel. This default template shows the <i>label</i>, <i>thumbnail</i> and <i>types</i> of the selected resource and moreover lists the resource's properties.
+
+      Because of the great variety in data models, it is recommended to define a domain and use-case specific Knowledge Panel content. A common refinement is to show a predefined set of properties for a given concept (e.g. the name, address and age for a person).
+    </p>
+    <p>
+      Default content rendered by the Knowledge Panel is defined in the dedicated template <semantic-link iri='PanelTemplate:http://www.w3.org/2000/01/rdf-schema#Resource'><span>PanelTemplate:http://www.w3.org/2000/01/rdf-schema#Resource</span></semantic-link>. Similar to the main <semantic-link uri="[[resolvePrefix "Help:TemplateAndApplicationPages"]]">templating mechanism</semantic-link>, resolution of Knowledge Panel templates is type-specific. In order to override a knowledge panel template for a specific class, the special <code>PanelTemplate</code> prefix needs to be used concatenated with the class IRI, e.g. <code>PanelTemplate:http://xmlns.com/foaf/0.1/Person</code> gets applied to instances of <code>foaf:Person</code>. To create such a template in the UI of the platform, navigate to the edit view of its resource page (e.g. <code>/resource/?uri=PanelTemplate:http://xmlns.com/foaf/0.1/Person&amp;action=edit</code>).
+    </p>
+    <p>
+      It is recommended that the template for the Knowledge Panel content only includes a presentation of the selected resource. If it is required to offer some action for the resource in the Knowledge Panel, the recommended way is to configure it inside the UI component that contains the Knowledge Panel definition, like <code>mp-knowledge-panel-frame</code> or any of the alternative embedding options (described below).
+    </p>
+
+    <h2>Advanced Configuration</h2>
+
+    <h3>Knowledge Panel Customization</h3>
+    <p>
+      The platform provides the ability to override the default placement of the Knowledge Panel in the page. The <code>mp-knowledge-panel-frame</code> component accepts the <code>template</code> attribute to define a custom template. For reference, an example template is depicted below:
+    </p>
+    <mp-code-block>
+      <![CDATA[
+      {{#if iri}}
+          <style>
+            *[data-knowledge-panel-iri='{{iri}}'] {
+              background: lightblue;
+            }
+            *[data-knowledge-panel-iri="{{iri}}"] .knowledge-panel-trigger__button {
+              opacity: 1;
+              visibility: visible;
+            }
+          </style>
+          <div
+              class='knowledge-panel-frame'
+              data-flex-self='size-1of3'
+          >
+            <div class='knowledge-panel-frame__buttons'>
+              {{#if pinned}}
+              <mp-event-trigger type='KnowledgePanel.Unpin'>
+                <button class='knowledge-panel-frame__button knowledge-panel-frame__pin active'>
+                  <i class='fa fa-thumb-tack'></i>
+                </button>
+              </mp-event-trigger>
+              {{else}}
+              <mp-event-trigger type='KnowledgePanel.Pin'>
+                <button class='knowledge-panel-frame__button knowledge-panel-frame__pin'>
+                  <i class='fa fa-thumb-tack'></i>
+                </button>
+              </mp-event-trigger>
+              {{/if}}
+              <mp-event-trigger type='KnowledgePanel.Close'>
+                <button class='knowledge-panel-frame__button'>
+                  <i class='fa fa-times'></i>
+                </button>
+              </mp-event-trigger>
+            </div>
+
+            <mp-knowledge-panel iri='{{iri}}'></mp-knowledge-panel>
+          </div>
+      {{/if}}
+      ]]>
+    </mp-code-block>
+    <p>
+      In the default template the <code>mp-knowledge-panel</code> component is used. It accepts a resource, fetches the respective Knowledge Panel template and displays it. This component accepts the following configuration options:
+    </p>
+    <mp-documentation type='KnowledgePanelConfig'></mp-documentation>
+
+    <h3>Options for embedding Knowledge Panel in a page</h3>
+    <p>
+      The platform supports different ways of embedding the Knowledge Panel in the page. For this it can be integrated with different components such as <semantic-link uri="[[resolvePrefix "Help:MPComponents"]]">Overlay Dialog</semantic-link>, <semantic-link uri="[[resolvePrefix "Help:ReactBootstrapPopover"]]">Popover</semantic-link> and <semantic-link uri="[[resolvePrefix "Help:MPSplitPaneComponent"]]">Split Pane</semantic-link> as illustrated in the following.
+    </p>
+
+    <h4>Example: Knowledge Panel in Overlay Dialog</h4>
+    <mp-code-example>
+    <![CDATA[
+    <mp-overlay-dialog title=' '>
+      <mp-overlay-dialog-trigger>
+        <a>
+					<mp-label iri='http://example.org/alice#me'></mp-label>
+				</a>
+      </mp-overlay-dialog-trigger>
+      <mp-overlay-dialog-content>
+        <mp-knowledge-panel iri='http://example.org/alice#me'></mp-knowledge-panel>
+      </mp-overlay-dialog-content>
+    </mp-overlay-dialog>
+    ]]>
+    </mp-code-example>
+
+    <h4>Example: Knowledge Panel in Popover</h4>
+    <mp-code-example>
+    <![CDATA[
+    <mp-popover>
+      <mp-popover-trigger placement='bottom' trigger='["click"]'>
+        <a>
+        	<mp-label iri='http://example.org/alice#me'></mp-label>
+        </a>
+      </mp-popover-trigger>
+      <mp-popover-content>
+        <div style='background: #fff; color: #333; margin: -9px -14px; padding: 9px 14px; overflow: auto; width: 400px;'>
+          <style>.popover { max-width: 404px }</style>
+          <mp-knowledge-panel iri='http://example.org/alice#me'></mp-knowledge-panel>
+        </div>
+      </mp-popover-content>
+    </mp-popover>
+    ]]>
+    </mp-code-example>
+
+    <h4>Example: Knowledge Panel in Split-Pane</h4>
+    <mp-code-example>
+    <![CDATA[
+		<mp-event-proxy
+			on-event-source='knowledge-panel-sidebar-trigger'
+			on-event-type='KnowledgePanel.Open'
+			proxy-event-type='SplitPane.Open'
+		>
+		</mp-event-proxy>
+
+    <mp-splitpane
+			default-open=false
+      min-size=35
+      primary='second'
+      persist-resize=false
+    >
+			<div>
+        <ul>
+          <li>
+            <mp-knowledge-panel-trigger
+							id='knowledge-panel-sidebar-trigger'
+							iri='http://example.org/alice#me'
+							target='knowledge-panel-sidebar'
+						></mp-knowledge-panel-trigger>
+          </li>
+					<li>
+            <mp-knowledge-panel-trigger
+							id='knowledge-panel-sidebar-trigger'
+							iri='http://example.org/bob#me'
+							target='knowledge-panel-sidebar'
+						></mp-knowledge-panel-trigger>
+          </li>
+				</ul>
+      </div>
+      <div data-flex-layout='column top-stretch' style='border-left: 1px solid #a2a2a2; height: auto'>
+        <mp-splitpane-toggle-on>
+          <button style='border: none; background: transparent; padding: 15px 2px; outline: none; width: 100%;'>
+            <i class='fa fa-angle-double-left' style='font-size: 20px'></i>
+          </button>
+        </mp-splitpane-toggle-on>
+        <mp-splitpane-toggle-off>
+          <button data-flex-layout='row center-left' style='border: none; border-bottom: 1px solid #999; background: #fff; padding: 15px; outline: none; width: 100%'>
+            <div class='fa fa-angle-double-right' style='font-size: 20px; margin-right: 10px'></div>
+            <h4 style='margin: 0px'>Sidebar</h4>
+          </button>
+        </mp-splitpane-toggle-off>
+        <mp-splitpane-sidebar-open style='display: flex; flex-direction: column; flex: auto; overflow: auto'>
+          <mp-knowledge-panel-frame
+            id='knowledge-panel-sidebar'
+            trigger='knowledge-panel-sidebar-trigger'
+            template='{{> template}}'
+          >
+            <template id='template'>
+              {{#if iri}}
+              <style>
+                *[data-knowledge-panel-iri="{{iri}}"] {
+                  background: lightblue;
+                }
+              </style>
+              <mp-knowledge-panel iri='{{iri}}'></mp-knowledge-panel>
+              {{else}}
+              <h4>Select a resource in the list</h4>
+              {{/if}}
+            </template>
+          </mp-knowledge-panel-frame>
+        </mp-splitpane-sidebar-open>
+      </div>
+    </mp-splitpane>
+    ]]>
+    </mp-code-example>
+
+    <h3>
+      Knowledge Panel Events
+    </h3>
+    <p>
+      The <code>mp-knowledge-panel-frame</code> component listens to the following commands:
+    </p>
+    <mp-documentation
+    	type='KnowledgePanelEventData'
+    	disable-transform-attributes=true
+    	hide-required-label=true>
+    </mp-documentation>
+  </div>
+</div>

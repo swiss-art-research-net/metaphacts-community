@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "JSX.Element": {
+            "type": "object"
+        },
+        "WidgetDock": {
+            "enum": [
+                "e",
+                "n",
+                "ne",
+                "nw",
+                "s",
+                "se",
+                "sw",
+                "w"
+            ],
+            "type": "string"
+        }
+    },
+    "description": "Controls to produce actions with canvas and data.",
+    "properties": {
+        "canvasId": {
+            "description": "Canvas ID, should be used to send commands to a specific canvas.",
+            "type": "string"
+        },
+        "children": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSX.Element"
+                },
+                {
+                    "items": {
+                        "$ref": "#/definitions/JSX.Element"
+                    },
+                    "type": "array"
+                }
+            ],
+            "description": "Custom controls."
+        },
+        "dock": {
+            "$ref": "#/definitions/WidgetDock",
+            "default": "'nw'",
+            "description": "Position on the canvas."
+        },
+        "id": {
+            "description": "Unique ID, should be used to have multiple toolbars on the same canvas.",
+            "type": "string"
+        },
+        "margin": {
+            "default": 10,
+            "description": "Margin.",
+            "type": "number"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "canvasId",
+        "dock",
+        "margin",
+        "children"
+    ],
+    "type": "object"
+}
+

@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "iri": {
+            "description": "Resource IRI.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "iri"
+    ],
+    "required": [
+        "iri"
+    ],
+    "type": "object"
+}
+

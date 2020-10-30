@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Maybe from 'data.maybe';
 import * as React from 'react';
 import * as SparqlJs from 'sparqljs';
@@ -23,36 +44,34 @@ import * as SparqlJs from 'sparqljs';
 import { Component } from 'platform/api/components';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
-import { SimpleSearch, SimpleSearchProps } from '../../simple-search/SimpleSearch';
+import { SimpleSearch } from 'platform/components/semantic/simple-search/SimpleSearch';
 import { setSearchDomain } from '../commons/Utils';
-import { BaseConfig } from './KeywordSearch';
+import { SemanticSearchKeywordConfig } from './KeywordSearch';
 import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 
-export interface SemanticEntitySearchConfig extends BaseConfig<string>, SimpleSearchProps {
-
+export interface SemanticEntitySearchConfig extends SemanticSearchKeywordConfig {
     /**
      * SPARQL Select query string, which will be provided to the search framework as base query.
-     * The query stringwill be parameterized through the values as selected by the user from
+     * The query string will be parameterized through the values as selected by the user from
      * auto-suggestion list, which is generated through the `search-query`. Selected values will be
      * injected using the same binding variable name as specified by the `resource-binding-name`
      * attribute i.e. effectively using the same as variable name as returned by the `search-query`.
      */
-    query: string
+    query: string;
+    defaultQuery?: string;
 
     /**
-     * SPARQL Select query string which is used to provide a autosuggestion list of resources.
+     * SPARQL Select query string which is used to provide a auto-suggestion list of resources.
      * Needs to expose result using a projection variable equal to the `resource-binding-name`
      * attribute.
      *
      * @default `PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-            PREFIX bds: <http://www.bigdata.com/rdf/search#>
+            PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
             SELECT ?resource WHERE {
-                ?resource rdfs:label|skos:prefLabel ?label .
-                ?label bds:search ?__token__ ;
-                bds:minRelevance "0.5" ;
-                bds:relevance ?score ;
-                bds:matchAllTerms "true" .
-                BIND(STRLEN(?label) as ?length)
+              SERVICE Repository:lookup {
+                ?resource lookup:token ?__token__ .
+              }
+              BIND(STRLEN(?name) as ?length)
             } ORDER BY DESC(?score) ?length`
      */
     searchQuery?: string
@@ -60,7 +79,7 @@ export interface SemanticEntitySearchConfig extends BaseConfig<string>, SimpleSe
     /**
      * Whether multi-selection of values should be allowed. If set to `true`,
      * VALUES clause will be used to inject the values into the base `query` for filtering.
-     * If set to `false`, only a single value can be selected from the autosuggestion.
+     * If set to `false`, only a single value can be selected from the auto-suggestion.
      * The value will be injected by replacement of the binding variable.
      *
      * @default false
@@ -68,17 +87,24 @@ export interface SemanticEntitySearchConfig extends BaseConfig<string>, SimpleSe
     multi: boolean
 
     /**
-     * Name of the bind variable (whithout question mark), which is returned
+     * Name of the bind variable (without question mark), which is returned
      * (a) as projection variable by the `search-query`
      * and
      * (b) used to inject the selected values into the base `query`.
      *
      * @default resource
      */
-    resourceBindingName?: string
+    resourceBindingName?: string;
+
+    /**
+     * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for suggestion item.
+     */
+    template?: string;
 }
 
-interface EntitySearchProps extends SemanticEntitySearchConfig {}
+interface EntitySearchProps extends SemanticEntitySearchConfig {
+  onSelected?: (value: SparqlClient.Binding | SparqlClient.Binding[]) => void;
+}
 
 /**
  * @example
@@ -117,16 +143,15 @@ interface InnerProps extends EntitySearchProps {
 
 class EntitySearchInner extends React.Component<InnerProps, {}> {
     static defaultProps = {
-        searchQuery: `PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-            PREFIX bds: <http://www.bigdata.com/rdf/search#>
-            SELECT ?resource WHERE {
-                ?resource rdfs:label|skos:prefLabel ?label .
-                ?label bds:search ?__token__ ;
-                bds:minRelevance "0.5" ;
-                bds:relevance ?score ;
-                bds:matchAllTerms "true" .
-                BIND(STRLEN(?label) as ?length)
-            } ORDER BY DESC(?score) ?length`,
+        searchQuery: `
+          PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+          PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
+          SELECT ?resource WHERE {
+            SERVICE Repository:lookup {
+              ?resource lookup:token ?__token__ .
+            }
+            BIND(STRLEN(?name) as ?length)
+          } ORDER BY DESC(?score) ?length`,
         template: '<span><mp-label iri="{{resource.value}}"></mp-label></span>' ,
         resourceBindingName: 'resource',
     };
@@ -150,7 +175,8 @@ class EntitySearchInner extends React.Component<InnerProps, {}> {
         const {
             placeholder, style, className, multi, template,
             searchQuery, resourceBindingName, defaultQuery,
-            escapeLuceneSyntax,
+            // tslint:disable-next-line: deprecation
+            escapeLuceneSyntax, tokenizeLuceneQuery
         } = this.props;
         return <SimpleSearch
                 query={searchQuery}
@@ -160,11 +186,12 @@ class EntitySearchInner extends React.Component<InnerProps, {}> {
                 placeholder={placeholder}
                 resourceBindingName={resourceBindingName}
                 defaultQuery={defaultQuery}
-                escapeLuceneSyntax={escapeLuceneSyntax}>
+                escapeLuceneSyntax={escapeLuceneSyntax}
+                tokenizeLuceneQuery={tokenizeLuceneQuery}>
             </SimpleSearch>;
     }
 
-    onSelected = (binding: SparqlClient.Binding & SparqlClient.Binding[]) => {
+    onSelected = (binding: SparqlClient.Binding | SparqlClient.Binding[]) => {
         // reset search if selection is emtpy e.g. after removal of initial selections
         if (this.isEmptySelection(binding)) {
             return this.props.context.setBaseQuery(Maybe.Nothing());
@@ -177,19 +204,20 @@ class EntitySearchInner extends React.Component<InnerProps, {}> {
 
         if (this.props.multi) {
             // use values clause for multi value parameterization i.e. filtering
-            const value = binding.map(node => ({[variableName] : node.resource}));
+            const value = (binding as SparqlClient.Binding[])
+              .map(node => ({[variableName] : node.resource}));
             query = SparqlClient.prepareParsedQuery(value)(parsedQuery);
         } else {
-            // use setBinding i.e. replacement for single selection paramerization
+            // use setBinding i.e. replacement for single selection parameterization
             query = SparqlClient.setBindings(
-                parsedQuery, { [variableName] : binding[variableName]}
+                parsedQuery, {[variableName]: (binding as SparqlClient.Binding)[variableName]}
             );
         }
 
         this.props.context.setBaseQuery(Maybe.Just(query));
     }
 
-    isEmptySelection(binding: SparqlClient.Binding & SparqlClient.Binding[]) {
+    isEmptySelection(binding: SparqlClient.Binding | SparqlClient.Binding[]) {
         return (Array.isArray(binding) && !binding.length) || !binding;
     }
 }

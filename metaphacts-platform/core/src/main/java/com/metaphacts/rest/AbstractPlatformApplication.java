@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,9 +37,9 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
@@ -34,12 +56,15 @@ import org.secnod.shiro.jersey.AuthInjectionBinder;
 import org.secnod.shiro.jersey.AuthorizationFilterFeature;
 import org.secnod.shiro.jersey.SubjectFactory;
 
+import com.google.common.collect.Lists;
+import com.google.inject.Injector;
 import com.metaphacts.di.GuiceServletConfig;
 import com.metaphacts.rest.feature.CacheControlFeature;
 import com.metaphacts.rest.providers.IriParamProvider;
 import com.metaphacts.rest.providers.JacksonObjectMapperProvider;
 import com.metaphacts.rest.providers.OptionalParamProvider;
 import com.metaphacts.rest.providers.Rdf4jModelTurtleMessageBodyWriter;
+import com.metaphacts.rest.swagger.SwaggerRegistry;
 
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
@@ -50,7 +75,7 @@ public abstract class AbstractPlatformApplication extends ResourceConfig {
 
     @Inject
     public AbstractPlatformApplication(ServiceLocator serviceLocator) {
-        
+
         // uncomment for debugging purpose
         // https://jersey.java.net/documentation/latest/user-guide.html#tracing
         // property("jersey.config.server.tracing.type", "ALL");
@@ -59,22 +84,23 @@ public abstract class AbstractPlatformApplication extends ResourceConfig {
         GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);
 
         GuiceIntoHK2Bridge guiceBridge = serviceLocator.getService(GuiceIntoHK2Bridge.class);
-        guiceBridge.bridgeGuiceInjector(GuiceServletConfig.injector);
+        guiceBridge.bridgeGuiceInjector(getEndpointInjector());
 
-
-        register(JacksonFeature.class);
-        register(JacksonObjectMapperProvider.class);
-        register(IriParamProvider.class);
-        
-        register(OptionalParamProvider.class);
-        register(AuthorizationFilterFeature.class);
-        register(SubjectFactory.class);
-        register(AuthInjectionBinder.class);
-        register(ShiroExceptionMapper.class);
-        register(Rdf4jModelTurtleMessageBodyWriter.class);
-        register(MultiPartFeature.class);
+        getAuxiliaryComponentClasses().forEach(clazz -> register(clazz));
 
         register(CacheControlFeature.class);
+        
+        /*
+         * Exception mapper for a security {@link Exception} not caught in the method
+         * itself.
+         */
+        register(ForbiddenExceptionMapper.class);
+        
+        /*
+         * Exception mapper for a generic {@link Exception} not caught in the method
+         * itself.
+         */
+        register(DefaultExceptionMapper.class);
 
         if(logger.isLoggable(java.util.logging.Level.FINER)) {
             registerInstances(
@@ -83,5 +109,48 @@ public abstract class AbstractPlatformApplication extends ResourceConfig {
                 )
             );
         }
+    }
+    
+    /**
+     * Registers this application for swagger. An OpenAPI spec for the application
+     * is available on {@literal /<appPath>/openapi.json}.
+     * 
+     * @param name display name for this application
+     */
+    protected void registerSwagger(String name) {
+        SwaggerRegistry registry = getEndpointInjector().getInstance(SwaggerRegistry.class);
+        registry.addApp(this, name);
+
+        register(io.swagger.v3.jaxrs2.SwaggerSerializers.class);
+        register(io.swagger.v3.jaxrs2.integration.resources.OpenApiResource.class);
+    }
+
+    /**
+     * Return list of auxiliary component classes required for processing REST requests, e.g. for security,
+     * data binding/conversion, etc.
+     * 
+     * @return list of auxiliary component classes
+     */
+    public static List<Class<?>> getAuxiliaryComponentClasses() {
+        return Lists.newArrayList(
+            JacksonFeature.class,
+            JacksonObjectMapperProvider.class,
+            IriParamProvider.class,
+        
+            OptionalParamProvider.class,
+            AuthorizationFilterFeature.class,
+            SubjectFactory.class,
+            AuthInjectionBinder.class,
+            ShiroExceptionMapper.class,
+            Rdf4jModelTurtleMessageBodyWriter.class,
+            MultiPartFeature.class);
+    }
+
+    /**
+     * Get {@link Injector} to be used when injecting dependencies into REST endpoint implementations
+     * @return injector for REST endpoint implementations
+     */
+    protected Injector getEndpointInjector() {
+        return GuiceServletConfig.injector;
     }
 }

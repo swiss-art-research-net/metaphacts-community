@@ -1,5 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
     "properties": {
         "className": {
             "description": "Custom css classes for the input element",
@@ -11,7 +16,7 @@
             "type": "number"
         },
         "defaultQuery": {
-            "description": "SPARQL SELECT query string. If present will be used to show default suggestions without the need for the user to type anything.",
+            "description": "SPARQL SELECT query string to show default suggestions without the need for the user\nto type anything if specified.",
             "type": "string"
         },
         "domain": {
@@ -19,8 +24,7 @@
             "type": "string"
         },
         "escapeLuceneSyntax": {
-            "default": true,
-            "description": "A flag determining whether any special Lucene syntax will be escaped.\nWhen `false` lucene syntax in the user input is not escaped.",
+            "description": "A flag determining whether any special Lucene syntax will be escaped.\nWhen `false` lucene syntax in the user input is not escaped.\n\nDeprecated: escaping will be applied automatically based on SPARQL query.",
             "type": "boolean"
         },
         "minSearchTermLength": {
@@ -33,7 +37,7 @@
             "type": "string"
         },
         "query": {
-            "description": "SPARQL SELECT query string. Needs to have a variable named as `__token__`(can be customized with searchTermVariable) that will be replaces with the user input.",
+            "description": "SPARQL SELECT query string.\n\nNeeds to have a variable `?__token__` serving as placeholder for the user input.\nNote that the name of this variable can be customized using `searchTermVariable`.",
             "type": "string"
         },
         "searchTermVariable": {
@@ -42,22 +46,21 @@
             "type": "string"
         },
         "style": {
-            "description": "Custom css styles for the input element",
-            "type": "string"
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Custom css styles for the input element"
         },
         "tokenizeLuceneQuery": {
-            "default": true,
-            "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`. \nE.g. the search for `Hello World` becomes `Hello* World*`.",
+            "description": "A flag determining whether the user input is tokenized by whitespace into\nwords postfixed by `*`.\nE.g. the search for `Hello World` becomes `Hello* World*`.\n\nDeprecated: tokenization will be applied automatically based on SPARQL query.",
             "type": "boolean"
         }
     },
     "propertyOrder": [
+        "query",
+        "defaultQuery",
         "style",
         "className",
         "domain",
         "debounce",
-        "query",
-        "defaultQuery",
         "searchTermVariable",
         "minSearchTermLength",
         "placeholder",

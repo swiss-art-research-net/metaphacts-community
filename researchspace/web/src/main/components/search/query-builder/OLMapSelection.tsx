@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Alexey Morozov
@@ -202,7 +201,7 @@ export class OLMapSelection extends React.Component<OLMapSelectionProps, OLMapSe
     switch (this.state.selectionTool) {
       case SelectType.Box:
         let olCoords = (feature.getGeometry() as LineString).getCoordinates()[0];
-        let coords = _.map(olCoords, this.transformToWGS84);
+        let coords = _.map(olCoords, this.transformToWGS84) as any[];
         const firstPoint: Coordinate = {lat: coords[0][1], long: coords[0][0]};
         const secondPoint: Coordinate = {lat: coords[2][1], long: coords[2][0]};
         // User could draw rectangle in any direction, setting coordinates right
@@ -260,7 +259,7 @@ export class OLMapSelection extends React.Component<OLMapSelectionProps, OLMapSe
       source: this.vectorSource,
       type: this.state.selectionTool === SelectType.Box ? 'LineString' : 'Circle',
       geometryFunction: (
-        this.state.selectionTool === SelectType.Box ? this.geometryFunction : undefined
+        this.state.selectionTool === SelectType.Box ? this.geometryFunction as any : undefined
       ),
       maxPoints: 2,
       wrapX: false,
@@ -269,7 +268,7 @@ export class OLMapSelection extends React.Component<OLMapSelectionProps, OLMapSe
     this.map.addInteraction(this.currentDraw);
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps: OLMapSelectionProps, prevState: OLMapSelectionState) {
     if (prevState.selectionTool !== this.state.selectionTool) {
       this.updateCurrentDraw();
     }

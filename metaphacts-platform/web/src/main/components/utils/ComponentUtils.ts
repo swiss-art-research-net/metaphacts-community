@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,8 +37,9 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import { ReactElement, ReactNode, ComponentClass } from 'react';
+import { ReactElement, ReactNode, ComponentClass, useState, useEffect } from 'react';
+import { Cancellation } from 'platform/api/async';
+import { ExtensionPoint } from 'platform/api/module-loader';
 
 /**
  * Check if react component is a valid ReactElement element.
@@ -84,4 +107,21 @@ export function universalChildren(children: ReactNode): ReactNode {
  return (Array.isArray(children) && children.length === 1)
    ? children[0]
    : children;
+}
+
+export function useExtensionPoint(extensionPoint: ExtensionPoint<unknown>): boolean {
+  const [loaded, setLoaded] = useState(!extensionPoint.isLoading());
+  useEffect(() => {
+    if (extensionPoint.isLoading()) {
+      const cancellation = new Cancellation();
+      extensionPoint.loadAndUpdate({
+        forceUpdate: () => setLoaded(true)
+      }, cancellation);
+      return () => cancellation.cancelAll();
+    } else if (!loaded) {
+      // if it has been loaded in the meantime, just update the state
+      setLoaded(true);
+    }
+  }, []);
+  return loaded;
 }

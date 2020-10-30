@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import { Props, createElement } from 'react';
+import { ClassAttributes, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import * as PropTypes from 'prop-types';
 import * as _ from 'lodash';
-import * as Either from 'data.either';
-import * as maybe from 'data.maybe';
 
 import { Cancellation } from 'platform/api/async';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
@@ -44,12 +63,12 @@ interface ControlledProps {
 }
 
 interface TableState {
-  data?: SparqlClient.SparqlSelectResult;
+  data?: SparqlClient.SparqlStarSelectResult;
   isLoading?: boolean;
   error?: any;
 }
 
-interface Options {
+export interface Options {
     /**
      * Whether or not to display table filter
      *
@@ -76,7 +95,7 @@ interface Options {
  * The simplest table configuration can be used to show all SPARQL result set projection variables.
  * The SPARQL projection variable name is used as column header. IRIs will be rendered as resolvable links using the `<semantic-link>` component or as a simple string otherwise.
  */
-interface BaseConfig extends ControlledProps {
+export interface BaseConfig extends ControlledProps {
   /**
    * SPARQL Select query.
    */
@@ -90,8 +109,7 @@ interface BaseConfig extends ControlledProps {
   numberOfDisplayedRows?: number
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results
-   * **The template MUST have a single HTML root element.**
+   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.
    */
   noResultTemplate?: string
 
@@ -116,7 +134,7 @@ interface BaseConfig extends ControlledProps {
    * Prefetches labels for all resource IRIs in the data to support sorting and filtering
    * by resource labels.
    *
-   * @default false
+   * @default true
    */
   prefetchLabels?: boolean;
 
@@ -135,7 +153,7 @@ interface BaseConfig extends ControlledProps {
 /**
  * More advanced configuration that can be used to restrict the set of columns to be visualized, to modify the column headings or to provide custom cell visualization templates
  */
-interface ColumnConfig extends BaseConfig {
+export interface ColumnConfig extends BaseConfig {
   /**
    * List of columns to display. If specified table shows only columns explicitly specified in the configuration
    */
@@ -145,15 +163,14 @@ interface ColumnConfig extends BaseConfig {
 /**
  * The most advanced table configuration that provides the ability to customize the rendering of an entire table row via tuple templates.
  */
-interface RowConfig extends BaseConfig {
+export interface RowConfig extends BaseConfig {
   /**
    * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the whole table row. Can be used to have visualizations different from the standard, e.g grid of thumbnails.
-   * The template has access to all projection variables for a single result tuple
-   * **The template MUST have a single HTML root element.**
+   * The template has access to all projection variables for a single result tuple.
    */
   tupleTemplate: string
 }
-function isRowConfig(config: SemanticTableConfig): config is RowConfig {
+export function isRowConfig(config: SemanticTableConfig): config is RowConfig {
   return _.has(config, 'tupleTemplate');
 }
 
@@ -162,7 +179,7 @@ export type SemanticTableProps =
   SemanticTableConfig &
   ControlledPropsHandler<ControlledProps> &
   ComponentProps &
-  Props<SemanticTable>;
+  ClassAttributes<SemanticTable>;
 
 export class SemanticTable extends Component<SemanticTableProps, TableState> {
   static propTypes: Partial<Record<keyof SemanticTableProps, any>> = {
@@ -170,8 +187,7 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
     onControlledPropChange: PropTypes.func,
   };
 
-  private readonly cancellation = new Cancellation();
-  private querying = this.cancellation.derive();
+  private querying = Cancellation.cancelled;
 
   constructor(props: SemanticTableProps, context: ComponentContext) {
     super(props, context);
@@ -180,11 +196,12 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
     };
   }
 
-  private TABLE_REF = 'table';
+  private readonly TABLE_REF = 'table';
   refs: {table: Table};
 
   getSelected() {
-    return this.refs[this.TABLE_REF].getSelected();
+    // TODO: there are no `getSelected()` method on Table?!
+    return (this.refs[this.TABLE_REF] as any).getSelected();
   }
 
   public shouldComponentUpdate(nextProps: SemanticTableProps, nextState: TableState) {
@@ -203,7 +220,7 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
   }
 
   componentWillUnmount() {
-    this.cancellation.cancelAll();
+    this.querying.cancelAll();
   }
 
   public render() {
@@ -221,7 +238,7 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
 
   private renderTable() {
     let layout: TableLayout = {
-      tupleTemplate: maybe.fromNullable(isRowConfig(this.props) ? this.props.tupleTemplate : null),
+      tupleTemplate: isRowConfig(this.props) ? this.props.tupleTemplate : undefined,
       options: this.props.options,
       showLabels: this.props.showLabels,
       prefetchLabels: this.props.prefetchLabels,
@@ -231,14 +248,14 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
     const controlledProps: Partial<TableConfig> = {
       currentPage,
       onPageChange: onControlledPropChange
-        ? page => onControlledPropChange({currentPage: page}) : undefined,
+        ? page => onControlledPropChange(this.props.id, {currentPage: page}) : undefined,
     };
     return createElement(Table, {
       ...otherProps,
       ...controlledProps,
-      layout: maybe.fromNullable(layout),
-      numberOfDisplayedRows: maybe.fromNullable(this.props.numberOfDisplayedRows),
-      data: Either.Right<any[], SparqlClient.SparqlSelectResult>(this.state.data),
+      layout: layout,
+      numberOfDisplayedRows: this.props.numberOfDisplayedRows,
+      data: this.state.data,
       ref: this.TABLE_REF,
     });
   }
@@ -248,9 +265,10 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
       isLoading: true,
       error: undefined,
     });
-    this.querying = this.cancellation.deriveAndCancel(this.querying);
+    this.querying.cancelAll();
+    this.querying = new Cancellation();
     const loading = this.querying.map(
-      SparqlClient.select(props.query, {context: context.semanticContext})
+      SparqlClient.selectStar(props.query, {context: context.semanticContext})
     ).onValue(
       res => this.setState({data: res, isLoading: false})
     ).onError(
@@ -274,8 +292,8 @@ export class SemanticTable extends Component<SemanticTableProps, TableState> {
       console.warn(
         'layout property in semantic-table is deprecated, please use flat properties instead'
       );
-      layout.tupleTemplate = maybe.fromNullable(this.props['layout']['tupleTemplate']);
-      layout.options = this.props['layout']['options'];
+      layout.tupleTemplate = (this.props as any)['layout']['tupleTemplate'];
+      layout.options = (this.props as any)['layout']['options'];
     }
     return layout;
   }

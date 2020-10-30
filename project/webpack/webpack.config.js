@@ -19,21 +19,27 @@
 const path = require('path');
 const fs = require('fs');
 const webpack = require('webpack');
+const ThreadLoader = require('thread-loader');
 const AssetsPlugin = require('assets-webpack-plugin');
 const autoprefixer = require('autoprefixer');
-const HappyPack = require('happypack');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
+
 const resolveTheme = require('./theme');
 
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-// GS:
-const getRepoInfo = require('git-repo-info');
+/**
+ * @typedef {Object} PlatformWebpackOptions
+ * @property {'test' | 'dev' | 'prod'} buildMode
+ */
 
 /**
  * @param {ReturnType<import('./defaults')>} defaults
+ * @param {PlatformWebpackOptions} platformOptions
  * @returns {import('webpack').Configuration}
  */
-module.exports = function (defaults) {
+module.exports = function (defaults, platformOptions) {
     const {
       WEB_PROJECTS,
       ROOT_DIR,
@@ -46,17 +52,11 @@ module.exports = function (defaults) {
       TEST_DIRS,
       SRC_DIRS
     } = defaults;
+    const {buildMode} = platformOptions;
 
     console.log('Building the following web projects: ' + WEB_PROJECTS.map(p => p.name).join(', '));
 
-    /**
-     * Env
-     * Get npm lifecycle event to identify the environment
-     */
-    var ENV = process.env.npm_lifecycle_event;
-    var isTest = ENV === 'test' || ENV === 'test-watch';
-    var isProd = ENV === 'build';
-    var info = getRepoInfo(); //git repo info  // This is needed for the version file.
+    const isTest = buildMode === 'test';
 
     /** @type {{ [entryKey: string]: Array<string> }} */
     const entries = {};
@@ -116,7 +116,27 @@ module.exports = function (defaults) {
     const {themeDir} = resolveTheme(defaults);
     console.log('Using theme directory: ' + themeDir);
 
+    const threadLoaderOptions = {
+      name: 'mp-thread-loader-pool',
+    };
+    const threadLoader = {
+      loader: 'thread-loader',
+      options: threadLoaderOptions,
+    };
+
+    ThreadLoader.warmup(threadLoaderOptions, [
+      'ts-loader',
+      'style-loader',
+      'typings-for-css-modules-loader',
+      'postcss-loader',
+      'sass-loader',
+      'css-loader',
+    ]);
+
     const config = {
+        /** @type {'production' | 'development'} */
+        // @ts-ignore
+        mode: buildMode === 'prod' ? 'production' : 'development',
         resolveLoader: {
             modules: [path.resolve(__dirname, 'node_modules'), __dirname]
         },
@@ -131,41 +151,79 @@ module.exports = function (defaults) {
         module: {
             /** @type {any[]} */
             rules: [
-                // order of ts and scss loader matters, we detect it by id in webpack.dev file
                 {
-                    test: /(\.ts$)|(\.tsx$)/,
-                    use: [{
-                        loader: 'ts-loader',
-                        options: {
-                            happyPackMode: true,
-                            transpileOnly: true
-                        }
-
-                    }],
-                    include: [SRC_DIRS.concat(TEST_DIRS), GRAPHSCOPE_NEW_SOURCE_DIR],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
+                  test: /(\.ts$)|(\.tsx$)/,
+                  use: [
+                    threadLoader,
+                    {
+                      loader: 'ts-loader',
+                      options: {
+                        happyPackMode: true,
+                        transpileOnly: true,
+                        compilerOptions: buildMode === 'dev' ? {
+                          sourceMap: true,
+                        } : undefined,
+                      }
+                    }
+                  ],
+                  include: [SRC_DIRS.concat(TEST_DIRS), GRAPHSCOPE_NEW_SOURCE_DIR],
+                  exclude: GRAPHSCOPE_SOURCE_DIR
                 },
                 {
-                    test: /\.scss$/,
-                    include: cssModulesBasedComponents,
-                    use: [{
-                        loader: 'happypack/loader?id=scss-modules'
-                    }, ],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
+                  test: /\.scss$/,
+                  include: cssModulesBasedComponents,
+                  use: [
+                    threadLoader,
+                    'style-loader',
+                    {
+                      loader: 'typings-for-css-modules-loader',
+                      options: {
+                        modules: true,
+                        importLoaders: 2,
+                        localIdentName: '[name]--[local]',
+                        namedExport: true,
+                        camelCase: true,
+                      }
+                    },
+                    'postcss-loader',
+                    {
+                      loader: 'sass-loader',
+                      options: {
+                        outputStyle: 'expanded'
+                      }
+                    },
+                  ],
+                  exclude: GRAPHSCOPE_SOURCE_DIR
                 },
                 {
-                    test: /\.scss$/,
-                    use: [{
-                        loader: 'happypack/loader?id=scss'
-                    }],
-                    exclude: [cssModulesBasedComponents, GRAPHSCOPE_SOURCE_DIR]
+                  test: /\.scss$/,
+                  use: [
+                    threadLoader,
+                    'style-loader',
+                    {
+                      loader: 'css-loader',
+                      options: {
+                        importLoaders: 2,
+                      }
+                    },
+                    'postcss-loader',
+                    {
+                      loader: 'sass-loader',
+                      options: {
+                        outputStyle: 'expanded'
+                      }
+                    },
+                  ],
+                  exclude: [cssModulesBasedComponents, GRAPHSCOPE_SOURCE_DIR]
                 },
                 {
-                    test: /\.css$/,
-                    use: [{
-                        loader: 'happypack/loader?id=css'
-                    }],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
+                  test: /\.css$/,
+                  use: [
+                    threadLoader,
+                    'style-loader',
+                    'css-loader'
+                  ],
+                  exclude: GRAPHSCOPE_SOURCE_DIR
                 },
                 {
                     test: /\.mp-components$/,
@@ -386,58 +444,57 @@ module.exports = function (defaults) {
                 'platform-extensions': path.join(__dirname, '.mp-extensions'),
                 'platform-schemas': path.join(__dirname, '.mp-schemas'),
                 'platform-theme': themeDir,
-                _: 'lodash',
+                'platform-tests': METAPHACTORY_DIRS.test,
                 'basil.js': 'basil.js/src/basil.js',
                 'handlebars': 'handlebars/dist/handlebars.js',
                 'ketcher.svg': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/ketcher/dist/ketcher.svg'),
                 'library.sdf': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/ketcher/dist/library.sdf'),
                 'library.svg': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/ketcher/dist/library.svg'),
                 'jsonld': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/jsonld/dist/jsonld.js'),
+                'tslib': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/tslib/tslib.es6.js'),
+                // workaround: properly resolve React and React-DOM for Ontodia
+                'react': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/react'),
+                'react-dom': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/react-dom'),
               },
             ),
             extensions: ['.ts', '.tsx', '.js']
         },
         externals: {
             'google': 'false',
-            // required by enzyme https://github.com/airbnb/enzyme/blob/master/docs/guides/webpack.md
-            'cheerio': 'window',
-            'react/addons': true,
-            'react/lib/ExecutionEnvironment': true,
-            'react/lib/ReactContext': true
         },
         plugins: [
-            // order matters see karma.config.js
-            new webpack.DllReferencePlugin({
-                /** @type {any} */
-                manifest: require("./assets/dll-manifest/vendor-manifest.json"),
-                context: path.resolve(METAPHACTORY_DIRS.src)
-            }),
-            new webpack.DllReferencePlugin({
-                /** @type {any} */
-                manifest: require("./assets/dll-manifest/basic_styling-manifest.json"),
-                context: path.resolve(METAPHACTORY_DIRS.src)
-            }),
+          // order matters see karma.config.js
+          new webpack.DllReferencePlugin({
+              /** @type {any} */
+              manifest: require("./assets/dll-manifest/vendor-manifest.json"),
+              context: path.resolve(METAPHACTORY_DIRS.src)
+          }),
+          new webpack.DllReferencePlugin({
+              /** @type {any} */
+              manifest: require("./assets/dll-manifest/basic_styling-manifest.json"),
+              context: path.resolve(METAPHACTORY_DIRS.src)
+          }),
 
-            new webpack.LoaderOptionsPlugin({
-                options: {
-                    postcss: [
-                        autoprefixer({
-                            browsers: [
-                                'last 3 version',
-                                'ie >= 10',
-                            ]
-                        }),
-                    ],
-                    context: METAPHACTORY_DIRS.src
-                }
-            }),
+          new webpack.LoaderOptionsPlugin({
+              options: {
+                  postcss: [
+                      autoprefixer({
+                          browsers: [
+                              'last 3 version',
+                              'ie >= 10',
+                          ]
+                      }),
+                  ],
+                  context: METAPHACTORY_DIRS.src
+              }
+          }),
 
-            //cytoscape.js expects jquery in scope
-            new webpack.ProvidePlugin({
-                'cytoscape': 'cytoscape',
-                '$': 'jquery',
-                'jQuery': "jquery"
-            }),
+          //cytoscape.js expects jquery in scope
+          new webpack.ProvidePlugin({
+              'cytoscape': 'cytoscape',
+              '$': 'jquery',
+              'jQuery': "jquery"
+          }),
 
             //do not bundle mirador images
           new webpack.NormalModuleReplacementPlugin(/\.\/images\/ui-.*/, 'node-noop'),
@@ -446,62 +503,39 @@ module.exports = function (defaults) {
               /scss\.d\.ts$/
           ]),
 
-         // new BundleAnalyzerPlugin(),
+          // new BundleAnalyzerPlugin(),
 
-            new HappyPack({
-                id: 'scss-modules',
-                threads: 2,
-                loaders: [
-                    'style-loader',
-                    'typings-for-css-modules-loader?' + JSON.stringify({
-                        modules: true,
-                        importLoaders: 2,
-                        localIdentName: '[name]--[local]',
-                        namedExport: true,
-                        camelCase: true
-                    }),
-                    'postcss-loader',
-                    'sass-loader?' + JSON.stringify({
-                        outputStyle: 'expanded'
-                    })
-                ]
-            }),
+          /*
+            * Generate json files with bundle - hashed bundle file names,
+            * so we can properly refer to bundles in main.hbs and login.hbs files
+            */
+          new AssetsPlugin({
+            // TODO: use this generated file even in local dev builds
+            filename: 'bundles-manifest.json',
+            path: defaults.DIST
+          }),
 
-            new HappyPack({
-                id: 'scss',
-                threads: 2,
-                loaders: [
-                    'style-loader',
-                    'css-loader?' + JSON.stringify({
-                        importLoaders: 2
-                    }),
-                    'postcss-loader',
-                    'sass-loader?' + JSON.stringify({
-                        outputStyle: 'expanded'
-                    })
-                ]
-            }),
-
-            new HappyPack({
-                id: 'css',
-                threads: 2,
-                loaders: [
-                    'style-loader',
-                    'css-loader'
-                ]
-            }),
-
-            /*
-             * Generate json files with bundle - hashed bundle file names,
-             * so we can properly refer to bundles in main.hbs and login.hbs files
-             */
-            new AssetsPlugin({
-              // TODO: use this generated file even in local dev builds
-              filename: 'bundles-manifest.json',
-              path: defaults.DIST
-            })
+          new CircularDependencyPlugin({
+            // exclude detection of files based on a RegExp
+            exclude: /node_modules/,
+            // add errors to webpack instead of warnings
+            failOnError: true,
+            // allow import cycles that include an asyncronous import,
+            // e.g. via import(/* webpackMode: "weak" */ './file.js')
+            allowAsyncCycles: true,
+            // set the current working directory for displaying module paths
+            cwd: process.cwd(),
+          }),
         ]
     };
+
+    if (!(buildMode === 'dev' && defaults.ROOT_BUILD_CONFIG.noTsCheck)) {
+      config.plugins.push(new ForkTsCheckerWebpackPlugin({
+        tsconfig: path.resolve(__dirname, '../../tsconfig.json'),
+        checkSyntacticErrors: true,
+        useTypescriptIncrementalApi: true,
+      }));
+    }
 
     return config;
 };

@@ -18,8 +18,6 @@
 
 const path = require('path');
 const fs = require('fs');
-const HappyPack = require('happypack');
-const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 /**
  * @typedef {Object} RootBuildConfig
@@ -96,27 +94,6 @@ module.exports = function () {
   const allRootDirs = WEB_PROJECTS.map(project => project.webDir);
   const srcs = allRootDirs.map(dir => path.join(dir, 'src/main'));
   const tests = allRootDirs.map(dir => path.join(dir, 'src/test'));
-  function tsHappyPack(tsLoader) {
-    const tsOptions = tsLoader.options;
-    tsLoader.loader = 'happypack/loader?id=ts';
-    delete tsLoader.options;
-
-    return new HappyPack({
-      id: 'ts',
-      threads: 2,
-      loaders: ['ts-loader?' + JSON.stringify(tsOptions)]
-    });
-  }
-
-  function tsTypeCheck(failOnError) {
-    return new ForkTsCheckerWebpackPlugin({
-      watch: srcs,
-      tsconfig: path.resolve(__dirname, '../../tsconfig.json'),
-      blockEmit: failOnError,
-      checkSyntacticErrors: true,
-      tslint: false
-    });
-  }
 
   return {
     ROOT_BUILD_CONFIG,
@@ -131,9 +108,6 @@ module.exports = function () {
     DIST: DIST,
     SRC_DIRS: srcs,
     TEST_DIRS: tests,
-
-    tsTypeCheck: tsTypeCheck,
-    tsHappyPack: tsHappyPack
   };
 };
 

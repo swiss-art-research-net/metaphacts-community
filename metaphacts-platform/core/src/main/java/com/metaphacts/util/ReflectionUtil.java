@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,11 +37,20 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.util;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.AnnotationUtils;
 
 /**
  * This class provides some utility methods for reflection.
@@ -66,5 +97,62 @@ public class ReflectionUtil {
             }
         }
         return Optional.empty();
+    }
+    
+    /**
+     * Returns all public methods in the given class and its super classes using
+     * {@link Class#getMethods()} that are annotated with the provided annotation.
+     * For retrieval of methods {@link Class#getMethods()} is used.
+     * 
+     * @param <A>
+     * @param clazz      the class
+     * @param annotation the annotation
+     * @return collection of {@link Method}s
+     */
+    public static <A extends Annotation> Collection<Method> findMethodsWithAnnotation(Class<?> clazz,
+            Class<A> annotation) {
+        return Arrays.asList(clazz.getMethods()).stream()
+                .filter(m -> m.getAnnotationsByType(annotation).length > 0)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Mock the given annotation with data provided in the given properties.
+     * 
+     * @param <A>
+     * @param annotationClass
+     * @param properties
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static <A extends Annotation> A mockAnnotation(Class<A> annotationClass, Map<String, Object> properties) {
+        
+        // see https://stackoverflow.com/questions/16299717/how-to-create-an-instance-of-an-annotation/16326389#16326389
+        
+        return (A) Proxy.newProxyInstance(annotationClass.getClassLoader(), new Class<?>[] { annotationClass },
+                new InvocationHandler() {
+                    
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                            Annotation annotation = (Annotation) proxy;
+    
+                        switch (method.getName()) {
+                        case "toString":
+                            return AnnotationUtils.toString(annotation);
+                        case "hashCode":
+                            return AnnotationUtils.hashCode(annotation);
+                        case "equals":
+                            return AnnotationUtils.equals(annotation, (Annotation) args[0]);
+                        case "annotationType":
+                            return annotationClass;
+                        default:
+                            if (!properties.containsKey(method.getName())) {
+                                throw new NoSuchMethodException(
+                                        "No value defined for mocked annotation method: " + method.getName());
+                            }
+                            return properties.get(method.getName());
+                        }
+                    }
+                });
     }
 }

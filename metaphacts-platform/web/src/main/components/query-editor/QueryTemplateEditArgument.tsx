@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Component, FormEvent } from 'react';
 import { FormGroup, FormControl, Col, ControlLabel, HelpBlock, Button } from 'react-bootstrap';
@@ -25,7 +46,7 @@ import { isEqual } from 'lodash';
 
 import { Rdf, vocabularies, XsdDataTypeValidation } from 'platform/api/rdf';
 import {
-  validateType, FieldValue, FieldError, ErrorKind, AtomicValue, EmptyValue,
+  FieldState, FieldValue, ErrorKind, AtomicValue, EmptyValue, validateType,
 } from 'platform/components/forms';
 
 import { VALUE_TYPES, Argument, Value } from './QueryTemplateTypes';
@@ -109,10 +130,10 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
           return {
             type: AtomicValue.type,
             value: Rdf.literal(defaultValue),
-            errors: FieldError.noErrors.push({
+            errors: [{
               kind: ErrorKind.Input,
               message: 'Specify value type first',
-            }),
+            }],
           };
         }
         const type = Rdf.iri(valueType.value);
@@ -120,7 +141,7 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
           ? Rdf.iri(defaultValue) : Rdf.literal(defaultValue, type);
         return validateType({value}, type);
       },
-    ).flatMap(v => FieldValue.getErrors(v).size > 0 ? Kefir.constantError(v) : Kefir.constant(v));
+    ).flatMap(v => FieldValue.getErrors(v).length > 0 ? Kefir.constantError(v) : Kefir.constant(v));
 
     defaultValueMapped.observe({
       value: defaultValue => this.setState({defaultValue}, this.onChange),
@@ -137,15 +158,15 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
     );
 
     Kefir.combine(
-      [
-        labelMapped.map(v => v.value),
-        variableMapped.map(v => v.value),
-        commentMapped.map(v => v.value),
-        valueTypeMapped.map(v => v.value),
-        optionalMapped.map(v => v),
-        defaultValueMapped,
-      ],
-      (label, variable, comment, valueType, optional) => {
+      {
+        label: labelMapped.map(v => v.value),
+        variable: variableMapped.map(v => v.value),
+        comment: commentMapped.map(v => v.value),
+        valueType: valueTypeMapped.map(v => v.value),
+        optional: optionalMapped.map(v => v),
+        defaultValue: defaultValueMapped,
+      },
+      ({label, variable, comment, valueType, optional}) => {
         if (!label || !variable || !valueType) { return; }
         this.setState({isValid: true}, this.onChange);
         return {};
@@ -196,6 +217,12 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
       return Kefir.constantError<Value>({
         value: v,
         error: new Error('Please fill out this field.'),
+      });
+    }
+    if (v === 'http://www.w3.org/2001/XMLSchema#langString') {
+      return Kefir.constantError<Value>({
+        value: v,
+        error: new Error('"xsd:langString" is deprecated and will be removed in the future. Use "rdf:langLiteral" instead.'),
       });
     }
     return Kefir.constant<Value>({value: v});
@@ -290,7 +317,8 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
               -- select value type --
             </option>
             {VALUE_TYPES.map(item =>
-              <option key={item.value} value={item.value}>{item.label}</option>)}
+              <option key={item.value} value={item.value}
+                disabled={item.disabled}>{item.label}</option>)}
           </FormControl>
           {valueType.isJust && valueType.get().error
             ? <HelpBlock>{valueType.get().error.message}</HelpBlock>
@@ -298,15 +326,17 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
         </Col>
       </FormGroup>
       <FormGroup validationState={
-        FieldValue.getErrors(defaultValue).size > 0 ? 'error' : undefined
+        FieldValue.getErrors(defaultValue).length > 0 ? 'error' : undefined
       }>
         <Col sm={2}><ControlLabel>Default Value</ControlLabel></Col>
         <Col sm={10}>
           <FormControl type='text'
             value={FieldValue.isAtomic(defaultValue) ? defaultValue.value.value : ''}
             onChange={e => this.defaultValue.plug(this.getFormValue(e))} />
-          {FieldValue.getErrors(defaultValue).size > 0
-            ? <HelpBlock>{FieldValue.getErrors(defaultValue).first().message}</HelpBlock>
+          {FieldValue.getErrors(defaultValue).length > 0
+            ? <HelpBlock>{
+                FieldState.getFirst(FieldValue.getErrors(defaultValue)).message
+              }</HelpBlock>
             : null}
         </Col>
       </FormGroup>

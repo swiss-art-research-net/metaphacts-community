@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,65 +37,36 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
-import * as SparqlJs from 'sparqljs';
-import * as Immutable from 'immutable';
 
 import { Rdf, XsdDataTypeValidation } from 'platform/api/rdf';
-import { SparqlClient, SparqlUtil, SparqlTypeGuards } from 'platform/api/sparql';
+import { xsd } from 'platform/api/rdf/vocabularies';
+import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
 import { getLabel } from 'platform/api/services/resource-label';
 
-import { FieldDefinition } from './FieldDefinition';
 import {
-  FieldValue, SparqlBindingValue, FieldError, ErrorKind, AtomicValue, LabeledValue,
+  FieldState, FieldValue, CompositeValue, SparqlBindingValue, LabeledValue,
 } from './FieldValues';
 
-/**
- * @returns a promise of field validation result.
- */
-export function validate(
-  subject: Rdf.Iri,
-  field: FieldDefinition,
-  oldValue: FieldValue,
-  newValue: FieldValue,
-): Kefir.Stream<FieldValue> {
-  if (!FieldValue.isAtomic(newValue) || Immutable.is(oldValue, newValue)) {
-    return Kefir.later(0, newValue);
+export function tryMakeBindings(
+  composite: CompositeValue,
+  fieldBindingNames: { readonly [fieldId: string]: string }
+): SparqlClient.Dictionary<Rdf.Node> | undefined {
+  const bindings: SparqlClient.Dictionary<Rdf.Node> = {};
+  for (const fieldId in fieldBindingNames) {
+    if (!Object.prototype.hasOwnProperty.call(fieldBindingNames, fieldId)) { continue; }
+    const fieldState = composite.fields.get(fieldId, FieldState.empty);
+    const values = fieldState.values.filter(FieldValue.isAtomic);
+    // require exactly one value per field
+    if (values.length === 1) {
+      const variableName = fieldBindingNames[fieldId];
+      bindings[variableName] = values[0].value;
+    } else {
+      return undefined;
+    }
   }
-  const queries = field.constraints.map(constraint =>
-    SparqlUtil.parseQueryAsync(constraint.validatePattern)
-    .flatMap<SparqlJs.AskQuery>(query =>
-      (SparqlTypeGuards.isQuery(query) && query.queryType === 'ASK')
-        ? Kefir.constant(query)
-        : Kefir.constantError<any>(new Error('validatePattern is not an ASK query'))
-    )
-    .map(query => SparqlClient.setBindings(query,  {
-      'subject': subject,
-      'value': newValue.value,
-    }))
-    .flatMap<boolean>(query => SparqlClient.ask(query))
-    .map(success => ({constraint, success, error: undefined}))
-    .flatMapErrors(error => Kefir.constant(
-      {constraint, success: false, error}))
-  );
-  // merge validation errors from FieldDefinition.constrains queries into FieldValue
-  return Kefir.zip(queries).map(results => {
-    const otherErrors = newValue.errors
-      .filter(error => error.kind !== ErrorKind.Validation).toList();
-    return AtomicValue.set(newValue, {
-      errors: otherErrors.concat(results
-        .filter(result => !result.success)
-        .map<FieldError>(result => ({
-          kind: ErrorKind.Validation,
-          message: result.error
-            ? `Failed to validate value: ${result.error}`
-            : result.constraint.message,
-        }))
-      ),
-    });
-  });
+  return bindings;
 }
 
 export function queryValues(
@@ -90,6 +83,7 @@ export function queryValues(
       .map<SparqlBindingValue>(binding => ({
         value: binding.value,
         label: binding.label ? binding.label.value : undefined,
+        index: parseValueIndex(binding.index),
         binding: binding,
       }))
       .filter(v => v.value !== undefined)
@@ -105,7 +99,7 @@ export function queryValues(
 
 export function canRestoreLabel(value: LabeledValue): boolean {
   return (value.label === null || value.label === undefined)
-    && value.value && value.value.isIri();
+    && value.value && Rdf.isIri(value.value);
 }
 
 export function restoreLabel<T extends LabeledValue>(value: T): Kefir.Property<T> {
@@ -118,9 +112,18 @@ export function restoreLabel<T extends LabeledValue>(value: T): Kefir.Property<T
 }
 
 function normalizeValueDatatype(node: Rdf.Node): Rdf.Node {
-  if (node instanceof Rdf.Literal && !node.language) {
+  if (Rdf.isLiteral(node) && !node.language) {
     return Rdf.literal(node.value, XsdDataTypeValidation.replaceDatatypeAliases(node.datatype));
   } else {
     return node;
   }
+}
+
+function parseValueIndex(term: Rdf.Node | undefined): number | undefined {
+  if (!(term && Rdf.isLiteral(term))) { return undefined; }
+  if (!XsdDataTypeValidation.sameXsdDatatype(term.datatype, xsd.integer)) {
+    return undefined;
+  }
+  const index = Number(term.value);
+  return Number.isInteger(index) ? index : undefined;
 }

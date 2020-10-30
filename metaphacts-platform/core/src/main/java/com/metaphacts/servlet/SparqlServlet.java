@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.servlet;
 
 import java.io.IOException;
@@ -61,6 +82,7 @@ import org.eclipse.rdf4j.rio.RDFHandler;
 import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.RDFWriterFactory;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
+import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -70,10 +92,13 @@ import com.metaphacts.api.sparql.ServletRequestUtil;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.api.sparql.SparqlUtil;
 import com.metaphacts.api.sparql.SparqlUtil.SparqlOperation;
+import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.di.MainGuiceModule.MainTemplateProvider;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.PermissionUtil;
+import com.metaphacts.servlet.SparqlRequestHandler.SparqlRequestContext;
+import com.metaphacts.util.ExceptionUtils;
 
 
 
@@ -96,6 +121,12 @@ public class SparqlServlet extends HttpServlet {
 
     @Inject
     private NamespaceRegistry nsRegistry;
+
+    @Inject
+    private CacheManager cacheManger;
+    
+    @Inject(optional=true)
+    SparqlRequestHandler sparqlHandler;
 
     static class ContentType{
         static String FORM_URLENCODED = "application/x-www-form-urlencoded";
@@ -270,11 +301,27 @@ public class SparqlServlet extends HttpServlet {
         }
         
         String repId = getRepositoryIdFromRequest(req);
+        Dataset dataset = getDatasetForTheRequest(req);
+        
+        SparqlRequestContext context = new SparqlRequestContext(repId, dataset, queryString, preferredMimeTypeString);
+        if ((sparqlHandler != null) && sparqlHandler.canHandle(context)) {
+            if (sparqlHandler.processOperation(context, req, resp)) {
+                return;
+            }
+        }
+        processOperationInternal(context, req, resp);
+    }
+    
+    protected void processOperationInternal(SparqlRequestContext context, HttpServletRequest req, HttpServletResponse resp) throws IOException{
+        final String queryString = context.getQueryString();
+        final String preferredMimeTypeString = context.getPreferredMimeType();
+        final String repId = context.getRepositoryId();
+        final Dataset dataset = context.getDataset(); 
         
         try (RepositoryConnection con = repositoryManager.getRepository(repId).getConnection()) {
             Operation sparqlOperation = 
                     SparqlOperationBuilder.create(queryString).
-                      setDataset(getDatasetForTheRequest(req)).
+                      setDataset(dataset).
                       resolveUser(nsRegistry.getUserIRI()).build(con);
             SparqlOperation operationType = SparqlUtil.getOperationType(sparqlOperation);
             if (logger.isTraceEnabled()) {
@@ -300,6 +347,7 @@ public class SparqlServlet extends HttpServlet {
                             .orElse(TupleQueryResultFormat.SPARQL);
                     Optional<TupleQueryResultWriterFactory> writerFactory = resultWriterRegistry.get((QueryResultFormat) rdfFormat);
                     TupleQueryResultWriter writer = writerFactory.get().getWriter(resp.getOutputStream());
+                    writer.getWriterConfig().set(BasicWriterSettings.ENCODE_RDF_STAR, false);
                     addNamespaces(writer);
                     logger.trace("Evaluating query with hash \"{}\" as TupleQuery using \"{}\"", queryString.hashCode(), writer.getClass());
                     setContentType(resp,rdfFormat);
@@ -344,6 +392,7 @@ public class SparqlServlet extends HttpServlet {
                     logger.trace("Evaluating query with hash \"{}\" as UPDATE operation.", queryString.hashCode());
                     ((Update) sparqlOperation).execute();
                     resp.setStatus(Status.OK.getStatusCode());
+                    cacheManger.invalidateAll();
                     return;
                 }
                 default:
@@ -351,10 +400,11 @@ public class SparqlServlet extends HttpServlet {
                 }
 
         }catch(Exception e){
+            
             logger.debug("Exception during Query Execution: {}", e.getMessage());
             logger.trace("Details: {}", e);
-            
-            resp.sendError(Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage());
+            String message = ExceptionUtils.extractSparqlExceptionMessage(e);
+            resp.sendError(Status.INTERNAL_SERVER_ERROR.getStatusCode(), message);
             return;
         }
 

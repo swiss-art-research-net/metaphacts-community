@@ -1,0 +1,84 @@
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title="Help" iri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
+  </li>
+  <li class="active">IIIF Components</li>
+</ol>
+
+<div class="page">
+  <div class='page__body'>
+  	<h1>IIIF Components</h1>
+    <p>The platform provides a set of components to view IIIF images with options for comparison and annotation.</p>
+
+    <h2>IIIF with Mirador</h2>
+    <p><code><rs-iiif-mirador /></code> displays <code>rso:EX_Digital_Image</code> and it's regions <code>rso:EX_Digital_Image_Region</code>, allows creating new regions.</p>
+    <h3>Configuration</h3>
+    <mp-documentation type='ImageRegionEditorConfig'></mp-documentation>
+    <h3>Example</h3>
+    <mp-code-block mode='text/html'><![CDATA[
+      <div style='height: 700px'>
+        <rs-iiif-mirador image-or-region='http://example.com/AN00230/AN00230725_001_l.jpg'
+          image-id-pattern='BIND(REPLACE(str(?imageIRI),
+            "^.+/[A-Z0]*([1-9][0-9]*)_.*$", "$1") AS ?imageID)'
+          iiif-server-url='http://example.com/IIIF'>
+        </rs-iiif-mirador>
+      </div>
+    ]]></mp-code-block>
+
+    <h2>IIIF Thumbnail</h2>
+    <p><code><rs-iiif-image-thumbnail /></code> displays thumbnail of <code>rso:EX_Digital_Image</code> or <code>rso:EX_Digital_Image_Region</code>.</p>
+    <p>By default component fits image in parent bounds and (if specified) props.{width, height} preserving aspect ratio of image. This could be disabled by setting <code>preserveImageSize</code>.</p>
+    <h3>Configuration</h3>
+    <mp-documentation type='ImageThumbnailConfig'></mp-documentation>
+    <h3>Example</h3>
+    <mp-code-block mode='text/html'><![CDATA[
+			<!-- fits inside 300x200 px rectangle -->
+			<rs-iiif-image-thumbnail image-or-region='http://example.com/bar/bar.jpg'
+				image-id-pattern='BIND(REPLACE(?imageIRI, "^http://example.com/(.*)$", "$1") as ?imageID)'
+			  iiif-server-url='/Scaler/IIIF'
+			  width='{300}' height='{200}'>
+			</rs-iiif-image-thumbnail>
+
+			<!-- fills container div -->
+			<div style="height: 200px; width: 400px;">
+				<rs-iiif-image-thumbnail image-or-region='http://example.com/bar/bar.jpg'
+			  	image-id-pattern='BIND(REPLACE(?imageIRI, "^http://example.com/(.*)$", "$1") as ?imageID)'
+			   	iiif-server-url='/Scaler/IIIF'>
+			 	</rs-iiif-image-thumbnail>
+			</div>
+    ]]></mp-code-block>
+
+    <h2>Overlay image comparison</h2>
+    <p><code><rs-iiif-overlay /></code> provides images comparison by overlaying them on top of each other with variable opacity.</p>
+    <h3>Configuration</h3>
+    <mp-documentation type='OverlayComparisonConfig'></mp-documentation>
+    <h3>Example</h3>
+    <mp-code-block mode='text/html'><![CDATA[
+			<div style='height: 700px;'>
+				<rs-iiif-overlay
+			  	selection='["http://example.com/bar/image1", "http://example.com/bar/image2"]'
+			    image-id-pattern='BIND(REPLACE(?imageIRI, "^http://example.com/(.*)$", "$1") as ?imageID)'
+			    iiif-server-url='/Scaler/IIIF'>
+			  </rs-iiif-overlay>
+			</div>
+    ]]></mp-code-block>
+
+    <h2>Side-by-side image comparison</h2>
+    <p><code><rs-iiif-side-by-side /></code> providers side-by-side image comparison.</p>
+    <h3>Configuration</h3>
+    <mp-documentation type='SideBySideComparisonConfig'></mp-documentation>
+    <h3>Example</h3>
+    <mp-code-block mode='text/html'><![CDATA[
+			<div style='height: 700px'>
+        <rs-iiif-side-by-side
+          selection='["http://example.com/bar/image1", "http://example.com/bar/image2", "http://example.com/bar/image3"]'
+          image-id-pattern='BIND(REPLACE(?imageIRI, "^http://example.com/(.*)$", "$1") as ?imageID)'
+          iiif-server-url='/Scaler/IIIF'>
+        </rs-iiif-side-by-side>
+			</div>
+    ]]></mp-code-block>
+  </div>
+</div>

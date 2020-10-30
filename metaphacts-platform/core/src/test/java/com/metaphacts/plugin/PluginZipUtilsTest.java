@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.plugin;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -48,11 +69,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import org.pf4j.PluginRuntimeException;
 
 import com.google.common.collect.Lists;
 import com.metaphacts.util.ZipUtils;
-
-import ro.fortsoft.pf4j.PluginException;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -64,7 +84,7 @@ public class PluginZipUtilsTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
     @Test
-    public void testZipCreation() throws IOException, PluginException {
+    public void testZipCreation() throws IOException, PluginRuntimeException {
         File appFolder = createDummyAppFolder();
         File archive = tempFolderRule.newFile("app1.zip");
         ZipUtils.compressDirToZipFile(appFolder, archive);
@@ -88,7 +108,7 @@ public class PluginZipUtilsTest {
     }
     
     @Test
-    public void expandAndDeleteIfValidZipTest() throws ZipException, IOException, PluginException  {
+    public void expandAndDeleteIfValidZipTest() throws ZipException, IOException, PluginRuntimeException  {
         File tempAppFolder = createDummyAppFolder();
         assertTrue(tempAppFolder.exists());
         File appsFolder =tempFolderRule.newFolder("apps");
@@ -102,7 +122,7 @@ public class PluginZipUtilsTest {
     }
 
     @Test
-    public void expandAndDeleteIfValidZipTestAdditionalFilesOrFolders() throws ZipException, IOException, PluginException  {
+    public void expandAndDeleteIfValidZipTestAdditionalFilesOrFolders() throws ZipException, IOException, PluginRuntimeException  {
         File tempAppFolder = createDummyAppFolder();
         
         assertTrue(tempAppFolder.exists());
@@ -131,7 +151,7 @@ public class PluginZipUtilsTest {
     }
     
     
-    public void expandAndDeleteIfValidZipApp(File nestedAppZipFile, File finalAppFolder, File appsFolder) throws ZipException, IOException, PluginException {
+    public void expandAndDeleteIfValidZipApp(File nestedAppZipFile, File finalAppFolder, File appsFolder) throws ZipException, IOException, PluginRuntimeException {
         assertTrue(PluginZipUtils.isSingleDirectoryAppZip(nestedAppZipFile));
         
         // path returned should 
@@ -151,7 +171,7 @@ public class PluginZipUtilsTest {
     
 
     @Test
-    public void isSingleDirectoryAppZipTest() throws IOException, PluginException {
+    public void isSingleDirectoryAppZipTest() throws IOException, PluginRuntimeException {
         File appFolder = createDummyAppFolder();
         assertTrue(appFolder.exists());
         File backup = tempFolderRule.newFile("app1.zip");
@@ -171,13 +191,13 @@ public class PluginZipUtilsTest {
         }
         
         assertTrue(backupNotSingleDirectory.exists());
-        exception.expect(PluginException.class);
+        exception.expect(PluginRuntimeException.class);
         exception.expectMessage("The zip file does not contain a folder with a name that is equal to the zip name");
         PluginZipUtils.isSingleDirectoryAppZip(backupNotSingleDirectory);
     }
     
     @Test
-    public void isFlatZipTest() throws IOException, PluginException {
+    public void isFlatZipTest() throws IOException, PluginRuntimeException {
         File zip = new File(tempFolderRule.newFolder(UUID.randomUUID().toString()),"test-app.zip");
         Map<String, String> env = new HashMap<>(); 
         env.put("create", "true");
@@ -200,7 +220,7 @@ public class PluginZipUtilsTest {
     }
     
     @Test
-    public void isSingleDirectoryAppZipWithoutLeadingSlashTest() throws IOException, PluginException {
+    public void isSingleDirectoryAppZipWithoutLeadingSlashTest() throws IOException, PluginRuntimeException {
         /*
          * some os / zip tools create zip entries without leading slash
          */

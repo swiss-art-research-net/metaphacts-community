@@ -1,18 +1,291 @@
+buildscript {
+	dependencies {
+		classpath "gradle.plugin.org.gretty:gretty:3.0.3"
+		classpath "gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:4.4.4"
+	}
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+}
+
+project.ext {
+	
+	buildEnv = setting('buildEnv', 'BUILD_ENV', 'dev')
+	isDevBuild = buildEnv.equalsIgnoreCase('dev')
+	
+	buildJsonPath = setting('buildjson', 'BUILD_JSON', null)
+	
+	if (buildJsonPath == null) {
+		throw new GradleException("Cannot find build configuration file. Please specify it by system property -Dbuildjson=<path-to-config>");
+	}
+
+	buildConfig = parseBuildConfig(project.file(buildJsonPath))
+}
+
+version = '3.6.0'
+group = 'com.metaphacts'
+project.ext.vendor = 'metaphacts GmbH'
+project.ext.buildDate = new Date()
+
+logger.lifecycle("Running gradle version: $gradle.gradleVersion (JVM " + System.getProperty("java.version") + ")")
+logger.lifecycle("Platform version: " + version)
+logger.lifecycle("Build revision: " + (System.getenv("BUILD_REVISION")?:"local environment") + " (Branch: " + (System.getenv("BUILD_BRANCH")?:"n/a") + ")" )
+logger.lifecycle("Run 'gradlew help' to get further help")
+
+
+apply plugin: 'java'
+
+
+apply from: 'project/build.license.gradle'
+apply from: 'project/build.checks.gradle'
+apply from: 'project/build.distribution.gradle'
+
+
 
 
 allprojects {
 	buildDir 'target'
 }
 
-
+def javaProjects = subprojects.findAll { it.parent != null && (it.name == 'core' || it.name == 'client-api') }
+def webProjects = subprojects.findAll { it.parent != null && (it.name == 'web' || it.name == 'webpack' || it.name == 'ontodia') }
 def appProjects = subprojects.findAll { it.parent != null && it.parent.name == 'apps' }
+def selectedRuntimeApps = findRuntimeAppProjects()
 
+logger.lifecycle("Runtime apps: " + selectedRuntimeApps);
 
-configure(appProjects) {
+configure(allprojects) {
+	
+	// version constants
+	project.ext {
+		RDF4J_VERSION = "3.4.2"
+		LOG4J_VERSION = "2.13.3"
+ 		JERSEY_VERSION = "2.22.2"
+		JACKSON_VERSION = "2.10.1"
+		GUICE_VERSION = "4.2.2"
+		GUAVA_VERSION = "28.2-jre"
+		SHIRO_VERSION = "1.6.0"
+		PAC4J_VERSION = "4.0.0"
+	}
+}
 
-	project.logger.info("Configuring app project " + project.name)
+configure(':project:webpack') {
+	project.ext.allWebProjects = webProjects;
+}
+
+def javaProjectDefinitionCommon = {
 	
 	apply plugin: 'java'
+	apply plugin: 'java-library'
+	apply plugin: 'eclipse'
+	apply plugin: 'license'
+	apply plugin: 'com.github.spotbugs'
+	
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+	
+	configurations {
+	
+		// TODO reactivate after cleanup
+		//all*.exclude group: 'commons-logging', module: 'commons-logging'
+		
+		// annotations from jsr305 are only required at compile time
+		runtimeClasspath.exclude group: 'com.google.code.findbugs', module: 'jsr305'
+		
+		// TODO should be revised if jersey dependency is cleaned in platform-client
+		all*.exclude group: 'org.glassfish.hk2.external', module: 'aopalliance-repackaged'
+		
+		// exclude Android-specific, empty artifact for Guava
+		runtimeClasspath.exclude group: 'com.google.guava', module: 'listenablefuture'
+		
+		spotbugsStylesheets { transitive false }
+	}
+	repositories {
+		mavenCentral();
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	
+	dependencies {
+	
+		// IMPORTANT do not define any dependencies on implementation / compile / api
+		// as these will reside on the runtimeClasspath for apps and thus get packaged.
+		// Global dependencies for our main projects can be defined in the configure()
+		// block below.
+		
+		
+		// compile time annotations like nullable
+		compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.1'
+		compileOnly "com.github.spotbugs:spotbugs-annotations:${spotbugs.toolVersion.get()}"
+		
+		// test dependencies
+		testImplementation group: 'junit', name: 'junit', version: '4.10'
+		testImplementation group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'
+		testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+		testImplementation group: 'com.novocode', name: 'junit-interface', version: '0.11'
+		testImplementation group: 'org.mockito', name: 'mockito-core', version: '1.9.5'
+		testImplementation group: 'org.jukito', name: 'jukito', version: '1.5'
+		
+		testImplementation group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-inmemory', version: JERSEY_VERSION
+		testImplementation group: 'com.github.sdorra', name: 'shiro-unit', version: '1.0.1', transitive: false
+		testImplementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: JERSEY_VERSION
+		
+		testImplementation('org.jukito:jukito:1.4.1') {
+			exclude group: 'commons-beanutils', module: 'commons-beanutils'
+			exclude group: 'com.google.inject', module: 'guice'
+		}
+		
+		testImplementation group: 'org.skyscreamer', name: 'jsonassert', version: '1.5.0'
+		
+		spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.10.1'
+	}
+	
+	project.afterEvaluate {
+		jar {
+			manifest = project.manifest {
+				attributes(manifestProperties(project.ext.externalName))
+			}
+		}
+	}
+	
+	test {
+		useJUnit()
+
+		maxHeapSize = '1G'
+		
+		reports {
+			junitXml.enabled = true
+			junitXml.destination = rootProject.file('target/reports/test/' + project.parent.name + '-' + project.name)
+			html.enabled = false
+		}
+	}
+	
+	license {
+		// we expect that LICENSE-HEADER.txt file is located in the root of the project
+		header findFileInProjectOrParent(project, 'LICENSE-HEADER.txt')
+		include '**/*.java'
+		mapping {
+			java='SLASHSTAR_STYLE'
+		}
+		strictCheck true
+	}
+	
+	spotbugs {
+		ignoreFailures = true
+		excludeFilter = project(':project').file("spotbugs-excludeFilter.xml")
+		reportsDir = rootProject.file('target/reports/spotbugs/' + project.parent.name + '-' + project.name)
+	}
+	
+	// To generate an HTML report instead of XML
+	spotbugsMain {
+		reports {
+			html {
+				enabled = true
+				stylesheet 'fancy-hist.xsl'
+			}
+		}
+	}
+	
+	eclipse {
+		classpath {
+			file {
+				whenMerged { classpath ->
+					// remove compiled test classes and resources from target folders 
+					// => this is already contained via the direct project import on the classpath
+					classpath.entries.removeAll { it.path.contains('target/classes/') || it.path.contains('target/resources/') }
+				}
+			}
+		}
+	}
+
+	task licenseCheck(dependsOn: [licenseMain, licenseTest])
+}
+configure(javaProjects, javaProjectDefinitionCommon)
+configure(javaProjects) {
+	dependencies {
+	
+		// global dependencies for core java projects
+		implementation group: 'com.google.guava', name: 'guava', version: GUAVA_VERSION
+		
+		implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: LOG4J_VERSION, transitive: false
+		implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: LOG4J_VERSION, transitive: false
+		implementation group: 'org.apache.logging.log4j', name: 'log4j-web', version: LOG4J_VERSION, transitive: false
+		implementation group: 'org.apache.logging.log4j', name: 'log4j-1.2-api', version: LOG4J_VERSION, transitive: false
+		implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: LOG4J_VERSION, transitive: false
+		implementation group: 'org.apache.logging.log4j', name: 'log4j-jul', version: LOG4J_VERSION, transitive: false
+		implementation group: 'org.apache.logging.log4j', name: 'log4j-jcl', version: LOG4J_VERSION, transitive: false
+		runtimeOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
+	}
+}
+
+configure(webProjects) {
+
+
+	apply plugin: 'license'
+
+	// run yarn
+	task yarnRun {
+		
+		// define task inputs and outputs for incremental run
+		inputs.file project.file('package.json')
+		outputs.file project.file('yarn.lock')
+		outputs.dir project.file('node_modules')
+		outputs.cacheIf { true }
+		
+		doLast {
+		
+			project.exec {
+				// use --mutex to avoid race-condition in parallel build on CI
+				// see https://github.com/yarnpkg/yarn/issues/683
+				commandLine generateCmdForOS(['yarn', '--mutex', 'network'])
+			}
+		}
+	}
+	
+	license {
+		// we expect that LICENSE-HEADER.txt file is located in the root of the project
+		header findFileInProjectOrParent(project, 'LICENSE-HEADER.txt')
+		include '**/*.ts'
+		include '**/*.tsx'
+		include '**/*.scss'
+		exclude '**/*.scss.d.ts'
+		mapping {
+			ts='SLASHSTAR_STYLE'
+			tsx='SLASHSTAR_STYLE'
+			scss='SLASHSTAR_STYLE'
+		}
+		strictCheck true
+	}
+	
+	task cleanNpm(type: Delete) {
+		delete project.file('node_modules')
+	}
+	
+	task licenseFormatWeb(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+		source = project.fileTree(dir: "src")
+	}
+	
+	task licenseWeb(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
+		source = project.fileTree(dir: "src")
+	}
+	
+	task licenseCheck
+	
+	licenseFormat.dependsOn licenseFormatWeb
+	licenseCheck.dependsOn licenseWeb
+}
+
+// inherit Java project definition from main code projects also for apps
+configure(appProjects, javaProjectDefinitionCommon)
+configure(appProjects) {
+	project.ext {
+		externalName = project.name
+	}
+
+	project.logger.info("Configuring app project " + project.name)
 	
 	def appCopySpec = project.copySpec {
 		from (project.getProjectDir()) {
@@ -24,8 +297,53 @@ configure(appProjects) {
 			include("ldp/**/*")
 			include("lib/**/*")
 			include("plugin.properties")
+			include("web-extensions.json")
 			include("_bootstrap/**/*")
 			
+			// make sure to never copy code
+			exclude("src/**/*")
+		}
+		
+		// jar (if the app has sources)
+		if (file('src/main/java').exists()) {
+			into("lib") {
+				from jar
+			}
+		}
+
+		// dependencies
+		into ('lib') {
+			from configurations.runtimeClasspath
+		}
+	}
+	
+	repositories {
+		mavenCentral();
+	}
+
+	configurations {
+		// give test dependencies access to compileOnly dependencies to emulate providedCompile
+		testImplementation.extendsFrom compileOnly
+	}
+	
+	dependencies {
+		// common platform dependencies
+		// note: all dependencies in configuration 'api' are inherited automatically
+		compileOnly project(":metaphacts-platform:core")
+		compileOnly project(":metaphacts-platform:client-api")
+		compileOnly group: 'org.pf4j', name: 'pf4j', version: '3.2.0', transitive: false
+		compileOnly group: 'org.apache.logging.log4j', name: 'log4j-api', version: LOG4J_VERSION, transitive: false
+		compileOnly group: 'com.github.jknack', name: 'handlebars', version: '4.0.5'
+		testImplementation project(":metaphacts-platform:core").sourceSets.test.output
+		testImplementation project(path: ":metaphacts-platform:core", configuration: 'testRuntime')
+		testImplementation project(":metaphacts-platform:client-api").sourceSets.test.output
+		testImplementation project(path: ":metaphacts-platform:client-api", configuration: 'testRuntime')
+	}
+	
+	eclipse {
+		classpath {
+			// add provided depencencies to Eclipse .classpath file
+			plusConfigurations += [ configurations.compileOnly ]
 		}
 	}
 	
@@ -41,4 +359,331 @@ configure(appProjects) {
 		from deployFolder;
 		destinationDirectory = appsTargetFolder
 	}
+		
+	// TODO make optional
+	task licenseFormatWeb(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+		source = project.fileTree(dir: "web/src")
+		
+		// we expect that LICENSE-HEADER.txt file is located in the root of the project
+		header findFileInProjectOrParent(project, 'LICENSE-HEADER.txt')
+		include '**/*.ts'
+		include '**/*.tsx'
+		include '**/*.scss'
+		exclude '**/*.scss.d.ts'
+		mapping {
+			ts='SLASHSTAR_STYLE'
+			tsx='SLASHSTAR_STYLE'
+			scss='SLASHSTAR_STYLE'
+		}
+		strictCheck true
+	}
+	
+	task licenseWeb(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
+		source = project.fileTree(dir: "web/src")
+		
+		// we expect that LICENSE-HEADER.txt file is located in the root of the project
+		header findFileInProjectOrParent(project, 'LICENSE-HEADER.txt')
+		include '**/*.ts'
+		include '**/*.tsx'
+		include '**/*.scss'
+		exclude '**/*.scss.d.ts'
+		mapping {
+			ts='SLASHSTAR_STYLE'
+			tsx='SLASHSTAR_STYLE'
+			scss='SLASHSTAR_STYLE'
+		}
+		strictCheck true
+	}
+	
+	licenseFormat.dependsOn licenseFormatWeb
+}
+
+/*
+ * Configures a virtual Jetty project which serves as a launcher
+ * for the platform
+ */
+configure(project(':jetty')) {
+
+	apply plugin: "org.gretty"
+	apply plugin: "war"
+	
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	
+	dependencies {
+		implementation project(':' + rootProject.ext.buildConfig.distribution + ':core')
+	}
+	
+	buildDir = rootProject.file('target/jetty/')
+	webAppDirName = rootProject.file(rootProject.ext.buildConfig.mainWebapp ?: 'metaphacts-platform/webapp')
+	
+	gretty {
+		inplaceMode='hard'
+		loggingLevel='INFO'
+		contextPath=''
+		httpPort=10214
+		
+		// external configurations
+		def runtimeDir = rootProject.file(setting('runtimeDirectory', 'RUNTIME_DIRECTORY', 'runtime'))
+		def logProfile = setting('log', 'LOG', 'log4j2-debug')
+		def shiroFolder = rootProject.ext.buildConfig.defaultShiroIniFolder ?: 'metaphacts-platform/app/config'
+		
+		jvmArgs = []
+		
+		// dev environment settings
+		jvmArgs << "-DruntimeDirectory=" + runtimeDir
+		jvmArgs << "-Dcom.metaphacts.config.baselocation=" + (new File(runtimeDir, 'config'))
+		jvmArgs << "-Dconfig.mutablePluginApps=true"	// TODO check if this is actually applicable
+		jvmArgs << "-Dlog4j.configurationFile=" + rootProject.file('metaphacts-platform/webapp/etc/' + logProfile + '.xml').toURI().toString()
+		jvmArgs << "-Dconfig.environment.assetsLocation=http://localhost:3000/assets/"	 // TODO remove
+		jvmArgs << "-Dconfig.environment.shiroConfig=" + rootProject.file(shiroFolder + '/shiro.ini')
+		jvmArgs << "-Dorg.eclipse.jetty.annotations.LEVEL=OFF"
+		int n = 1
+		for (def runtimeAppProject : selectedRuntimeApps) {
+			jvmArgs << "-Dapp.${n}=${runtimeAppProject.projectDir}"
+			n++
+		}
+		
+		// platform settings
+		for (String key : System.getProperties().keySet()) {
+			if (key.startsWith('config.') || key.startsWith('appsDirectory')) {
+				jvmArgs << '-D' + key + '=' + System.getProperties().get(key)
+			}
+		}
+		
+		// jetty parameters
+		jvmArgs << "-Dorg.eclipse.jetty.server.Request.maxFormContentSize=100000000"
+		
+		if (Boolean.parseBoolean(setting('debug', 'DEBUG', 'false'))) {
+			def port = setting('debug.port', 'DEBUG_PORT', '5005')
+			def suspend = Boolean.parseBoolean(setting('debug.suspend', 'DEBUG_SUSPEND', 'true')) ? 'y' : 'n'
+			jvmArgs << '-Xdebug'
+			jvmArgs << '-Xrunjdwp:transport=dt_socket,server=y,suspend=' + suspend + ',address=' + port
+		}
+		
+		// webapp from each included project (e.g. metaphacts)
+		for (def includeProject : rootProject.ext.buildConfig.includeProjects) {
+			extraResourceBase  project(':'+includeProject).file("webapp")
+		}
+		extraResourceBase rootProject.file('target/jetty/webapp')
+	}
+	
+	task prepareWebapp(type: Copy) {
+		
+		into rootProject.file('target/jetty/webapp')
+		
+		into('WEB-INF/classes/com/metaphacts/app') {
+			from rootProject.internalStorageProps
+		}
+	}
+	
+	task appRunPrepare;
+	
+	project.afterEvaluate {
+		appRunPrepare.dependsOn rootProject.getTasksByName("jar", true)
+		appRunPrepare.dependsOn rootProject.getTasksByName("licenseFormat", true)
+		appRunPrepare.dependsOn prepareWebapp
+		appRunPrepare.dependsOn ':project:webpack:startWebpackServerDevBackground'
+		for (def runtimeAppProject : selectedRuntimeApps) {
+			appRunPrepare.dependsOn runtimeAppProject.getTasksByName("deploy", false)
+		}
+		
+		appRun.dependsOn appRunPrepare
+		appRun.finalizedBy ':project:webpack:stopWebpackServerDev'
+		
+		appStart.dependsOn appRunPrepare
+		appStart.finalizedBy ':project:webpack:stopWebpackServerDev'
+	}
+}
+
+allprojects {
+	task allDeps(type: DependencyReportTask) {}
+}
+
+// Documentation
+help.doLast {
+	println """
+Available commands:
+
+./gradlew appRun
+./gradlew clean platformWar
+./gradlew cleanEclipse eclipse
+./gradlew appZip
+./gradlew test
+./gradlew generateLicenseReport
+./gradlew licenseCheck
+./gradlew generateJsonSchema
+./gradlew spotbugsMain
+./gradlew allDeps
+./gradlew --rerun-tasks licenseFormat
+./gradlew diagnostics
+./gradlew dependencyCheckAnalyze
+
+The location of the buildjson configuration can be provided using the system
+property -Dbuildjson, or  using gradle.properties mechanism via systemProp.buildjson.
+
+
+Available settings:
+
+System properties can be defined using `-Dprop=value` in the `./gradlew` command (e.g. `./gradlew -Ddebug=true appRun`) or 
+in `gradle.properties` in the project root folder using the prefix `systemProp.` (see also `gradle.properties.template`).
+
+runtimeDirectory => location of the runtime directory (relative to root project). Default: runtime
+log => log4j configuration profile (supported values: log4j2 log4j2-debug, log4j2-trace, log4j2-trace2) Default: log4j2-debug
+buildJson => location of the build JSON configuration
+debug => whether JVM debug is enabled (default port 5005)
+debug.port => JVM debug port. Default: 5005
+debug.suspend => suspend on debug (true|false). Default: false
+platformVersion => the platform version
+apps => comma-separated list of apps (name of app projects) to load. 
+        Note: these apps do not need to be available in the runtime/apps folder, they will be loaded from their
+        project folder. 
+"""
+}
+
+
+// Diagnostics
+task diagnostics {
+	
+	doLast {
+		println "JVM:"
+		println System.getProperty("java.version")
+		println "Node:"
+		project.exec {
+			commandLine generateCmdForOS(['node', '--version'])
+		}
+		println "Yarn:"
+		project.exec {
+			commandLine generateCmdForOS(['yarn', '--version'])
+		}
+		println "NPM:"
+		project.exec {
+			commandLine generateCmdForOS(['npm', '--version'])
+		}
+	}
+}
+
+// report timings
+gradle.addListener new com.metaphacts.util.TimingsListener()
+
+
+// Helper methods
+
+Map<String, String> manifestProperties(String title) {
+
+	def attributeMap = [:]
+	attributeMap["Implementation-Title"] 		= title
+	attributeMap["Implementation-Version"] 		= rootProject.version
+	attributeMap["Implementation-Vendor"] 		= rootProject.ext.vendor
+	attributeMap["Implementation-Vendor-Id"] 	= rootProject.ext.vendor
+	attributeMap["Specification-Title"] 		= title
+	attributeMap["Specification-Version"] 		= rootProject.version
+	attributeMap["Specification-Vendor"] 		= rootProject.ext.vendor
+	
+	// commit ID and build time stamp is only added when externally provide
+	// => support incremental local build
+	def buildRevision = setting('buildRevision', 'BUILD_REVISION', null)
+	def buildBranch = setting('buildBranch', 'BUILD_BRANCH', null)
+	if (buildRevision != null) {
+		attributeMap['Build-Revision'] = buildRevision
+		if (buildBranch != null) {
+			attributeMap['Build-Branch'] = buildBranch
+		}
+		attributeMap['Build-Timestamp'] = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(rootProject.ext.buildDate);
+	}
+	return attributeMap;
+}
+
+List<String> generateCmdForOS(List<String> command) {
+	List<String> res;
+	
+	String osname = System.getProperty("os.name", "generic").toLowerCase();
+	if(osname.indexOf("win") >= 0) {
+		res = new ArrayList<>();
+		res.add("cmd");
+		res.add("/C");
+		res.addAll(command);
+	} else {
+		res = new ArrayList<>();
+		res.add("sh")
+		res.add("-c")
+		res = command
+	}
+	return res;
+}
+
+/**
+ * Parse a build config JSON to a Java Pojo
+ */
+def parseBuildConfig(File buildConfigJson) {
+	if (!buildConfigJson.isFile()) {
+		throw new GradleException("Cannot find build configuration file at " + buildConfigJson);
+	}
+	def jsonSlurper = new groovy.json.JsonSlurper()
+	return jsonSlurper.parse(project.file(buildJsonPath))
+}
+
+/**
+ * Return the project representing the given relative path
+ * Example: path/to/subproject -> project(':path:to:subproject')
+ */
+def toProject(String projectRelativePath) {
+	return project(':' + projectRelativePath.replace('/', ':'));
+}
+
+/**
+ * Retrieves an externally provided setting by inspecting
+ *
+ * project -> system property -> environment -> defaultValue
+ */
+def setting(String propertyName, String envName, String defaultValue) {
+	if (project.hasProperty(propertyName)) {
+		return project.getProperty(propertyName)
+	}
+	if (System.properties[propertyName] != null) {
+		return System.properties[propertyName];
+	}
+	if (System.getenv(envName) != null) {
+		return System.getenv(envName);
+	}
+	return defaultValue;
+}
+
+/**
+ * Inspects the setting "apps" for a app identifiers.
+ * This is a comma separated list of app names corresponding
+ * to the Gradle project name.
+ */
+def findRuntimeAppProjects() {
+
+	String appsSetting = setting("apps", "APPS", null);
+	if (appsSetting == null) {
+		return [];
+	}
+	
+	def appProjects = [];
+	for (String appId : appsSetting.split(",")) {
+		def _matchingProjects = allprojects.findAll { it.name == appId.trim() }
+		if (_matchingProjects.isEmpty()) {
+			project.logger.warn("No matching app projects found for " + appId);
+		}
+		appProjects.addAll(_matchingProjects)
+	}
+	
+	return appProjects;
+}
+
+/**
+ * Retrieves the specified file in the provided project or any parent project going up the 
+ * hierarchy until it is found. If there is no such file null is returned
+ */
+def findFileInProjectOrParent(Project project, String fileName) {
+	if (!project) return null
+	def file = project.file(fileName)
+	if (file && file.exists()) return file
+	if (project.parent) return findFileInProjectOrParent(project.parent, fileName)
+	return null
 }

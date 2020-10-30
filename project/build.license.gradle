@@ -1,0 +1,216 @@
+import com.github.jk1.license.filter.*
+import com.github.jk1.license.render.*
+import com.metaphacts.license.*
+import com.github.jk1.license.License
+import com.github.jk1.license.ImportedModuleData
+import com.github.jk1.license.ImportedModuleBundle
+
+
+
+apply plugin: 'com.github.jk1.dependency-license-report'
+
+
+configurations {
+	allRuntimeDependencies
+}
+
+project.afterEvaluate {
+
+	Project distributionProject = project(':' + project.ext.buildConfig.distribution + ':core')
+	configurations.allRuntimeDependencies.extendsFrom(distributionProject.configurations.runtimeClasspath)
+}
+
+repositories {
+	mavenCentral();
+}
+
+licenseReport {
+
+	outputDir = project.file("target/reports/licenses/")
+
+	projects = [project]
+	configurations = ['allRuntimeDependencies']
+
+	// collect the generate NPM license files
+	def licenseFiles = [];
+	for (def includeProject : rootProject.ext.buildConfig.includeProjects) {
+		licenseFiles << project(':project:webpack').file('target/licenses/' + includeProject + '-licenses.json');
+	}
+	licenseFiles << project(':project:webpack').file('target/licenses/ontodia-licenses.json')
+	
+	// exclude packages from frontend modules
+	def excludedJsModules = ['sputniq', 'ontodia']
+
+	def npmImporter = new NpmLicenseReportImporter("Frontend dependencies", licenseFiles, excludedJsModules);
+	npmImporter.moduleNormalizer = new MPNpmLicenseItemNormalizer();
+
+	boolean includesRS = rootProject.ext.buildConfig.includeProjects.contains('researchspace')
+	if (includesRS) {
+		importers = [npmImporter, new RSDependencyImporter(project)]
+	} else {
+		importers = [npmImporter]
+	}
+
+	filters = [new LicenseBundleNormalizer(bundlePath: project(':project').file('license-normalizer-bundle.json'))] //,
+
+	def renderer = new MPLicenseRenderer('THIRDPARTY.html', new LicenseComparator())
+	renderer.renderLinks = false;
+	renderer.modulesBundleName = 'Backend dependencies'
+	renderers = [renderer]
+
+	excludeGroups = ['platform-externals..*']
+}
+
+generateLicenseReport.dependsOn ':project:webpack:generateNpmLicenseReportFiles'
+
+// normalize some NPM licenses (e.g. modified components)
+class MPNpmLicenseItemNormalizer implements NpmLicenseItemNormalizer {
+
+
+	ImportedModuleData normalize(ImportedModuleData module) {
+
+		// MP forked items (hosted on github)
+		if (module.version.contains('invalid semversion')) {
+			if (module.name == 'docson') {
+				module.version = '1.0.2'
+				module.projectUrl = 'docson@metaphacts/docson#npm'
+				module.license = 'Apache-2.0'
+				module.licenseUrl = 'https://www.apache.org/licenses/LICENSE-2.0'
+			}
+			else if (module.name == 'dom-serializer') {
+				module.version = '1.0.5'
+				module.projectUrl = 'dom-serializer@metaphacts/dom-serializer#quote-escape-fix'
+				module.license = 'MIT'
+				module.licenseUrl = 'https://opensource.org/licenses/MIT'
+			}
+			else if (module.name == 'html-to-react') {
+				module.version = '1.2.1'
+				module.projectUrl = 'html-to-react@metaphacts/html-to-react#async'
+				module.license = 'MIT'
+				module.licenseUrl = 'https://opensource.org/licenses/MIT'
+			}
+			else if (module.name == 'jsonld') {
+				module.version = '1.6.3-0'
+				module.projectUrl = 'jsonld@metaphacts/jsonld.js#v1.6.2-fix-ie:'
+				module.license = 'BSD'
+				module.licenseUrl = 'https://opensource.org/licenses/BSD-3-Clause'
+			}
+			else if (module.name == 'ketcher') {
+				module.version = '2.0.0-RC'
+				module.projectUrl = 'ketcher@https://github.com/metaphacts/ketcher#react-integration'
+				module.license = 'Apache-2.0'
+				module.licenseUrl = 'https://www.apache.org/licenses/LICENSE-2.0'
+			}
+			else if (module.name == 'webvowl') {
+				module.version = '1.0.3'
+				module.projectUrl = 'webvowl@metaphacts/WebVOWL#950b50c97d01c5fa7f902bd3d3cc0c769627982e'
+				module.license = 'MIT'
+				module.licenseUrl = 'https://opensource.org/licenses/MIT'
+			}
+		}
+
+		// pick preferred license from dual licensed items
+		else if (module.name == 'vis' && module.license == '(Apache-2.0 OR MIT)') {
+			module.license = 'Apache-2.0'
+			module.licenseUrl = 'https://www.apache.org/licenses/LICENSE-2.0'
+		}
+
+		// font-awesome has two licenses
+		else if (module.name == 'font-awesome' && module.version == '4.7.0') {
+			module.licenseUrl = 'https://github.com/FortAwesome/Font-Awesome/blob/v4.7.0/README.md'
+		}
+
+		else if (module.name == 'jsonlint-mod') {
+			module.license = 'MIT'
+			module.licenseUrl = 'https://opensource.org/licenses/MIT'
+		}
+
+		return module;
+	}
+}
+
+
+/**
+ * For components that are dual licensed, prefer licenses according
+ * to the following rules
+ *
+ * Apache < MIT < Eclipse < CDDL < Public
+ *
+ * Special case: bouncy castle license is preferred
+ */
+class LicenseComparator implements Comparator<License> {
+
+	int compare(License a, License b) {
+		if (a.name == null) {
+			return 1;
+		}
+		if (b.name == null) {
+			return -1;
+		}
+		if (a.name.contains("Bouncy")) {
+			return -1;
+		}
+		if (b.name.contains("Bouncy")) {
+			return 1;
+		}
+		if (a.name.contains("Apache")) {
+			return -1;
+		}
+		if (b.name.contains("Apache")) {
+			return 1;
+		}
+		if (a.name.contains("MIT")) {
+			return -1;
+		}
+		if (b.name.contains("MIT")) {
+			return 1;
+		}
+		if (a.name.contains("Eclipse")) {
+			return -1;
+		}
+		if (b.name.contains("Eclipse")) {
+			return 1;
+		}
+		if (a.name.contains("(CDDL)")) {
+			return -1;
+		}
+		if (b.name.contains("(CDDL)")) {
+			return 1;
+		}
+		if (a.name.contains("Public Domain")) {
+			return -1;
+		}
+		if (b.name.contains("Public Domain")) {
+			return 1;
+		}
+
+		return 0;
+	}
+}
+
+class RSDependencyImporter implements com.github.jk1.license.importer.DependencyDataImporter {
+
+	String importerName = 'Backend & Frontend dependencies'
+	Project project
+
+	public RSDependencyImporter(Project project) {
+		this.project = project
+	}
+
+	@Override
+	Collection<ImportedModuleBundle> doImport() {
+		def bundles = new HashSet<ImportedModuleBundle>();
+
+		def modules = []
+		modules << new ImportedModuleData(
+					name: 'org.researchspace',
+					version: '3.3.2',
+					projectUrl: null,
+					license: 'GNU Lesser General Public License v2.1',
+					licenseUrl: 'http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html'
+				)
+
+		ImportedModuleBundle bundle = new ImportedModuleBundle(importerName, modules)
+		return [bundle];
+	}
+}

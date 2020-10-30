@@ -1,0 +1,17 @@
+[[> "http://www.metaphacts.com/resource/OntodiaUserTemplates" ]]
+
+<div class="page page--fullheight">
+  <ontodia id='ontodia' hide-navigation-confirmation=true iri='[[this]]'
+           [[> "http://www.metaphacts.com/resource/assets/OntodiaGlobalSettings" ]]
+           [[> OntodiaClassAndLinksCustomization ]]
+           >
+    <ontodia-data-providers>
+      [[> "http://www.metaphacts.com/resource/OntodiaUserDataProvider" ]]
+    </ontodia-data-providers>
+    [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:any")]]
+      [[> "http://www.metaphacts.com/resource/OntodiaSimpleWorkspace" expectsSmallDiagram=true]]
+    [[else]]
+      [[> "http://www.metaphacts.com/resource/OntodiaSimpleWorkspace" readonly=true expectsSmallDiagram=true]]
+    [[/if]]
+  </ontodia>
+</div>

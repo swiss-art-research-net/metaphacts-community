@@ -1,37 +1,27 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li class="active">
-    Template and Application Pages
-  </li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
     <h1>Back-end Templating Syntax and Helpers</h1>
-    As already mentioned before, the entire front-end is based on client-side components using latest HTML5 technologies and standards. As such the most simple application and template pages can be made by assembling built-in or custom HTML5 components using standard HTML syntax. However, in some cases certain component parameters must be set before the client-side components are being initialized or - in other cases - it must be guaranteed that certain parts of a page or template never leave the backend (i.e. due to security restrictions). <br>
+    As already mentioned before, the entire front-end is based on client-side components based on the latest HTML5 technologies and standards. The simplest application and template pages can be already made by assembling built-in or custom HTML5 components using standard HTML syntax. However, in some cases certain component parameters must be set before the client-side components are being initialized or - in other cases - it must be guaranteed that certain parts of a page or template never leave the backend (i.e. due to security restrictions). <br>
 
-    Therefore, we use handlebars.java with custom helper functions to provide a "<b>mostly logic-less</b>" templating backend. That is the backend templating syntax should only be used for:
+    Therefore, we use handlebars.java (more on <a href="https://github.com/jknack/handlebars.java" target="_BLANK">handlebars.java</a>) with custom helper functions to provide a "<b>mostly logic-less</b>" templating backend. The backend templating syntax should only be used for:
     <ul>
       <li>Back-end parameterization of component inputs (simplified component inputs, restricted access to certain parameters).</li>
       <li>Partial rendering of page or template sub-parts (i.e. according to security restrictions or availability of data). </li>
-      <li>Includes to void duplication and facilitate reused of pages or sub-parts.  </li>
+      <li>Includes to avoid duplication and facilitate re-use of pages or sub-parts of them.  </li>
     </ul>
-    For different reasons (performance, complexity) <b>it is not recommend to use the backend templating syntax to query and format any query results in arbitrary ways </b>. All formatting should be done using purely client-side components.<br><br>
+    For different reasons (performance, complexity) <b>it is not recommended to use the backend templating syntax to query and format any query results in arbitrary ways </b>. All formatting should be done purely on the level of client-side components.<br><br>
 
     <b>Notes on handlebars.java syntax:</b>
     <ul>
-      <li>We are using <code>[[{{documentation}}]] [[ [[{{/documentation}}]]</code> as start delimiter and <code>[[{{documentation}}]] ]] [[{{/documentation}}]]</code> as end delimiter in order to distinguish from client-side handlebars.js template expressions (<code>{{ .. }}</code> ) as being used in some components to format the result.</li>
-      <li>The hash <code>[[{{documentation}}]] [[#helpername &quot;arguments&quot;]][[{{/documentation}}]]</code> indicates a block helper and needs to be closed <code>[[{{documentation}}]] [[/helpername]] [[{{/documentation}}]]</code>.<br> Inline-helper start directly after the start delimiter:  <code>[[{{documentation}}]] [[helpername]] [[{{/documentation}}]]</code>. </li>
+      <li>We are using <code>&lbrack;&lbrack;</code> as start delimiter and <code>[[{{documentation}}]] ]] [[{{/documentation}}]]</code> as end delimiter in order to distinguish from client-side handlebars.js template expressions (<code>{{ .. }}</code> ) as these are being used in some components to format the result.</li>
+      <li>The hash <code>&lbrack;&lbrack;#helpername &quot;arguments&quot;]]</code> indicates a block helper and needs to be closed <code>&lbrack;&lbrack;/helpername]]</code>.<br> Inline-helper starts directly after the start delimiter:  <code>&lbrack;&lbrack;helpername]]</code>. </li>
       <li>
-        Comments <code>[[{{documentation}}]] [[!-- this is a comment --]][[{{/documentation}}]]</code> will never leave the backend.
+        Comments <code>&lbrack;&lbrack;!-- this is a comment --]]</code> will never leave the backend.
       </li>
       <li>
-        When nesting helper functions (i.e. on helper is used as input argument for another helper), the inner helper functions need to be surrounded with simple parentheses only  <code>[[{{documentation}}]] [[#helpername (innerHelper &quot;innerArgument1&quot;) ]] [[{{/documentation}}]]</code> (c.f. also if-else examples below).
+        When nesting helper functions (i.e. one helper is used as an input argument for another helper), the inner helper functions need to be surrounded with simple parentheses only <code>&lbrack;&lbrack;#helpername (innerHelper &quot;innerArgument1&quot;) ]]</code> (compare this with if-else examples below).
       </li>
     </ul>
 
@@ -41,19 +31,19 @@
     Useful for parameterization of client-side components where the configuration needs to be parameterized with a single value depending on the context.
     <ul>
       <li>Expects as first argument an SPARQL SELECT query string.</li>
-      <li>Result will be a JSON escaped, double quoted value : <code>&quot;http://www.metaphacts.com/resource/result1&quot;</code></li>
+      <li>Result will be a JSON escaped, double quoted value-IRI : <code>&quot;http://www.metaphacts.com/resource/result1&quot;</code></li>
       <li>If no explicit parameter <code>binding=&quot;bindingVariable&quot;</code> is provided, the first projection variable from the result of the specified SPARQL SELECT result will be extracted.	</li>
       <li>If the result of the SPARQL SELECT contains multiple tuples, only the first matching binding will be returned.</li>
       <li>Returns <code>null</code> if result is empty.</li>
     </ul>
     <bs-panel header="Example: jsonValueFromSelect" collapsible=true default-expanded=true>
       data-config='{...<br>
-      "depiction": <code>[[{{documentation}}]] [[jsonValueFromSelect &quot;SELECT ?depiction WHERE { ?p foaf:depiction ?depiction}&quot; ]][[{{/documentation}}]]</code>,<br>
+      "depiction": <code>&lbrack;&lbrack;jsonValueFromSelect &quot;SELECT ?depiction WHERE { ?p foaf:depiction ?depiction}&quot; ]]</code>,<br>
       ...}'<br>
       <br>
       .. will return the same result as:<br><br>
       data-config='{...<br>
-      "depiction": <code>[[{{documentation}}]] [[jsonValueFromSelect &quot;SELECT ?p ?depiction WHERE { ?p foaf:depiction ?depiction}&quot; binding=&quot;depiction&quot; ]][[{{/documentation}}]]</code>,<br>
+      "depiction": <code>&lbrack;&lbrack;jsonValueFromSelect &quot;SELECT ?p ?depiction WHERE { ?p foaf:depiction ?depiction}&quot; binding=&quot;depiction&quot; ]]</code>,<br>
       ...}'<br>
     </bs-panel>
 
@@ -72,12 +62,12 @@ t.b.d. -->
 
     <bs-panel header="Example: jsonArrayFromSelect" collapsible=true default-expanded=true>
       data-config='{...<br>
-      "roots": <code>[[{{documentation}}]] [[jsonArrayFromSelect "SELECT ?person ?someone WHERE { ?p a foaf:Person. FILTER EXISTS{?person foaf:knows ?someone} }" ]][[{{/documentation}}]]</code>,<br>
+      "roots": <code>&lbrack;&lbrack;jsonArrayFromSelect "SELECT ?person ?someone WHERE { ?p a foaf:Person. FILTER EXISTS{?person foaf:knows ?someone} }" ]]</code>,<br>
       ...}'<br>
       <br>
       .. will return the same result as:<br><br>
       data-config='{...<br>
-      "roots": <code>[[{{documentation}}]] [[jsonArrayFromSelect "SELECT ?someone ?person WHERE { ?p a foaf:Person. FILTER EXISTS{?person foaf:knows ?someone} }" binding="person" ]][[{{/documentation}}]]</code>,<br>
+      "roots": <code>&lbrack;&lbrack;jsonArrayFromSelect "SELECT ?someone ?person WHERE { ?p a foaf:Person. FILTER EXISTS{?person foaf:knows ?someone} }" binding="person" ]]</code>,<br>
       ...}'<br>
     </bs-panel>
 
@@ -92,25 +82,21 @@ t.b.d. -->
     </ul>
 
     <bs-panel header="Example: singleValueFromSelect" collapsible=true default-expanded=true>
-      Single value <code>[[{{documentation}}]] [[singleValueFromSelect &quot;SELECT ?test WHERE { BIND('Hello World' as ?test)}&quot; ]] [[{{/documentation}}]]</code> in the middle of the text.<br>
+      Single value <code>&lbrack;&lbrack;singleValueFromSelect &quot;SELECT ?test WHERE { BIND('Hello World' as ?test)}&quot; ]]</code> in the middle of the text.<br>
       ... will render to:<br>
       Single value <code>[[singleValueFromSelect "SELECT ?test WHERE { BIND('Hello World' as ?test)}" ]]</code> in the middle of the text.<br>
     </bs-panel>
 
     <h4>urlParam Helper</h4>
     Helper to extract parameter(s) from the current URL. The following example extracts the value for the "tab" param <code>[[{{documentation}}]] &tab="value" [[{{/documentation}}]]</code> from the URL. Can be used, for example, to declare which tab should be opened in tabs-component. May also be useful when combined with if helper (c.f. section below).
-    <bs-panel header="Example: urlParm" collapsible=true default-expanded=true>
-      Param: <code>[[{{documentation}}]] 
-      [[urlParam &quot;tab&quot;]]</code>
-      [[{{/documentation}}]]
+    <bs-panel header="Example: urlParam" collapsible=true default-expanded=true>
+      Param: <code>&lbrack;&lbrack;urlParam &quot;tab&quot;]]</code>
     </bs-panel>
 
     <h4>resolvePrefix Helper</h4>
     Helper to resolve prefixed IRIs to full IRI string.
-    <bs-panel header="Example: urlParm" data-collapsible=true default-expanded=true>
-      <code>[[{{documentation}}]] 
-        [[resolvePrefix &quot;Help:Start&quot;]]
-        [[{{/documentation}}]]</code> <br>
+    <bs-panel header="Example: resolvePrefix" data-collapsible=true default-expanded=true>
+      <code>&lbrack;&lbrack;resolvePrefix &quot;Help:Start&quot;]]</code> <br>
       ... will render to: <br>
       <code>[[resolvePrefix "Help:Start"]]</code>
 
@@ -121,7 +107,7 @@ t.b.d. -->
     Helper to render the query template stored in the query catalog including the assigned parameters where necessary. The following example takes from the catalog a query template with a URI <code>http://example.org/testTemplate</code>, assigns a literal value "SomeString" to the parameter <code>label</code> and a URI <code>foaf:Person</code> to the parameter <code>type</code>. Can be used, for example, to use saved queries from the catalog as parameters in web components.
     <bs-panel header="Example: getQueryString" collapsible=true default-expanded=true>
       <code>[[{{documentation}}]] 
-      [[getQueryString &quot;http://example.org/testTemplate&quot; type=&#39;&lt;http://xmlns.com/foaf/0.1/Person&gt;&#39; label=&#39;&quot;SomeString&quot;&#39;]]</code>
+      &lbrack;&lbrack;getQueryString &quot;http://example.org/testTemplate&quot; type=&#39;&lt;http://xmlns.com/foaf/0.1/Person&gt;&#39; label=&#39;&quot;SomeString&quot;&#39;]]</code>
       <br>If the template body is <code>SELECT ?x WHERE { ?x a ?type . ?x rdfs:label ?label . }</code> and <code>type</code> and <code>label</code> are declared as arguments, then it will render to
       <br><code>SELECT ?x WHERE { ?x a &lt;http://xmlns.com/foaf/0.1/Person&gt; . ?x rdfs:label &quot;SomeString&quot; . }</code>
       [[{{/documentation}}]]
@@ -134,17 +120,11 @@ t.b.d. -->
       <li>Expects as first argument an boolean string. Everything non-equal to an empty string will be interpreted as <code>false</code>.</li>
     </ul>
     <bs-panel header="Example: if-else block" data-collapsible=true default-expanded=true>
-      <code>[[{{documentation}}]] 
-        [[#if &quot;true&quot;]] 
-        [[{{/documentation}}]]</code><br/>
+      <code>&lbrack;&lbrack;#if &quot;true&quot;]]</code><br/>
       &emsp;This will be rendered.<br/>
-      <code>[[{{documentation}}]] 
-        [[else]]
-        [[{{/documentation}}]]</code><br/>
+      <code>&lbrack;&lbrack;else]]</code><br/>
       &emsp;This will not be rendered.<br/>
-      <code>[[{{documentation}}]] 
-        [[/if]]
-        [[{{/documentation}}]]</code><br/>
+      <code>&lbrack;&lbrack;/if]]</code><br/>
     </bs-panel>
 
     <h4>ask Helper</h4>
@@ -153,70 +133,143 @@ t.b.d. -->
       <li>Expects as first argument an SPARQL Ask query string.</li>
     </ul>
     <bs-panel header="Example: if with nested ask" collapsible=true default-expanded=true>
-      <code>[[{{documentation}}]] 
-        [[#if (ask &quot;ASK {?? a foaf:Person}&quot;)]]
-        [[{{/documentation}}]]</code><br>
+      <code>&lbrack;&lbrack;#if (ask &quot;ASK {?? a foaf:Person}&quot;)]]</code><br>
       &emsp;This will be rendered if the current entity is of type foaf:Person<br/>
-      <code>[[{{documentation}}]] 
-        [[/if]]
-        [[{{/documentation}}]]</code>
+      <code>&lbrack;&lbrack;/if]]</code>
     </bs-panel>
 
     <h4>hasPermission Helper</h4>
-    Helper to ask the backend whether the currently logged-in user has the specified shiro permission.  Particularly useful when combined with if (else) helper.
+    Helper to ask the backend whether the currently logged-in user has the specified shiro permission (read more on   <semantic-link uri="[[resolvePrefix "Help:Security"]]">shiro permissions</semantic-link>).  Particularly useful when combined with if (else) helper.
     <ul>
       <li>Expects as first argument an shiro permission string.</li>
     </ul>
     <bs-panel header="Example: if with nested hasPermission" data-collapsible=true default-expanded=true>
-      <code>[[{{documentation}}]] 
-        [[#if (hasPermission &quot;sparql:update&quot;)]]
-        [[{{/documentation}}]]</code><br>
+      <code>&lbrack;&lbrack;#if (hasPermission &quot;sparql:update&quot;)]]</code><br>
       &emsp;This will be rendered if the currently logged-in user has the permission "sparql:update"<br/>
-      <code>[[{{documentation}}]] 
-        [[/if]]
-        [[{{/documentation}}]]</code>
+      <code>&lbrack;&lbrack;/if]]</code>
     </bs-panel>
 
     <h3>Includes</h3>
-    <code>[[{{documentation}}]] [[> &quot;fullIRI&quot;]] [[{{/documentation}}]]</code> includes other pages or templates identifier by their prefixed or full IRI. Full IRIs need to be quoted. 
+    <code>&lbrack;&lbrack;> &quot;fullIRI&quot;]]</code> includes other pages or templates identifier by their prefixed or full IRI. Full IRIs need to be quoted. 
     <bs-panel header="Example: Includes" collapsible=true default-expanded=true>
       Prefixed include:<br>
-      <code>[[{{documentation}}]] 
-        [[> :PageToInclude]]
-        [[{{/documentation}}]]</code>
+      <code>&lbrack;&lbrack;> :PageToInclude]]</code>
       <br>
       Full IRI include:<br>
-      <code>[[{{documentation}}]] 
-        [[> &quot;http://www.metaphacts.com/resource/PageToInclude&quot;]]
-        [[{{/documentation}}]]</code>
+      <code>&lbrack;&lbrack;> &quot;http://www.metaphacts.com/resource/PageToInclude&quot;]]</code>
 
     </bs-panel>
     
-    <h3>encodeUriComponent Helper</h3>
+    <h3>Utility helpers</h3>
+    <h4>encodeUriComponent Helper</h4>
     Encodes a URI component. 
     <bs-panel header="Example: encodeUriComponent" collapsible=true default-expanded=true>
-      <code>[[{{documentation}}]]
-        [[encodeUriComponent "?uri=http://example.com"]]
-        [[{{/documentation}}]]</code>
+      <code>&lbrack;&lbrack;encodeUriComponent "?uri=http://example.com"]]</code>
     </bs-panel>
     
-    <h3>decodeUriComponent Helper</h3>
+    <h4>decodeUriComponent Helper</h4>
     Decodes a URI component. 
     <bs-panel header="Example: decodeUriComponent" collapsible=true default-expanded=true>
-      <code>[[{{documentation}}]]
-        [[decodeUriComponent "%3Furi%3Dhttp%3A%2F%2Fexample.com"]]
-        [[{{/documentation}}]]</code>
+      <code>&lbrack;&lbrack;decodeUriComponent "%3Furi%3Dhttp%3A%2F%2Fexample.com"]]</code>
     </bs-panel>
     
-    <h3>currentDateTime Helper</h3>
-    Returns the current system time. Default format is "dd.MM.yyyy HH:mm:ss.SSS".
+    <h3>Localization and date/time</h3>
+    
+    <h4>currentDateTime Helper</h4>
+    Returns the current system time. Default format is "dd.MM.yyyy HH:mm:ss.SSS", see 
+    <a href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">here</a> for a description of the format.
     <bs-panel header="Example: currentDateTime" collapsible=true default-expanded=true>
-      <code>[[{{documentation}}]]
-        [[currentDateTime]]
-        [[{{/documentation}}]]</code>
+      <code>&lbrack;&lbrack;currentDateTime]]</code>
       <br>
+      <code>&lbrack;&lbrack;currentDateTime format="MM-dd-yyyy"]]</code>
+    </bs-panel>
+    
+    <h4>i18n Helper (Internationalization)</h4>
+    <p>
+    Returns the localized text identified by the provided key from the message bundle for the current user's locale.
+    </p> 
+    <p>
+    A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ResourceBundle.html">Java ResourceBundle</a> is a well-known mechanism  
+    for internationalization (i18n). A <a href="https://docs.oracle.com/javase/8/docs/api/java/util/PropertyResourceBundle.html">property file</a> 
+    contains key-value pairs where the key is used to lookup message strings.
+    </p> 
+    <p>
+    If the key cannot be resolved to a message it is returned with a warning appended.
+    </p> 
+    <p> 
+    A message string may also contain <code>{&lt;index&gt;}</code> place holders for variables where <code>position</code> is the index of the provided 
+    parameter with <code>0</code> being the first, etc. When using insertion values single quote needs escaping using another single quote (i.e. 
+    <code>''</code> instead of <code>'</code>) as specified in <a href="https://docs.oracle.com/javase/7/docs/api/java/text/MessageFormat.html">MessageSource</a>.
+    </p>
+    
+    <p>
+    By default all messages are automatically escaped for HTML, i.e. special characters such as <code>&lt;</code>, <code>&amp;</code>, <code>&gt;</code>, or
+    <code>&quot;</code> are replaced with the corresponding HTML entities. This can be disabled using the option <code>escapeHTML</code>.
+    </p>
+    
+    <bs-panel header="Example: i18n" collapsible=true default-expanded=true>
+      Basic example returning message for key <code>greetings</code> from the default bundle (<code>messages</code>):<br>
+      <code>&lbrack;&lbrack;i18n "greetings"]]</code>
+      <br>
+      Get message for key <code>greetings</code> from bundle <code>myapp</code> which translates to <code>data/i18n/myapp.properties</code> which will be loaded from an app or the runtime storage:<br>
+      <code>&lbrack;&lbrack;i18n "greetings" bundle="myapp"]]</code>
+      <br>
+      Get message for key <code>greetings</code> from bundle <code>myapp</code> with additional parameters which can be used with place holder <code>{0}</code> in the message string:<br>
+      <code>&lbrack;&lbrack;i18n "greetings" "from metaphacts" bundle="myapp"]]</code>
+      <br>
+      Skip HTML escaping for the message string and any insertion strings:<br>
+      <code>&lbrack;&lbrack;i18n "&lt;font color='red'&gt;hello&lt;/font&gt;" "Handlebars.java" escapeHTML=false]]</code>
+      <br>
+      Get message for key <code>greetings</code> with specific locale from the default bundle (<code>messages</code>):<br>
+      <code>&lbrack;&lbrack;i18n "greetings" locale="en"]]</code>
+      <br>
+      Get message for key <code>greetings</code> with specific locale from bundle <code>myapp</code> with additional parameters which can be used with place holders <code>{0}</code> and <code>{1}</code> in the message string:<br>
+      <code>&lbrack;&lbrack;i18n "greetings" "from metaphacts" locale="de" bundle="myapp"]]</code>
+      <br>
+      Get message for key <code>load_failed</code> from bundle <code>myapp</code> with additional parameters which can be used with place holders <code>{0}</code> and <code>{1}</code> in the message string:<br>
+      <code>&lbrack;&lbrack;i18n "load_failed" "myfile.ttl" "cannot load URL: hostname not reachable" bundle="myapp"]]</code>
+      <br>
+    </bs-panel>
+    
+    <p>
+    A bundle may be provided in a number of localizations (language).<br/>
+      Examples:</p>
+    
+    <ul>
+    <li><code>mybundle.properties</code>: default locale</li>
+    <li><code>mybundle_en.properties</code>: English locale</li>
+    <li><code>mybundle_de.properties</code>: German locale</li>
+    <li><code>mybundle_fr.properties</code>: French locale</li>
+    <li><code>mybundle_ru.properties</code>: Russian locale</li>
+    </ul>
+    <p>
+    The message string will be fetched from the bundle best matching the requested locale. 
+    If a key is not available in one bundle the next-best matching bundle will be searched, e.g. like this:<br/>
+    <code>mybundle_fr_CA.properties</code> &rarr; <code>mybundle_fr.properties</code> &rarr; <code>mybundle_&lt;systemlanguage&gt;.properties</code> &rarr; <code>mybundle.properties</code>
+    </p>
+    
+    <p>
+    In contrast to commonly used handling of I18n in Java applications, ResourceBundles are loaded via the  
+    <semantic-link title="Storage" iri='[[resolvePrefix "Help:Storage"]]'>(App) Storage Mechanism</semantic-link> 
+    from the <code>data/i18n/</code> folder of an app or runtime storage. ResourceBundles will be assumed to be in <code>UTF-8</code> encoding.
+    If the resource bundle cannot be resolved via the storage mechanism, it will be loaded from the application class path.
+    </p>
+    
+    <bs-panel header="Example bundles" collapsible=true default-expanded=true>
+      Example resource bundle <code>data/i18n/myapp.properties</code> for default locale:<br>
       <code>[[{{documentation}}]]
-        [[currentDateTime format="MM-dd-yyyy"]]
+        greetings = Hello {0}
+        [[{{/documentation}}]]</code><br/>
+      <code>[[{{documentation}}]]
+        load_failed = Failed to load {0}: {1}
+        [[{{/documentation}}]]</code>
+      <br><br/>
+      Example resource bundle <code>data/i18n/myapp_de.properties</code> for locale <code>de</code>:<br>
+      <code>[[{{documentation}}]]
+        greetings = Hallo {0}
+        [[{{/documentation}}]]</code><br/>
+      <code>[[{{documentation}}]]
+        load_failed = Konnte {0} nicht laden: {1}
         [[{{/documentation}}]]</code>
     </bs-panel>
   </div>

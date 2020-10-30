@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "id": {
+            "description": "Unique ID to be used in the event system. Default value is `undefined`.",
+            "type": "string"
+        },
+        "noPin": {
+            "description": "If this parameter is equal to 'true', 'pin' button is removed from default template.",
+            "type": "boolean"
+        },
+        "template": {
+            "description": "Custom template that gets resource IRI and knowledge panel ID as parameters `{{iri}}` and `{{knowledgePanelId}}` respectively.",
+            "type": "string"
+        },
+        "trigger": {
+            "description": "Knowledge Panel Trigger component ID. Default value is `undefined`.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "trigger",
+        "template",
+        "noPin"
+    ],
+    "type": "object"
+}
+

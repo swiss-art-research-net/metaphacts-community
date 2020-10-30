@@ -1,15 +1,5 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li>
-    <semantic-link title="Components" uri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
-  </li>
-  <li class="active">Table Component</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
 
 <div class="page documentation">
   <div class='page__body'>
@@ -39,7 +29,7 @@
     <div style="clear:both;"></div>
 
     <h2>Configuration </h2>
-    <mp-documentation type="SemanticTableConfig"></mp-documentation>
+    <mp-documentation type="SemanticDataTableConfig"></mp-documentation>
 
     <h2>Examples </h2>
     <h3>Custom Column Configuration and Cell Templates </h3>
@@ -58,7 +48,7 @@
   	{"variableName": "p", "displayName": "Predicate"},  
   	{
   	"displayName": "Object", 
-  	"cellTemplate": "<div><i class=\"fa fa-user\" style=\"margin-right: 5px\"></i>{{o.value}}</div>" 
+  	"cellTemplate": "<i class=\"fa fa-user\" style=\"margin-right: 5px\"></i>{{o.value}}" 
   	}
   ]'
 ></semantic-table>
@@ -83,7 +73,7 @@ When specifying a <code>column-configuration</code> with a custom <code>cellTemp
   column-configuration='[
   	{"variableName": "s",
     "displayName": "Subject",
-    "cellTemplate": "<div><i class=\"fa fa-user\" style=\"margin-right: 5px\"></i><semantic-link iri={{s.value}} /></div>" 
+    "cellTemplate": "<i class=\"fa fa-user\" style=\"margin-right: 5px\"></i><semantic-link iri={{s.value}} />" 
     }
   ]'
 ></semantic-table>
@@ -97,7 +87,7 @@ When specifying a <code>column-configuration</code> with a custom <code>cellTemp
 
     <div class="documentation__example">
       <div class="documentation__example__description">
-        Passes on griddle specific configuration properties to the griddle table library to disable the filter and show only two results per pagination page.
+        This example demonstrates how filtering components can be disabled. Moreover, the number of displayed rows per page is configured to two.
       </div>
       <div class="documentation__example__demo" id='demo3'>
         <mp-code-example>
@@ -145,11 +135,11 @@ When specifying a <code>column-configuration</code> with a custom <code>cellTemp
     </div>
     
     
-        <h3>Numerical sorting</h3>
+    <h3>Numerical sorting</h3>
 
     <div class="documentation__example">
       <div class="documentation__example__description">
-        The table supports built-in numerical sorting using XML schema information, i.e. literals with data type <code>xsd:Number</code> and specialized types (integer, float, double, ...).
+        The table supports built-in numerical sorting using XML schema information, i.e. literals with data type <code>xsd:Number</code> and specialized types (integer, float, double, ...). Optionally the default sort column can be preconfigured using the <code>sorting</code> option.
       </div>
       <div class="documentation__example__demo" id='demo4'>
         <mp-code-example>
@@ -166,12 +156,132 @@ When specifying a <code>column-configuration</code> with a custom <code>cellTemp
           (person:max foaf:age 17)
         }
       }"
+    options='{"sorting": {"age": "desc"}}'
 ></semantic-table>
 ]]>
         </mp-code-example>
       </div>
     </div>
     
+    <h3>Column Filtering</h3>
+    
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>The table supports filtering on both a global and column level. Column filtering can be done by either using the filter icon in the column header or the <i>Filter columns</i> button in the header.</p>
+        <p>If <code>showFilter</code> is set for a given column, the filter type is automatically selected depending on the data (e.g. the <i>age</i> column in the example uses the <code>number</code> filter). The type can be set explicitly with the <code>filterType</code> option.</p>
+      </div>
+      <div class="documentation__example__demo" id='demo4'>
+        <mp-code-example>
+<![CDATA[
+<semantic-table
+    query='
+      prefix person: <http://example.com/person/> 
+      prefix foaf: <http://xmlns.com/foaf/0.1/>
+      SELECT ?person ?gender ?age WHERE {                    
+        VALUES (?person ?gender ?prop ?age) { 
+          (person:alice "female" foaf:age 35)
+          (person:lisa "female" foaf:age 1)
+          (person:martin "male" foaf:age 26)
+          (person:max "male" foaf:age 17)
+        }
+      }'
+    column-configuration='[
+      {"variableName": "person", "showFilter": true, "filterType": "multiselect"},
+      {"variableName": "gender", "showFilter": true},
+      {"variableName": "age", "showFilter": true}
+    ]'
+></semantic-table>
+]]>
+        </mp-code-example>
+      </div>
+    </div>
+    
+    <h3>Grouping</h3>
+    
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        <p>The table supports grouping rows and aggregation of the grouped values. The option <code>enableGrouping</code> enables interactive grouping through the <i>Group columns</i> button in the header.</p>
+        <p>The default aggregation shows a list of unique values for up to a maximum of three values and the number of unique values if there are more. Different aggregations can be set with the <code>aggregation</code> and <code>aggregationCellTemplate</code> options for each column.</p>
+      </div>
+      <div class="documentation__example__demo" id='demo4'>
+        <mp-code-example>
+<![CDATA[
+<semantic-table
+    query='
+      prefix person: <http://example.com/person/> 
+      prefix foaf: <http://xmlns.com/foaf/0.1/>
+      SELECT ?person ?gender ?age WHERE {                    
+        VALUES (?person ?gender ?prop ?age) { 
+          (person:alice "female" foaf:age 34)
+          (person:lisa "female" foaf:age 10)
+          (person:carol "female" foaf:age 22)
+          (person:martin "male" foaf:age 26)
+          (person:max "male" foaf:age 17)
+          (person:bob "male" foaf:age 41)
+          (person:eve "female" foaf:age 31)
+        }
+      }'
+    options='{
+      "enableGrouping": true,
+      "groupingOptions": {"groupedBy": ["gender"]}
+    }'
+    column-configuration='[
+      {"variableName": "person"},
+      {"variableName": "gender"},
+      {
+        "variableName": "age",
+        "aggregation": "average",
+        "aggregationCellTemplate": "Average: {{value}}"
+      }
+    ]'
+></semantic-table>
+]]>
+        </mp-code-example>
+      </div>
+    </div>
+    
+    
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        A configuration option that is useful for search results is <code>showOnlyAggregatedValue</code>. It can be used to show a summarized search result (including potentially configured context specific values) without showing the sub rows. See <semantic-link iri='[[resolvePrefix "Help:SemanticSearch"]]'>Semantic Search</semantic-link> for further details.
+      </div>
+      <div class="documentation__example__demo" id='demo4'>
+        <mp-code-example>
+<![CDATA[
+<semantic-table
+    query='
+      prefix person: <http://example.com/person/> 
+      prefix foaf: <http://xmlns.com/foaf/0.1/>
+      SELECT ?person ?gender ?age WHERE {                    
+        VALUES (?person ?gender ?prop ?age) { 
+          (person:alice "female" foaf:age 34)
+          (person:lisa "female" foaf:age 10)
+          (person:carol "female" foaf:age 22)
+          (person:martin "male" foaf:age 26)
+          (person:max "male" foaf:age 17)
+          (person:bob "male" foaf:age 41)
+          (person:eve "female" foaf:age 31)
+        }
+      }'
+    options='{
+      "enableGrouping": false,
+      "groupingOptions": {"groupedBy": ["gender"], "showOnlyAggregatedValue": true}
+    }'
+    column-configuration='[
+      {"variableName": "person"},
+      {"variableName": "gender"},
+      {
+        "variableName": "age",
+        "aggregation": "average",
+        "aggregationCellTemplate": "Average: {{value}}"
+      }
+    ]'
+></semantic-table>
+]]>
+        </mp-code-example>
+      </div>
+    </div>
+
     
   </div>
 </div>

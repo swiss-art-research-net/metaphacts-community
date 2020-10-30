@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as request from 'platform/api/http';
 import * as _ from 'lodash';
 import * as Kefir from 'kefir';
@@ -88,11 +109,13 @@ export interface Account {
 export interface RoleDefinition {
   roleName: string;
   permissions: Array<string>;
+  mutable: boolean;
+  deletable: boolean;
 }
 
 export class NotEnoughPermissionsError extends Error {
   __proto__: Error ;
-  constructor(message) {
+  constructor(message: string) {
     const trueProto = new.target.prototype;
     super(message);
     this.__proto__ = trueProto;
@@ -113,8 +136,8 @@ export class SecurityUtil implements SecurityUtilI {
 
       // TODO cache
       const WINDOW_user = 'cache_user';
-      if (!_.isUndefined(window[WINDOW_user])) {
-        return Promise.resolve(window[WINDOW_user]);
+      if (!_.isUndefined((window as any)[WINDOW_user])) {
+        return Promise.resolve((window as any)[WINDOW_user]);
       }
 
       return new Promise((resolve, reject) => {
@@ -126,7 +149,7 @@ export class SecurityUtil implements SecurityUtilI {
               reject(err);
             } else {
               const user = <UserI>JSON.parse(res.text);
-              window[WINDOW_user] = user;
+              (window as any)[WINDOW_user] = user;
               resolve(user);
             }
           });
@@ -156,22 +179,22 @@ export class SecurityUtil implements SecurityUtilI {
      * user opens new tab or tab is reloaded e.g. due to login/logout.
      * @param {Function} cb callback
      */
-    public isAnonymous(cb): void {
+    public isAnonymous(cb: (isAnonymous: boolean) => void): void {
       // TODO cache
       const WINDOW_isAnonymousUser = 'cache_isAnonymousUser';
-      if (!_.isUndefined(window[WINDOW_isAnonymousUser])) {
-        cb(window[WINDOW_isAnonymousUser]);
+      if (!_.isUndefined((window as any)[WINDOW_isAnonymousUser])) {
+        cb((window as any)[WINDOW_isAnonymousUser]);
         return;
       }
       this.getUser(
           (userObject) => {
-            window[WINDOW_isAnonymousUser] = (<UserI>userObject).isAnonymous;
+            (window as any)[WINDOW_isAnonymousUser] = (<UserI>userObject).isAnonymous;
             cb((<UserI>userObject).isAnonymous);
           }
         );
     }
 
-    public getSessionInfo(cb) {
+    public getSessionInfo(cb: (sessionInfo: SessionInfoI) => void) {
       return request.get('/rest/security/getSessionInfo')
                      .type('application/json')
                      .accept('application/json')
@@ -180,7 +203,7 @@ export class SecurityUtil implements SecurityUtilI {
                       });
     }
 
-    public touchSession(cb) {
+    public touchSession(cb: (status: number) => void) {
       return request.post('/rest/security/touchSession')
                      .end((err, res: request.Response) => {
                         cb(res.status);
@@ -199,7 +222,9 @@ export class SecurityUtil implements SecurityUtilI {
          ).toProperty();
     }
 
-    getDocumentationForAllPermissions(): Kefir.Property<PermissionDocumentation[]> {
+    getDocumentationForAllPermissions():
+      Kefir.Property<{ [group: string]: PermissionDocumentation[] }>
+    {
       const req = request.get('/rest/security/getAllPermissionsDoc').
         type('application/json')
         .accept('application/json');

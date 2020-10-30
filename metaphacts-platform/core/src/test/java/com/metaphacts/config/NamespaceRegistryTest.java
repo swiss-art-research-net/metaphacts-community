@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.config;
 
 import java.util.Optional;
@@ -74,55 +95,42 @@ public class NamespaceRegistryTest extends AbstractRepositoryBackedIntegrationTe
         Assert.assertEquals(NamespaceRegistry.DFLT_USER_NAMESPACE, ns.getNamespace(RuntimeNamespace.USER).get());
         Assert.assertEquals(NamespaceRegistry.DFLT_HELP_NAMESPACE, ns.getNamespace(RuntimeNamespace.HELP).get());
         Assert.assertEquals(NamespaceRegistry.DFLT_ADMIN_NAMESPACE, ns.getNamespace(RuntimeNamespace.ADMIN).get());
-        
+        Assert.assertEquals(NamespaceRegistry.DFLT_ASSETS_NAMESPACE, ns.getNamespace(RuntimeNamespace.ASSETS).get());
     }
 
     @Test(expected = ProtectedNamespaceDeletionException.class)
     public void testRuntimeNamespaceDeletionFailsEmptyNS() throws Exception {
-
-        final NamespaceRegistry ns = getNamespaceRegistry();
         namespaceRule.delete(RuntimeNamespace.EMPTY);
-
     }
 
     @Test(expected = ProtectedNamespaceDeletionException.class)
     public void testRuntimeNamespaceDeletionFailsDefaultNS() throws Exception {
-
-        final NamespaceRegistry ns = getNamespaceRegistry();
         namespaceRule.delete(RuntimeNamespace.DEFAULT);
-
     }
 
     @Test(expected = ProtectedNamespaceDeletionException.class)
     public void testRuntimeNamespaceDeletionFailsPlatformNS() throws Exception {
-
-        final NamespaceRegistry ns = getNamespaceRegistry();
         namespaceRule.delete(RuntimeNamespace.PLATFORM);
-
     }
 
     @Test(expected = ProtectedNamespaceDeletionException.class)
     public void testRuntimeNamespaceDeletionFailsUserNS() throws Exception {
-
-        final NamespaceRegistry ns = getNamespaceRegistry();
         namespaceRule.delete(RuntimeNamespace.USER);
-
     }
 
     @Test(expected = ProtectedNamespaceDeletionException.class)
     public void testRuntimeNamespaceDeletionFailsHelpNS() throws Exception {
-
-        final NamespaceRegistry ns = getNamespaceRegistry();
         namespaceRule.delete(RuntimeNamespace.HELP);
-
     }
     
     @Test(expected = ProtectedNamespaceDeletionException.class)
     public void testRuntimeNamespaceDeletionFailsAdminNS() throws Exception {
-
-        final NamespaceRegistry ns = getNamespaceRegistry();
         namespaceRule.delete(RuntimeNamespace.ADMIN);
+    }
 
+    @Test(expected = ProtectedNamespaceDeletionException.class)
+    public void testRuntimeNamespaceDeletionFailsAssetsNS() throws Exception {
+        namespaceRule.delete(RuntimeNamespace.ASSETS);
     }
 
     @Test
@@ -319,16 +327,22 @@ public class NamespaceRegistryTest extends AbstractRepositoryBackedIntegrationTe
     
     @Test
     public void testSpecialTemplatePrefixedIRI() throws Exception {
+        testSpecialPrefixedIRI("Template:");
+    }
+
+    private void testSpecialPrefixedIRI(String prefix) throws Exception {
         final NamespaceRegistry ns = getNamespaceRegistry();
 
-        Assert.assertEquals(vf.createIRI("Template:"+DUMMY_NAMESPACE1+"templateTest"), ns.resolveToIRI("Template:"+DUMMY_NAMESPACE1+"templateTest").get());
+        Assert.assertEquals(vf.createIRI(prefix + DUMMY_NAMESPACE1 + "templateTest"),
+                ns.resolveToIRI(prefix + DUMMY_NAMESPACE1 + "templateTest").get());
 
         namespaceRule.set(DUMMY_PREFIX1, DUMMY_NAMESPACE1);
-                
-        Assert.assertEquals(vf.createIRI("Template:"+DUMMY_NAMESPACE1+"templateTest"), ns.resolveToIRI("Template:"+DUMMY_PREFIX1+":templateTest").get());
-        Assert.assertEquals(vf.createIRI("Template:"+DUMMY_NAMESPACE1+"templateTest"), ns.resolveToIRI("Template:"+DUMMY_NAMESPACE1+"templateTest").get());
+
+        Assert.assertEquals(vf.createIRI(prefix + DUMMY_NAMESPACE1 + "templateTest"),
+                ns.resolveToIRI(prefix + DUMMY_PREFIX1 + ":templateTest").get());
+        Assert.assertEquals(vf.createIRI(prefix + DUMMY_NAMESPACE1 + "templateTest"),
+                ns.resolveToIRI(prefix + DUMMY_NAMESPACE1 + "templateTest").get());
     }
-    
     
     @Test
     public void looksLikePrefixedIriTest() throws Exception {

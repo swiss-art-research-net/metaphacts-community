@@ -1,0 +1,190 @@
+/*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, you can receive a copy
+ * of the GNU Lesser General Public License from http://www.gnu.org/
+ */
+.template {
+  height: 56px;
+  width: 200px;
+  border-radius: 2px;
+  background-color: #FFFFFF;
+  box-shadow: 0 0 4px 0 rgba(0,0,0,0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.border.Selected,
+.border:hover {
+  box-shadow: 0px 0px 0px 1px;
+  border-radius: 2px;
+}
+
+.ontodiaCanvasGray {
+  background-color: #fafafa;
+}
+
+.content {
+  width: 196px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 2px;
+  display: flex;
+}
+
+.image {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 56px;
+  height: 100%;
+  overflow: hidden;
+  background-color: #f7f7f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image img {
+  min-height: 100%;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+.body {
+  margin: 12px 15px 11px 15px;
+  min-width: 90px;
+}
+.label,
+.types {
+  overflow: hidden;
+}
+
+.noTypes {
+  display: flex;
+  align-items: center;
+  height: 16px;
+}
+
+.noTypes .line {
+  border-bottom: 1px solid #C4BB7B;
+  width: 20px;
+}
+
+.labelValue,
+.typesValue {
+  font-family: Lato, Tahoma, sans-serif;
+  white-space: nowrap;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.labelValue {
+  font-size: 14px;
+  color: #222222;
+  line-height: 17px;
+}
+
+.typesValue {
+  font-size: 12px;
+  line-height: 15px;
+  color: #C4BB7B;
+}
+
+.buttons {
+  position: absolute;
+  height: 100%;
+  right: 0;
+  background-color: white;
+  display: flex;
+  box-shadow: 1px 1px 16px 20px white;
+  padding: 20px 18px;
+  opacity: 0;
+}
+
+.selected .buttons,
+.template:hover .buttons {
+  opacity: 1;
+}
+
+.buttonInformation,
+.buttonConnections,
+.buttonNavigateToResource {
+  flex-shrink: 0;
+  border: 0;
+  outline: none;
+  border-radius: 100%;
+  height: 16px;
+  width: 16px;
+  background-color: transparent;
+  padding: 0;
+}
+
+.buttonInformation:not(:last-child),
+.buttonConnections:not(:last-child),
+.buttonNavigateToResource:not(:last-child) {
+    margin-right: 10px;
+}
+
+.buttonInformation {
+  background-image: url('../../../images/ontodia/info-icon.svg');
+}
+.buttonInformation:hover {
+  background-image: url('../../../images/ontodia/info-icon-selected.svg');
+}
+
+.buttonConnections {
+  background-image: url('../../../images/ontodia/connections-menu-icon.svg');
+}
+.buttonConnections:hover {
+  background-image: url('../../../images/ontodia/connections-menu-icon-selected.svg');
+}
+
+.buttonNavigateToResource {
+  background-image: url('../../../images/ontodia/navigate-to-resource.svg');
+}
+.buttonNavigateToResource:hover {
+  background-image: url('../../../images/ontodia/navigate-to-resource-selected.svg');
+}
+
+.buttonInformation:hover,
+.buttonConnections:hover,
+.buttonNavigateToResource:hover {
+  color: #007FFE;
+  border-color: hsl(210, 100%, 50%);
+  background-color: #D0E8FF;
+  box-shadow: 0px 0px 0px 8px #D0E8FF
+}

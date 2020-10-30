@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Component, Children, ReactElement, cloneElement } from 'react';
 import { Button, ButtonToolbar } from 'react-bootstrap';
@@ -52,7 +73,7 @@ export class RemoveSetAction extends Component<Props, State> {
   context: SetManagementContext & SetViewContext;
 
   private confirmationRef: HTMLElement;
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       showConfirmation: false,
@@ -64,7 +85,7 @@ export class RemoveSetAction extends Component<Props, State> {
     document.body.removeEventListener('click', this.handleClickOutside);
   }
 
-  private onClick = e => {
+  private onClick = (e: React.MouseEvent<unknown>) => {
     if (!this.state.showConfirmation) {
       this.setState({showConfirmation: true});
       document.body.addEventListener('click', this.handleClickOutside);
@@ -89,8 +110,8 @@ export class RemoveSetAction extends Component<Props, State> {
   /**
    * Cancel action if clicked outside of the component.
    */
-  private handleClickOutside = (event) => {
-    if (this.confirmationRef && !this.confirmationRef.contains(event.target)) {
+  private handleClickOutside = (event: MouseEvent) => {
+    if (this.confirmationRef && !this.confirmationRef.contains(event.target as Node)) {
       this.setState({showConfirmation: false});
     }
   }

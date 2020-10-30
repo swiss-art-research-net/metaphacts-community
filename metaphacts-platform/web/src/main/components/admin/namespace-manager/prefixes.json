@@ -1,0 +1,245 @@
+[
+  {
+    "prefix": "bds",
+    "description": "Technical namespace for Blazegraph specific magic predicates related to full-text search.",
+    "iri": "http://www.bigdata.com/rdf/search#",
+    "link": "https://github.com/blazegraph/database/wiki/FullTextSearch"
+  },
+  {
+    "prefix": "bibo",
+    "description":"The Bibliographic Ontology Specification provides main concepts and properties for describing citations and bibliographic references (i.e. quotes, books, articles, etc)",
+    "iri": "http://purl.org/ontology/bibo/",
+    "link": "http://www.bibliontology.com/"
+  },
+  {
+    "prefix": "cc",
+    "iri": "http://creativecommons.org/ns#",
+    "description": "The Creative Commons Rights Expression Language (CC REL) lets you describe copyright licenses in RDF.",
+    "link": "http://creativecommons.org/ns#"
+  },
+  {
+    "prefix": "crm",
+    "iri": "http://www.cidoc-crm.org/cidoc-crm/",
+    "description": "Conceptual Reference Model (CRM) - an extensible, event-centric ontology primarily for concepts and information mainly in the domain of cultural heritage and museums.",
+    "link": "http://www.cidoc-crm.org/cidoc-crm/"
+  },
+  {
+    "prefix": "crminf",
+    "description" : "Argumentation model extension to CIDOC-CRM. Allows for representing the process of argumentation and inference making in descriptive and empirical sciences.",
+    "iri": "http://www.ics.forth.gr/isl/CRMinf/",
+    "link" : "https://projects.ics.forth.gr/isl/index_main.php?l=e&c=713"
+  },
+  {
+    "prefix": "crmsci",
+    "description": "Scientific Observation Model extension to CIDOC CRM. Formal ontology intended to be used as a global schema for integrating metadata about scientific observation, measurements and processed data in descriptive and empirical sciences",
+    "iri": "http://www.ics.forth.gr/isl/CRMsci/",
+    "link": "https://www.ics.forth.gr/isl/crmsci-scientific-observation-model"
+  },
+  {
+    "prefix": "dbpedia",
+    "iri": "http://dbpedia.org/resource/",
+    "description":"DBpedia instance namespace. For example, dbpedia:Walldorf is the prefixed identifier for Walldorf.",
+    "link": "https://wiki.dbpedia.org/services-resources/datasets/dbpedia-datasets#h434-3"
+  },
+  {
+    "prefix": "dbprop",
+    "description": "Automatic extract of all properties from all infoboxes and templates within all Wikipedia articles. The names of the these properties directly reflect the name of the Wikipedia infobox property. Property names are not cleaned or merge",
+    "iri": "http://dbpedia.org/property/",
+    "link": "http://dbpedia.org/property/"
+  },
+  {
+    "prefix": "dbpedia-owl",
+    "iri": "http://dbpedia.org/ontology/",
+    "description": "This ontology is generated from the manually created specifications in the DBpedia Mappings Wiki. Mapping-based Properties dataset contains the actual data values that have been extracted from infoboxes.",
+    "link": "http://dbpedia.org/ontology/"
+  },
+  {
+    "prefix": "dc",
+    "iri": "http://purl.org/dc/elements/1.1/",
+    "description": "Metadata maintained by the Dublin Core Metadata Initiative, includes properties, vocabulary encoding schemes, syntax encoding schemes, and classes.",
+    "link": "http://purl.org/dc/elements/1.1/"
+  },
+  {
+    "prefix": "dcat",
+    "iri": "http://www.w3.org/ns/dcat#",
+    "description": "This is a namespace for use with Data Catalog Vocabulary (DCAT).",
+    "link": "http://www.w3.org/ns/dcat#"
+  },
+  {
+    "prefix": "dct",
+    "iri": "http://purl.org/dc/terms/",
+    "description": "Metadata maintained by the Dublin Core Metadata Initiative, includes properties, vocabulary encoding schemes, syntax encoding schemes, and classes.",
+    "link": "http://purl.org/dc/terms/"
+  },
+  {
+    "prefix": "foaf",
+    "iri": "http://xmlns.com/foaf/0.1/",
+    "description": "Describes the FOAF language, defined as a dictionary of named properties and classes using W3Cs RDF technology.",
+    "link": "http://xmlns.com/foaf/0.1/"
+  },
+  {
+    "prefix": "frbr",
+    "iri": "http://purl.org/vocab/frbr/core#",
+    "description": "This vocabulary is an expression in RDF of the concepts and relations described in the IFLA report on the Functional Requirements for Bibliographic Records (FRBR).",
+    "link": "http://purl.org/vocab/frbr/core#"
+  },
+  {
+    "prefix": "geo",
+    "iri": "http://www.opengis.net/ont/geosparql#",
+    "description": "An RDF/OWL vocabulary for representing and querying spatial information according to the OGC GeoSparql Standard.",
+    "link": "http://www.opengis.net/ont/geosparql#"
+  },
+  {
+    "prefix": "hint",
+    "description": "Technical namespace for Blazegraph query hints.",
+    "iri": "http://www.bigdata.com/queryHints#",
+    "link": "https://github.com/blazegraph/database/wiki/QueryHints"
+  },
+  {
+    "prefix": "nextprot",
+    "description": "The human proteome database data model.",
+    "iri": "http://nextprot.org/rdf#",
+    "link": "https://snorql.nextprot.org/help/doc/introduction"
+  },
+  {
+    "prefix" : "dul",
+    "description" : "DOLCE+DnS Ultralite - Foundational, upper-level ontology with a fundamental distinction between occurrences and continuants, i.e. things that are primarily in space and things that are primarily in time. Serves as basis for many ontologies like SSN and can provide a foundation to design domain specific ontologies cleanly.",
+    "iri" : "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#",
+    "link" :  "http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#"
+  },
+  {
+    "prefix": "ssn",
+    "description": "Ontology to describe sensors and observations, and related concepts.",
+    "iri" : "http://purl.oclc.org/NET/ssnx/ssn",
+    "link" : "http://purl.oclc.org/NET/ssnx/ssn"
+  },
+  { 
+    "prefix": "qudt",
+    "description": "Quantity, Unit, Dimension and Type",
+    "iri" : "https://www.qudt.org/",
+    "link" : "http://purl.oclc.org/NET/ssnx/ssn"
+  },{
+    "prefix": "obo",
+    "iri": "http://purl.obolibrary.org/obo/",
+    "link" : "http://www.obofoundry.org/",
+    "description" : "Namespace for classes from the Open Biological and Biomedical Ontology (OBO)"
+  },
+  {
+    "prefix": "odrl",
+    "iri": "http://www.w3.org/ns/odrl/2/",
+    "description": "The Open Digital Rights Language (ODRL) is a policy expression language that provides a flexible and interoperable information model, vocabulary, and encoding mechanisms for representing statements about the usage of content and services.",
+    "link": "http://www.w3.org/ns/odrl/2/"
+  },{
+    "prefix": "org",
+    "iri": "https://www.w3.org/TR/vocab-org/",
+    "description": "W3C Recommendation - The Organization Ontology. An ontology for representing organizational structures across domains.",
+    "link": "https://www.w3.org/TR/vocab-org/"
+  },
+  {
+    "prefix": "ontolex",
+    "iri": "http://www.w3.org/ns/lemon/ontolex#",
+    "description": "A model for the representation of lexical information relative to ontologies.",
+    "link" : "http://www.w3.org/ns/lemon/ontolex#"
+  },{
+    "prefix": "part",
+    "iri": "http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#",
+    "description": "Simple vocabulary and design patterns to model part-whole relations in OWL.",
+    "link": "https://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/"
+  },
+  {
+    "prefix": "prov",
+    "iri": "http://www.w3.org/ns/prov#",
+    "description": "Provenance Ontology - A set of classes, properties, and restrictions that can be used to represent and interchange provenance information generated in different systems and under different contexts.",
+    "link": "http://www.w3.org/ns/prov#"
+  },
+  {
+    "prefix": "rr",
+    "iri": "http://www.w3.org/ns/r2rml#",
+    "description": "R2RML: RDB to RDF Mapping Language - A W3C recommendation language/vocabulary for expressing customized mappings from relational databases to RDF datasets.",
+    "link": "http://www.w3.org/ns/r2rml#"
+  },
+  {
+    "prefix": "schema",
+    "iri": "http://schema.org/",
+    "description": "Creates, maintains, and promotes schemas for structured data on the Internet, on web pages, in email messages, and beyond.",
+    "link": "http://schema.org/"
+  },
+  {
+    "prefix": "sd",
+    "iri": "http://www.w3.org/ns/sparql-service-description#",
+    "description": "This is the namespace document for the http://www.w3.org/ns/sparql-service-description# namespace",
+    "link": "http://www.w3.org/ns/sparql-service-description#"
+  },
+  {
+    "prefix": "sioc",
+    "iri": "http://rdfs.org/sioc/ns#",
+    "description": "SIOC (Semantically-Interlinked Online Communities) is an ontology for describing the information in online communities.",
+    "link": "https://www.w3.org/Submission/sioc-spec/"
+  },
+  {
+    "prefix": "sh",
+    "iri": "http://www.w3.org/ns/shacl#",
+    "description": "SHACL Shapes Constraint Language, a language for validating RDF graphs against a set of conditions.",
+    "link":"https://www.w3.org/TR/shacl/"
+  },
+  {
+    "prefix": "sp",
+    "iri": "http://spinrdf.org/sp#",
+    "description": "An RDF schema to represent SPARQL queries and update commands as RDF triples.",
+    "link": "https://www.spinrdf.org/sp.html"
+  },
+  {
+    "prefix": "spl",
+    "iri": "http://spinrdf.org/spl#",
+    "description": "A light- weight set of RDFS classes and properties that can be used to represent query templates and respective constraints over sp:Query objects. ",
+    "link": "https://www.spinrdf.org/spin.html"
+  },
+  {
+    "prefix": "spl",
+    "iri": "http://spinrdf.org/spl#",
+    "description": "SPARQL 1.1 Service Description vocabulary - W3C Recommendation.",
+    "link": "https://www.w3.org/TR/sparql11-service-description/"
+  },
+  {
+    "prefix": "uniprot",
+    "iri": "http://purl.uniprot.org/core/",
+    "description": "Properties and classes used for protein annotation.",
+    "link": "http://purl.uniprot.org/core/"
+  },
+  {
+    "prefix": "void",
+    "iri": "http://rdfs.org/ns/void#",
+    "description": "The Vocabulary of Interlinked Datasets (VoID) is an RDF Schema vocabulary for expressing metadata about RDF datasets.",
+    "link": "https://www.w3.org/TR/void/"
+  },
+  {
+    "prefix": "wd",
+    "iri": "http://www.wikidata.org/entity/",
+    "description": "Wikidata instance namespace. For example: wd:Q22132500 is metaphacts GmbH.",
+    "link": "http://www.wikidata.org/entity/"
+  },
+  {
+    "prefix": "wds",
+    "description": "Wikidata namespaces for reified statements.",
+    "iri": "http://www.wikidata.org/entity/statement/",
+    "link": "https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual#Basics_-_Understanding_SPO_(Subject,_Predicate,_Object)_also_known_as_a_Semantic_Triple"
+  },
+  {
+    "prefix": "wdt",
+    "description": "Wikidata namespaces for direct (binary) properties.",
+    "iri": "http://www.wikidata.org/prop/direct/",
+    "link": "https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual#Basics_-_Understanding_SPO_(Subject,_Predicate,_Object)_also_known_as_a_Semantic_Triple"
+  },
+  {
+    "prefix": "wgs",
+    "iri": "http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "description": "A vocabulary for representing latitude, longitude and altitude information in the WGS84 geodetic reference datum. ",
+    "link": "http://www.w3.org/2003/01/geo/wgs84_pos#"
+  },
+  {
+    "prefix": "wikibase",
+    "iri": "http://wikiba.se/ontology#",
+    "description": "Wikidata system ontology to describe all wikidata meta concepts like Items, Statements and Values. Also used to invoke the wikidata specific services extensions or magic predicates.",
+    "link" : "https://www.mediawiki.org/wiki/Wikidata_Query_Service/User_Manual#Label_service"
+  }
+]

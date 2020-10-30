@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +37,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { OrderedMap } from 'immutable';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
-import { SparqlClient, QueryVisitor } from 'platform/api/sparql';
+import { SparqlClient, QueryVisitor, SparqlTypeGuards } from 'platform/api/sparql';
 
 export interface Resource {
   readonly iri: Rdf.Iri
@@ -103,16 +124,20 @@ export function transformRangePattern(
     public begin: SparqlJs.Term;
     public end: SparqlJs.Term;
 
-    private findSecondVariable(args: SparqlJs.Expression[], variable: string) {
-      return _.find(args, value => value !== variable) as SparqlJs.Term;
+    private findSecondVariable(args: SparqlJs.Expression[], variable: SparqlJs.VariableTerm) {
+      return _.find(args, v =>
+        SparqlTypeGuards.isVariable(v) && !v.equals(variable)
+      ) as SparqlJs.VariableTerm;
     }
 
-    private hasVariable(args: SparqlJs.Expression[], variable: string): boolean {
-      return _.some(args, value => value === variable);
+    private hasVariable(args: SparqlJs.Expression[], variable: SparqlJs.VariableTerm): boolean {
+      return _.some(args, v =>
+        SparqlTypeGuards.isVariable(v) && v.equals(variable)
+      );
     }
 
     private getBindPattern(
-      variable: SparqlJs.Term, expression: SparqlJs.Expression
+      variable: SparqlJs.VariableTerm, expression: SparqlJs.Expression
     ): SparqlJs.BindPattern {
       return {type: 'bind', variable, expression};
     }
@@ -125,12 +150,12 @@ export function transformRangePattern(
       }
 
       const rangeVariables = {
-        begin: `?${range.begin}` as SparqlJs.Term,
-        end: `?${range.end}` as SparqlJs.Term,
+        begin: Rdf.DATA_FACTORY.variable(range.begin),
+        end: Rdf.DATA_FACTORY.variable(range.end),
       };
       const rangeToVariables = {
-        begin: `?${rangeTo.begin}` as SparqlJs.Term,
-        end: `?${rangeTo.end}` as SparqlJs.Term,
+        begin: Rdf.DATA_FACTORY.variable(rangeTo.begin),
+        end: Rdf.DATA_FACTORY.variable(rangeTo.end),
       };
 
       if (operator === '>=' && this.hasVariable(args, rangeVariables.begin)) {

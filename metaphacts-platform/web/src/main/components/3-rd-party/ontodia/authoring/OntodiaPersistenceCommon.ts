@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as Immutable from 'immutable';
 import {
-  ElementIri, ElementTypeIri, LocalizedString, Property, ElementModel, LinkModel, AuthoringState,
-  isLiteralProperty, isIriProperty
+  ElementIri, ElementTypeIri, Property, ElementModel, LinkModel, AuthoringState,
 } from 'ontodia';
 
 import { Rdf } from 'platform/api/rdf';
@@ -36,24 +56,21 @@ export function fetchInitialModel(
   metadata: EntityMetadata,
   fieldsToFetch = metadata.fieldByIri
 ): Kefir.Property<CompositeValue> {
-  const initial: CompositeValue = {
-    type: CompositeValue.type,
+  const initial = CompositeValue.set(CompositeValue.empty, {
     subject,
     definitions: metadata.fieldByIri,
-    fields: Immutable.Map<string, FieldState>(),
-    errors: FieldError.noErrors,
-  };
+  });
 
   const valuesFetching = fieldsToFetch.toArray().map(definition =>
     queryValues(definition.selectPattern, subject).map(bindings => {
       const values = bindings.map(b => FieldValue.fromLabeled(b));
-      const state = FieldState.set(FieldState.empty, {values: Immutable.List(values)});
+      const state = FieldState.set(FieldState.empty, {values});
       return [definition.id, state] as [string, FieldState];
     })
   );
 
   return Kefir.zip(valuesFetching).map(fields => {
-    const nonEmpty = fields.filter(([id, state]) => state.values.size > 0);
+    const nonEmpty = fields.filter(([id, state]) => state.values.length > 0);
     return CompositeValue.set(initial, {fields: Immutable.Map(nonEmpty)});
   }).toProperty();
 }
@@ -83,7 +100,7 @@ export function convertElementModelToCompositeValue(
       } else if (metadata.imageField && definition.iri === metadata.imageField.iri) {
         fieldValues = model.image ? [FieldValue.fromLabeled({value: Rdf.iri(model.image)})] : [];
       } else if (definition.iri === metadata.labelField.iri) {
-        fieldValues = convertLocalizedStringsToFieldValues(model.label.values);
+        fieldValues = convertPropertyToFieldValues(model.label);
       } else {
         const property = model.properties[definition.iri];
         if (property) {
@@ -91,19 +108,17 @@ export function convertElementModelToCompositeValue(
         }
       }
       map.set(fieldId, {
-        values: Immutable.List(fieldValues),
+        values: fieldValues,
         errors: FieldError.noErrors,
       });
     });
   });
 
-  return {
-    type: CompositeValue.type,
+  return CompositeValue.set(CompositeValue.empty, {
     subject: Rdf.iri(model.id),
     definitions: metadata.fieldByIri,
     fields,
-    errors: FieldError.noErrors,
-  };
+  });
 }
 
 export function convertCompositeValueToElementModel(
@@ -111,7 +126,7 @@ export function convertCompositeValueToElementModel(
   metadata: EntityMetadata
 ): ElementModel {
   let types: ElementTypeIri[] | undefined;
-  let labels: LocalizedString[] | undefined;
+  let labels: Rdf.Literal[] | undefined;
   let image: string | undefined;
   const properties: { [id: string]: Property } = {};
 
@@ -120,18 +135,17 @@ export function convertCompositeValueToElementModel(
     if (definition.iri === metadata.typeField.iri) {
       types = field.values
         .map(FieldValue.asRdfNode)
-        .filter(v => v && v.isIri())
-        .map(v => v.value as ElementTypeIri)
-        .toArray();
+        .filter(v => v && Rdf.isIri(v))
+        .map(v => v.value as ElementTypeIri);
     } else if (metadata.imageField && definition.iri === metadata.imageField.iri) {
-      image = field.values
+      image = FieldState.getFirst(field.values
         .map(FieldValue.asRdfNode)
-        .filter(v => v && v.isIri())
+        .filter(v => v && Rdf.isIri(v))
         .map(v => v.value)
-        .first();
+      );
     } else if (definition.iri === metadata.labelField.iri) {
       field.values.forEach(v => {
-        if (FieldValue.isAtomic(v) && v.value.isLiteral()) {
+        if (FieldValue.isAtomic(v) && Rdf.isLiteral(v.value)) {
           const label = FieldValue.asRdfNode(v) as Rdf.Literal;
           labels = labels ? [...labels, label] : [label];
         }
@@ -139,24 +153,12 @@ export function convertCompositeValueToElementModel(
     } else {
       field.values.forEach(v => {
         if (!FieldValue.isAtomic(v)) { return; }
-        if (v.value.isLiteral()) {
-          const {value, language} = FieldValue.asRdfNode(v) as Rdf.Literal;
-          const property = properties[definition.iri] || {type: 'string', values: []};
-          if (isLiteralProperty(property)) {
-            property.values = [...property.values, {
-              value,
-              language,
-              datatype: definition.xsdDatatype,
-            }];
-          }
-          properties[definition.iri] = property;
-        } else if (v.value.isIri()) {
-          const {value} = FieldValue.asRdfNode(v) as Rdf.Iri;
-          const property = properties[definition.iri] || {type: 'uri', values: []};
-          if (isIriProperty(property)) {
-            property.values = [...property.values, {type: 'uri', value}];
-          }
-          properties[definition.iri] = property;
+        const node = FieldValue.asRdfNode(v) as Rdf.Iri | Rdf.BNode | Rdf.Literal;
+        if (Rdf.isIri(node) || Rdf.isLiteral(node)) {
+          const property = properties[definition.iri] || {values: []};
+          properties[definition.iri] = {
+            values: [...property.values, node]
+          };
         }
       });
     }
@@ -225,8 +227,8 @@ export function applyEventsToCompositeValue(params: {
         const event = state.elements.get(relatedElementIri);
         const isTargetValueDeleted = event && event.deleted;
         return !isTargetValueDeleted;
-      }).toList();
-      return FieldState.set(previous, { values: newValueSet });
+      });
+      return FieldState.set(previous, {values: newValueSet});
     };
     const newFieldSet = currentModel.fields.update(fieldId, updater);
     currentModel = CompositeValue.set(currentModel, {fields: newFieldSet});
@@ -235,7 +237,7 @@ export function applyEventsToCompositeValue(params: {
   if (newIri) {
     currentModel = {
       ...currentModel,
-      subject: new Rdf.Iri(newIri),
+      subject: Rdf.iri(newIri),
     };
   }
 
@@ -255,9 +257,10 @@ function applyLinkModelToCompositeValue(
   const fields = composite.fields.update(
     definition.id,
     (previous = FieldState.empty) => FieldState.set(previous, {
-      values: previous.values.push(
-        FieldValue.fromLabeled({value})
-      ),
+      values: [
+        ...previous.values,
+        FieldValue.fromLabeled({value}),
+      ],
     })
   );
   return CompositeValue.set(composite, {fields});
@@ -272,9 +275,9 @@ function applyElementModelToCompositeValue(
 
   metadata.fieldByIri.forEach((definition, fieldIri) => {
     if (isObjectProperty(definition, metadata)) { return; }
-    let values = [];
+    let values: ReadonlyArray<FieldValue> = [];
     if (definition.id === metadata.labelField.id) {
-      values = convertLocalizedStringsToFieldValues(model.label.values);
+      values = convertPropertyToFieldValues(model.label);
     } else if (definition.id === metadata.typeField.id) {
       values = model.types.map(type => FieldValue.fromLabeled({value: Rdf.iri(type)}));
     } else if (metadata.imageField && definition.id === metadata.imageField.id && model.image) {
@@ -286,7 +289,7 @@ function applyElementModelToCompositeValue(
       }
     }
     fields = fields.set(definition.id, {
-      values: Immutable.List(values),
+      values,
       errors: FieldError.noErrors,
     });
   });
@@ -294,23 +297,17 @@ function applyElementModelToCompositeValue(
   return CompositeValue.set(composite, {fields});
 }
 
-function convertPropertyToFieldValues(property: Property): FieldValue[] {
-  if (isIriProperty(property)) {
-    return property.values.map(({value}) =>
-      FieldValue.fromLabeled({value: Rdf.iri(value)})
-    );
-  } else if (isLiteralProperty(property)) {
-    return convertLocalizedStringsToFieldValues(property.values);
-  }
-  return [];
-}
-
-function convertLocalizedStringsToFieldValues(property: ReadonlyArray<LocalizedString>) {
-  return property.map(({value, language, datatype}) => {
-    const literal = language
-      ? Rdf.langLiteral(value, language)
-      : Rdf.literal(value, datatype ? Rdf.iri(datatype.value) : undefined);
-    return FieldValue.fromLabeled({value: literal});
+function convertPropertyToFieldValues(property: Pick<Property, 'values'>): FieldValue[] {
+  return property.values.map(term => {
+    let value: Rdf.Iri | Rdf.Literal;
+    if (term.termType === 'NamedNode') {
+      value = Rdf.iri(term.value);
+    } else if (term.language) {
+      value = Rdf.langLiteral(term.value, term.language);
+    } else {
+      value = Rdf.literal(term.value);
+    }
+    return FieldValue.fromLabeled({value});
   });
 }
 
@@ -327,8 +324,7 @@ function deleteLinkFromCompositeValue(
     definition.id,
     previous => FieldState.set(previous, {
       values: previous.values
-        .filter(v => FieldValue.asRdfNode(v).value !== link.targetId)
-        .toList()
+        .filter(v => FieldValue.asRdfNode(v).value !== link.targetId),
     })
   );
   return CompositeValue.set(composite, {fields});

@@ -1,0 +1,45 @@
+<div class="page documentation">
+  <div class='page__body'>
+    <h1>Query Component </h1>
+    <div class="documentation__intro">
+      <div class="documentation__intro__description">
+        The semantic query component is the most powerful and flexible component to query and render SPARQL SELECT query results.
+        <p>&nbsp;</p>
+        <p>
+          Compared to the other visualization components such as tables or trees, the semantic query result component is much simpler in it's basic configuration. 
+      However, at the same time it requires advanced knowledge about the structure of SPARQL SELECT result tuples as well as handlebars.js since it leaves the task of iterating and formatting the result tuples completely to the template configuration.
+        </p>
+      </div>
+
+
+    <h2>Examples </h2>
+    <h3>No (Default) Template</h3>
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        If no <code>template</code> is defined, all tuples for the <b>first projection variable</b> will we rendered as a comma-separated list.
+      </div>
+      <div class="documentation__example__demo" id='demo2'>
+        <mp-code-example>
+<![CDATA[
+<semantic-query 
+  query='
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+    PREFIX person: <http://example.com/person/> 
+    SELECT ?person ?name WHERE {                    
+      VALUES (?person ?name) { 
+        (person:alice "Alice")
+        (person:carol "Carol")
+        (person:bob "Bob")
+        (person:mike "Mike")
+      }
+    }
+  '
+></semantic-query>
+]]>       
+        </mp-code-example>
+      </div>
+    </div>
+
+
+  </div>
+</div>

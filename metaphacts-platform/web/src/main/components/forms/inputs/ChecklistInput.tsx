@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,19 +37,19 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import * as classnames from 'classnames';
 
 import { Cancellation } from 'platform/api/async';
 
-import { FieldValue, SparqlBindingValue, ErrorKind, DataState } from '../FieldValues';
+import { FieldState, FieldValue, SparqlBindingValue, ErrorKind, DataState } from '../FieldValues';
 import {
   MultipleValuesInput,
   MultipleValuesProps,
   MultipleValuesHandlerProps,
-  CardinalityCheckingHandler
+  CardinalityCheckingHandler,
+  ValuesWithErrors,
 } from './MultipleValuesInput';
 import { queryValues } from '../QueryValues';
 
@@ -60,7 +82,7 @@ export interface ChecklistInputProps extends MultipleValuesProps {
 }
 
 interface State {
-  readonly valueSet?: Immutable.List<SparqlBindingValue>;
+  readonly valueSet?: ReadonlyArray<SparqlBindingValue>;
 }
 
 /**
@@ -79,13 +101,13 @@ interface State {
  */
 
 export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, State> {
-  private readonly cancellation = new Cancellation();
+  private fetchingValueSet = Cancellation.cancelled;
   private isLoading = true;
 
   constructor(props: ChecklistInputProps, context: any) {
     super(props, context);
     this.state = {
-      valueSet: Immutable.List<SparqlBindingValue>(),
+      valueSet: [],
     };
   }
 
@@ -97,36 +119,42 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
   }
 
   componentDidMount() {
-    const { definition } = this.props;
-    if (definition.valueSetPattern) {
-      this.cancellation.map(
-        queryValues(definition.valueSetPattern)
+    this.fetchValueSet(this.props);
+  }
+
+  componentWillReceiveProps(nextProps: ChecklistInputProps) {
+    if (nextProps.dependencyContext !== this.props.dependencyContext) {
+      this.fetchValueSet(nextProps);
+    }
+  }
+
+  componentWillUnmount() {
+    this.fetchingValueSet.cancelAll();
+  }
+
+  private fetchValueSet(props: ChecklistInputProps) {
+    this.isLoading = false;
+    this.fetchingValueSet.cancelAll();
+
+    const valueSetPattern = getValueSetPattern(props);
+    if (valueSetPattern) {
+      this.isLoading = true;
+      this.fetchingValueSet = new Cancellation();
+      this.fetchingValueSet.map(
+        queryValues(valueSetPattern)
       ).observe({
         value: valueSet => {
           this.isLoading = false;
-          this.setState({valueSet: Immutable.List(valueSet)});
+          this.setState({valueSet});
           this.props.updateValues(v => v);
         },
         error: error => {
           console.error(error);
           this.isLoading = false;
-          this.props.updateValues(({values, errors}) => {
-            const otherErrors = errors.filter(e => e.kind === ErrorKind.Loading).toList();
-            otherErrors.push({
-              kind: ErrorKind.Loading,
-              message: `Failed to load value set`,
-            });
-            return {values, errors: otherErrors};
-          });
+          this.props.updateValues(appendValueSetLoadingError);
         }
       });
-    } else {
-      this.isLoading = false;
     }
-  }
-
-  componentWillUnmount() {
-    this.cancellation.cancelAll();
   }
 
   private onValueChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,28 +162,28 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     const {valueSet} = this.state;
     const checked = event.target.checked;
     updateValues(({values, errors}) => {
-      let newValues: Immutable.List<SparqlBindingValue> = Immutable.List<SparqlBindingValue>();
+      let newValues: ReadonlyArray<SparqlBindingValue> = [];
       if (this.checkType() === 'checkbox') {
         // Look for previous values if they are existing.
         const previousValues = values.filter(value => {
           return FieldValue.isAtomic(value) && value.value.value !== event.target.value;
-        }).toList();
+        });
         newValues = valueSet.filter(value => {
           const isEqualValues = value.value.value === event.target.value;
           // Current value compare with items from previous selection.
-          const previouslyChecked = previousValues.
-            some(valueToCheck => FieldValue.isAtomic(valueToCheck) &&
-              valueToCheck.value.equals(value.value));
+          const previouslyChecked = previousValues.some(v =>
+            FieldValue.isAtomic(v) && v.value.equals(value.value)
+          );
           return checked
-                 ? (previouslyChecked || isEqualValues)
-                 : (previouslyChecked && !isEqualValues);
-        }).toList();
+            ? (previouslyChecked || isEqualValues)
+            : (previouslyChecked && !isEqualValues);
+        });
       }
       if (this.checkType() === 'radio') {
         newValues = valueSet.filter(value => {
           const isEqualValues = value.value.value === event.target.value;
           return checked && isEqualValues;
-        }).toList();
+        });
       }
       const validated = handler.validate({
         values: newValues.map(value => FieldValue.fromLabeled(value)),
@@ -165,8 +193,8 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     });
   }
 
-  private checkType = () => {
-    const { type } = this.props;
+  private checkType() {
+    const {type} = this.props;
     return (
       type === 'checkbox' ? 'checkbox' :
       type === 'radio' ? 'radio' :
@@ -174,8 +202,8 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     );
   }
 
-  private renderCheckItem = (value: SparqlBindingValue, checked: boolean, key: string) => {
-    const { classItemName } = this.props;
+  private renderCheckItem(value: SparqlBindingValue, checked: boolean, key: string) {
+    const {classItemName} = this.props;
     const type = this.checkType();
     const labelClass = `${CHECKLIST_CLASS}__label`;
     const inputClass = `${CHECKLIST_CLASS}__input`;
@@ -195,20 +223,20 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     </div>;
   }
 
-  private renderChecklist = ( options: SparqlBindingValue[] ) => {
-    const { values } = this.props;
+  private renderChecklist(options: ReadonlyArray<SparqlBindingValue>) {
+    const {values} = this.props;
     return options.map((option, index) => {
-      const checked = values.toArray().some(value => {
-        return FieldValue.isAtomic(value) && value.value.equals(option.value);
+      const checked = values.some(v => {
+        return FieldValue.isAtomic(v) && v.value.equals(option.value);
       });
       return this.renderCheckItem(option, checked, `${option.value.value}-${index}`);
     });
   }
 
   render() {
-    const { row, className } = this.props;
+    const {row, className} = this.props;
     const options = this.state.valueSet
-      ? this.state.valueSet.toArray()
+      ? this.state.valueSet
       : [];
 
     return (
@@ -221,6 +249,24 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
   static makeHandler(props: MultipleValuesHandlerProps<ChecklistInputProps>) {
     return new CardinalityCheckingHandler(props);
   }
+}
+
+function getValueSetPattern(props: ChecklistInputProps) {
+  const {definition, dependencyContext} = props;
+  if (dependencyContext) {
+    return dependencyContext.valueSetPattern;
+  } else {
+    return definition.valueSetPattern;
+  }
+}
+
+function appendValueSetLoadingError({values, errors}: ValuesWithErrors): ValuesWithErrors {
+  const otherErrors = errors.filter(e => e.kind === ErrorKind.Loading);
+  otherErrors.push({
+    kind: ErrorKind.Loading,
+    message: `Failed to load value set`,
+  });
+  return {values, errors: otherErrors};
 }
 
 MultipleValuesInput.assertStatic(ChecklistInput);

@@ -1,0 +1,490 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "FieldDefinitionConfig": {
+            "properties": {
+                "askPattern": {
+                    "description": "Single constraint (SPARQL ASK query) to to validate values entered by\nthe user against the database.\n\nQuery bindings:\n   * `?value` - validated field value;\n\nIf both `askPattern` and `constraints` are specified then all of them will\nbe evaluated for each validated value.",
+                    "type": "string"
+                },
+                "autosuggestionPattern": {
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     # ?value lookup:type :MyType\n   }\n}\n```",
+                    "type": "string"
+                },
+                "categories": {
+                    "description": "An unordered set of categories as additional metadata for improved organization.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "constraints": {
+                    "description": "Constraints (SPARQL ASK queries) to validate values entered by\nthe user against the database.",
+                    "items": {
+                        "$ref": "#/definitions/SingleFieldConstraint"
+                    },
+                    "type": "array"
+                },
+                "defaultValues": {
+                    "description": "An array of default values (represented as text) assigned to the field\nif subject doesn't contain a value for it.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "deletePattern": {
+                    "description": "SPARQL DELETE query to remove previous value from the database\nbefore inserting a new one.\n\nQuery bindings:\n   * `?subject` - current entity to be created/edited;\n   * `?value` - inserted atomic values, connected to `?subject` through the graph pattern;",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Description of a field, might be rendered e.g. as a tooltip on hover or\nusing an info icon next to the field.",
+                    "type": "string"
+                },
+                "domain": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "description": "Domain restriction on classes this field applicable to."
+                },
+                "id": {
+                    "description": "Unique identifier of the field definition.\n\nIn most cases it will be the IRI of the field definition, but might be an alias as well.",
+                    "type": "string"
+                },
+                "insertPattern": {
+                    "description": "SPARQL INSERT query to add new value to the database.\n\nQuery bindings:\n   * `?subject` - current entity to be created/edited;\n   * `?value` - deleted atomic values, connected to `?subject` through the graph pattern;\n   * (optional) `?index` - see `orderedWith` property;",
+                    "type": "string"
+                },
+                "iri": {
+                    "description": "IRI of field definition.",
+                    "type": "string"
+                },
+                "label": {
+                    "description": "Label used to refer to field on form (e.g. in validation messages) and\nrendering the field, for example as an HTML input label before the input element.",
+                    "type": "string"
+                },
+                "maxOccurs": {
+                    "anyOf": [
+                        {
+                            "enum": [
+                                "unbound"
+                            ],
+                            "type": "string"
+                        },
+                        {
+                            "type": "number"
+                        }
+                    ],
+                    "default": "'unbound'",
+                    "description": "XSD schema max cardinality (inclusive) or `'unbound'` (i.e. infinite)."
+                },
+                "minOccurs": {
+                    "anyOf": [
+                        {
+                            "enum": [
+                                "unbound"
+                            ],
+                            "type": "string"
+                        },
+                        {
+                            "type": "number"
+                        }
+                    ],
+                    "default": "'unbound'",
+                    "description": "XSD schema min cardinality (inclusive) or `'unbound'` (i.e. 0)."
+                },
+                "order": {
+                    "description": "Number used for ordering field definitions.",
+                    "type": "number"
+                },
+                "orderedWith": {
+                    "description": "Enables values ordering. Supported value: `index-property`.\n\n`index-property` means that the `?index` variable in the query will bind a literal value\nof type `xsd:integer` representing the node's index.\n\nThe following conventions apply:\n   * `insertPattern` MUST have an `?index` variable to bind;\n   * `selectPattern` MUST expose an `?index` projection variable;\n   * `maxOccurs` MUST be > 1 or `'unbound'`;\n\nNote that the index must be bound as property to an object resource.\nFor ordering literal values consider adding an intermediate node, i.e.:\n```\n?subj :hasOrderedItem ?itemNode .\n?itemNode :hasItemValue ?value .\n?itemNode :hasIndex ?index .\n```",
+                    "enum": [
+                        "index-property"
+                    ],
+                    "type": "string"
+                },
+                "range": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "description": "Range restriction on allowed classes of objects for the field values.\nOnly applicable if `xsdDatatype` is `xsd:anyURI`."
+                },
+                "selectPattern": {
+                    "description": "SPARQL SELECT query string to read initial values for the field.\n\nQuery bindings:\n   * `?subject` - current entity to be created/edited;\n\nExposed projection variables:\n   * `?value` - current atomic values, connected to `?subject` through the graph pattern;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n   * (optional) `?index` - see `orderedWith` property;",
+                    "type": "string"
+                },
+                "treePatterns": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/SimpleTreeConfig"
+                        },
+                        {
+                            "$ref": "#/definitions/FullTreeConfig"
+                        }
+                    ],
+                    "description": "SPARQL configuration to select terms from an hierarchical thesaurus.\nCan be either `simple` or `full` (specified in the `type` attribute)."
+                },
+                "valueSetPattern": {
+                    "description": "SPARQL SELECT query to generate a fixed list (choices) of values\nthat the user may choose from.\n\nExposed projection variables:\n   * `?value` - set of values for user to choose from;\n   * (optional) `?label` - label for `?value`;\n   * (optional) further projection variables might be exposed\n     to format the rendering within the input element;",
+                    "type": "string"
+                },
+                "xsdDatatype": {
+                    "description": "A full or prefix XSD IRI datatype identifier as specified\nin [RDF 1.1](https://www.w3.org/TR/rdf11-concepts/#xsd-datatypes)",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "id",
+                "iri",
+                "label",
+                "description",
+                "categories",
+                "domain",
+                "xsdDatatype",
+                "range",
+                "minOccurs",
+                "maxOccurs",
+                "order",
+                "defaultValues",
+                "selectPattern",
+                "deletePattern",
+                "insertPattern",
+                "askPattern",
+                "constraints",
+                "valueSetPattern",
+                "autosuggestionPattern",
+                "treePatterns",
+                "testSubject",
+                "orderedWith"
+            ],
+            "required": [
+                "id"
+            ],
+            "type": "object"
+        },
+        "FieldDependency": {
+            "properties": {
+                "autosuggestionPattern": {
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependend field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
+                    "type": "string"
+                },
+                "dependencies": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "description": "Maps a field ID (to depend on) to the variable name that can be used in the\n`autosuggestionPattern` and `valueSetPattern` queries. The value\nof the dependent field is injected as additional binding into the\nqueries.",
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "field": {
+                    "description": "Dependent field ID.",
+                    "type": "string"
+                },
+                "valueSetPattern": {
+                    "description": "SPARQL SELECT query to generate a fixed list (choices) of values\nthat the user may choose from. The value of the dependent field\nis injected as additional binding as defined in the `dependencies`\nmapping.\n\nQuery bindings:\n   * `?(dependentOnFieldVariable)` - value for each dependent on field;\n\nExposed projection variables:\n   * `?value` - set of values for user to choose from;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "field",
+                "dependencies",
+                "valueSetPattern",
+                "autosuggestionPattern"
+            ],
+            "required": [
+                "dependencies",
+                "field"
+            ],
+            "type": "object"
+        },
+        "FullTreeConfig": {
+            "properties": {
+                "childrenQuery": {
+                    "description": "Children SPARQL query with `[?parent]` input and `[?item, ?label, ?hasChildren]` output\nvariables:\n  - `?parent` - parametrized variable with node IRI to retrieve children for;\n  - `?item` - result child node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display value.",
+                    "type": "string"
+                },
+                "escapeLuceneSyntax": {
+                    "description": "A flag determining whether any special Lucene syntax will be escaped.\nWhen `false` lucene syntax in the user input is not escaped.\n\nDeprecated: escaping will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
+                "parentsQuery": {
+                    "description": "A SPARQL query to recursively compute the parent hierarchy for search results.\nCan be used together with the `search-query` setting.\n\nThe query has `[?item]` inputs through `VALUES(...)` clause\nand `[?item, ?parent, ?parentLabel]` outputs:\n  - `?item` - child node IRI provided with `VALUES(?item) { ... }` clause;\n  - `?parent` - result parent node IRI for `?item` node;\n  - `?parentLabel` (optional) - display label for `?parent` (if not provided the display label\n    is retrieved using the label service);\n\nBe aware to have a distinct association of node and label to not produce any cross products.",
+                    "type": "string"
+                },
+                "rootsQuery": {
+                    "description": "Tree roots SPARQL query with no input and `[?item, ?label, ?hasChildren]` output variables:\n  - `?item` - result root node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display label.",
+                    "type": "string"
+                },
+                "searchQuery": {
+                    "description": "A SPARQL query to compute a search result for a given user input.\n\nThe query has `[?__token__]` input and `[?item, ?score, ?label, ?hasChildren]` outputs:\n  - `?__token__` - parametrized search input string;\n  - `?item` - search result node IRI;\n  - `?score` (optional) - search result score of `?item` for tree sorting;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nNote that the parent hierarchy is computed recursively using the `parents-query` configuration\nsetting.",
+                    "type": "string"
+                },
+                "tokenizeLuceneQuery": {
+                    "description": "A flag determining whether the user input is tokenized by whitespace into words postfixed\nby `*`. E.g. the search for `Hello World` becomes `Hello* World*`.\n\nDeprecated: tokenization will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
+                "type": {
+                    "enum": [
+                        "full"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "escapeLuceneSyntax",
+                "tokenizeLuceneQuery",
+                "rootsQuery",
+                "childrenQuery",
+                "parentsQuery",
+                "searchQuery"
+            ],
+            "required": [
+                "childrenQuery",
+                "rootsQuery",
+                "type"
+            ],
+            "type": "object"
+        },
+        "Iri<string>_1": {
+            "properties": {
+                "termType": {
+                    "description": "Contains the constant \"NamedNode\".",
+                    "enum": [
+                        "NamedNode"
+                    ],
+                    "type": "string"
+                },
+                "value": {
+                    "description": "The IRI of the named node (example: `http://example.org/resource`)",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "termType",
+                "value",
+                "equals",
+                "hashCode",
+                "toString",
+                "toJSON"
+            ],
+            "required": [
+                "termType",
+                "value"
+            ],
+            "type": "object"
+        },
+        "MultipleFieldConstraint": {
+            "properties": {
+                "fields": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "description": "Maps the ID of a constrained field to the variable name that can be used\nin the `validatePattern`.",
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "message": {
+                    "description": "Error message to display if constraint is violated.",
+                    "type": "string"
+                },
+                "validatePattern": {
+                    "description": "SPARQL ASK pattern to validate if the constraint holds. The value of the\nconstrained field is injected as additional binding as defined in the `fields`\nmapping.\n\nQuery bindings:\n   * `?(constrainedFieldVariable)` - value for each constrained field;",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "fields",
+                "validatePattern",
+                "message"
+            ],
+            "required": [
+                "fields",
+                "message",
+                "validatePattern"
+            ],
+            "type": "object"
+        },
+        "SimpleTreeConfig": {
+            "properties": {
+                "relationPattern": {
+                    "description": "Output bindings: `?item`, `?parent`",
+                    "type": "string"
+                },
+                "scheme": {
+                    "description": "Binds to `?__scheme__` variable in the `schemePattern`",
+                    "type": "string"
+                },
+                "schemePattern": {
+                    "description": "Input bindings: `?__scheme__`\nOutput bindings: `?item`",
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "simple"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "scheme",
+                "schemePattern",
+                "relationPattern"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
+        "SingleFieldConstraint": {
+            "properties": {
+                "message": {
+                    "description": "Error message to display if constraint is violated.",
+                    "type": "string"
+                },
+                "validatePattern": {
+                    "description": "SPARQL ASK pattern to validate if the constraint holds.\n\nQuery bindings:\n   * `?value` - validated field value;",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "validatePattern",
+                "message"
+            ],
+            "required": [
+                "message",
+                "validatePattern"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "addToDefaultSet": {
+            "default": false,
+            "description": "`true` if persisted component should be added to the default set of the current user.",
+            "type": "boolean"
+        },
+        "browserPersistence": {
+            "default": false,
+            "description": "Whether to save intermediate changes in browser's local storage.\n\nUse `form-id` attribute to assign an storage ID and\n`<semantic-form-recover-notification>` to display notification to user\nwhether a form state was recovered from the local storage.\n\nIf not set or `false` the form will neither try persist change\nnor try to recover on initialization form states from the local storage.",
+            "type": "boolean"
+        },
+        "debug": {
+            "default": false,
+            "description": "Enables debugging mode which allows to inspect current form state.",
+            "type": "boolean"
+        },
+        "fieldConstraints": {
+            "description": "An array of multi-field constraints on field values.",
+            "items": {
+                "$ref": "#/definitions/MultipleFieldConstraint"
+            },
+            "type": "array"
+        },
+        "fieldDependencies": {
+            "description": "Definitions for dependencies between field values.",
+            "items": {
+                "$ref": "#/definitions/FieldDependency"
+            },
+            "type": "array"
+        },
+        "fields": {
+            "description": "An array of fields to define data model of the form.",
+            "items": {
+                "$ref": "#/definitions/FieldDefinitionConfig"
+            },
+            "type": "array"
+        },
+        "formId": {
+            "description": "Optional identifier to be used to recover cached\nform states from the local storage. By default the current resource (`[[this]]`) will\nbe used as identifier. However, if several forms being embedded on a page,\nunique and static form identifier need to be assigned manually.",
+            "type": "string"
+        },
+        "id": {
+            "description": "Used as source id for emitted events.",
+            "type": "string"
+        },
+        "newSubjectTemplate": {
+            "description": "URI template to customize subject generation.\n\nThe template allows to reference form values, e.g if there is field ABC that uniquely\nidentify record, we can specify subject template as `http://example.com/records/{{ABC}}`,\nwhere `{{ABC}}` will be substituted with value of the field ABC.\n\n`{{UUID}}` placeholder allows to substitute a random UUID.\n\n`new-subject-template` for composite-input can be a relative IRI.\nIf it's set as '.' the IRI will be equal to the parent form IRI.",
+            "type": "string"
+        },
+        "persistence": {
+            "default": "'ldp'",
+            "description": "Persistence and operation mode to use for creating and modifying data.\nBoth modes require dedicated ACL permissions.\n\nIn `ldp` mode, all generated statements for a form subject are being stored into\na dedicated LDP container and as such can easily be updated or even reverted and\nhave provenance information attached.\nHowever, `ldp` requires to enable quads mode in the graph database.\n\nIn the `sparql` mode no provenance can be captured.",
+            "enum": [
+                "client-side-sparql",
+                "ldp",
+                "sparql"
+            ],
+            "type": "string"
+        },
+        "postAction": {
+            "anyOf": [
+                {
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": "'reload'",
+            "description": "Optional post-action to be performed after saving the form.\nCan be either `'none'`, `'reload'` or `'redirect'` (redirects to the subject of the form)\nor any IRI string to which the form will redirect."
+        },
+        "subject": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Iri<string>_1"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "description": "IRI of instance described by the form.\nThis value will be passed down to all queries as `?subject`.\n\nIf this attribute is set to a non-empty value then the form will operate\nin the \"editing existing instance\" mode instead of \"creating a new instance\"."
+        },
+        "validateAfterLoad": {
+            "default": false,
+            "description": "Whether the form should be validated after it is loaded.\nIf set to false, the form is only validated on user input and before submit.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "fields",
+        "persistence",
+        "fieldConstraints",
+        "fieldDependencies",
+        "subject",
+        "newSubjectTemplate",
+        "id",
+        "formId",
+        "browserPersistence",
+        "postAction",
+        "validateAfterLoad",
+        "addToDefaultSet",
+        "debug"
+    ],
+    "required": [
+        "fields"
+    ],
+    "type": "object"
+}
+

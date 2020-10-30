@@ -1,13 +1,41 @@
 rootProject.name = 'platform-externals'
 
-// define sub-projects
-def subProjects = []
+// include sub projects for discovered modules
+for (module in findModules()) {
+	include module.name
+	
+	if (new File(module, 'core').isDirectory()) {
+		include module.name + ':core'
+	}
+	
+	if (new File(module, 'web').isDirectory()) {
+		include module.name + ':web'
+	}
+	
+	if (new File(module, 'client-api').isDirectory()) {
+		include module.name + ':client-api'
+	}
+	
+	if (new File(module, 'ontodia').isDirectory()) {
+		include module.name + ':ontodia'
+	}
+}
 
-subProjects.each { include it }
+// include webpack project
+include 'project:webpack'
+
+// include virtual project for metaphacts-platform-dist
+// see /platform-externals/metaphacts-platform/build.gradle for the definition
+include 'metaphacts-platform-dist:core'
+project(':metaphacts-platform-dist:core').setProjectDir(file('target/mpos-dist'));
+
+// include holder project for gretty
+include 'jetty'
+project(':jetty').setProjectDir(file('target/jetty'))
+
 
 // dynamically discovered app modules
 for (appParentDir in findAppParentDirs()) {
-	println appParentDir
 	appParentDir.eachFile() { app ->
 		if (isAppDir(app)) {
 			include toFullProjectName(appParentDir, app.name)
@@ -15,13 +43,24 @@ for (appParentDir in findAppParentDirs()) {
 	}
 }
 
+def findModules() {
+	def modules = [];
+	file('.').eachFile() { module ->
+		if (module.name == 'buildSrc') { /* ignore */  }
+		// check if the module has an apps folde
+		else if (new File(module, "build.gradle").isFile()) {	// for now check on existence of gradle file 
+			modules << module;
+		}
+	}
+	return modules
+}
+
 
 def findAppParentDirs() {
 	def appParentDirs = [];
-	file('.').eachFile() { module ->
+	findModules().each() { module ->
 		// check if the module has an apps folder
-		if (new File(module, "build.sbt").isFile() 	// for now check on existence of sbt definition
-				&& new File(module, "apps").isDirectory()) {
+		if (new File(module, "apps").isDirectory()) {
 			appParentDirs << new File(module, "apps");
 		}
 	}

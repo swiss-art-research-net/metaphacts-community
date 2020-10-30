@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +37,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.security;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -38,18 +60,18 @@ import javax.naming.ldap.LdapContext;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
-import org.apache.shiro.authz.SimpleRole;
+import org.apache.shiro.authz.permission.RolePermissionResolver;
 import org.apache.shiro.realm.activedirectory.ActiveDirectoryRealm;
 import org.apache.shiro.realm.ldap.DefaultLdapRealm;
 import org.apache.shiro.realm.ldap.LdapContextFactory;
 import org.apache.shiro.realm.ldap.LdapUtils;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.util.CollectionUtils;
 
 import com.google.common.collect.Sets;
 import com.metaphacts.secrets.SecretResolver;
@@ -69,7 +91,7 @@ import com.metaphacts.secrets.SecretResolver;
  *
  * @author Johannes Trame <jt@metaphacts.com>
  */
-public class LDAPRealm extends DefaultLdapRealm implements UserMetadataProvider {
+public class LDAPRealm extends DefaultLdapRealm implements UserMetadataProvider, OneTimeRolePermissionResolverAware {
 
     private static final Logger logger = LogManager.getLogger(LDAPRealm.class);
     
@@ -142,6 +164,8 @@ public class LDAPRealm extends DefaultLdapRealm implements UserMetadataProvider 
      * (e.g. mathematicans)
      */
     private Map<String, String> groupRolesMap;
+
+    private RolePermissionResolver oneTimeRolePermissionResolver;
 
     public void setGroupRolesMap(Map<String, String> groupRolesMap) {
         this.groupRolesMap = groupRolesMap;
@@ -249,18 +273,19 @@ public class LDAPRealm extends DefaultLdapRealm implements UserMetadataProvider 
             logger.debug("User {} successfully authorized. Roles: {}", username, roleNames);
         }
 
-         SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo(roleNames);
-         ShiroTextRealm shiroTextRealm = ((MetaphactsSecurityManager) SecurityUtils.getSecurityManager()).getShiroTextRealm();
-         Map<String, SimpleRole> roles = shiroTextRealm.getRoles();
-         Set<Permission>permissions = Sets.newHashSet();
-         for(String roleString : authorizationInfo.getRoles()){
-             if(roles.containsKey(roleString)){
-                 permissions.addAll(roles.get(roleString).getPermissions());
-             }
-         }
+        SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo(roleNames);
+        Set<Permission> permissions = Sets.newHashSet();
+        for (String roleString : authorizationInfo.getRoles()) {
+            Collection<Permission> perms = oneTimeRolePermissionResolver != null
+                    ? oneTimeRolePermissionResolver.resolvePermissionsInRole(roleString)
+                    : Collections.emptyList();
+            if (!CollectionUtils.isEmpty(perms)) {
+                permissions.addAll(perms);
+            }
+        }
 
-         authorizationInfo.setObjectPermissions(permissions);
-         return  authorizationInfo;
+        authorizationInfo.setObjectPermissions(permissions);
+        return authorizationInfo;
      }
 
     /**
@@ -502,5 +527,10 @@ public class LDAPRealm extends DefaultLdapRealm implements UserMetadataProvider 
             }
         } catch (NamingException e) { }
         return result;
+    }
+
+    @Override
+    public void setOneTimeRolePermissionResolver(RolePermissionResolver rpr) {
+        this.oneTimeRolePermissionResolver = rpr;
     }
 }

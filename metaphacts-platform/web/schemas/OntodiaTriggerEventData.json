@@ -1,0 +1,138 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "`ontodia` triggers events.",
+    "properties": {
+        "Ontodia.DiagramIsDirty": {
+            "description": "Observable property which tracks whether diagram has been changed.",
+            "properties": {
+                "hasChanges": {
+                    "description": "Equals to `true` if a diagram has been changed, otherwise equals to `false`.",
+                    "type": "boolean"
+                }
+            },
+            "propertyOrder": [
+                "hasChanges"
+            ],
+            "required": [
+                "hasChanges"
+            ],
+            "type": "object"
+        },
+        "Ontodia.DiagramSaved": {
+            "description": "Event which should be triggered when diagram has been saved.",
+            "properties": {
+                "resourceIri": {
+                    "description": "Saved diagram IRI.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "resourceIri"
+            ],
+            "required": [
+                "resourceIri"
+            ],
+            "type": "object"
+        },
+        "Ontodia.SelectedElements": {
+            "description": "Observable property which tracks selected elements.",
+            "properties": {
+                "elements": {
+                    "items": {
+                        "properties": {
+                            "iri": {
+                                "type": "string"
+                            }
+                        },
+                        "propertyOrder": [
+                            "iri"
+                        ],
+                        "required": [
+                            "iri"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "elements"
+            ],
+            "required": [
+                "elements"
+            ],
+            "type": "object"
+        },
+        "Ontodia.SelectedLinks": {
+            "description": "Observable property which tracks selected links.",
+            "properties": {
+                "links": {
+                    "items": {
+                        "properties": {
+                            "linkTypeIri": {
+                                "type": "string"
+                            },
+                            "sourceIri": {
+                                "type": "string"
+                            },
+                            "targetIri": {
+                                "type": "string"
+                            }
+                        },
+                        "propertyOrder": [
+                            "linkTypeIri",
+                            "sourceIri",
+                            "targetIri"
+                        ],
+                        "required": [
+                            "linkTypeIri",
+                            "sourceIri",
+                            "targetIri"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "links"
+            ],
+            "required": [
+                "links"
+            ],
+            "type": "object"
+        },
+        "Ontodia.ShowElementInfo": {
+            "description": "Event which should be triggered when user press \"showInfoButton\".",
+            "properties": {
+                "iri": {
+                    "description": "IRI of an entity to show information dialog for.\nIf provided IRI is undefined the dialog will be hidden on event.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "iri"
+            ],
+            "required": [
+                "iri"
+            ],
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "Ontodia.DiagramSaved",
+        "Ontodia.DiagramIsDirty",
+        "Ontodia.SelectedElements",
+        "Ontodia.SelectedLinks",
+        "Ontodia.ShowElementInfo"
+    ],
+    "required": [
+        "Ontodia.DiagramIsDirty",
+        "Ontodia.DiagramSaved",
+        "Ontodia.SelectedElements",
+        "Ontodia.SelectedLinks",
+        "Ontodia.ShowElementInfo"
+    ],
+    "type": "object"
+}
+

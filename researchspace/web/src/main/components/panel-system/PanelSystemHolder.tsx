@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { cloneElement, Children } from 'react';
 
@@ -113,7 +112,7 @@ export class PanelSystemHolder extends React.Component<Props, State> {
     return Children.map(children, child => {
         if (isValidChild(child)) {
           if (holder === Holder.PageLoader && componentHasType(child, PageLoaderComponent) &&
-            child.props.id === data.pageId) {
+            (child.props as any).id === data.pageId) {
             return cloneElement(child, {key: holderKey, ...data.pageProps});
           }
           if (

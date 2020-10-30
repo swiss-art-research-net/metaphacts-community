@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +37,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
+
+import { Rdf } from 'platform/api/rdf';
 
 import {
   isQuery, isStarProjection, isPattern, isBlockPattern, isExpression, isQuads,
@@ -70,7 +93,7 @@ export class QueryVisitor {
       } else if (isQuery(result)) {
         return result;
       } else {
-        this.throwUnexpected(
+        throwUnexpected(
           result, {expected: 'Query', transformed: 'SelectQuery'});
       }
     } else if (query.queryType === 'CONSTRUCT') {
@@ -130,8 +153,8 @@ export class QueryVisitor {
           const value = row[resultVariable];
           const valueResult = this.term(value);
           if (valueResult !== undefined) {
-            row[resultVariable] = this.coerce(
-              valueResult, t => isTerm(t) && t,
+            row[resultVariable] = coerce(
+              valueResult, isValuesRowValue,
               {expected: 'Term', transformed: 'VALUES row value'});
           }
         }
@@ -152,20 +175,22 @@ export class QueryVisitor {
     const variables = Immutable.List(rows).reduce((vars, row) => {
       for (const variable in row) {
         if (!row.hasOwnProperty(variable)) { continue; }
-        vars = vars.add(variable as SparqlJs.Term);
+        vars = vars.add(variable);
       }
       return vars;
-    }, Immutable.Set<SparqlJs.Term>());
+    }, Immutable.Set<string>());
     // try to transform each variable (walk over it)
     return variables.reduce((transforms, variable) => {
-      const result = this.variableTerm(variable);
+      // remove leading '?' from variable name
+      const synthesizedVariable = Rdf.DATA_FACTORY.variable(variable.substring(1));
+      const result = this.variableTerm(synthesizedVariable);
       if (result === undefined) {
         return transforms;
       } else if (isVariable(result)) {
-        return transforms.set(variable, result);
+        return transforms.set(variable, '?' + result.value);
       } else {
-        this.throwUnexpected(result,
-          {expected: '?variable', transformed: 'variable Term'});
+        throwUnexpected(result,
+          {expected: 'Variable', transformed: 'variable Term'});
       }
     }, Immutable.Map<string, string>());
   }
@@ -175,9 +200,9 @@ export class QueryVisitor {
     this.walkProjectionVariables(select.variables);
 
     if (select.from) {
-      const walkOnlyIri = (iri: SparqlJs.Term) => this.coerce(
-        this.iri(iri), term => isIri(term) && term,
-        {expected: '<iri>', transformed: 'IRI Term'});
+      const walkOnlyIri = (iri: SparqlJs.IriTerm) => coerce(
+        this.iri(iri), isIri,
+        {expected: 'IriTerm', transformed: 'SelectQuery.from'});
       this.walkArray('from.default', select.from.default, walkOnlyIri);
       this.walkArray('from.named', select.from.named, walkOnlyIri);
     }
@@ -217,8 +242,8 @@ export class QueryVisitor {
 
   pattern(pattern: SparqlJs.Pattern): SparqlJs.Pattern {
     if (pattern.type === 'bgp') {
-      return this.coerce(
-        this.bgp(pattern), bgp => isPattern(bgp) && bgp,
+      return coerce(
+        this.bgp(pattern), isPattern,
         {expected: 'Pattern', transformed: 'BgpPattern'});
     } else if (isBlockPattern(pattern)) {
       return this.block(pattern);
@@ -234,8 +259,8 @@ export class QueryVisitor {
         throw new Error(
           `Invalid query Pattern: unexpected ${queryType} query`);
       }
-      return this.coerce(
-        this.select(pattern), p => isPattern(p) && p,
+      return coerce(
+        this.select(pattern), isPattern,
         {expected: 'Pattern', transformed: 'SelectQuery'});
     } else {
       console.warn(`Unknown pattern '${JSON.stringify(pattern)}'`);
@@ -245,9 +270,9 @@ export class QueryVisitor {
 
   quads(quads: SparqlJs.Quads): SparqlJs.Quads {
     if (quads.type === 'bgp') {
-      return this.coerce(
-        this.bgp(quads), bgp => isQuads(bgp) && bgp,
-        {expected: 'Quads', transformed: 'SelectQuery'});
+      return coerce(
+        this.bgp(quads), isQuads,
+        {expected: 'Quads', transformed: 'BGP'});
     } else if (quads.type === 'graph') {
       return this.graphQuads(quads);
     } else {
@@ -264,42 +289,74 @@ export class QueryVisitor {
   graphQuads(graphQuads: SparqlJs.GraphQuads): SparqlJs.Quads {
     this.visitMember(graphQuads, 'name', name => {
       const term = this.term(name);
-      return this.coerce(
-        term, t => isTerm(t) && t,
-        {expected: 'Term', transformed: 'GraphQuads'});
+      return coerce(
+        term, isIri,
+        {expected: 'IriTerm', transformed: 'GraphQuads.name'});
     });
     this.walkArray('triples', graphQuads.triples, this.triple);
     return undefined;
   }
 
   block(pattern: SparqlJs.BlockPattern): SparqlJs.Pattern {
-    if (pattern.type === 'graph') {
-      return this.graph(pattern as SparqlJs.GraphPattern);
-    } else if (pattern.type === 'service') {
-      return this.service(pattern as SparqlJs.ServicePattern);
-    } else {
-      this.walkArray('patterns', pattern.patterns, this.pattern);
-      return undefined;
+    switch (pattern.type) {
+      case 'optional':
+        return this.optional(pattern);
+      case 'union':
+        return this.union(pattern);
+      case 'group':
+        return this.group(pattern);
+      case 'graph':
+        return this.graph(pattern);
+      case 'minus':
+        return this.minus(pattern);
+      case 'service':
+        return this.service(pattern);
+      default: {
+        const block = pattern as SparqlJs.BaseBlockPattern;
+        console.warn(`Unknown block pattern type: "${block.type}"`);
+        this.walkArray('patterns', block.patterns, this.pattern);
+        return undefined;
+      }
     }
+  }
+
+  optional(optional: SparqlJs.OptionalPattern): SparqlJs.Pattern {
+    this.walkArray('patterns', optional.patterns, this.pattern);
+    return undefined;
+  }
+
+  union(union: SparqlJs.UnionPattern): SparqlJs.Pattern {
+    this.walkArray('patterns', union.patterns, this.pattern);
+    return undefined;
+  }
+
+  group(group: SparqlJs.GroupPattern): SparqlJs.GroupPattern {
+    this.walkArray('patterns', group.patterns, this.pattern);
+    return undefined;
   }
 
   graph(graph: SparqlJs.GraphPattern): SparqlJs.Pattern {
     this.visitMember(graph, 'name', name => {
       const term = this.term(name);
-      return this.coerce(
-        term, t => isTerm(t) && t,
-        {expected: 'Term', transformed: 'GraphPattern'});
+      return coerce(
+        term, isIri,
+        {expected: 'IriTerm', transformed: 'GraphPattern.name'});
     });
     this.walkArray('patterns', graph.patterns, this.pattern);
+    return undefined;
+  }
+
+  minus(minus: SparqlJs.MinusPattern): SparqlJs.Pattern {
+    this.walkArray('patterns', minus.patterns, this.pattern);
     return undefined;
   }
 
   service(service: SparqlJs.ServicePattern): SparqlJs.Pattern {
     this.visitMember(service, 'name', name => {
       const term = this.term(name);
-      return this.coerce(
-        term, t => isTerm(t) && t,
-        {expected: 'Term', transformed: 'ServicePattern'});
+      return coerce(
+        term, isIri,
+        {expected: 'IriTerm', transformed: 'ServicePattern.name'});
     });
     this.walkArray('patterns', service.patterns, this.pattern);
     return undefined;
@@ -314,9 +371,9 @@ export class QueryVisitor {
     this.visitMember(pattern, 'expression', this.expression);
     this.visitMember(pattern, 'variable', variable => {
       const variableTerm = this.variableTerm(variable);
-      return this.coerce(
-        variableTerm, v => isVariable(v) && v,
-        {expected: '?variable', transformed: 'variable Term'});
+      return coerce(
+        variableTerm, isVariable,
+        {expected: 'VariableTerm', transformed: 'BindPattern.variable'});
     });
     return undefined;
   }
@@ -330,8 +387,8 @@ export class QueryVisitor {
     if (Array.isArray(expression)) {
       return this.tuple(expression);
     } else if (isTerm(expression)) {
-      return this.coerce(
-        this.term(expression), expr => isExpression(expr) && expr,
+      return coerce(
+        this.term(expression) as unknown, isExpression,
         {expected: 'Expression', transformed: 'term-like Expression'});
     } else if (expression.type === 'operation') {
       return this.operation(expression);
@@ -348,19 +405,21 @@ export class QueryVisitor {
   }
 
   protected walkPatternLikeExpression(
-    expression: SparqlJs.Pattern
+    expression: SparqlJs.Pattern & { type: 'bgp' | 'graph' | 'group' }
   ): SparqlJs.Expression {
     let result: SparqlJs.Expression | SparqlJs.Pattern | SparqlJs.Quads = undefined;
     if (expression.type === 'bgp') {
       result = this.bgp(expression);
-    } else if (expression.type === 'group') {
+    } else if (expression.type === 'graph' || expression.type === 'group') {
       result = this.block(expression);
     } else {
-      console.warn(`Unknown pattern-like Expression type '${expression.type}'`);
+      console.warn(
+        `Unknown pattern-like Expression type '${(expression as SparqlJs.Pattern).type}'`
+      );
     }
 
-    return this.coerce(
-      result, expr => isExpression(expr) && expr,
+    return coerce(
+      result, isExpression,
       {expected: 'Expression', transformed: 'pattern-like Expression'});
   }
 
@@ -382,16 +441,16 @@ export class QueryVisitor {
   variable(variable: SparqlJs.Variable): SparqlJs.Variable {
     if (isTerm(variable)) {
       const variableTerm = this.variableTerm(variable);
-      return this.coerce(
-        variableTerm, v => isVariable(v) && v,
+      return coerce(
+        variableTerm, isVariable,
         {expected: '?variable', transformed: 'variable Term'});
     } else {
       this.visitMember(variable, 'expression', this.expression);
       this.visitMember(variable, 'variable', variableName => {
         const variableTerm = this.variableTerm(variableName);
-        return this.coerce(
-          variableTerm, v => isVariable(v) && v,
-          {expected: '?variable', transformed: 'variable Term'});
+        return coerce(
+          variableTerm, isVariable,
+          {expected: '?variable', transformed: 'Variable.variable'});
       });
       return undefined;
     }
@@ -405,20 +464,26 @@ export class QueryVisitor {
   triple(triple: SparqlJs.Triple): SparqlJs.Triple {
     this.visitMember(triple, 'subject', subject => {
       const term = this.term(subject);
-      return this.coerce(
-        term, t => isTerm(t) && t,
-        {expected: 'Term', transformed: 'subject Term'});
+      return coerce(
+        term, isSubjectTerm,
+        {expected: 'Term', transformed: 'Triple.subject'});
     });
 
-    this.visitMember(triple, 'predicate', predicate => isTerm(predicate)
-      ? this.term(predicate as SparqlJs.Term)
-      : this.propertyPath(predicate as SparqlJs.PropertyPath));
+    this.visitMember(triple, 'predicate', predicate => {
+      const term = isTerm(predicate)
+        ? this.term(predicate)
+        : this.propertyPath(predicate);
+      return coerce(
+        term, isPredicateTerm,
+        {expected: 'Predicate term', transformed: 'Triple.predicate'}
+      );
+    });
 
     this.visitMember(triple, 'object', object => {
       const term = this.term(object);
-      return this.coerce(
-        term, t => isTerm(t) && t,
-        {expected: 'Term', transformed: 'object Term'});
+      return coerce(
+        term, isTerm,
+        {expected: 'Term', transformed: 'Triple.object'});
     });
 
     return undefined;
@@ -439,27 +504,32 @@ export class QueryVisitor {
     return undefined;
   }
 
-  variableTerm(variable: SparqlJs.Term): SparqlJs.Term | SparqlJs.PropertyPath {
+  variableTerm(variable: SparqlJs.VariableTerm): SparqlJs.Term | SparqlJs.PropertyPath {
     return undefined;
   }
 
-  literal(literal: SparqlJs.Term): SparqlJs.Term | SparqlJs.PropertyPath {
+  literal(literal: SparqlJs.LiteralTerm): SparqlJs.Term | SparqlJs.PropertyPath {
     return undefined;
   }
 
-  blank(blank: SparqlJs.Term): SparqlJs.Term | SparqlJs.PropertyPath {
+  blank(blank: SparqlJs.BlankTerm): SparqlJs.Term | SparqlJs.PropertyPath {
     return undefined;
   }
 
-  iri(iri: SparqlJs.Term): SparqlJs.Term | SparqlJs.PropertyPath {
+  iri(iri: SparqlJs.IriTerm): SparqlJs.Term | SparqlJs.PropertyPath {
     return undefined;
   }
 
   propertyPath(
     path: SparqlJs.PropertyPath
-  ): SparqlJs.Term | SparqlJs.PropertyPath {
-    this.walkArray('items', path.items, item =>
-      isTerm(item) ? this.term(item) : this.propertyPath(item));
+  ): SparqlJs.IriTerm | SparqlJs.VariableTerm | SparqlJs.PropertyPath {
+    this.walkArray('items', path.items, item => {
+      const term = isTerm(item) ? this.term(item) : this.propertyPath(item);
+      return coerce(
+        term, isPropertyPathItem,
+        {expected: 'PropertyPath item', transformed: 'PropertyPath.items'}
+      );
+    });
     return undefined;
   }
 
@@ -472,7 +542,7 @@ export class QueryVisitor {
     }
   }
 
-  protected walkProjectionVariables(variables: SparqlJs.Variable[] | ['*']) {
+  protected walkProjectionVariables(variables: SparqlJs.Variable[] | [SparqlJs.Wildcard]) {
     if (!isStarProjection(variables)) {
       this.walkArray('variables', variables, this.variable);
     }
@@ -502,28 +572,81 @@ export class QueryVisitor {
     }
     return index + 1;
   }
+}
 
-  protected coerce<Coerced, Value>(
-    value: Value | undefined,
-    coerce: (input: Value) => Coerced | false,
-    names: { expected: string; transformed: string; }
-  ): Coerced | undefined {
-    if (value === undefined) { return undefined; }
-    const coerced = coerce(value);
-    if (typeof coerced === 'boolean') {
-      this.throwUnexpected(value, names);
-    } else {
-      return coerced;
-    }
+function isValuesRowValue(
+  node: any
+): node is SparqlJs.IriTerm | SparqlJs.BlankTerm | SparqlJs.LiteralTerm | undefined {
+  if (typeof node === 'undefined') {
+    return true;
+  } else if (!isTerm(node)) {
+    return false;
   }
+  switch (node.termType) {
+    case 'NamedNode':
+    case 'Literal':
+    case 'BlankNode':
+      return true;
+    default:
+      return false;
+  }
+}
 
-  protected throwUnexpected<T>(
-    value: T, names: { expected: string; transformed: string; }
-  ) {
-    throw new Error(
-      `${names.expected} is expected as result of ${names.transformed} ` +
-      `transformation but ${JSON.stringify(value)} was given`);
+function isSubjectTerm(
+  node: SparqlJs.Term | SparqlJs.PropertyPath
+): node is SparqlJs.Triple['subject'] {
+  if (!isTerm(node)) { return false; }
+  switch (node.termType) {
+    case 'NamedNode':
+    case 'BlankNode':
+    case 'Variable':
+    case 'Quad':
+      return true;
+    default:
+      return false;
   }
+}
+
+function isPredicateTerm(
+  node: SparqlJs.Term | SparqlJs.PropertyPath
+): node is SparqlJs.Triple['predicate'] {
+  if (!isTerm(node)) { return true; }
+  switch (node.termType) {
+    case 'NamedNode':
+    case 'Variable':
+    case 'Quad':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isPropertyPathItem(
+  node: SparqlJs.Term | SparqlJs.PropertyPath
+): node is SparqlJs.IriTerm | SparqlJs.PropertyPath {
+  if (!isTerm(node)) { return true; }
+  return node.termType === 'NamedNode';
+}
+
+function coerce<Value, Coerced extends Value>(
+  value: Value | undefined,
+  matches: (input: Value) => input is Coerced,
+  names: { expected: string; transformed: string; }
+): Coerced | undefined {
+  if (value === undefined) { return undefined; }
+  if (matches(value)) {
+    return value;
+  } else {
+    throwUnexpected(value, names);
+  }
+}
+
+function throwUnexpected<T>(
+  value: T, names: { expected: string; transformed: string; }
+) {
+  throw new Error(
+    `${names.expected} is expected as result of ${names.transformed} ` +
+    `transformation but ${JSON.stringify(value)} was given`);
 }
 
 /**

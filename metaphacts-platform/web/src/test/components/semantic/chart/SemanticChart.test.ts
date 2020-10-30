@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,17 +37,19 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { assert } from 'chai';
 
 import { Rdf, vocabularies } from 'platform/api/rdf';
-import { ChartType, DataSetMappings } from 'platform/components/semantic/chart/ChartingCommons';
+import { SparqlClient } from 'platform/api/sparql';
+import {
+  BuiltData, ChartType, DataSetMappings
+} from 'platform/components/semantic/chart/ChartingCommons';
 import { SemanticChartProps, buildData } from 'platform/components/semantic/chart/SemanticChart';
 
 const { literal, iri } = Rdf;
 const { xsd } = vocabularies;
 
-const NON_PIVOTING_DATASETS = {
+const NON_PIVOTING_DATASETS: SparqlClient.SparqlSelectResult = {
   'head' : {
     'link' : [],
     'vars' : ['year', 'papers', 'authors', 'authorsPerPaper'],
@@ -52,7 +76,7 @@ const NON_PIVOTING_DATASETS = {
 
 const peter = iri('http://data.semanticweb.org/person/peter-haase');
 const enrico = iri('http://data.semanticweb.org/person/enrico-motta');
-const PIVOTING_DATASETS = {
+const PIVOTING_DATASETS: SparqlClient.SparqlSelectResult = {
   'head' : {
     'link' : [],
     'vars' : [ 'author', 'year', 'papers' ],
@@ -98,7 +122,7 @@ describe('ChartWidgetComponent', () => {
       ],
     });
     const builtData = buildData(props, NON_PIVOTING_DATASETS);
-    const expectedData = {
+    const expectedData: BuiltData = {
       'sets': [
         {
           'mapping': {
@@ -108,7 +132,7 @@ describe('ChartWidgetComponent', () => {
           },
           'iri': undefined,
           'name': 'Authors',
-          'points': NON_PIVOTING_DATASETS.results.bindings,
+          'points': NON_PIVOTING_DATASETS.results.bindings as SparqlClient.Binding[],
         },
         {
           'mapping': {
@@ -118,7 +142,7 @@ describe('ChartWidgetComponent', () => {
           },
           'iri': undefined,
           'name': 'Papers',
-          'points': NON_PIVOTING_DATASETS.results.bindings,
+          'points': NON_PIVOTING_DATASETS.results.bindings as SparqlClient.Binding[],
         },
       ],
       'categories': [
@@ -135,7 +159,7 @@ describe('ChartWidgetComponent', () => {
       multiDataSet: { dataSetVariable: 'author', category: 'year', value: 'papers' },
     });
     const builtData = buildData(props, PIVOTING_DATASETS);
-    const expectedData = {
+    const expectedData: BuiltData = {
       'sets': [
         {
           'id': 'http://data.semanticweb.org/person/enrico-motta',

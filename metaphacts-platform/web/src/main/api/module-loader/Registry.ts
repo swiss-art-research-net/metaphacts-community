@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
   ReactElement,
   ReactNode,
@@ -27,22 +48,24 @@ import * as D from 'react-dom-factories';
 
 import * as assign from 'object-assign';
 import * as _ from 'lodash';
-import * as lambda from 'core.lambda';
 import { Set } from 'immutable';
 import * as React from 'react';
-import * as render from 'dom-serializer';
 import * as he from 'he';
 import { Parser as ToReactParser, ProcessNodeDefinitions, Node, Instruction } from 'html-to-react';
 import * as Kefir from 'kefir';
-import { fromNullable } from 'data.maybe';
+import * as jsonlint from 'jsonlint-mod';
 
-import { ConfigHolder } from 'platform/api/services/config-holder';
-import * as SecurityService from 'platform/api/services/security';
-import { TemplateParser, TemplateScope } from 'platform/api/services/template';
+import {
+  DataContext, TemplateScope, RawTemplateScope, extractTemplates, findImportedComponents,
+  isNonEmptyNode, isTemplate, matchJsonAttributeValue, parseHtml, renderHtml,
+  RAW_TEMPLATES_ATTRIBUTE, CAPTURED_DATA_CONTEXT_ATTRIBUTE,
+} from 'platform/api/services/template';
 import { ComponentProps } from 'platform/api/components';
 import { WrappingError } from 'platform/api/async';
+import { FormattedError } from 'platform/components/ui/notification/FormattedError';
 
-import { hasComponent, loadComponent } from './ComponentsStore';
+import { loadPermittedComponents, isComponentPermittedSync } from './ComponentBasedSecurity';
+import { hasComponent, loadComponents, loadComponentSync } from './ComponentsStore';
 import { safeReactCreateElement } from './ReactErrorCatcher';
 
 const processNodeDefinitions = new ProcessNodeDefinitions(React);
@@ -57,7 +80,7 @@ const NativeRegistry = Set<string>().asMutable();
  */
 const registerElement = customElements.define;
 customElements.define = function(
-  name: string, constructor: Function, options?: ElementDefinitionOptions
+  name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions
 ) {
   NativeRegistry.add(name);
   return registerElement.bind(customElements)(name, constructor, options);
@@ -93,16 +116,13 @@ export function init() {/**/}
  */
 export const RAW_STYLE_ATTRIBUTE = '__style';
 
-/**
- * Parse HTML string into ReactElements hierarchy.
- * @param  {string} html
- *         Plain html string to be parsed to React.
- * @return {Array} Array of @ReactElement
- */
-export function parseHtmlToReact(
-  html: string
-): Promise<ReactElement<any> | ReactElement<any>[]> {
-  const processingInstructions: Instruction[] = [
+const PROCESSING_INSTRUCTIONS = getProcessingInstructions(false);
+const PROCESSING_INSTRUCTIONS_USE_RANDOM_KEY = getProcessingInstructions(true);
+
+function getProcessingInstructions(
+  useRandomKey: boolean
+): Instruction<React.ReactElement<any>>[] {
+  return [
     {
       shouldProcessNode: isCodeExample,
       processNode: processCode('mp-code-example'),
@@ -129,31 +149,101 @@ export function parseHtmlToReact(
     },
     {
       shouldProcessNode: isReactComponent,
-      processNode: processReactComponent,
+      processNode: processReactComponent(useRandomKey),
     },
     {
       shouldProcessNode: isNativeComponent,
       processNode: processNativeComponent,
     },
     {
-      shouldProcessNode: node => !TemplateParser.isTemplate(node),
+      shouldProcessNode: node => !isTemplate(node),
       processNode: processDefaultNode,
     },
   ];
+}
 
-  const htmlToReactParser = new ToReactParser(React, {recognizeCDATA: true});
+const TO_REACT_PARSER = new ToReactParser(React, {recognizeCDATA: true});
 
-  /*
-   * Because html-to-react expects html with single root node as an input,
-   * we need to wrap html into artificial div node. After parsing it's children
-   * will correspond to initial html.
-   */
-  return htmlToReactParser.parseWithInstructions(
-    `<div key="root">${html}</div>`,
-    isValidNode, processingInstructions
-  ).then(
-    components => components.props.children
+/**
+ * Parse HTML string into ReactElements hierarchy.
+ * @param html Plain html string to be parsed to React.
+ * @return Array of React nodes
+ */
+export function parseHtmlToReact(
+  html: string,
+  allowTemplateMode = false,
+  useRandomKey = false
+): Kefir.Property<ReactElement<any> | ReactElement<any>[]> {
+  let nodes: Node[];
+  try {
+    nodes = parseHtml(html);
+  } catch (err) {
+    return Kefir.constantError<any>(err);
+  }
+
+  if (allowTemplateMode && nodes.find(isEnablePageTemplateMetaTag)) {
+    // TODO: decide if we want to support "page is a template" mode
+    // where template constructs are available at the top level
+    return TemplateScope.empty().prepare(html).map(compiledTemplate => {
+      const renderedNodes = compiledTemplate({context: undefined});
+      return mapHtmlTreeToReact(renderedNodes, useRandomKey);
+    });
+  } else {
+    const importedComponents = findImportedComponents(nodes);
+    return loadPermittedComponents(importedComponents)
+      .flatMap(permittedComponents =>
+        Kefir.fromPromise(loadComponents(permittedComponents))
+      )
+      .flatMap<ReactElement<any> | ReactElement<any>>(() => {
+        try {
+          const reactElements = mapHtmlTreeToReact(nodes, useRandomKey);
+          return Kefir.constant(reactElements);
+        } catch (err) {
+          return Kefir.constantError<any>(err);
+        }
+      })
+      .toProperty();
+  }
+}
+
+// TODO: discuss this backwards compatibility flag
+function isEnablePageTemplateMetaTag(node: Node) {
+  return Boolean(
+    node.type === 'tag' &&
+    node.name === 'meta' &&
+    node.attribs &&
+    node.attribs['name'] === 'mp-page-experimental-template-mode' &&
+    node.attribs['content'] === 'true'
   );
+}
+
+export function mapHtmlTreeToReact(
+  tree: Node[], useRandomKey = false
+): ReactElement<any> | ReactElement<any>[] {
+  if (tree.length === 0) {
+    return [];
+  }
+
+  const root: Node = {
+    type: 'tag',
+    name: 'div',
+    children: tree,
+  };
+
+  const mapped = TO_REACT_PARSER.mapParsedTree(
+    [root],
+    isNonEmptyNode,
+    useRandomKey ? PROCESSING_INSTRUCTIONS_USE_RANDOM_KEY : PROCESSING_INSTRUCTIONS
+  ).props.children;
+
+  if (Array.isArray(mapped)) {
+    if (mapped.length === 0) {
+      return null;
+    } else if (mapped.length === 1) {
+      return mapped[0];
+    }
+  }
+  return mapped;
 }
 
 export function isWebComponent(componentTag: string) {
@@ -165,27 +255,33 @@ export function isWebComponent(componentTag: string) {
  * provided props, children and templateScope
  */
 export function renderWebComponent(
-  componentTag: string, props: Object,
-  children?: ReactNode[], templateScope?: TemplateScope
-): Promise<ReactElement<any>> {
+  componentTag: string,
+  props: Object,
+  children?: ReactNode[],
+  templateScope?: TemplateScope,
+  dataContext?: DataContext
+): ReactElement<any> | null {
   // check if user is permitted to use the component
   // if not it will not be rendered at all
-  templateScope = templateScope || TemplateScope.create();
-  return isComponentPermited(componentTag).toPromise()
-    .then<ReactElement<any>>(result => {
-      if (!result) { return null; }
-      return loadComponent(componentTag).then(
-        component => createElementWithTemplateScope(
-          component, props, children, templateScope
-        )
-      );
-    });
+  if (!isComponentPermittedSync(componentTag)) {
+    return null;
+  }
+  const component = loadComponentSync(componentTag);
+  templateScope = templateScope || TemplateScope.empty();
+  return createElementWithTemplateScope(
+    component, props, children, templateScope, dataContext
+  );
 }
 
 function processDefaultNode(
   node: Node, children: Array<ReactElement<any>>
-): Promise<ReactElement<any> | Array<ReactElement<any>>> {
-  return Promise.resolve(processNodeDefinitions.processDefaultNode(node, children));
+): ReactElement<any> | Array<ReactElement<any>> {
+  const decodedNode: Node = {
+    ...node,
+    // 'html-to-react' does not decode attributes so it needs to be done separately
+    attribs: decodeHtmlEntitiesInAttributes(node.attribs),
+  };
+  return processNodeDefinitions.processDefaultNode(decodedNode, children);
 }
 
 function isCode(node: Node): boolean {
@@ -223,25 +319,18 @@ function isNativeComponent(node: Node): boolean {
   // see https://developer.mozilla.org/en-US/docs/Web/API/CustomElementRegistry/define
   return !hasComponent(node.name) && (node.type === 'tag' && node.name.indexOf('-') !== -1);
 }
-/**
- * We simply skip (ignore) empty text nodes here in the processing instructions.
- */
-function isValidNode(node: Node): boolean {
-  return  node.type === 'text' ? _.trim(node.data) !== '' : true ;
-}
 
 function processNativeComponent(
   node: Node, children: Array<ReactNode>
-): Promise<ReactElement<any>> {
-  return Promise.resolve(
-    D.div(
-      {
-        dangerouslySetInnerHTML: {
-          __html: render(node),
-        },
-      }
-    )
-  );
+): ReactElement<any> {
+  let decodedAttrs: { [attrName: string]: unknown };
+  try {
+    decodedAttrs = decodeHtmlEntitiesInAttributes(node.attribs);
+  } catch (e) {
+    throw new WrappingError(
+      `Error while processing attributes for web component \"${node.name}\":`, e);
+  }
+  return React.createElement(node.name, decodedAttrs, children);
 }
 
 /**
@@ -250,20 +339,18 @@ function processNativeComponent(
 function processCode(codeComponent: 'mp-code-example' | 'mp-code-highlight' | 'mp-code-block') {
   return function(
     node: Node, children: Array<React.ReactNode>
-  ): Promise<React.ReactElement<any>> {
-    const innerCode = _.trim(he.decode(render(node.children)));
+  ): React.ReactElement<any> {
+    const innerCode = _.trim(he.decode(renderHtml(node.children)));
     const attributes = htmlAttributesToReactProps(node.attribs);
 
     // remove CDATA wrapper if it is present
     const codeToHighlight =
       innerCode.replace('<!--[CDATA[', '').replace(']]-->' , '');
 
-    return loadComponent(codeComponent).then(
-      component =>
-        createElement(
-          component,
-          assign({codeText: codeToHighlight}, attributes)
-        )
+    const component = loadComponentSync(codeComponent);
+    return createElement(
+      component,
+      assign({codeText: codeToHighlight}, attributes)
     );
   };
 }
@@ -271,112 +358,121 @@ function processCode(codeComponent: 'mp-code-example' | 'mp-code-highlight' | 'm
 
 function skipNode(
   node: Node, children: Array<React.ReactNode>
-): Promise<React.ReactElement<any>> {
+): React.ReactElement<any> {
   return null;
 }
 
 function processStyle(
   node: Node, children: Array<React.ReactNode>
-): Promise<React.ReactElement<any>> {
+): React.ReactElement<any> {
   // return for empty style tags i.e. uBlock browser extension may inject these
   const styleNode = !node.children[0]
     ? D.style()
     : D.style({dangerouslySetInnerHTML: { __html: node.children[0].data}}, null );
 
-  return Promise.resolve(
-   styleNode
-  );
+  return styleNode;
 }
 
 function processReactComponent(
-  node: Node, children: Array<ReactNode>
-): Promise<React.ReactElement<any>> {
-  let attributes;
-  try {
-    attributes = htmlAttributesToReactProps(node.attribs);
-  }catch (e) {
-    const msg = `Error while processing attributes for component \"${node.name}\":
+  useRandomKey: boolean
+) {
+  return function(node: Node, children: Array<ReactNode>) {
+    let attributes: { key?: string; fixedKey?: string, useRandomKey?: boolean };
+    try {
+      const decodedAttrs = decodeHtmlEntitiesInAttributes(node.attribs);
+      attributes = htmlAttributesToReactProps(decodedAttrs);
+    } catch (e) {
+      if (e instanceof FormattedError) {
+        throw e;
+      } else {
+        const msg = `Error while processing attributes for component \"${node.name}\":
       ' + ${e.message}`;
-    throw new Error(msg);
-  }
-
-  // was previously {key: `component-${index}-${level}`},
-  const computedKey = (attributes['key'] && !attributes['fixedKey']) ? attributes['key'] :
-    (attributes['fixedKey']
-    ? attributes['fixedKey']
-    : Math.random().toString(36).slice(2));
-
-  // we propagate attributes as-is, but also put them into special config field
-  let props =
-      assign(
-        { key: computedKey },
-        attributes
-      );
-
-  // handle nested config for semantic components
-  if (_.startsWith(node.name, 'semantic')) {
-    if (!_.isUndefined(props['config'])) {
-      const nestedProps = _.transform(
-        props['config'],
-        (acc: {}, val: string, key: string) => {
-          acc[attributeName(key)] = val;
-          return acc;
-        }, {}
-      );
-      props = assign(props, nestedProps);
+        throw new Error(msg);
+      }
     }
-  }
 
-  let templateScope: TemplateScope = undefined;
-  try {
-    templateScope = extractTemplateScope(node);
-  } catch (error) {
-    throw new WrappingError(`Invalid template markup at <${node.name}>`, error);
-  }
-  return renderWebComponent(node.name, props, children, templateScope);
+    let computedKey: string;
+    if (attributes['fixedKey']) {
+      computedKey = attributes['fixedKey'];
+    } else if (attributes['key']) {
+      computedKey = attributes['key'];
+    } else if (useRandomKey || attributes['useRandomKey']) {
+      computedKey = Math.random().toString(36).slice(2);
+    }
+    let props = {...attributes, key: computedKey} as { [key: string]: any };
+
+    // handle nested config for semantic components
+    if (_.startsWith(node.name, 'semantic')) {
+      if (!_.isUndefined(props['config'])) {
+        const nestedProps = _.transform(
+          props['config'],
+          (acc: { [attr: string]: string }, val: string, key: string) => {
+            acc[attributeName(key)] = val;
+            return acc;
+          }, {}
+        );
+        props = assign(props, nestedProps);
+      }
+    }
+
+    let templateScope: TemplateScope = undefined;
+    try {
+      templateScope = extractTemplateScope(node);
+    } catch (error) {
+      throw new WrappingError(`Invalid template markup at <${node.name}>`, error);
+    }
+    const dataContext = extractDataContext(node);
+    return renderWebComponent(node.name, props, children, templateScope, dataContext);
+  };
 }
 
 /**
  * Creates a template scope derived from default one and registers
  * local templates from the node.
  */
-export function extractTemplateScope(node: Node): TemplateScope | undefined {
-  const templates = TemplateParser.extractTemplates(node);
-  if (templates.length === 0) { return undefined; }
-  return templates.reduce(
-    (builder, {id, source}) => {
-      try {
-        builder.registerPartial(id, source);
-      } catch (error) {
-        throw new WrappingError(`Failed to register <template id='${id}'>`, error);
-      }
-      return builder;
-    },
-    TemplateScope.builder()
-  ).build();
+function extractTemplateScope(node: Node): TemplateScope | undefined {
+  if (node.attribs[RAW_TEMPLATES_ATTRIBUTE]) {
+    const templates = node.attribs[RAW_TEMPLATES_ATTRIBUTE] as RawTemplateScope;
+    return TemplateScope.fromTemplates(templates);
+  } else if (nodeHasTemplate(node)) {
+    const templates: RawTemplateScope = new Map();
+    for (const template of extractTemplates(node)) {
+      templates.set(template.localName, template);
+    }
+    return TemplateScope.fromTemplates(templates);
+  }
+  return undefined;
 }
 
-const isAlwaysPermitted = Kefir.constant(true);
-
-/**
- * With default platform configuration all component are enabled by default
- * one need to explicitly enable security check for components in ui.prop
- */
-function isComponentPermited(componentName: string): Kefir.Property<boolean> {
-  if (ConfigHolder.getUIConfig().enableUiComponentBasedSecurity) {
-    const right = 'ui:component:view:' + componentName.replace(/-/g, ':');
-    return SecurityService.Util.isPermitted(right);
-  } else {
-    return isAlwaysPermitted;
+function extractDataContext(node: Node): DataContext | undefined {
+  if (node.attribs[CAPTURED_DATA_CONTEXT_ATTRIBUTE]) {
+    return node.attribs[CAPTURED_DATA_CONTEXT_ATTRIBUTE] as DataContext;
   }
+  return undefined;
+}
+
+function nodeHasTemplate(node: Node) {
+  if (!node.children) {
+    return false;
+  }
+  for (const child of node.children) {
+    if (isTemplate(child)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function createElementWithTemplateScope(
   component: ComponentClass<any>,
   componentProps: any,
   children: ReactNode[],
-  templateScope: TemplateScope
-) {
+  templateScope: TemplateScope,
+  dataContext: DataContext | undefined
+): ReactElement<any> {
+  if (!component) {
+    throw new Error('Failed to create component with undefined type');
+  }
   let props = componentProps;
   if (component.propTypes) {
     const propTypes = component.propTypes as { [K in keyof ComponentProps]: any; };
@@ -384,28 +480,44 @@ function createElementWithTemplateScope(
       // provide template context if component accepts it in props
       const scopeProps: Partial<ComponentProps> = {
         markupTemplateScope: templateScope,
+        markupDataContext: dataContext,
       };
       props = {...props, ...scopeProps};
     }
   }
-  return safeReactCreateElement.apply(
+  return safeReactCreateElement.apply<unknown, any[], any>(
     null, [component, props].concat(children));
+}
+
+function decodeHtmlEntitiesInAttributes(
+  attrs: { [attrName: string]: unknown }
+): { [attrName: string]: unknown } {
+  const decoded: { [attrName: string]: unknown } = {};
+  for (const attrName in attrs) {
+    if (!Object.prototype.hasOwnProperty.call(attrs, attrName)) { continue; }
+    const attrValue = attrs[attrName];
+    decoded[attrName] = typeof attrValue === 'string'
+      ? he.decode(attrValue)
+      : attrValue;
+  }
+  return decoded;
 }
 
 /**
  * Use helper functions from reactive-elements to convert html attributes to react props.
  */
-function htmlAttributesToReactProps(attribs: {[key: string]: string}): {} {
+function htmlAttributesToReactProps(attribs: { [key: string]: unknown }): {} {
   return _.transform(
     attribs,
-    (acc: {}, val: string, key: string) => {
-      acc[attributeName(key)] = (key === 'style')
-        ? parseReactStyleFromCss(attributeValue(key, val))
-        : attributeValue(key, val);
-
-      if (key === 'style') {
+    (acc: { [attrName: string]: unknown }, val: unknown, key: string) => {
+      if (key === RAW_TEMPLATES_ATTRIBUTE || key === CAPTURED_DATA_CONTEXT_ATTRIBUTE) {
+        /* skip */
+      } else if (key === 'style') {
+        acc[attributeName(key)] = parseReactStyleFromCss(attributeValue(key, val));
         // save raw style attribute
         acc[RAW_STYLE_ATTRIBUTE] = attributeValue(key, val);
+      } else {
+        acc[attributeName(key)] = attributeValue(key, val);
       }
       return acc;
     }, {}
@@ -424,56 +536,55 @@ function attributeName(name: string): string {
   }
 }
 
-function attributeNameToPropertyName(attributeName: string): string {
-  return attributeName
+function attributeNameToPropertyName(attrName: string): string {
+  return attrName
     .replace(/^(x|data)[-_:]/i, '')
     .replace(/[-_:](.)/g, (x, chr) => chr.toUpperCase());
 }
 
-function attributeValue(name: string, val: string): any {
-  const decoded = he.decode(val);
+function attributeValue(name: string, val: unknown): any {
+  if (typeof val !== 'string') {
+    return val;
+  }
 
   // custom handling for boolean attributes.
   // replace with something more generic, like https://github.com/YousefED/typescript-json-schema
-  if ( decoded === 'true' || decoded === 'false') {
-    return JSON.parse(decoded);
-  } else if (!isNaN(+decoded)) {
+  if (val === 'true' || val === 'false') {
+    return JSON.parse(val);
+  } else if (isNumberAttributeValue(val) && !Number.isNaN(+val)) {
     // custom handling for number attributes
-    return +decoded;
+    return +val;
   } else {
-    return parseAttributeValue(name, decoded);
+    return parseJsonAttributeValue(name, val);
   }
 }
 
-function parseAttributeValue(name: string, value) {
-    if (!value) {
-        return null;
-    }
-
-    const jsonRegexp = /^{{1}.*}{1}$/,
-         jsonArrayRegexp = /(^\[.*\]$)/;
-
-    // remove all kind of line breaks
-    const valueWithoutLineBreaks = value.replace(/(\r\n|\n|\r|\t)/gm, '');
-    const jsonMatches = valueWithoutLineBreaks.match(jsonRegexp)
-                        || valueWithoutLineBreaks.match(jsonArrayRegexp);
-    const isEnclosedInDoubleCurlyBraces =
-      valueWithoutLineBreaks.startsWith('{{') &&
-      valueWithoutLineBreaks.endsWith('}}');
-
-    if (jsonMatches && !isEnclosedInDoubleCurlyBraces) {
-      try {
-        value = JSON.parse(jsonMatches[0]);
-      } catch (e) {
-        const msg = `Failed to parse value for attribute \"${name}\" as JSON.
-                      Details: ${e.message}`;
-        throw new Error(msg);
-      }
-    }
-
-    return value;
+function isNumberAttributeValue(value: string): boolean {
+  return /^[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$/.test(value);
 }
 
+function parseJsonAttributeValue(name: string, value: string) {
+  if (!value) {
+    return value;
+  }
+
+  const jsonMatch = matchJsonAttributeValue(value);
+  if (jsonMatch !== null) {
+    try {
+      value = JSON.parse(jsonMatch);
+    } catch (e) {
+      try {
+        jsonlint.parse(jsonMatch);
+      } catch (e2) {
+        const msg = `Failed to parse value for attribute \"${name}\" as JSON.
+          Details`;
+        throw new FormattedError(D.pre({}, FormattedError.concatMessage(msg, e2)), msg, e2);
+      }
+    }
+  }
+
+  return value;
+}
 
 export function parseReactStyleFromCss(cssStyle: string | undefined | null): CSSProperties {
   if (!cssStyle) {
@@ -488,7 +599,7 @@ export function parseReactStyleFromCss(cssStyle: string | undefined | null): CSS
     }
     const key = _.camelCase(styleEntry.substring(0, separatorIndex));
     const value = styleEntry.substring(separatorIndex + 1);
-    jsonStyles[key] = value;
+    (jsonStyles as any)[key] = value;
   }
   return jsonStyles;
 }

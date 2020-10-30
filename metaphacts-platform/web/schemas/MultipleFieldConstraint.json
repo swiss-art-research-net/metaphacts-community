@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "fields": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "description": "Maps the ID of a constrained field to the variable name that can be used\nin the `validatePattern`.",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "message": {
+            "description": "Error message to display if constraint is violated.",
+            "type": "string"
+        },
+        "validatePattern": {
+            "description": "SPARQL ASK pattern to validate if the constraint holds. The value of the\nconstrained field is injected as additional binding as defined in the `fields`\nmapping.\n\nQuery bindings:\n   * `?(constrainedFieldVariable)` - value for each constrained field;",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "fields",
+        "validatePattern",
+        "message"
+    ],
+    "required": [
+        "fields",
+        "message",
+        "validatePattern"
+    ],
+    "type": "object"
+}
+

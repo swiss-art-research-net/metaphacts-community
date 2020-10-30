@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Kefir from 'kefir';
 import * as SparqlJs from 'sparqljs';
@@ -42,7 +63,6 @@ export interface BaseSearchContext {
   readonly availableDatasets: Array<Dataset>;
   readonly selectedDatasets: Array<Dataset>;
   readonly selectedAlignment: Data.Maybe<Alignment>;
-  readonly isConfigurationEditable: boolean;
   readonly visualizationContext: Data.Maybe<Model.Relation>;
 }
 
@@ -88,11 +108,21 @@ export interface ResultContext extends BaseSearchContext {
   readonly resultState: { [componentId: string]: object };
   updateResultState(componentId: string, stateChange: object): void;
   setVisualizationContext(relation: Data.Maybe<Model.Relation>): void;
+  readonly extendedVisualizationContext?: VisualizationContext;
+}
+
+export interface VisualizationContext {
+  readonly properties: ReadonlyArray<VisualizationContextProperty>;
+  readonly addProjection: boolean;
+}
+
+export interface VisualizationContextProperty {
+  readonly relation: Model.Relation;
+  /** SPARQL variable name without leading "?" or "$". */
+  readonly variableName: string;
 }
 
 export interface GraphScopeContext extends BaseSearchContext {
-  readonly graphScopeStructure: Data.Maybe<Model.GraphScopeSearch>;
   readonly graphScopeResults: Data.Maybe<Model.GraphScopeResults>;
-  setGraphScopeStructure(graphScopeStructure: Data.Maybe<Model.GraphScopeSearch>): void;
   setGraphScopeResults(graphScopeResults: Data.Maybe<Model.GraphScopeResults>): void;
 }

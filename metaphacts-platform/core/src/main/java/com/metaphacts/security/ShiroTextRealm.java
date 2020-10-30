@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +37,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.security;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,15 +51,18 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.Account;
 import org.apache.shiro.authc.SimpleAccount;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.authz.SimpleRole;
+import org.apache.shiro.authz.permission.RolePermissionResolver;
 import org.apache.shiro.config.Ini;
 import org.apache.shiro.config.Ini.Section;
 import org.apache.shiro.realm.text.IniRealm;
 import org.apache.shiro.subject.SimplePrincipalCollection;
-import org.apache.shiro.util.PermissionUtils;
+import org.apache.shiro.util.CollectionUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -50,7 +75,8 @@ import com.metaphacts.config.Configuration;
  * @author Johannes Trame <jt@metaphacts.com>
  * @author Artem Kozlov <ak@metaphacts.com>
  */
-public class ShiroTextRealm extends IniRealm {
+public class ShiroTextRealm extends IniRealm
+        implements AccountManager, RolePermissionResolver, OneTimeRolePermissionResolverAware {
 
     private static final Logger logger = LogManager.getLogger(ShiroTextRealm.class);
     
@@ -82,6 +108,8 @@ public class ShiroTextRealm extends IniRealm {
     
     private boolean isConfigShiro = true;
 
+    private RolePermissionResolver oneTimeRolePermissionResolver;
+
     private Ini getIniFromConfig(Configuration config) {
         SecurityConfigRecord record = config.getEnvironmentConfig()
             .getSecurityConfig(SecurityConfigType.ShiroConfig);
@@ -105,7 +133,18 @@ public class ShiroTextRealm extends IniRealm {
         return this.users;
     }
     
-    public Map<String, SimpleRole> getRoles(){
+    @Override
+    public Map<String, Account> getAccounts() {
+        return Collections.unmodifiableMap(this.users);
+    }
+
+    /**
+     * 
+     * @return the roles as defined local in the shiro.ini
+     * @deprecated as of 3.4 roles are no longer defined in shiro.ini, but managed
+     *             by {@link PlatformRoleManager}
+     */
+    Map<String, SimpleRole> getRoles() {
         return this.roles;
     }
     
@@ -115,9 +154,12 @@ public class ShiroTextRealm extends IniRealm {
             throw new IllegalStateException("");
         
         List<String> suppliedRoles = (roles==null) ? Lists.<String>newArrayList()  : Lists.<String>newArrayList(roles); 
+        PlatformRoleManager roleManager = ((MetaphactsSecurityManager) SecurityUtils.getSecurityManager())
+                .getPlatformRoleManager();
         for(String r : suppliedRoles){
-            if(!this.getRoles().containsKey(r))
+            if (!roleManager.roleExists(r)) {
                 throw new IllegalArgumentException("Role "+ r +" does not exist.");
+            }
         }
         
         super.addAccount(username, password, roles);
@@ -125,7 +167,7 @@ public class ShiroTextRealm extends IniRealm {
       //set permission otherwise restart is required
         Set<Permission> permissions = Sets.newHashSet();
         for(String r : suppliedRoles){
-            permissions.addAll(this.getRole(r).getPermissions());
+            permissions.addAll(roleManager.getRole(r).getPermissions());
         }
         getUser(username).setObjectPermissions(permissions);
         
@@ -143,37 +185,8 @@ public class ShiroTextRealm extends IniRealm {
     public void addAccount(String username, String password) {
         this.addAccount(username, password, new String[]{});
     }
-    
-    public void addRole(String roleName, Set<Permission> permissionsSet) {
-        add(new SimpleRole(roleName, permissionsSet));
-    }
 
-    public void updateRoles(Map<String, List<String>> updateRolesMap) {
-        Ini ini = getIni();
-        logger.info("Updating roles by user : " + SecurityService.getUserName());
-        Ini.Section rolesSection = ini.getSection(ROLES_SECTION_NAME);
-        ROLES_LOCK.writeLock().lock();
-        try {
-            for (Map.Entry<String, List<String>> entry : updateRolesMap.entrySet()) {
-                Set<Permission> permissions = PermissionUtils.resolvePermissions(entry.getValue(), getPermissionResolver());
-                rolesSection.put(entry.getKey(), StringUtils.join(permissions, ", "));
-                addRole(entry.getKey(), permissions);
-            }
-            HashSet<String> unionKeys = new HashSet<>();
-            unionKeys.addAll(getRoles().keySet()); // Actual role names
-            unionKeys.removeAll(updateRolesMap.keySet());
-            for (String roleNameToDelete : unionKeys) {
-                logger.info("Deleting role : " + roleNameToDelete);
-                rolesSection.remove(roleNameToDelete);
-                this.roles.remove(roleNameToDelete); // Removing from the in-memory stores
-            }
-        } finally {
-            ROLES_LOCK.writeLock().unlock();
-        }
-
-        saveIni(ini);
-    }
-    
+    @Override
     public void deleteAccount(String username){
         logger.trace("Deleting account with principal: "+username);
         if(!this.accountExists(username))
@@ -211,7 +224,8 @@ public class ShiroTextRealm extends IniRealm {
         }
     }
 
-    public void updateAccount(String principal, String encryptPassword, String[] roles) {
+    @Override
+    public void updateAccount(String principal, String encryptPassword, String... roles) {
         logger.trace("Updating account with principal: "+principal);
         if(!this.accountExists(principal))
             throw new IllegalArgumentException("User with principal "+principal + " does not exist.");
@@ -220,5 +234,56 @@ public class ShiroTextRealm extends IniRealm {
 
         this.addAccount(principal, encryptPassword, roles);
     }
+
+    @Override
+    public Collection<Permission> resolvePermissionsInRole(String roleString) {
+
+        // NOTE: supported for legacy reasons to expose role definitions defined in
+        // shiro.ini to other consumers (e.g. LDAPRealm)
+
+        SimpleRole r = this.roles.get(roleString);
+        if (r == null) {
+            return Collections.emptySet();
+        }
+        return r.getPermissions();
+    }
     
+    @Override
+    protected void processRoleDefinitions(Map<String, String> roleDefs) {
+        if (roleDefs != null && !roleDefs.isEmpty()) {
+            logger.warn("[Deprecated] reading roles from shiro.ini. As of 3.4 roles are separated from users,"
+                    + " e.g. into shiro-roles.ini. Make sure to properly upgrade your shiro.ini.");
+        }
+        super.processRoleDefinitions(roleDefs);
+    }
+
+    @Override
+    public void setOneTimeRolePermissionResolver(RolePermissionResolver rpr) {
+        this.oneTimeRolePermissionResolver = rpr;
+    }
+
+    @Override
+    public void updateRoleDefinitions() {
+
+        // attach permissions from platform role permission resolver to already
+        // initialized RoleAccounts
+
+        if (oneTimeRolePermissionResolver == null) {
+            throw new IllegalStateException("Role permission resolver is not defined.");
+        }
+
+        for (SimpleAccount account : this.users.values()) {
+
+            Set<Permission> newPermissions = Sets.newHashSet();
+
+            for (String role : account.getRoles()) {
+                Collection<Permission> perms = oneTimeRolePermissionResolver.resolvePermissionsInRole(role);
+                if (!CollectionUtils.isEmpty(perms)) {
+                    newPermissions.addAll(perms);
+                }
+            }
+
+            account.setObjectPermissions(newPermissions);
+        }
+    }
 }

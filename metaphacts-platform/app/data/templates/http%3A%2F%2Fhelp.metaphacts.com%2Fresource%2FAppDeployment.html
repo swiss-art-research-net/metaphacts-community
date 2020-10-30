@@ -1,12 +1,4 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" iri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li class="active">App Deployment</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
@@ -15,7 +7,7 @@
     
     <p>Using <semantic-link title="Apps" iri="[[resolvePrefix "Help:Apps"]]">Apps</semantic-link>, new functionality and content can be added to the platform. Below options for the deployment of such app artifacts are discussed.</p>
       
-    <p>While all options have different advantages and disadvantages, <b>Option 1</b> is recommended for the general case (one-shot, immutable app deployment) and <b>Option 2</b> if you want to streamline the platform lifecycle and development experiecne.</p>
+    <p>While all options have different advantages and disadvantages, <b>Option 1</b> is recommended for the general case (one-shot, immutable app deployment) and <b>Option 2</b> if you want to streamline the platform lifecycle and development experience.</p>
     
     <h2>1. Uploading a ZIP artifact</h2>
     
@@ -47,13 +39,13 @@
     	<li>Requires an adjustment of the deployment (i.e. need to adjust docker compose)</li>
     </ul>
     
-    <p>Assuming the app is locally available at <i>/Users/home/demo/apps/my-app/</i>, the docker volume mount can be specified as <i>/Users/home/demo/apps/myApp:/apps/myApp</i>. This can be done in the <i>docker-compose.override.xml</i> file of the deployment:</p>
+    <p>Assuming the app is locally available at <i>/Users/home/demo/apps/my-app/</i>, the docker volume mount can be specified as <i>/Users/home/demo/apps/myApp:/apps/myApp</i>. This can be done in the <i>docker-compose.overwrite.yml</i> file of the deployment:</p>
 
 <pre>
 <code>
 metaphactory:
   
-  #metaphactory-overwites here
+  #metaphactory-overwrites here
     volumes:
       - /Users/home/demo/apps/myApp:/apps/myApp
     ports:

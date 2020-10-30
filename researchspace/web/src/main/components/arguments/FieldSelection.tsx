@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +15,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Maybe from 'data.maybe';
 import * as _ from 'lodash';
 import * as Kefir from 'kefir';
-import ReactSelect from 'react-select';
+import ReactSelect, { OnChangeHandler } from 'react-select';
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
@@ -75,10 +74,10 @@ interface UndocumentedReactSelect {
  *    for the give record can be selected.
  */
 export class FieldSelection extends React.Component<FieldSelectionProps, State> {
-  private fieldSelection: ReactSelect;
+  private fieldSelection: ReactSelect<string>;
   private repositories = getRepositoryStatus().map(repos => repos.keySeq().toArray());
 
-  constructor(props: FieldSelectionProps, context) {
+  constructor(props: FieldSelectionProps, context: any) {
     super(props, context);
     this.state = {
       fields: Maybe.Nothing<Array<ArgumentsFieldDefinition>>(),
@@ -112,7 +111,7 @@ export class FieldSelection extends React.Component<FieldSelectionProps, State> 
       <ReactSelect
         ref={component => this.fieldSelection = component}
         multi={this.props.multiSelection} clearable={true}
-        onChange={this.onFieldSelectionChange(fields)}
+        onChange={this.onFieldSelectionChange(fields) as OnChangeHandler<string>}
         options={fields.map(field => ({value: field.iri, label: getPreferredLabel(field.label)}))}
         value={this.state.selectedFields} placeholder={this.props.placeholder}
       />

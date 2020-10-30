@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="16px"
+   height="16px"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg14"
+   sodipodi:docname="connections-menu-icon-selected.svg"
+   inkscape:version="0.92.2 5c3e80d, 2017-08-06">
+  <metadata
+     id="metadata20">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>2C5119F8-20B9-4A09-B7B4-2B9650C4F08A</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs18" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1897"
+     inkscape:window-height="1086"
+     id="namedview16"
+     showgrid="false"
+     inkscape:zoom="20.85965"
+     inkscape:cx="-4.1335179"
+     inkscape:cy="3.5578399"
+     inkscape:window-x="-2"
+     inkscape:window-y="4"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg14" />
+  <!-- Generator: sketchtool 59.1 (101010) - https://sketch.com -->
+  <title
+     id="title2">2C5119F8-20B9-4A09-B7B4-2B9650C4F08A</title>
+  <desc
+     id="desc4">Created with sketchtool.</desc>
+  <g
+     id="g870"
+     style="stroke:#007ffe;stroke-opacity:1">
+    <circle
+       r="7"
+       cy="8"
+       cx="8"
+       id="Oval"
+       style="fill:none;fill-rule:evenodd;stroke:#007ffe;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1" />
+    <line
+       id="Path"
+       y2="11.357853"
+       x2="8"
+       y1="4.6421471"
+       x1="8"
+       style="fill:none;fill-rule:evenodd;stroke:#007ffe;stroke-width:1.76488495;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <line
+       style="fill:none;fill-rule:evenodd;stroke:#007ffe;stroke-width:1.76488495;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       x1="11.35762"
+       y1="8.039505"
+       x2="4.6423798"
+       y2="7.960495"
+       id="line865" />
+  </g>
+</svg>

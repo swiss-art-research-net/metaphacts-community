@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { invert } from 'lodash';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as Maybe from 'data.maybe';
@@ -23,13 +44,16 @@ import * as Maybe from 'data.maybe';
 import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil } from 'platform/api/sparql';
 import { serialize, deserialize } from 'platform/api/json';
+import {
+  FieldValue, ValuePatch, computeValuePatch, applyValuePatch,
+} from 'platform/components/forms';
 
 import { SearchProfileStore } from '../profiles/SearchProfileStore';
 import * as FacetModel from '../facet/Model';
 import {
   Category, Relation, Search, Resource, Conjunct, ConjunctKinds, TextDisjunctKind,
   RelationConjunct, TextConjunct, RelationDisjunct, TextDisjunct, DisjunctIndex, RelationKey,
-  GraphScopeSearch,
+  GraphScopeSearch, SearchKind,
 } from './Model';
 import { Dataset, Alignment } from '../datasets/Model';
 
@@ -39,7 +63,6 @@ export interface RawState {
   result: { [componentId: string]: object };
   datasets: Array<Dataset>;
   alignment: Data.Maybe<Alignment>;
-  graphScopeSearch: Data.Maybe<GraphScopeSearch>;
 }
 
 export interface SerializedState {
@@ -48,12 +71,45 @@ export interface SerializedState {
   result: object;
   datasets: object;
   alignment: object;
-  graphScopeSearch: object;
+  // for backward compatibility with old serialized graphscope searches
+  graphScopeSearch?: {
+    translationId: string;
+    keywords: string;
+  };
 }
 
-interface SerializedSearch {
+type SerializedSearch =
+  SerializedStructuredSearch | SerializedKeywordSearch | SerializedFormBasedSearch |
+  SerializedGraphScopeSearch | SerializedConstantSearch;
+
+interface SerializedStructuredSearch {
+  // undefined is for supporting old serialized searches.
+  kind: SearchKind.Structured | undefined;
   domain: string;
   conjuncts: SerializedConjunct[];
+}
+
+interface SerializedKeywordSearch {
+  kind: SearchKind.Keyword;
+  value: string;
+  domain?: string;
+}
+
+interface SerializedFormBasedSearch {
+  kind: SearchKind.FormBased;
+  model: ValuePatch;
+  domain?: string;
+}
+
+interface SerializedGraphScopeSearch {
+  kind: SearchKind.GraphScope;
+  translationId: string;
+  keywords: string;
+}
+
+interface SerializedConstantSearch {
+  kind: SearchKind.Constant;
+  domain?: string;
 }
 
 type SerializedConjunct = {
@@ -77,18 +133,49 @@ export class Serializer {
     return {
       search: state.search ? this.serializeSearch(state.search) : undefined,
       facet: state.facet ? this.serializeFacet(state.facet) : undefined,
-      result: state.result ? serialize(state.result) : undefined,
-      datasets: state.datasets ? serialize(state.datasets): undefined,
-      alignment: state.alignment ? serialize(state.alignment): undefined,
-      graphScopeSearch: state.graphScopeSearch ? serialize(state.graphScopeSearch) : undefined,
+      result: state.result && !isEmptyMapLikeObject(state.result)
+        ? serialize(state.result) : undefined,
+      datasets: state.datasets && state.datasets.length > 0
+        ? serialize(state.datasets) : undefined,
+      alignment: state.alignment && state.alignment.isJust
+        ? serialize(state.alignment) : undefined,
     };
   }
 
-  private serializeSearch(search: Search): SerializedSearch {
-    return {
-      domain: this.compactIRI(search.domain.iri),
-      conjuncts: search.conjuncts.map(this.serializeConjunct),
-    };
+  private serializeSearch(search: Search): SerializedSearch | undefined {
+    switch (search.kind) {
+      case SearchKind.Structured:
+        return {
+          kind: SearchKind.Structured,
+          domain: this.compactIRI(search.domain.iri),
+          conjuncts: search.conjuncts.map(this.serializeConjunct),
+        };
+      case SearchKind.Keyword:
+        return {
+          kind: SearchKind.Keyword,
+          value: search.value,
+          domain: search.domain ? this.compactIRI(search.domain.iri) : undefined,
+        };
+      case SearchKind.FormBased:
+        return {
+          kind: SearchKind.FormBased,
+          model: computeValuePatch(FieldValue.empty, search.model),
+          domain: search.domain ? this.compactIRI(search.domain.iri) : undefined,
+        };
+      case SearchKind.GraphScope:
+        return {
+          kind: SearchKind.GraphScope,
+          translationId: search.translationId,
+          keywords: search.keywords,
+        };
+      case SearchKind.Constant:
+        return {
+          kind: SearchKind.Constant,
+          domain: search.domain ? this.compactIRI(search.domain.iri) : undefined,
+        };
+      default:
+        return undefined;
+    }
   }
 
   private serializeFacet(ast: FacetModel.Ast): SerializedFacet {
@@ -136,40 +223,84 @@ export class Deserializer {
   constructor(private store: SearchProfileStore) {}
 
   deserializeState(state: SerializedState): RawState {
-    if (!state || typeof state !== 'object' || !state.search) {
+    if (!state || typeof state !== 'object' || !(state.search || state.graphScopeSearch)) {
       return {
         search: undefined, facet: undefined, result: {},
         datasets: [], alignment: Maybe.Nothing<Alignment>(),
-        graphScopeSearch: (
-          state.graphScopeSearch ?
-            deserialize<Data.Maybe<GraphScopeSearch>>(state.graphScopeSearch) :
-            Maybe.Nothing<GraphScopeSearch>()
-        ),
       };
     }
     const result = state.result ? deserialize(state.result) as any : undefined;
+    let facet: FacetModel.Ast | undefined;
+    if (state.search && (state.search.kind === SearchKind.Structured ||
+      state.search.kind === SearchKind.Keyword ||
+      state.search.kind === SearchKind.FormBased ||
+      state.search.kind === SearchKind.Constant) &&
+      state.search.domain) {
+      facet = this.deserializeFacet(state.facet, state.search.domain);
+    }
+    // for backward compatibility with old serialized graphscope searches
+    let graphScopeSearch: GraphScopeSearch | undefined = undefined;
+    if (state.graphScopeSearch) {
+      deserialize<Data.Maybe<{ translationId: string; keywords: string }>>(
+        state.graphScopeSearch
+      ).map(deserialized =>
+        graphScopeSearch = deserialized
+          ? {kind: SearchKind.GraphScope, ...deserialized}
+          : undefined
+      );
+    }
     return {
-      search: this.deserializeSearch(state.search),
-      facet: this.deserializeFacet(state.facet, state.search.domain),
+      search: graphScopeSearch || this.deserializeSearch(state.search),
+      facet: facet,
       result: result || {},
       datasets: state.datasets ? deserialize<Array<Dataset>>(state.datasets) : [],
-      alignment: state.alignment ?
-        deserialize<Data.Maybe<Alignment>>(state.alignment): Maybe.Nothing<Alignment>(),
-      graphScopeSearch: (
-        state.graphScopeSearch ?
-          deserialize<Data.Maybe<GraphScopeSearch>>(state.graphScopeSearch) :
-          Maybe.Nothing<GraphScopeSearch>()
-      ),
+      alignment: state.alignment
+        ? deserialize<Data.Maybe<Alignment>>(state.alignment)
+        : Maybe.Nothing<Alignment>(),
     };
   }
 
   private deserializeSearch(search: SerializedSearch): Search {
-    return {
-      domain: this.deserializeCategory(search.domain),
-      conjuncts: search.conjuncts.map((conjunct, index) =>
-        this.deserializeConjunct(conjunct, index, search.domain)
-      ),
-    };
+    switch (search.kind) {
+      case SearchKind.Structured:
+      case undefined:
+        return {
+          kind: SearchKind.Structured,
+          domain: this.deserializeCategory(search.domain),
+          conjuncts: search.conjuncts.map((conjunct, index) =>
+            this.deserializeConjunct(conjunct, index, search.domain)
+          ),
+        };
+      case SearchKind.Keyword:
+        return {
+          kind: SearchKind.Keyword,
+          value: search.value,
+          domain: search.domain ? this.deserializeCategory(search.domain) : undefined,
+        };
+      case SearchKind.FormBased:
+        const model = applyValuePatch(FieldValue.empty, search.model);
+        if (!FieldValue.isComposite(model)) {
+          return undefined;
+        }
+        return {
+          kind: SearchKind.FormBased,
+          model: model,
+          domain: search.domain ? this.deserializeCategory(search.domain) : undefined,
+        };
+      case SearchKind.GraphScope:
+        return {
+          kind: SearchKind.GraphScope,
+          translationId: search.translationId,
+          keywords: search.keywords,
+        };
+      case SearchKind.Constant:
+        return {
+          kind: SearchKind.Constant,
+          domain: search.domain ? this.deserializeCategory(search.domain) : undefined,
+        };
+      default:
+        return undefined;
+    }
   }
 
   private deserializeFacet(facet: SerializedFacet, domain: string): FacetModel.Ast {
@@ -304,6 +435,18 @@ const FullToCompact: Record<string, string> = {
   disjuncts: 'd',
   '#type': 'T',
   '#value': 'V',
+  kind: 'k',
+  value: 'v',
+  subject: 'su',
+  discriminator: 'di',
+  fields: 'fi',
+  baseLength: 'b',
+  values: 'va',
+  translationId: 'tr',
+  keywords: 'ke',
+  alignment: 'al',
+  datasets: 'da',
+  result: 'res',
 };
 
 const CompactToFull = invert(FullToCompact) as Record<string, string>;
@@ -315,7 +458,7 @@ type PropertyMapper = (
 ) => { key: string; value: any } | undefined;
 
 function deepMapObject(target: any, propertyMapper: PropertyMapper): any {
-  if (target === undefined && target === null) {
+  if (target === undefined || target === null) {
     return target;
   } else if (Array.isArray(target)) {
     return target.map(item => deepMapObject(item, propertyMapper));
@@ -360,8 +503,7 @@ export function unpackState(state: any): SerializedState {
 
 export function serializeSearch(
   baseQuery: Search, facet?: FacetModel.Ast, result?: { [componentId: string]: object },
-  datasets?: Array<Dataset>, alignment?: Data.Maybe<Alignment>,
-  graphScopeSearch?: Data.Maybe<GraphScopeSearch>,
+  datasets?: Array<Dataset>, alignment?: Data.Maybe<Alignment>
 ): string {
   const serialized = new Serializer().serializeState({
     search: baseQuery,
@@ -369,10 +511,21 @@ export function serializeSearch(
     result: result,
     datasets,
     alignment,
-    graphScopeSearch,
   });
 
   const packed = packState(serialized);
   const packedJson = JSON.stringify(packed);
   return compressToEncodedURIComponent(packedJson);
+}
+
+function isEmptyMapLikeObject(obj: { [key: string]: unknown }): boolean {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      if (value !== undefined) {
+        return false;
+      }
+    }
+  }
+  return true;
 }

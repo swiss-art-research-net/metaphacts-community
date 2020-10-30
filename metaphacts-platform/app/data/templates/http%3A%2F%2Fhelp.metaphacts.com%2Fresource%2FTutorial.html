@@ -21,10 +21,12 @@
   <div class='page__body'>
 
     <p>
-      <b>Prerequisites:</b><br>
+      <b>Prerequisites:</b><br/>
       This tutorial assumes that you have installed your own instance of the metaphacts platform. 
       If this is not the case, read the <semantic-link uri="[[resolvePrefix "Help:Installation"]]">installation manual</semantic-link>.
     </p>
+
+    [[> Help:TutorialExtensions]]
 
     <div data-flex-layout="rows center-stretch" class="feature-row">
       <!-- BOX: DATA LOADING & QUERYING -->
@@ -40,6 +42,22 @@
           <mp-anchor to="#querying-data">Querying data</mp-anchor>
         </div>
       </div>
+      
+      
+      <!-- BOX: SEARCH -->  
+      <div data-flex-self="center-stretch" class="feature-box text-center">
+        <div class="feature-box-image text-center">
+          <img class="metaphacts-icon" src="/images/help/tutorial/search-orange-web.png"/>
+        </div>
+        <div class="feature-box-title text-center">
+          SEARCH & EXPLORATION
+        </div>
+        <div class="feature-box-list">
+         <mp-anchor to="#inspecting-named-graph">Inspecting a named graph</mp-anchor><br/>
+         <mp-anchor to="#exploring_resources">Exploring resources</mp-anchor><br/>
+         <mp-anchor to="#simple-search">Using the out-of-box simple search</mp-anchor>
+        </div>
+      </div>
 
       <!-- BOX: VISUALIZATION -->
       <div data-flex-self="center-stretch" class="feature-box text-center">
@@ -52,19 +70,6 @@
         <div class="feature-box-list">
           <mp-anchor to="#visualization-table">Visualizing results in a table</mp-anchor><br/>
           <mp-anchor to="#visualization-graph">Visualizing results in a graph</mp-anchor>
-        </div>
-      </div>
-
-      <!-- BOX: SEARCH -->  
-      <div data-flex-self="center-stretch" class="feature-box text-center">
-        <div class="feature-box-image text-center">
-          <img class="metaphacts-icon" src="/images/help/tutorial/search-orange-web.png"/>
-        </div>
-        <div class="feature-box-title text-center">
-          SEARCH
-        </div>
-        <div class="feature-box-list">
-         <mp-anchor to="#simple-search">Creating a simple search interface</mp-anchor>
         </div>
       </div>
 
@@ -86,16 +91,17 @@
     <h2> Introduction </h2>
     In this tutorial we use a small dataset from the <a href="http://www.w3.org/TR/rdf11-primer/"> RDF Primer document</a>.
 
-    The following figure shows an informal representation of the sample data as a graph:
+    The following figure shows a representation of the sample data as a graph:<br/>
 
-    <img src="http://www.w3.org/TR/rdf11-primer/example-graph.jpg" alt="Informal graph of the sample data"/><br>
+    <img src="/images/help/tutorial/rdf11-primer-example-graph.jpg" alt="Informal graph of the sample data"/><br>
 
     You can download the sample data <a href="/metaphacts/samples/sample.ttl">here</a> .
     <section id="loading-data">
       <h2> Loading the data </h2>
       First, please download the <a href="/metaphacts/samples/sample.ttl">sample data</a> (simple right click and save as).
-      You can now load this data into the backing store via the 
+      You can now load this data into the database via the 
       <semantic-link uri="[[resolvePrefix "Admin:DataImportExport"]]"> data import and export</semantic-link> administration page. 
+      The data will be stored in a dedicated named graph.
 
       <div>
         [[#if (ask "ASK {  <http://example.org/bob#me> a <http://xmlns.com/foaf/0.1/Person>  }") ]] 
@@ -105,10 +111,65 @@
         [[/if]]
       </div>
     </section>
+    
+    <section id="exploring-data">
+      <h2>Searching &amp; exploring the data </h2>		
+      <p>metaphactory offers functionality for searching, exploring and inspecting data.</p> 
 
+      <p>In the following we describe how the data that has previously been loaded (see above) can be visually explored.</p>
+      
+      <h3 id="inspecting-named-graph">Inspecting the named graph</h3>
+      
+      <p>On the <semantic-link uri="[[resolvePrefix "Admin:DataImportExport"]]"> data import and export</semantic-link> page a table lists the named graphs available in the database. This table should also show a link to the graph containing the sample data, which is named using the scheme <code>file:///sample.ttl-%timestamp%</code>. Following this link leads to a page for the respective named graph, offering different visualization views of the data:</p>
+      
+      <ul>
+        <li>Statements (default): the raw RDF statements contained in this graph</li>
+        <li>Graph: a graph visualization of the data</li>
+        <li>HTML / Page view: statistics about the named graph</li>
+      </ul>
+      
+      <p>The following figure depicts a graph visualization of the RDF resources available in the sample data. For instance, we can see three persons (Bob, Alice, and Leonardo da Vinci) and the painting Mona Lisa. The graph visualization provides a good overview of the data and shows the relationships between the resources.</p>
+      
+      <p><i>Note that using the top-right toggle buttons (marked with 'View Selection') the view can be switched.</i></p>
+     	
+      <p><img src="/images/help/tutorial/graph_view_sample_data.png" alt="Graph visualization of sample data" width="850px"></p>
+      
+      
+      <h3 id="exploring_resources">Exploring resources</h3>
+      
+      <p>From the <strong>Graph View</strong> the individual resources can be explored. By focusing <strong>Mona Lisa</strong> node on the graph and then clicking the icon that appears to the left of the node we navigate to the page of <strong>Mona Lisa</strong>.</p>
+      
+      <p><img src="/images/help/tutorial/MonaLisa-Node.png" height=100px></p>
+      
+       <p>The metaphactory offers a unified view for all resources. On the page of <strong>Mona Lisa</strong> we see again the three toggle buttons located at the top-right corner for view selection</p>
+      
+      <p><img src="/images/help/tutorial/MonaLisa-Toggle-Buttons.png" width=800px></p>
+      
+      <p>From left to right:</p>
+      
+      <ul>
+        <li><strong>Graph View</strong>  - for a visual graph representation of the data enabling navigation through the knowledge graph.</li>
+        <li><strong>Statements View</strong> - to display the raw data for the current resource as statements in tabular form.</li>
+        <li><strong>HTML / Page View</strong> - to provide a domain specific end-user view, defined through a template for a particular class. If there is no template defined yet, this view is intentionally left blank.</li>
+      </ul>
+      
+      <p>Go ahead and switch to <strong>Statements View</strong> to learn that Mona Lisa was created by Leonardo Da Vinci. You can now click on <strong>Leonardo Da Vinci</strong> which will immediately take you to his resource page.</p>
+      <p><img src="/images/help/tutorial/MonaLisa-Statements.png" width=800px /></p>
+      
+        
+      <h3 id="simple-search">Simple search</h3>
+      
+      <p>Another way to access the data is the built-in keyword search. To go to the search page look up at the product header and click the search icon. Using our sample data, we can for instance search for the person <strong>Bob</strong>:</p>
+      
+        
+      <p><img src="/images/help/tutorial/simple-search-bob.png" alt="Simple search for Bob" width="850px"></p>
+      
+      <p>From the results it is again possible to navigate to the resource page and explore the data further (e.g. through the graph visualization component).</p>
+   
+     
     <section id="querying-data">
       <h2> Querying the data </h2>
-      You can now query the data via the <a href="/sparql?query=SELECT+*+WHERE+%7B+%3Chttp%3A%2F%2Fexample.org%2Fbob%23me%3E+%3Fpredicate+%3Fobject+%7D" target="_blank">SPARQL endpoint</a>.
+      You can also query the data via the <a href="/sparql?query=SELECT+*+WHERE+%7B+%3Chttp%3A%2F%2Fexample.org%2Fbob%23me%3E+%3Fpredicate+%3Fobject+%7D" target="_blank">SPARQL endpoint</a>.
       For example, you may want to issue a query  for all statements made about Bob as a subject:<br>
 
       <code>SELECT * WHERE { &lt;http://example.org/bob#me&gt; ?predicate ?object }</code><br>
@@ -118,7 +179,7 @@
 
     <h2> Visualizing results </h2>
 
-    Let’s visualize the results of queries by embedding visualization components in a page.
+    In addition to using the built-in views it possible to create customized visualizations. Let’s visualize the results of queries by embedding visualization components in a page.
     <section id="visualization-table">
       <h3> Tables </h3> 
       <p>
@@ -137,7 +198,7 @@
         For this, we make use of the <code>tupleTemplate</code>, which is applied to every result tuple.
       </p>
 
-      We start with the following SPARQL query, which asks for all resources together label and thumbnail:
+      We start with the following SPARQL query, which asks for all resources together with their label and thumbnail:
       <mp-code-block mode='application/sparql-query'>
 <![CDATA[
 SELECT ?uri ?label ?thumbnail WHERE { ?uri rdfs:label ?label; <http://schema.org/thumbnail> ?thumbnail }
@@ -176,7 +237,7 @@ SELECT ?uri ?label ?thumbnail WHERE { ?uri rdfs:label ?label; <http://schema.org
         Again, copy and paste the component definition into a new page, e.g. <semantic-link uri="[[resolvePrefix ":TableComponent2"]]">TableComponent2</semantic-link>. 
       </p>
       <p> 
-        Here you can find further documentation about using the <semantic-link uri="[[resolvePrefix ":SemanticTable"]]">Table Component</semantic-link>.
+        Here you can find further documentation about using the <semantic-link uri="[[resolvePrefix "Help:SemanticTable"]]">Table Component</semantic-link>.
       </p>
     </section>
 
@@ -219,7 +280,7 @@ SELECT ?uri ?label ?thumbnail WHERE { ?uri rdfs:label ?label; <http://schema.org
     </section>
     -->
 
-    <section id="simple-search">
+    <section id="simple-search-definition">
       <h2> A simple search interface</h2>
       Let’s now create a simple search interface for querying the data.
 
@@ -245,7 +306,7 @@ SELECT ?uri ?label ?thumbnail WHERE { ?uri rdfs:label ?label; <http://schema.org
 
   <section id="creating-a-template">    
     <h2> Creating a template </h2>
-    Now, we want to create a template for resources of a particular type.
+    Now, we want to create a template for resources of a particular class.
     The general templating mechanism is described <semantic-link uri="[[resolvePrefix "Help:TemplateAndApplicationPages"]]"> here </semantic-link>.
 
     In our example, we create a template for the class <code>foaf:Person</code>.
@@ -352,9 +413,9 @@ INSERT {
       </mp-code-block>
 
       The imported data will now show up as a named graph 
-      <semantic-link uri="[[resolvePrefix "Admin:NamedGraphs"]]" urlqueryparam-graph="http://www.metaphacts.com/tutorial/">&lt;http://www.metaphacts.com/tutorial/&gt;</semantic-link>
+      <semantic-link uri='[[resolvePrefix "Assets:NamedGraph"]]' urlqueryparam-graph="http://www.metaphacts.com/tutorial/">&lt;http://www.metaphacts.com/tutorial/&gt;</semantic-link>
       under <semantic-link uri="[[resolvePrefix "Admin:DataImportExport"]]">Admin:DataImportExport</semantic-link>.
-    </section>
+      </section>
 
 <!--
     <section id="input-form">     

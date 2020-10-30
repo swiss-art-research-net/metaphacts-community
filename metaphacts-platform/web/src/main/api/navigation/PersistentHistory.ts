@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,14 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+import * as h from 'history';
+import * as Kefir from 'kefir';
 
-/**
- * @author Mike Kelly <mkelly@britishmuseum.org>
- */
-
-const h = require('history');
-
-import { BrowserPersistence } from 'platform/api/persistence';
+import { BrowserPersistence } from 'platform/api/persistence/BrowserPersistence';
 
 const BH_RECENT_PAGES = 'recentPages';
 const MAX_BH_RECENT_QUERIES = 12;
@@ -38,24 +56,25 @@ if (!recentPages || recentPages.toArray().length === 0) {
  *
  * Use MemoryHistory from the 'history' API to store page changes
  * and persist them to the browser, for use in BrowseHistoryComponent
+ *
+ * @author Mike Kelly <mkelly@britishmuseum.org>
  */
-
 export const MemoryHistory = h.createMemoryHistory({
   initialEntries: recentPages,
   initialIndex: 0,
 });
 
-export function init(init, notifyAll) {
+export function init(
+  onInit: (location: Location) => Kefir.Property<Data.Maybe<uri.URI>>,
+) {
   MemoryHistory.listen(
-    (location, action) =>
-      init(location).onValue(
-        mUrl => mUrl.map(url => notifyAll({url: url, action: action}))
-      )
+    (location) =>
+      onInit(location)
   );
 }
 
 export function clearPersistedRecentPages() {
-  const noPages = [];
+  const noPages: string[] = [];
   BrowserPersistence.setItem(BH_RECENT_PAGES, noPages);
 }
 

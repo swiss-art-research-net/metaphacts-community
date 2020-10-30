@@ -1,0 +1,105 @@
+
+
+/**
+ * Define the storages for the bundled distributions as resource file for the classpath
+ * Added as part of the platform resources jar
+ */
+task internalStorageProps() {
+	
+	def outputFile = project.file('target/tmp/internalStorage.prop')
+	outputs.file(outputFile)
+	inputs.property 'isDevBuild', project.ext.isDevBuild
+	inputs.property 'bundledAppsFrom', project.ext.buildConfig.bundleAppsFrom
+	
+	doLast {
+		def props = new org.apache.commons.configuration2.PropertiesConfiguration();
+		if (project.ext.isDevBuild) {
+		
+			for (def includeApp : project.ext.buildConfig.bundleAppsFrom) {
+				props.setProperty('config.storage.' + includeApp + '.type', 'nonVersionedFile')
+				props.setProperty('config.storage.' + includeApp + '.mutable', 'true')
+				props.setProperty('config.storage.' + includeApp + '.root', project(':' + includeApp).file('app'))
+			}
+			
+		} else {
+		
+			for (def includeApp : project.ext.buildConfig.bundleAppsFrom) {
+				props.setProperty('config.storage.' + includeApp + '.type', 'classpath')
+				props.setProperty('config.storage.' + includeApp + '.classpathLocation', 'com/metaphacts/app/' + includeApp)
+			}
+		}
+		outputFile.withWriter('ISO-8859-1') { writer ->
+			props.write(writer);
+		}
+	}
+}
+
+task platformResourcesJar(type: Jar) {
+	
+	archiveFileName = 'platform-resources-' + rootProject.version + '.jar'
+	
+	manifest = project.manifest {
+		attributes(manifestProperties('platform-resources'))
+	}
+	
+	// include app content such as template (e.g. from metaphacts-platform/app)
+	for (def includeApp : project.ext.buildConfig.bundleAppsFrom) {
+		into ('com/metaphacts/app/' + includeApp) {
+			from project(':' + includeApp).file('app');
+		}
+	}
+	
+	// include storage definitions
+	into ('com/metaphacts/app') {
+		from internalStorageProps
+	}
+}
+
+task deployWebapp(type: Copy, dependsOn: [':project:webpack:npmBuildProd', 'generateLicenseReport']) {
+	
+	into 'target/webapp';
+	
+	// webapp from each included project (e.g. metaphacts=
+	for (def includeProject : project.ext.buildConfig.includeProjects) {
+		from project(':'+includeProject).file("webapp")
+	}
+	
+	// generated production webpack dlls
+	into('assets') {
+		from project(':project:webpack').file('assets')
+	}
+	
+	into('.') {
+		from rootProject.file('target/reports/licenses/THIRDPARTY.html')
+	}
+	
+	into('.') {
+		from rootProject.file(project.ext.buildConfig.license.licenseFile);
+	}
+	
+	into('.') {
+		from rootProject.file('COPYING.txt')
+	}
+}
+
+task platformWar(type: War, dependsOn: [deployWebapp]) {
+	
+	archiveBaseName = 'platform'
+	destinationDirectory = project.file('target')
+	
+	manifest = project.manifest {
+		attributes(manifestProperties(rootProject.buildConfig.distributionTitle))
+	}
+	
+	from 'target/webapp'
+	
+	// for additional classpath see below (configured at evaluation time)
+}
+
+project.afterEvaluate {
+	// Note: we can only define the classpath after evaluate because the project is not known otherwise
+	Project distributionProject = project(':' + project.ext.buildConfig.distribution + ':core')
+	platformWar.classpath distributionProject.configurations.runtimeClasspath
+	platformWar.classpath distributionProject.jar
+	platformWar.classpath platformResourcesJar
+}

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import java.io.IOException;
@@ -58,14 +79,18 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF4J;
+import org.eclipse.rdf4j.model.vocabulary.SESAME;
+import org.eclipse.rdf4j.query.GraphQuery;
+import org.eclipse.rdf4j.query.GraphQueryResult;
 import org.eclipse.rdf4j.query.UpdateExecutionException;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.RepositoryResult;
 import org.eclipse.rdf4j.rio.RDFFormat;
-import org.eclipse.rdf4j.rio.RDFHandlerException;
 import org.eclipse.rdf4j.rio.RDFParserRegistry;
 import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.RDFWriterFactory;
@@ -74,11 +99,13 @@ import org.eclipse.rdf4j.rio.Rio;
 
 import com.google.common.collect.Sets;
 import com.metaphacts.api.sparql.ServletRequestUtil;
+import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.data.rdf.ReadConnection;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.Permissions.SPARQL;
+import com.metaphacts.util.ExceptionUtils;
 
 /**
  * Implementation of SPARQL 1.1 Graph Store HTTP Protocol<br/>
@@ -120,6 +147,9 @@ public class RDFGraphStoreEndpoint {
     @Inject
     private Configuration config;
 
+    @Inject
+    private CacheManager cacheManager;
+
     @POST
     @RequiresAuthentication
     @RequiresPermissions(SPARQL.GRAPH_STORE_CREATE)
@@ -159,7 +189,7 @@ public class RDFGraphStoreEndpoint {
                 con.add(results, graphUri);
             }
             con.commit();
-
+            cacheManager.invalidateAll();
         } catch (RepositoryException e) {
 
             final Throwable cause = e.getCause();
@@ -183,8 +213,8 @@ public class RDFGraphStoreEndpoint {
 
                 logger.error("Failed to create GRAPH \"{}\" : {}", graphUri, e.getMessage());
                 logger.debug("Details:" , e);
-
-                return Response.serverError().entity(e.getMessage()).build();
+                String message = ExceptionUtils.extractSparqlExceptionMessage(e);
+                return Response.serverError().entity(message).build();
 
             }
 
@@ -192,7 +222,8 @@ public class RDFGraphStoreEndpoint {
 
             logger.error("Failed to create GRAPH \""+ graphUri +"\" :"+e.getMessage());
             logger.debug("Details:" , e);
-            return Response.serverError().entity(e.getMessage()).build();
+            String message = ExceptionUtils.extractSparqlExceptionMessage(e);
+            return Response.serverError().entity(message).build();
 
         }
 
@@ -210,11 +241,12 @@ public class RDFGraphStoreEndpoint {
         if (logger.isTraceEnabled())
             logger.trace("Request to return GRAPH: "+ uri);
 
-        if(!graphExists(uri, repository))
+        if (!graphExists(uri, repository)) {
             return Response
                     .serverError()
                     .status(Status.NOT_FOUND)
-                    .entity("NamedGraph " + uri+ " does not exist or is empty.").build();
+                    .entity("NamedGraph " + uri + " does not exist or is empty.").build();
+        }
 
         Optional<String> prefMime = getAcceptMIMEType(servletRequest);
 
@@ -225,48 +257,61 @@ public class RDFGraphStoreEndpoint {
         String prefMimeType = prefMime.get();
 
         RDFFormat format = Rio.getParserFormatForMIMEType(prefMimeType).orElse(RDFFormat.TURTLE);
-        boolean useQuads = (format == RDFFormat.TRIG)
-                || (format == RDFFormat.TRIX)
-                || (format == RDFFormat.NQUADS);
-
         try{
             final RDFWriterFactory factory = RDFWriterRegistry.getInstance().get(format).orElseThrow(
-                    () -> new IllegalStateException("Not able to instantiate RDFWriteFactory for format "+format.getName())
-                    );
+                    () -> new IllegalStateException(
+                            "Not able to instantiate RDFWriterFactory for format " + format.getName()));
             StreamingOutput stream = new StreamingOutput() {
                 @Override
                 public void write(OutputStream os) throws IOException, WebApplicationException {
-                    try (RepositoryConnection con = getRepository(repository).getConnection()){
-                        try( RepositoryResult<Statement> repositoryResult = con.getStatements(null, null, null, false, uri)){
+                    try (RepositoryConnection con = getRepository(repository).getConnection()) {
+                        
+                        StringBuilder qb = new StringBuilder();
+                        qb.append("CONSTRUCT \n");
+
+                        /*
+                         * If RDF4J.NIL is used as the graph name, we interpret that as a request for data in the
+                         * default graph. We specify the default graph by adding the various triplestores' virtual
+                         * property names for the default graph into the query's dataset.
+                         * 
+                         * NB we are appending to the query string instead of configuring a Dataset object on the
+                         * prepared query because some older triplestores (Blazegraph) do not fully support sending
+                         * graph names along as parameters (as specified in SPARQL 1.1 Protocol).
+                         */
+                        if (RDF4J.NIL.equals(uri)) {
+                            qb.append("FROM <" + RDF4J.NIL + "> \n");
+                            qb.append("FROM <" + SESAME.NIL + "> \n");
+                            qb.append("FROM <tag:stardog:api:context:default> \n");
+                            qb.append("FROM <http://www.bigdata.com/rdf#nullGraph> \n");
+                            qb.append("FROM <http://aws.amazon.com/neptune/vocab/v01/DefaultNamedGraph> \n");
+                        } else {
+                            qb.append("FROM <" + uri + ">\n");
+                        }
+                        qb.append("WHERE { ?s ?p ?o }");
+
+                        GraphQuery query = con.prepareGraphQuery(qb.toString());
+                        query.setIncludeInferred(false);
+                        try (GraphQueryResult statements = query.evaluate()) {
                             RDFWriter writer = factory.getWriter(os);
+                            writer.startRDF();
                             for (Map.Entry<String, String> entry : ns.getPrefixMap().entrySet()) {
                                 String prefix = entry.getKey();
                                 String namespace = entry.getValue();
                                 writer.handleNamespace(prefix, namespace);
                             }
-                            writer.startRDF();
-                            if (useQuads) {
-                                while(repositoryResult.hasNext()){
-                                    Statement st = repositoryResult.next();
-                                    Statement st2 = SimpleValueFactory
-                                                        .getInstance()
-                                                        .createStatement(
-                                                                st.getSubject(),
-                                                                st.getPredicate(),
-                                                                st.getObject(),
-                                                                uri);
-                                    writer.handleStatement(st2);
-                                }
-                            } else {
-                                while(repositoryResult.hasNext()){
-                                    writer.handleStatement(repositoryResult.next());
-                                }
+                            if (!RDF4J.NIL.equals(uri) && format.supportsContexts()) {
+                                statements.stream()
+                                        .map(st -> con.getValueFactory().createStatement(st.getSubject(),
+                                                st.getPredicate(), st.getObject(), uri))
+                                        .forEach(writer::handleStatement);
+                            }
+                            else {
+                                statements.forEach(writer::handleStatement);
                             }
                             writer.endRDF();
                         }
-
                     } catch (RDF4JException e) {
-                        logger.error("Failed to retrieve or write the requested graph \"{}\":",uri.stringValue(), e);
+                        logger.error("Failed to retrieve or write the requested graph \"{}\":", uri, e);
                         // these are checked exceptions anyway
                         throw e;
                     }
@@ -277,7 +322,8 @@ public class RDFGraphStoreEndpoint {
         }catch(Exception e){
             logger.error("Failed to return GRAPH \""+ uri +"\" :"+e.getMessage());
             logger.debug("Details:" , e);
-            return Response.serverError().entity(e.getMessage()).build();
+            String message = ExceptionUtils.extractSparqlExceptionMessage(e);
+            return Response.serverError().entity(message).build();
         }
     }
 
@@ -301,11 +347,19 @@ public class RDFGraphStoreEndpoint {
         }
 
         try(RepositoryConnection con = getRepository(repository).getConnection()){
-            con.clear(uri);
+            if (RDF4J.NIL.equals(uri)) {
+                // use SPARQL DROP command instead of RDF4J clear to avoid GraphDB bug in clearing the null context
+                con.prepareUpdate("DROP DEFAULT").execute();
+            }
+            else {
+                con.clear(uri);
+            }
+            cacheManager.invalidateAll();
         }catch(Exception e){
-            logger.error("Failed to delete GRPAH \""+ uri +"\": "+e.getMessage());
+            logger.error("Failed to delete GRAPH \"" + uri + "\": " + e.getMessage());
             logger.debug("Details:" , e);
-            return Response.serverError().entity(e.getMessage()).build();
+            String message = ExceptionUtils.extractSparqlExceptionMessage(e);
+            return Response.serverError().entity(message).build();
         }
         return Response.ok().build();
     }
@@ -339,11 +393,12 @@ public class RDFGraphStoreEndpoint {
             con.clear(graphUri);
             con.add(results, graphUri);
             con.commit();
-
+            cacheManager.invalidateAll();
         } catch (Exception e) {
             logger.error("Failed to update GRAPH \""+ graphUri +"\" :"+e.getMessage());
             logger.debug("Details:" , e);
-            return Response.serverError().entity(e.getMessage()).build();
+            String message = ExceptionUtils.extractSparqlExceptionMessage(e);
+            return Response.serverError().entity(message).build();
         }
 
         return Response.created(new java.net.URI(graphUri.toString())).build();
@@ -396,7 +451,11 @@ public class RDFGraphStoreEndpoint {
     }
 
     private boolean graphExists(IRI iri, Optional<String> repository) {
-        return iri==null ? false : new ReadConnection(getRepository(repository)).hasStatement(null, null, null, iri);
+        if (iri == null) {
+            return false;
+        }
+        return RDF4J.NIL.equals(iri) ? true
+                : new ReadConnection(getRepository(repository)).hasStatement(null, null, null, iri);
     }
 
     private Repository getRepository(Optional<String> repository){
@@ -404,5 +463,4 @@ public class RDFGraphStoreEndpoint {
                 ? repository.map( rep -> repositoryManager.getRepository(rep)).get()
                 : repositoryManager.getDefault();
     }
-
 }

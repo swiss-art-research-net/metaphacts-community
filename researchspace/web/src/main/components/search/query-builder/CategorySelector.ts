@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,17 +15,16 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
 
-import { Component, createFactory, createElement } from 'react';
+import { Component, createFactory, createElement, MouseEvent } from 'react';
 import * as D from 'react-dom-factories';
 import { findDOMNode } from 'react-dom';
 import * as classnames from 'classnames';
 import * as _ from 'lodash';
-import ReactSelect from 'react-select';
+import ReactSelect, { OnChangeHandler, OptionRendererHandler } from 'react-select';
 
 import { TemplateItem } from 'platform/components/ui/template';
 import { Category, Categories } from 'platform/components/semantic/search/data/profiles/Model';
@@ -93,7 +92,7 @@ export class CategorySelectorComponent extends Component<
                   }),
                   title: entity.label,
                   'data-rdfa-about': entity.iri.value,
-                  onClick: (event) => {
+                  onClick: (event: MouseEvent<HTMLElement>) => {
                     if (this.hasDisabledChild(event.currentTarget) == false) {
                       event.currentTarget.blur();
                       this.props.actions.onValueChange(entity);
@@ -124,7 +123,7 @@ export class CategorySelectorComponent extends Component<
       placeholder: 'Select category',
       value: selectedCategory,
       options: this.props.entities.toArray(),
-      optionRenderer: (entity: Category) => {
+      optionRenderer: ((entity: Category) => {
         const isSelectedElement = selectedCategory &&
           entity.iri.value === selectedCategory.iri.value;
         return createElement(TemplateItem, {
@@ -146,15 +145,15 @@ export class CategorySelectorComponent extends Component<
             'data-rdfa-about': entity.iri.value,
           }
         });
-      },
-      onChange: (selected: Category) => {
+      }) as OptionRendererHandler<unknown>,
+      onChange: ((selected: Category) => {
         if (selected && selected !== selectedCategory) {
           this.props.actions.onValueChange(selected);
         } else if (!selected && selectedCategory) {
           // select same value to toggle off category
           this.props.actions.onValueChange(selectedCategory);
         }
-      },
+      }) as OnChangeHandler<unknown>,
     });
   }
 
@@ -162,7 +161,7 @@ export class CategorySelectorComponent extends Component<
     const disabled =
         _.reduce(
           this.refs,
-          (acc, ref, key) => {
+          (acc: { [key: string]: boolean }, ref, key) => {
             acc[key] = this.hasDisabledChild(
               findDOMNode(ref) as HTMLElement
             );
@@ -179,7 +178,7 @@ export class CategorySelectorComponent extends Component<
 
   private hasDisabledChild(elem: HTMLElement): boolean {
     return _.some(
-      elem.children, c => c['dataset']['disabled'] == 'true'
+      elem.children, c => (c as any)['dataset']['disabled'] == 'true'
     );
   }
 }

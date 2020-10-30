@@ -1,46 +1,45 @@
-    [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:read:any")]]
-      <semantic-context repository="assets">
-        <semantic-table query='
-                          prefix ontodia: <http://ontodia.org/schema/v1#>
-                          SELECT ?diagram ?label ?author ?modified WHERE {
-                                VALUES ?ontodiaClass {ontodia:Diagram <http://www.ontodia.org/schema/v1#diagram>}
-                                ?diagram a ?ontodiaClass;
-                                rdfs:label ?label;
-                                <http://www.w3.org/ns/prov#wasAttributedTo> ?author;
-                                <http://www.w3.org/ns/prov#generatedAtTime> ?modified .
-                               
-                               [[#if (urlParam "ontologyIri")]]
-                                 ?diagram Platform:diagramForOntology <[[urlParam "ontologyIri"]]> .  
-                               [[/if]]
-                           }
-                       '
-                       column-configuration='[
-                            {"variableName":"diagram", "displayName":"Diagram", "cellTemplate":"{{> view}}"},
-                            {"variableName":"author", "displayName":"Author", "cellTemplate":"<mp-label iri=\"{{author.value}}\"></mp-label>"},
-                            {"variableName":"modified", "displayName":"Last Update", "cellTemplate": "{{dateTimeFormat modified.value \"LLL\"}}" }
-                            [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:delete:any")]]
-                              ,{"displayName":"Delete", "cellTemplate": "<mp-ldp-remove-from-container-action iri=\"{{diagram.value}}\" data-container=\"http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer\">
-                    <i class=\"fa fa-trash\" aria-hidden=\"true\"></i>
-                  </mp-ldp-remove-from-container-action>" }
-                            [[/if]]
-                       ]'
-       >
-          <template id='view'>
-              <semantic-context repository=default>
-                <semantic-link iri='http://www.metaphacts.com/resource/assets/OntodiaView' urlqueryparam-diagram='{{diagram.value}}' 
-                              [[#if (urlParam "ontologyIri")]] urlqueryparam-ontology-iri='[[urlParam "ontologyIri"]]' [[/if]]
-                >{{label.value}}</semantic-link>
-              </semantic-context>
-          </template>
-       </semantic-table>
-     </semantic-context>
+[[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:read:any")]]
+  <semantic-context repository="assets">
+    <semantic-table query='
+      prefix ontodia: <http://ontodia.org/schema/v1#>
+      SELECT DISTINCT ?diagram ?label ?author ?modified ?diagramKindLabel ?context WHERE {
+        ?diagram a ontodia:Diagram;
+        rdfs:label ?label;
+        <http://www.w3.org/ns/prov#wasAttributedTo> ?author;
+        <http://www.w3.org/ns/prov#generatedAtTime> ?modified.
+        [[#if resource]]
+          ?diagram
+            ontodia:layoutData/ontodia:hasElement/ontodia:resource|Platform:diagramForOntology|Platform:diagramForGraph|Platform:diagramForVocabulary
+              <[[resource]]>.
+        [[/if]]
 
-     [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:create:any")]]
-       <mp-resource-link-container 
-         uri="http://www.metaphacts.com/resource/assets/OntodiaView" 
-         [[#if (urlParam "ontologyIri")]] urlqueryparam-ontology-iri='[[urlParam "ontologyIri"]]' [[/if]]
-       >
-         <button class="btn btn-primary">Create Diagram</button>
-       </mp-resource-link-container>
-     [[/if]]
+        OPTIONAL {
+          ?diagram <http://www.metaphacts.com/ontologies/platform#diagramKind> ?diagramKind .
+          values (?diagramKind ?diagramKindLabel) {
+            (Platform:OntologyDiagram "Ontology")
+            (Platform:NamedGraphDiagram "Named Graph")
+            (Platform:VocabularyDiagram "Vocabulary")
+          }
+        }
+        OPTIONAL {
+          ?diagram Platform:diagramForOntology|Platform:diagramForGraph|Platform:diagramForVocabulary ?context.
+        }
+      }'
+      no-result-template='<i>No Diagrams.</i>'
+      [[> Assets:DiagramsTableDescriptionInclude]]>
+      [[> Assets:DiagramsTableResultsInclude]]
+    </semantic-table>
+  </semantic-context>
+
+  [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:create:any")]]
+    [[#if createDefault]]
+    <semantic-link iri='[[resolvePrefix "Assets:OntodiaView"]]'>
+      <button class="btn btn-primary" style="margin-top: 10px;">Create Diagram</button>
+    </semantic-link>
+    [[else]]
+    <semantic-link iri='[[this]]' urlqueryparam-view='graph' [[#if (urlParam "graph")]]urlqueryparam-graph='[[urlParam "graph"]]' [[/if]]>
+      <button class="btn btn-primary" style="margin-top: 10px;">Create Diagram</button>
+    </semantic-link>
     [[/if]]
+  [[/if]]
+[[/if]]

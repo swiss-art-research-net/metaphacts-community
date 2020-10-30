@@ -1,0 +1,21 @@
+apply plugin: 'eclipse'
+apply plugin: 'java'
+apply plugin: 'groovy'
+
+
+buildDir 'target'
+
+repositories {
+	mavenCentral()
+	maven {
+		url "https://plugins.gradle.org/m2/"
+	}
+}
+
+dependencies {
+	implementation 'com.github.jk1:gradle-license-report:1.14'
+	implementation 'gradle.plugin.com.hierynomus.gradle.plugins:license-gradle-plugin:0.15.0'
+	implementation 'org.apache.commons:commons-configuration2:2.1'
+	implementation 'org.owasp:dependency-check-gradle:5.3.2.1'
+}
+	

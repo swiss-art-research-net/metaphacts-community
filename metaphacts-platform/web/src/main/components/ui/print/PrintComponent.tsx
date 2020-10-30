@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { ReactNode, ReactElement, Children, CSSProperties } from 'react';
 import * as D from 'react-dom-factories';
@@ -37,6 +58,7 @@ import {
 } from './PrintSectionComponent';
 
 import './print-component.scss';
+import { extractParams } from 'platform/api/navigation/NavigationUtils';
 
 const DEFAULT_CLASS = 'mp-print';
 
@@ -68,7 +90,7 @@ export interface Props {
    * }'
    * ```
    */
-   htmlToPdf: {};
+   htmlToPdf: object;
 }
 
 export interface State {
@@ -113,11 +135,11 @@ interface Section {
 export class PrintComponent extends Component<Props, State> {
   // c.f. comment in componentDidMount
   observer = new MutationObserver(_.debounce(() => this.setStyles(), 500));
-  private html2pdf;
+  private html2pdf: typeof import('html2pdf.js');
 
   private frameRef?: Frame | null;
 
-  constructor(props: Props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       sections: [],
@@ -153,7 +175,7 @@ export class PrintComponent extends Component<Props, State> {
   }
 
   private setPrintSections = () => {
-    const printSections = [];
+    const printSections: ReactElement<any>[][] = [];
 
     Kefir.sequentially(0, this.props.pages)
       .map(page => Rdf.iri(page))
@@ -162,7 +184,7 @@ export class PrintComponent extends Component<Props, State> {
         printSections.push(this.findPrintSections(content));
       })
       .onEnd(() => {
-        const concatPrintSections = [].concat.apply([], printSections);
+        const concatPrintSections = ([] as ReactElement<any>[]).concat.apply([], printSections);
         const mergedPrintSections = this.mergePrintSections(concatPrintSections);
         const sections = mergedPrintSections.map(section => {
           return {
@@ -177,7 +199,7 @@ export class PrintComponent extends Component<Props, State> {
       });
   }
 
-  private mergePrintSections = (sections) => {
+  private mergePrintSections = (sections: ReactElement<any>[]) => {
     const groups: { id: string; sections: ReactElement<any>[]; }[] = [];
 
     sections.forEach(section => {
@@ -212,20 +234,20 @@ export class PrintComponent extends Component<Props, State> {
       .getOrElse(undefined);
 
     return PageService.loadRenderedTemplate(
-      iri, iri, {repository}
+      iri, iri, {
+        repository,
+        ...extractParams(this.props)
+      }
     ).flatMap<ReactNode>(
-      page =>
-        Kefir.fromPromise(
-          ModuleRegistry.parseHtmlToReact(
-            `
-              <div>
-                ${page.templateHtml}
-              </div>
-            `
-          )
-        ).map<ReactNode>(
-          content => D.div({}, content)
-        )
+      page => ModuleRegistry.parseHtmlToReact(
+        `
+          <div>
+            ${page.templateHtml}
+          </div>
+        `
+      ).map<ReactNode>(
+        content => D.div({}, content)
+      )
     ).toProperty();
   }
 
@@ -251,14 +273,16 @@ export class PrintComponent extends Component<Props, State> {
   }
 
   private setStyles = () => {
-    ModuleRegistry.parseHtmlToReact(document.head.innerHTML).then(head => {
-      head = Array.isArray(head) ? head : [head];
-      const styles = head.filter(item => {
-        return item.type === 'link' || item.type === 'style';
-      });
-      this.setState({
-        styles: styles,
-      });
+    ModuleRegistry.parseHtmlToReact(document.head.innerHTML).observe({
+      value: head => {
+        head = Array.isArray(head) ? head : [head];
+        const styles = head.filter(item => {
+          return item.type === 'link' || item.type === 'style';
+        });
+        this.setState({
+          styles: styles,
+        });
+      }
     });
   }
 

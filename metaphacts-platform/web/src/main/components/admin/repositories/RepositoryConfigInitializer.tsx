@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Alert, Row, Col } from 'react-bootstrap';
 import { Cancellation } from 'platform/api/async';
@@ -78,15 +99,19 @@ export class RepositoryConfigInitializer extends Component<{}, State> {
               </Col>
               <Col sm={2}>
                   <b>stardog</b>
-                  <p>For use with a Stardog repository</p>
+                  <p>For use with a Stardog repository.</p>
+              </Col>
+              <Col sm={2}>
+                  <b>graphdb</b>
+                  <p>For use with Ontotext GraphDB.</p>
               </Col>
               <Col sm={3}>
                   <b>sparql</b>
-                  <p>Use with any SPARQL 1.1 compliant database endpoint where authentication is not required, e.g. Blazegraph, RDF4J</p>
+                  <p>Use with any SPARQL 1.1 compliant database endpoint where authentication is not required, e.g. Blazegraph, RDF4J.</p>
               </Col>
               <Col sm={3}>
                   <b>sparql-basic</b>
-                  <p>Same as "sparql", but includes basic authentication. Can be used for GraphDB amongst others.</p>
+                  <p>Same as "sparql", but includes basic authentication.</p>
               </Col>
 
             </Row>

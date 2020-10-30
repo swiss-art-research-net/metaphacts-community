@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "SemanticUpdate.Error": {
+            "description": "If the post-action='event' for SemanticUpdate, Component fires this event after a\nquery failed.",
+            "properties": {
+                "error": {
+                }
+            },
+            "propertyOrder": [
+                "error"
+            ],
+            "required": [
+                "error"
+            ],
+            "type": "object"
+        },
+        "SemanticUpdate.Success": {
+            "description": "If the post-action='event' for SemanticUpdate, Component fires this event after a\nquery is successfully executed",
+            "properties": {
+            },
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "SemanticUpdate.Success",
+        "SemanticUpdate.Error"
+    ],
+    "required": [
+        "SemanticUpdate.Error",
+        "SemanticUpdate.Success"
+    ],
+    "type": "object"
+}
+

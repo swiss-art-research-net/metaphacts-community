@@ -7,36 +7,24 @@
   }
 </style>
 
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" iri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-
-  <li>
-    <semantic-link title="Components" iri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
-  </li>
-  <li class="active">CSS Layout</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
     <h1>CSS Layout</h1>
-    <p>The layout frameworks help to manage the layout of pages. They allow dividing HTML-elements into grids of rows and columns.</p>
+    <p>The layout frameworks help manage the layout of pages. They allow dividing HTML-elements into grids of rows and columns.</p>
 
     <h2>Bootstrap Layout</h2>
     <div class="documentation__example">
       <div class="documentation__example__description">
-        <p>To create a basic grid system one need to use <code>bs-row</code> and <code>bs-col</code> components with <code>xs</code>, <code>sm</code>, <code>md</code>, <code>lg</code> attributes. See <a href="https://getbootstrap.com/docs/3.3/css/#grid" target="_blank">Bootstrap Grid</a> to learn more about grid system.</p>
+        <p>To create a basic grid system one needs to use <code>bs-row</code> and <code>bs-col</code> components with <code>xs</code>, <code>sm</code>, <code>md</code>, <code>lg</code> attributes. See <a href="https://getbootstrap.com/docs/3.3/css/#grid" target="_blank">Bootstrap Grid</a> to learn more about grid system.</p>
         <p>Use Bootstrap Layout to create a responsive layout based on the 12-columns grid system.</p>
       </div>
       <div class="documentation__example__demo">
         <mp-code-example>
           <![CDATA[
           <bs-row>
-            <bs-col sm="6" md="3">
+            <bs-col sm="3" md="3">
               <div class="grid-demo">sm-6 md-3</div>
             </bs-col>
             <bs-col sm="6" md="3">
@@ -55,7 +43,7 @@
     </div>
 
     <h2>Flex Layout</h2>
-    <p>To use Flex Layout one need to add <code>data-flex-layout</code> and <code>data-flex-self</code> attributes to HTML-elements. See <a href="http://progressivered.com/fla" target="_blank">Flex Layout Attribute</a> for more details and configuration options.</p>
+    <p>To use Flex Layout one needs to add <code>data-flex-layout</code> and <code>data-flex-self</code> attributes to HTML-elements. See <a href="http://progressivered.com/fla" target="_blank">Flex Layout Attribute</a> for more details and configuration options.</p>
     <p>Use Flex Layout to create a flexible responsive layout.</p>
     <h3>Example 1</h3>
     <mp-code-example>
@@ -99,8 +87,9 @@
     </mp-code-example>
 
     <h2>Built-in CSS classes</h2>
-    <p>The platform provides a set of CSS classes that help to layout page header and body.</p>
+    <p>The platform carries a set of CSS classes that help layout a page header and body. Use <code>page__header</code>,  <code>page__header-thumbnail</code> and <code>page__header-body</code> to separate out your header content and <code>page__body</code> class to place tha page body content. 
     <h3>Example 1</h3>
+    
     <mp-code-example>
       <![CDATA[
       <div class="page">
@@ -133,6 +122,7 @@
     <h2>Built-in CSS classes with Tabs</h2>
     <p>These CSS classes can also be used with <semantic-link uri="http://help.metaphacts.com/resource/ReactBootstrap">Horizontal Tabs</semantic-link>.</p>
     <h3>Example 1</h3>
+    <p>In this example we declare a header with an image to represent Alice that is also combined with 2 tabs. </br> Please take a notice of <code>unmount-on-exit</code>property of tabs in the example. This parameter allows you to control whether each tab preserves its state aftet the user clicks away on another tab or not. More on this in react bootstap documentation for tabs <a href="https://react-bootstrap-v3.netlify.app/components/tabs/#tabs-props-area" target="_blank">here</a>. Setting this property value to <code>true</code> will force the platform to reload the contents of the tab anew each time the user returns to it, which can be quite costly, if the amount of data to fetch is significant.</p>
     <mp-code-example>
       <![CDATA[
       <div class="page">
@@ -158,13 +148,14 @@
     </mp-code-example>
     
     <h3>Example 2</h3>
+    <p>Here, in comparison to the previous example, we define a header with no image (but with an icon) and the same 2 tabs.</p>
     <mp-code-example>
       <![CDATA[
       <div class="page">
         <div class="page__header-navtabs--no-image">
           <h2><i class="fa fa-user" style="margin-right:4px;"></i> Alice</h2>
         </div>
-        <bs-tabs class="page__body-navtabs--borderless-no-image" unmount-on-exit=true>
+        <bs-tabs class="page__body-navtabs--borderless-no-image" unmount-on-exit=false>
           <bs-tab event-key="1" title="Tab 1">
             Tab 1
           </bs-tab>
@@ -172,6 +163,94 @@
             Tab 2
           </bs-tab>
         </bs-tabs>
+      </div>
+      ]]>
+    </mp-code-example>
+
+    <h2 id='workspace-layout'>Workspace Layout</h2>
+    <p>
+      Helps creating complex workspace layouts by combining <code>mp-workspace-layout</code>,
+      <code>mp-workspace-column</code>, <code>mp-workspace-row</code>,
+      <code>mp-workspace-item</code> components. The workspace components also come with resizable spaces and an option to collapse side panels completely from view, which delivers more flexibility to the end-user if compaired to CSS layouting solutions. 
+    </p>
+
+    <p>
+      <code>mp-workspace-layout</code> configuration:
+      <mp-documentation type='WorkspaceLayoutConfig'></mp-documentation>
+    </p>
+
+    <p>
+      <code>mp-workspace-column</code> and <code>mp-workspace-row</code> configuration:
+      <mp-documentation type='WorkspaceContainerConfig'></mp-documentation>
+    </p>
+
+    <p>
+      <code>mp-workspace-item</code> configuration:
+      <mp-documentation type='WorkspaceItemConfig'></mp-documentation>
+    </p>
+
+    <h3>Example 1</h3>
+<p>In this example we created the main work space surrounded by additional left-side and right-side panels that can be collapsed to give away all space to the main space in the middle.</p>
+    <mp-code-example>
+      <![CDATA[
+      <div style='height: 500px'>
+				<mp-workspace-layout horizontal-collapsed-size=0>
+					<mp-workspace-row>
+            <mp-workspace-item id='1' default-size=275>
+                <div class='grid-demo' style='flex: 1'>1</div>
+              </mp-workspace-item>
+            <mp-workspace-item id='2'>
+                <div class='grid-demo' style='flex: 1'>2</div>
+              </mp-workspace-item>
+            <mp-workspace-item id='3' default-size=275>
+              <div class='grid-demo' style='flex: 1'>3</div>
+          </mp-workspace-item>
+					</mp-workspace-row>
+				</mp-workspace-layout>
+      </div>
+			]]>
+    </mp-code-example>
+
+    <h3>Example 2</h3>
+<p>In this one we devided the vertical space into three equal spaces. Notice that we added headers to each panel that also carries collapse/expand triangle. Also when panels are layed out horizontally that are not equipped with the collapse/expand circle.<p>
+    <mp-code-example>
+      <![CDATA[
+      <div style='height: 500px'>
+        <mp-workspace-layout horizontal-collapsed-size=0>
+          <mp-workspace-column undocked=true>
+            <mp-workspace-item id='1' heading="Panel 1">
+            	<div class='grid-demo' style='flex: 1'>1</div>
+            </mp-workspace-item>
+						<mp-workspace-item id='2' heading="Panel 1">
+            	<div class='grid-demo' style='flex: 1'>2</div>
+            </mp-workspace-item>
+						<mp-workspace-item id='3' heading="Panel 1">
+            	<div class='grid-demo' style='flex: 1'>3</div>
+            </mp-workspace-item>
+          </mp-workspace-column>
+        </mp-workspace-layout>
+      </div>
+      ]]>
+    </mp-code-example>
+    
+    <h3>Example 3</h3>
+<p>Finally, by not setting any <code>default-size</code> we went for equal dynamic distribution of spaces that share evenly vertical screen real estate. For the third space we kept collapse/expand circle available.<p>
+    <mp-code-example>
+      <![CDATA[
+      <div style='height: 500px'>
+        <mp-workspace-layout horizontal-collapsed-size=0>
+          <mp-workspace-row>
+            <mp-workspace-item id='1' undocked=true>
+            	<div class='grid-demo' style='flex: 1'>1</div>
+            </mp-workspace-item>
+						<mp-workspace-item id='2'>
+            	<div class='grid-demo' style='flex: 1'>2</div>
+            </mp-workspace-item>
+						<mp-workspace-item id='3' undocked=false>
+            	<div class='grid-demo' style='flex: 1'>3</div>
+            </mp-workspace-item>
+          </mp-workspace-row>
+        </mp-workspace-layout>
       </div>
       ]]>
     </mp-code-example>

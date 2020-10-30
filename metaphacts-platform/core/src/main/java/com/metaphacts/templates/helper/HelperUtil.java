@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.templates.helper;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -25,6 +46,8 @@ import java.util.List;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.MalformedQueryException;
 import org.eclipse.rdf4j.query.Operation;
@@ -112,5 +135,34 @@ public class HelperUtil {
     public static String escapeIfRequested(String result, Options options) {
         return options.isFalsy(options.hash.getOrDefault(ESCAPE_RESULT_FLAG, "true"))
             ? result : StringEscapeUtils.escapeHtml4(result);
+    }
+
+    /**
+     * Converts a helper parameter to {@code String}.
+     * 
+     * @param param to convert
+     * @return the parameter as string or {@code null} if the input is {@code null}.
+     */
+    public static String toString(Object param) {
+        return param != null ? param.toString() : null;
+    }
+
+    /**
+     * Converts the helper parameter to {@link IRI}.
+     * 
+     * @param param to convert
+     * @return parsed {@link IRI}. {@code null} if input is {@code null} or is a
+     *         {@link TemplateContext} but no IRI.
+     */
+    public static IRI toIRI(Object param) {
+        if (param == null) {
+            return null;
+        } else if (param instanceof TemplateContext) {
+            Value value = ((TemplateContext) param).getValue();
+            return value instanceof IRI ? (IRI) value : null;
+        } else {
+            String string = toString(param);
+            return SimpleValueFactory.getInstance().createIRI(string);
+        }
     }
 }

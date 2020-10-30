@@ -1,0 +1,53 @@
+<style>
+  tr:nth-child(odd) {
+    background-color: #f2f2f2
+  }
+</style>
+
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li class="active">User Profile</li>
+</ol>
+
+<div class="page">
+  <div class="page__header">
+    <div class='page__header-thumbnail'>
+      <h2><i class="fa fa-user fa-2x"></i></h2>
+    </div>
+    <div class='page__header-body'>
+      <h2>User Profile - <mp-json-renderer get-url='/rest/security/user' template='<span>{{this.principal}}</span>'></mp-json-renderer>
+      </h2>
+    </div>
+  </div>
+
+  <div class='page__body'>
+    <bs-tabs id="tabs">
+      <bs-tab event-key="1" title="Your Roles">
+        <mp-json-renderer style="align: center;" get-url='/rest/security/getPersonalRoles'
+                          template='{{> roles-table}}'>
+          <template id='roles-table'>
+            <div>
+              <p>
+                You have been assigned to the following <b>{{this.length}}</b> roles:
+              </p>
+              <table class="centerTable">
+                {{#each this as |role|}}
+                <tr>
+                  <td># {{@index}}</td> <td>{{role}}</td>
+                </tr>
+                {{/each}}
+              </table>
+            </div>
+          </template>
+          >
+        </mp-json-renderer>
+     </bs-tab>
+     <bs-tab event-key="2" title="Permission Check">   
+       In the following input, you can check whether your roles grant access to a certain permission string, i.e. you may get asked by an administrator to check on a certain permission:<br><br>
+        <mp-account-permission-check></mp-account-permission-check>
+      </bs-tab>
+    </bs-tabs>
+  </div>
+</div>

@@ -19,6 +19,7 @@
   </div>
   <div class='page__body'>
 	[[#if (hasPermission "repository-config:view")]]
+    <p>Use the following UI to manage  <semantic-link title="Repositories" uri='[[resolvePrefix "Help:RepositoryManager"]]'>repositories</semantic-link>. The currently active default repository for all database operations is "<mp-json-renderer get-url="/rest/repositories/info/linkedDefaultRepository" template='<b>{{id}}</b>'></mp-json-renderer>". Use the <semantic-link title="System Configuration" uri='[[resolvePrefix "Admin:Configuration"]]'>environment configuration setting</semantic-link>&nbsp;<i>linkedDefaultRepository</i> to change the active default repository. Refer to the <semantic-link title="Repositories" uri='[[resolvePrefix "Help:RepositoryManager"]]'>repositories</semantic-link> documentation for further details.</p>
     <mp-admin-repository-mgmt></mp-admin-repository-mgmt>
   [[else]]
     <i>No permission to view repository configurations.</i>

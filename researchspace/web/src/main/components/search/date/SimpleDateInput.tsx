@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -44,7 +43,7 @@ interface State {
 }
 
 export class SimpleDateInput extends React.PureComponent<SimpleDateInputProps, State> {
-  constructor(props, context) {
+  constructor(props: SimpleDateInputProps, context: any) {
     super(props, context);
     this.state = {
       day: '',
@@ -81,7 +80,7 @@ export class SimpleDateInput extends React.PureComponent<SimpleDateInputProps, S
     </div>;
   }
 
-  componentWillUpdate(nextProps, nextState: State) {
+  componentWillUpdate(nextProps: SimpleDateInputProps, nextState: State) {
     this.triggerOnSelected(nextState);
   }
 

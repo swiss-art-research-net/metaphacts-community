@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,9 +15,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
-import ReactSelect from 'react-select';
+import ReactSelect, { OnChangeHandler } from 'react-select';
 import { FormControl, ControlLabel, FormGroup, Button, Panel } from 'react-bootstrap';
 import * as Maybe from 'data.maybe';
 import * as Immutable from 'immutable';
@@ -29,7 +28,7 @@ import * as classnames from 'classnames';
 import { Component, ComponentChildContext, TemplateContextTypes } from 'platform/api/components';
 import { TemplateItem } from 'platform/components/ui/template';
 import { Rdf } from 'platform/api/rdf';
-import { CapturedContext } from 'platform/api/services/template';
+import { mergeInContextOverride } from 'platform/api/services/template';
 import { ModuleRegistry } from 'platform/api/module-loader';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Cancellation } from 'platform/api/async/Cancellation';
@@ -41,7 +40,7 @@ import {
 } from 'platform/components/forms';
 import { Spinner } from 'platform/components/ui/spinner';
 import { DropArea } from 'platform/components/dnd/DropArea';
-import { ResourceLinkComponent } from 'platform/api/navigation/components';
+import { ResourceLinkComponent } from 'platform/components/navigation';
 import { navigateToResource } from 'platform/api/navigation';
 import { addNotification } from 'platform/components/ui/notification';
 
@@ -159,7 +158,6 @@ interface State {
   addingNewValue?: boolean;
   newValues?: ReadonlyArray<Rdf.Node>;
   formTemplate?: React.ReactNode;
-  capturedDataContext?: CapturedContext;
   addingNarrative?: boolean;
   narrative?: Rdf.Iri;
   assertionIri?: Rdf.Iri;
@@ -319,16 +317,15 @@ export class AssertionComponent extends Component<Props, State> {
     const {templateDataContext} = this.context;
     const {formTemplate} = this.props;
     if (!formTemplate) { return; }
-    const capturer = CapturedContext.inheritAndCapture(templateDataContext);
-    this.appliedTemplateScope.compile(formTemplate).then(
-      template => ModuleRegistry.parseHtmlToReact(
-        template({field: this.state.field}, {capturer, parentContext: templateDataContext})
-      )
-    ).then(formTemplate => {
-      this.setState({
-        formTemplate: formTemplate,
-        capturedDataContext: capturer.getResult(),
-      });
+    this.cancellation.map(
+      this.appliedTemplateScope.prepare(formTemplate)
+    ).observe({
+      value: compiledTemplate => {
+        const dataContext = mergeInContextOverride(templateDataContext, {field: this.state.field});
+        const nodes = compiledTemplate(dataContext);
+        const renderedTemplate = ModuleRegistry.mapHtmlTreeToReact(nodes);
+        this.setState({formTemplate: renderedTemplate});
+      }
     });
   }
 
@@ -655,12 +652,12 @@ export class AssertionComponent extends Component<Props, State> {
           options={fields.map(field =>
             ({value: field.iri, label: getPreferredLabel(field.label)})
           )}
-          onChange={(newValue: { value: string }) => {
+          onChange={((newValue: { value: string }) => {
             const newField = newValue
               ? fields.find(field => field.iri === newValue.value)
               : undefined;
             this.setState({field: newField});
-          }} />
+          }) as OnChangeHandler<string>} />
         )}
       </FormGroup>
       {this.renderValues()}
@@ -699,10 +696,10 @@ export class AssertionComponent extends Component<Props, State> {
         _.filter(entries, entry => !entry.subject.equals(target));
       return new LdpPersistence()
         .persistModelUpdates(nestedValues[0].subject, nestedValues)
-        .map(() => topLevelFieldValue.inserted);
+        .map(() => topLevelFieldValue.inserted.map(value => value.value));
     } else {
       return Kefir.constant(
-        _.flatten(entries.map(entry => entry.inserted as Array<Rdf.Node>))
+        _.flatten(entries.map(entry => entry.inserted.map(value => value.value)))
       );
     }
   }

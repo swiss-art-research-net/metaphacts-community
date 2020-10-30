@@ -1,0 +1,221 @@
+
+task initializeNpm;
+
+task cleanNpmAssets(type: Delete) {
+	delete project.file('assets')
+	delete project.file('.cache-loader')
+	delete project.file('.happypack')
+}
+cleanNpm.dependsOn cleanNpmAssets
+
+
+task clean(type: Delete, dependsOn: [cleanNpmAssets]) {
+	delete project.file('target/assets')
+}
+
+
+// generate webpack DLL
+task generateWebpackDll(dependsOn: [initializeNpm]) {
+
+	// define "package.json" as task input
+	allWebProjects.each {
+		inputs.file it.file('package.json')
+	}
+	inputs.property("buildEnv", rootProject.buildEnv)
+	def markerOutputFile = project.file('target/assets/.dll.cache')
+	outputs.file markerOutputFile;
+	outputs.cacheIf { true }
+
+	// depends on ontodia distribution
+	dependsOn toProject(rootProject.ext.buildConfig.ontodiaDist).getTasksByName('buildAndDeployOntodia', true)
+
+	doLast {
+
+		def npmTarget = rootProject.isDevBuild ? 'dll-dev' : 'dll-prod'
+
+		project.exec {
+			environment 'buildjson', rootProject.buildJsonPath
+			commandLine generateCmdForOS(['npm', 'run', npmTarget])
+		}
+
+		// create a marker output file for incremental builds
+		markerOutputFile.createNewFile();
+	}
+}
+
+task generateJsonSchema {
+	
+		doLast {
+		
+			// iterate for each included project (e.g. metaphacts-platform)
+			for (def includeProject : rootProject.ext.buildConfig.includeProjects) {
+				project.logger.info("Generating JSON schema for " + includeProject)
+				
+					project.exec {
+					// exec 'yarn run generate-schema metaphacts-platform --all' in scope of project/webpack
+					commandLine generateCmdForOS(['yarn', 'run', 'generate-schema', includeProject, '--all'])
+				}
+			}
+		}
+	}
+
+task npmBuildProd(dependsOn: [generateWebpackDll]) {
+
+	doLast {
+
+		project.exec {
+			environment 'buildjson', rootProject.buildJsonPath
+			commandLine generateCmdForOS(['npm', 'run', 'prod'])
+		}
+	}
+}
+
+task npmTest(dependsOn: [generateWebpackDll]) {
+
+	doLast {
+
+		project.exec {
+			environment 'buildjson', rootProject.buildJsonPath
+			commandLine generateCmdForOS(['npm', 'run', 'test-ci'])
+		}
+	}
+}
+
+
+task startWebpackServerDev(dependsOn: [generateWebpackDll]) {
+
+	doLast {
+		startWebpackServer();
+		project.javaexec {
+			classpath rootProject.file('buildSrc/target/classes/java/main')
+			main = 'com.metaphacts.build.util.WaitForInput'
+			args 'Press any key to stop the Webpack server'
+			standardInput = System.in
+		}
+	}
+	finalizedBy 'stopWebpackServerDev'
+}
+
+task startWebpackServerDevBackground(dependsOn: [generateWebpackDll]) {
+
+	doLast {
+		startWebpackServer();
+	}
+}
+
+task stopWebpackServerDev() {
+
+	doLast {
+		stopWebpackServer();
+	}
+}
+
+task restartWebpackServerDev() {
+	doLast {
+		stopWebpackServer();
+		Thread.sleep(5000);
+	}
+	finalizedBy 'startWebpackServerDev'
+}
+
+
+
+def startWebpackServer() {
+
+	if (rootProject.ext.has('webpackDevServerProcess')) {
+		logger.lifecycle("Webpack dev server already running ...");
+		return;
+	}
+
+	logger.lifecycle("Starting webpack dev server ...")
+
+	ProcessBuilder pb = new java.lang.ProcessBuilder(generateCmdForOS(['npm', 'run', 'dev']));
+	pb.redirectErrorStream(true);
+	pb.directory(project.file('.'));
+	pb.environment().put('buildjson', rootProject.buildJsonPath)
+
+	def process = pb.start();
+
+	StreamGobbler outputGobbler = new StreamGobbler(process.getInputStream(), { line -> println line });
+	new Thread(outputGobbler).start();
+}
+
+def stopWebpackServer() {
+
+	project.logger.lifecycle('Initiating shutdown of webpack dev server...')
+	project.exec {
+		commandLine generateCmdForOS(['npm', 'run', 'dev-stop'])
+	}
+}
+
+initializeNpm.dependsOn rootProject.getTasksByName('yarnRun', true)
+
+
+/*
+ * Generates JSON report files for all NPM web projects. These serve as input
+ * for our generateLicenseReport task, see project/build.license.gradle
+ */
+task generateNpmLicenseReportFiles(dependsOn: initializeNpm) {
+	doLast {
+		def packageJsonFiles = []
+		def outputReports = []
+		// webapp from each included project (e.g. metaphacts)
+		for (def includeProject : rootProject.ext.buildConfig.includeProjects) {
+			File packageJson = project(':'+includeProject).file("web/package.json")
+			if (!packageJson.isFile()) {
+				project.logger.warn("Project " + includeProject + " does not define a package.json");
+				continue;
+			}
+			packageJsonFiles << packageJson;
+			outputReports << project.file('target/licenses/' + includeProject + '-licenses.json');
+		}
+		
+		// include ontodia OSS dependencies
+		packageJsonFiles << toProject(rootProject.ext.buildConfig.ontodiaDist).file('package.json')
+		outputReports << project.file('target/licenses/ontodia-licenses.json');
+
+		int index = 0;
+		for (File packageJson : packageJsonFiles) {
+			ByteArrayOutputStream outBuffer = new ByteArrayOutputStream()
+			def execResult = project.exec {
+				commandLine generateCmdForOS(['npm', 'run', 'license-report-prod', '--', packageJson.absolutePath, '>'])
+				standardOutput = outBuffer;
+			}
+			execResult.assertNormalExitValue();
+
+			File packageJsonReport = outputReports[index]
+			packageJsonReport.getParentFile().mkdirs();
+			packageJsonReport.write("");	// make sure to create a new file
+
+			BufferedReader br = new BufferedReader(new StringReader(outBuffer.toString()));
+			String line;
+			while ((line=br.readLine()) != null) {
+				// we are ignoring some of the license report output, and only take the final JSON part
+				// Note that the JSON report is in a single line
+				if (!line.startsWith("[")) {
+					continue;
+				}
+				packageJsonReport << line + "\n";
+			}
+			index++;
+		}
+	}
+}
+
+
+// Helper
+
+class StreamGobbler implements Runnable {
+	private InputStream inputStream;
+	private java.util.function.Consumer<String> consumeInputLine;
+
+	public StreamGobbler(InputStream inputStream, java.util.function.Consumer<String> consumeInputLine) {
+		this.inputStream = inputStream;
+		this.consumeInputLine = consumeInputLine;
+	}
+
+	@Override
+	public void run() {
+		new BufferedReader(new InputStreamReader(inputStream, 'UTF-8')).lines().forEach(consumeInputLine);
+	}
+}

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,21 +37,23 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Props as ReactProps, Component, createElement } from 'react';
 import * as D from 'react-dom-factories';
+import * as URI from 'urijs';
 import { findDOMNode } from 'react-dom';
-import * as YASQE from 'yasgui-yasqe';
-import { isUndefined, debounce, findKey } from 'lodash';
+import { debounce, findKey } from 'lodash';
 import { Overlay } from 'react-bootstrap';
 
-import { GET_REGISTERED_PREFIXES } from 'platform/api/services/namespace';
 import { Rdf } from 'platform/api/rdf';
 import { resolveIris } from 'platform/api/sparql/SparqlUtil';
 import { TemplateItem } from 'platform/components/ui/template';
 import { TargetedPopover } from 'platform/components/ui/TargetedPopover';
+import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
-import 'yasgui-yasqe/dist/yasqe.css';
+import * as YasqeInstance from '@triply/yasqe';
+type Yasqe = typeof import('@triply/yasqe').Yasqe;
+const Yasqe = YasqeInstance as unknown as Yasqe;
+import '@triply/yasqe/build/yasqe.min.css';
 
 import * as styles from './SparqlEditor.scss';
 
@@ -52,8 +76,6 @@ export interface SparqlEditorProps extends ReactProps<SparqlEditor> {
   backdrop?: boolean;
   query?: string;
   size?: {h: number; w: number; };
-  // built-in autocompleters are "prefixes", "properties", "classes", "variables"
-  autocompleters?: string[];
   /**
    * Function returning a string that will be used to identify
    * cached queries / prefixes from the local storage. If null, it will be used
@@ -62,17 +84,20 @@ export interface SparqlEditorProps extends ReactProps<SparqlEditor> {
    *
    */
   persistent?: () => string;
-
   /**
    * Whether syntax erros should be checked and visually indicated.
    * Default: true
    */
   syntaxErrorCheck?: boolean;
-
   /**
    * Defines the popover content, expects {{iri}} as a context variable.
    */
   popoverTemplate?: string;
+  /**
+   * Enables autofocus.
+   * @default false
+   */
+  autofocus?: boolean;
 }
 
 export interface State {
@@ -87,7 +112,7 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
     popoverTemplate: DEFAULT_POPOVER_TEMPLATE,
   };
 
-  private yasqe: YasguiYasqe.Yasqe;
+  private yasqe: InstanceType<Yasqe>;
   private id: string;
 
   constructor(props: SparqlEditorProps) {
@@ -101,35 +126,24 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
   }
 
   componentDidMount() {
-    // bad hack, however, YASQE does extend a default autocompleters array
-    // with the autocompleters passed in through options using $extend, which apparently
-    // does not overwrite the entire array but replaces values in order
-    if (this.props.autocompleters) {
-      YASQE['defaults']['autocompleters'] = this.props.autocompleters;
-      if (this.props.autocompleters.indexOf('prefixes') > -1) {
-        YASQE['Autocompleters']['prefixes']['fetchFrom'] = GET_REGISTERED_PREFIXES;
-        // Workaround for disabling caching of prefixes
-        // YASQE doesn't support overriding the persistent option
-        const _prefixes = YASQE['Autocompleters'].prefixes;
-        YASQE['Autocompleters'].prefixes = (yasqe, completerName) => {
-          const completer = _prefixes(yasqe, completerName);
-          completer.persistent = null;
-          return completer;
-        };
-      }
-    }else {
-      // by default we only support variables, since prefixes issues
-      // calls against external services
-      YASQE['defaults']['autocompleters'] = ['variables'];
-    }
-
-    this.yasqe = YASQE(
-      findDOMNode(this) as Element, {
-        backdrop: 0,
-        value: this.props.query,
-        persistent: this.props.persistent ? this.props.persistent  : null,
-      }
-    );
+    const {persistent = null, query, autofocus} = this.props;
+    this.yasqe = new Yasqe(findDOMNode(this) as HTMLElement, {
+      value: query,
+      createShareableLink: (yasqe: Yasqe): string => {
+        return new URI(window.location.href)
+          .removeQuery('query')
+          .addQuery({'query': yasqe.getValue()})
+          .toString();
+      },
+      showQueryButton: false,
+      resizeable: false,
+      autofocus,
+      persistenceId: persistent,
+      requestConfig : {
+        endpoint: document.URL
+      },
+      pluginButtons: () => createFullscreenButton(this.id)
+    });
 
     /*
       Disabling syntax error check AFTER the node has been initialized.
@@ -146,11 +160,9 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
 
     if (this.props.size) {
       this.yasqe.setSize(this.props.size.w, this.props.size.h);
-    }else {
+    } else {
       this.yasqe.setSize(null, 400);
     }
-
-    this.setBackdrop(this.props.backdrop);
 
     const wrapper = this.yasqe.getWrapperElement();
     if (wrapper) {
@@ -165,7 +177,6 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
   private __componentWillRecieveProps =
     debounce(function (this: SparqlEditor, nextProps: SparqlEditorProps) {
       if (normalizeLineEndings(nextProps.query) !== normalizeLineEndings(this.getQuery().value)) {
-        this.setBackdrop(nextProps.backdrop);
         this.setValue(nextProps.query);
       }
     });
@@ -239,17 +250,8 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
     }
   }
 
-  private onChange = (doc, change) => {
-    // call onChange only if change event was triggered by keyboard
-    if (this.props.onChange && change.origin !== 'setValue') {
-      this.props.onChange(this.getQuery());
-    }
-  }
-
-  private setBackdrop = (show: boolean) => {
-    this.yasqe.setBackdrop(
-      isUndefined(show) ? false : show
-    );
+  private onChange = () => {
+    this.props.onChange(this.getQuery());
   }
 }
 
@@ -257,12 +259,20 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
  * We need this function to make sure that we have consistent line endings,
  * independently from OS defaults.
  */
-function normalizeLineEndings (str) {
+function normalizeLineEndings(str: string) {
   if (!str) { return str; }
   return str.replace(/\r\n|\r/g, '\n');
 }
 
-function getResourceIriFromToken(token: YasguiYasqe.YasqeToken): Rdf.Iri | undefined {
+interface SparqlToken {
+  type: string;
+  string: string;
+  state: {
+    prefixes: { [prefixKey: string]: string };
+  };
+}
+
+function getResourceIriFromToken(token: SparqlToken): Rdf.Iri | undefined {
   const {prefixes} = token.state;
   if (token.type === 'string-2') {
     const [prefixKey, resource] = token.string.split(':');
@@ -287,3 +297,60 @@ function getResourceIriFromToken(token: YasguiYasqe.YasqeToken): Rdf.Iri | undef
   }
   return undefined;
 }
+
+// set persistenceId to explicitly return null to prevent caching prefixes
+Yasqe.Autocompleters['prefixes'].persistenceId = () => null;
+Yasqe.Autocompleters['prefixes'].get = () => {
+  return Object.keys(SparqlUtil.RegisteredPrefixes).map(key => {
+    return `${key}: <${SparqlUtil.RegisteredPrefixes[key]}>`;
+  });
+};
+Yasqe.Autocompleters['property'].get = (yasqe, token) => {
+  return SparqlClient.select(`SELECT ?property WHERE {
+  { ?property a owl:DatatypeProperty }
+  UNION
+  { ?property a owl:ObjectProperty }
+  FILTER(REGEX(STR(?property), "${token.autocompletionString}.*", "i"))
+} LIMIT 10`).map(res =>
+    res.results.bindings.map(item => item['property'].value)
+  ).toPromise();
+}
+Yasqe.Autocompleters['class'].get = (yasqe, token) => {
+  return SparqlClient.select(`SELECT ?class WHERE {
+  { ?class a rdfs:Class }
+  UNION
+  { ?class a owl:Class }
+  FILTER(REGEX(STR(?class), "${token.autocompletionString}.*", "i"))
+} LIMIT 10`).map(res =>
+    res.results.bindings.map(item => item['class'].value)
+  ).toPromise();
+}
+
+function createFullscreenButton(id: string) {
+  const button = document.createElement('button');
+  button.id = 'fullScreenButton';
+  button.className = styles.fullScreenOpenButton;
+  let isFullScreen = false;
+  button.onclick = (e) => {
+    const sparqlEditorArea = document.getElementById(id);
+    const codeMirrorElements = document.getElementsByClassName('CodeMirror');
+    const codeMirrorElement = codeMirrorElements.item(0);
+    const doc = document.querySelector('html');
+    if (isFullScreen) {
+      sparqlEditorArea.classList.remove(styles.fullScreen);
+      codeMirrorElement.classList.remove(styles.sparqlCodeMirrorFullScreen);
+      button.className = styles.fullScreenOpenButton;
+      doc.style.overflowY = 'auto';
+      isFullScreen = false;
+    } else {
+      sparqlEditorArea.classList.add(styles.fullScreen);
+      codeMirrorElement.classList.add(styles.sparqlCodeMirrorFullScreen);
+      button.className = styles.fullScreenCloseButton;
+      doc.style.overflowY = 'hidden';
+      isFullScreen = true;
+    }
+  };
+  return button;
+}
+
+

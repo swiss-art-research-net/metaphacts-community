@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +15,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
 
 import * as React from 'react';
-import ReactSelect, { Options } from 'react-select';
+import ReactSelect, { Options, OnChangeHandler } from 'react-select';
 import * as _ from 'lodash';
 
 import { Dataset } from 'platform/components/semantic/search/data/datasets/Model';
@@ -41,9 +40,10 @@ export class DatasetSelector extends React.Component<DatasetSelectorProps, {}> {
 
   componentDidMount() {
     if (_.isEmpty(this.props.selectedDatasets)) {
-      this.props.onDatasetsSelection(
-        _.filter(this.props.availableDatasets, d => d.isDefault)
-      );
+      const datasets = _.filter(this.props.availableDatasets, d => d.isDefault);
+      if (datasets.length) {
+        this.props.onDatasetsSelection(datasets);
+      }
     }
   }
 
@@ -53,7 +53,7 @@ export class DatasetSelector extends React.Component<DatasetSelectorProps, {}> {
       options={this.datasetsToOptions(this.props.availableDatasets)}
       multi={true}
       value={this.datasetsToOptions(this.props.selectedDatasets)}
-      onChange={this.selectDatasets}
+      onChange={this.selectDatasets as OnChangeHandler<any>}
       placeholder='Select Datasets'
     />;
   }
@@ -64,7 +64,7 @@ export class DatasetSelector extends React.Component<DatasetSelectorProps, {}> {
         _.map(dataset.alignments, alignment => alignment.label).join(', ');
       return {
         value: dataset.iri.value,
-        label: `${dataset.label} [${alignmentsLabels}]`,
+        label: alignmentsLabels ? `${dataset.label} [${alignmentsLabels}]` : dataset.label,
       };
     });
 

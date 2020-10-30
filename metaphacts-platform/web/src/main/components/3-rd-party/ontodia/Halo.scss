@@ -1,0 +1,70 @@
+/*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, you can receive a copy
+ * of the GNU Lesser General Public License from http://www.gnu.org/
+ */
+.removeButton {
+  position: absolute;
+  right: -24px;
+  top: 4px;
+  border: none;
+  outline: none;
+  width: 28px;
+  height: 28px;
+  background-color: white;
+  box-shadow: 0 0 4px 0 rgba(0,0,0,0.12);
+}
+
+.establishNewConnection {
+  position: absolute;
+  background-color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: 0 none;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+  bottom: -22px;
+  left: calc(50% - 10px);
+  background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODQgNTEyIj48cGF0aCBkPSJNMjU2IDE0NFYzMmMwLTE3LjY3MyAxNC4zMjctMzIgMzItMzJzMzIgMTQuMzI3IDMyIDMydjExMmgtNjR6bTExMiAxNkgxNmMtOC44MzcgMC0xNiA3LjE2My0xNiAxNnYzMmMwIDguODM3IDcuMTYzIDE2IDE2IDE2aDE2djMyYzAgNzcuNDA2IDU0Ljk2OSAxNDEuOTcxIDEyOCAxNTYuNzk2VjUxMmg2NHYtOTkuMjA0YzczLjAzMS0xNC44MjUgMTI4LTc5LjM5IDEyOC0xNTYuNzk2di0zMmgxNmM4LjgzNyAwIDE2LTcuMTYzIDE2LTE2di0zMmMwLTguODM3LTcuMTYzLTE2LTE2LTE2em0tMjQwLTE2VjMyYzAtMTcuNjczLTE0LjMyNy0zMi0zMi0zMlM2NCAxNC4zMjcgNjQgMzJ2MTEyaDY0eiIvPjwvc3ZnPg==);
+}

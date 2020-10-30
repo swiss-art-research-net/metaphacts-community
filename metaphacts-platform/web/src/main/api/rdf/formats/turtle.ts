@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,19 +37,16 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as N3 from 'n3';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
+import type * as RdfJs from 'rdf-js';
 
 import * as Rdf from '../core/Rdf';
-import { rdf as rdfVocab } from '../vocabularies/vocabularies';
-
-const N3Util = N3.Util;
 
 /**
  * Provides functions for RDF serialization into Turtle.
- * As well as converters beetwen {@link ../core/Rdf} and {@link n3}
+ * As well as converters between {@link ../core/Rdf} and {@link n3}
  */
 export module serialize {
 
@@ -44,32 +63,15 @@ export module serialize {
   export function serializeGraph(
     graph: Rdf.Graph, format: string = Format.Turtle
   ): Kefir.Property<string> {
-    const writer = N3.Writer({format: format});
+    const writer = new N3.Writer({format: format});
     graph.triples.forEach(
-      triple => writer.addTriple(tripleToN3(triple))
+      // type-cast here due to incorrect N3 typings
+      // (too concrete N3.Quad type -- should be RDF/JS one)
+      triple => writer.addQuad(triple as unknown as N3.Quad)
     );
     return Kefir.fromNodeCallback<string>(
       writer.end.bind(writer)
     ).toProperty();
-  }
-
-  /**
-   * Convert {@link Rdf.Triple} into N3 Triple representation.
-   *
-   * @see https://github.com/RubenVerborgh/N3.js#triple-representation
-   */
-  export function tripleToN3(triple: Rdf.Triple): N3.Triple {
-    const nTriple: N3.Triple = {
-      subject: nodeToN3(triple.s),
-      predicate: nodeToN3(triple.p),
-      object: nodeToN3(triple.o),
-    };
-
-    if (!_.isUndefined(triple.g) && !triple.g.equals(Rdf.DEFAULT_GRAPH)) {
-      nTriple.graph = nodeToN3(triple.g);
-    }
-
-    return nTriple;
   }
 
   /**
@@ -78,30 +80,13 @@ export module serialize {
    * @see https://github.com/RubenVerborgh/N3.js#triple-representation
    */
   export function nodeToN3(value: Rdf.Node): string {
-    return value.cata(
-      iri => iri.value,
-      literal => literalToN3(literal),
-      bnode => bnode.value
-    );
-  }
-
-  /**
-   * Convert {@link Rdf.Literal} into N3 value.
-   *
-   * @see https://github.com/RubenVerborgh/N3.js#triple-representation
-   */
-  export function literalToN3(literal: Rdf.Literal): string {
-    if (literal.language) {
-      return `"${literal.value}"@${literal.language}`;
-    } else {
-      return `"${literal.value}"^^${literal.datatype.value}`;
-    }
+    return Rdf.termToString(value);
   }
 }
 
 /**
  * Provides functions for RDF de-serialization from Turtle.
- * As well as converters beetwen {@link ../core/Rdf} and {@link n3}
+ * As well as converters between {@link ../core/Rdf} and {@link n3}
  */
 export module deserialize {
 
@@ -113,81 +98,57 @@ export module deserialize {
   }
 
   /**
-   * Deserialize Turtle string as array of {@link Rdf.Triple}
+   * Deserialize Turtle string as array of {@link Rdf.Quad}
    */
-  export function turtleToTriples(turtle: string): Kefir.Property<Rdf.Triple[]> {
-    return Kefir.stream(emitter => {
+  export function turtleToTriples(turtle: string): Kefir.Property<Rdf.Quad[]> {
+    return Kefir.stream<Rdf.Quad>(emitter => {
       initN3Parser(emitter, turtle);
     }).scan(
-      (acc: Rdf.Triple[], x: Rdf.Triple) => {
+      (acc: Rdf.Quad[], x: Rdf.Quad) => {
         acc.push(x);
         return acc;
-      }, <Rdf.Triple []>[]
+      }, []
     ).last();
-  }
-
-  /**
-   * Converts N3.js representation of the RDF triple into {@link Rdf.Triple}.
-   */
-  export function n3TripleToRdf(triple: N3.Triple): Rdf.Triple {
-    return Rdf.triple(
-      n3ValueToRdf(
-        triple.subject
-      ),
-      <Rdf.Iri>n3ValueToRdf(
-        triple.predicate
-      ),
-      n3ValueToRdf(
-        triple.object
-      )
-    );
   }
 
   /**
    * Converts N3.js representation of the RDF value into {@link Rdf.Node}.
    */
   export function n3ValueToRdf(value: string): Rdf.Node {
-    // TODO seems to be a bug with N3Util.isIRI in n3.js, need to revise this later
-    if (N3Util.isIRI(value) || value === '') {
-      return Rdf.iri(value);
-    } else if (N3Util.isLiteral(value)) {
-      return n3LiteralToRdf(value);
-    } else if (N3Util.isBlank(value)) {
-      return Rdf.bnode(value);
-    } else {
-      throw new Error(`Invalid rdf value: ${value}`);
-    }
-  }
-
-  /**
-   * Converts N3.js RDF literal representation into the internal {@link Rdf.Literal}.
-   */
-  export function n3LiteralToRdf(literal: string): Rdf.Literal {
-    switch (N3Util.getLiteralType(literal)) {
-    case rdfVocab.langString.value:
-      return Rdf.langLiteral(
-        N3Util.getLiteralValue(literal), N3Util.getLiteralLanguage(literal)
-      );
-    default:
-      return Rdf.literal(
-        N3Util.getLiteralValue(literal), Rdf.iri(N3Util.getLiteralType(literal))
-      );
+    const parser = new N3.Parser({
+      // type-cast here due to incorrect N3 typings
+      // (too concrete N3.Quad type -- should be RDF/JS one)
+      factory: Rdf.DATA_FACTORY as RdfJs.DataFactory<any, any>,
+      blankNodePrefix: '',
+    });
+    const [quad] = parser.parse(`<s:s> <p:p> ${value} .`);
+    switch (quad.object.termType) {
+      case 'NamedNode':
+      case 'BlankNode':
+      case 'Literal':
+        return quad.object;
+      default:
+        throw new Error('Unexpected N3 term type: ' + quad.object.termType);
     }
   }
 
   /**
    * Create streaming Turtle parser.
    */
-  export function initN3Parser(emitter: Kefir.Emitter<Rdf.Triple>, turtle: string): N3.Parser {
-    const parser = N3.Parser();
+  function initN3Parser(emitter: Kefir.Emitter<Rdf.Quad>, turtle: string): N3.Parser {
+    const parser = new N3.Parser({
+      // type-cast here due to incorrect N3 typings
+      // (too concrete N3.Quad type -- should be RDF/JS one)
+      factory: Rdf.DATA_FACTORY as RdfJs.DataFactory<any, any>,
+      blankNodePrefix: '',
+    });
     parser.parse(turtle, (error, triple, prefixes) => {
       if (error) {
         emitter.error(error);
       }
       if (triple != null) {
-        emitter.emit(
-          n3TripleToRdf(triple)
-        );
+        // triple is always Rdf.Triple here because we passed Rdf.DATA_FACTORY above
+        emitter.emit(triple as unknown as Rdf.Quad);
       } else {
         emitter.end();
       }

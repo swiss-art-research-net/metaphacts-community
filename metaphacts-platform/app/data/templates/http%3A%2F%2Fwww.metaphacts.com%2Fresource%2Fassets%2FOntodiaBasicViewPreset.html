@@ -1,0 +1,61 @@
+[[!--
+To use this set of presets copy following line to your file:
+[[> "http://www.metaphacts.com/resource/assets/OntodiaBasicViewPreset"]]
+--]]
+
+[[#*inline "BasicGraphBreadcrumbs"]]
+[[!-- Parameters: diagramIri --]]
+  <semantic-context repository='default'>
+    <ol class="page-breadcrumb">
+      <li>
+        <mp-link title="Home" url="/">Home</mp-link>
+      </li>
+      <li>
+        <semantic-link
+          title="Assets"
+          iri='[[resolvePrefix "Assets:Diagrams"]]'>
+          Diagrams
+        </semantic-link>
+      </li>
+      <semantic-context repository='assets'>
+        <li class="active">[[#if diagramIri]]<mp-label iri="[[diagramIri]]"></mp-label>[[else]]New Diagram[[/if]]</li>
+      </semantic-context>
+    </ol>
+  </semantic-context>
+[[/inline]]
+
+[[#*inline "BasicGraphSettings"]]
+[[!-- Empty for now --]]
+<semantic-query
+	query='SELECT * WHERE {}'
+  no-result-template='{{> basicBody}}'>
+  <template id='basicBody'>
+  [[> @partial-block]]
+  </template>
+</semantic-query>
+[[/inline]]
+
+[[!-- optionally id --]]
+[[#*inline "BasicGraphBody"]]
+  <ontodia
+  id='[[#if id]][[id]][[/if]]'
+    hide-navigation-confirmation=true
+    [[#if diagramIri]]diagram="[[diagramIri]]"[[/if]]
+    [[> "http://www.metaphacts.com/resource/assets/OntodiaGlobalSettings" ]]
+    [[> OntodiaClassAndLinksCustomization ]]
+    >
+    <ontodia-data-providers>
+      [[> "http://www.metaphacts.com/resource/OntodiaUserDataProvider"]]
+    </ontodia-data-providers>
+    [[#> show-if-editable]]
+      [[#if diagramIri]]
+        [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace" focusView=true]]
+      [[else]]
+        [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace" focusCreate=true]]
+      [[/if]]
+    [[/show-if-editable]]
+    [[#> show-if-read-only]]
+      [[> "http://www.metaphacts.com/resource/OntodiaSimpleWorkspace" readonly=true focusView=true]]
+    [[/show-if-read-only]]
+  </ontodia>
+[[/inline]]

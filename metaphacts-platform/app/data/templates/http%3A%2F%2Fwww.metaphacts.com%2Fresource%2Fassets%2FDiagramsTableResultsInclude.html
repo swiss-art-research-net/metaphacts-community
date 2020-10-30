@@ -1,0 +1,38 @@
+<template id='view'>
+  <semantic-context repository='default'>
+    <semantic-link iri='http://www.metaphacts.com/resource/assets/OntodiaView' urlqueryparam-diagram='{{diagram.value}}'>
+      {{label.value}}
+    </semantic-link>
+  </semantic-context>
+</template>
+<template id='context'>
+  {{#if context}}
+  <semantic-context repository='default'>
+    {{#ifCond diagramKind.value "===" "http://www.metaphacts.com/ontologies/platform#NamedGraphDiagram"}}
+      <semantic-link iri='http://www.metaphacts.com/resource/assets/NamedGraph' urlqueryparam-graph='{{context.value}}'>
+        {{context.value}}
+      </semantic-link>
+    {{else}}
+      <semantic-link iri='{{context.value}}'></semantic-link>
+    {{/ifCond}}
+  </semantic-context>
+  {{/if}}
+</template>
+<template id='author'>
+  {{#if author.value}}
+  <mp-label iri="{{author.value}}"></mp-label>
+  {{/if}}
+</template>
+<template id='modified'>
+  {{#if modified.value}}
+    {{dateTimeFormat modified.value "LLL"}}
+  {{/if}}
+</template>
+<template id='delete'>
+  [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:delete:any")]]
+    <mp-ldp-remove-from-container-action iri="{{diagram.value}}"
+      data-container="http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer">
+      <i class="fa fa-trash" aria-hidden="true"></i>
+    </mp-ldp-remove-from-container-action>
+  [[/if]]
+</template>

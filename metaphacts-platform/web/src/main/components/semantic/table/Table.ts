@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
   createElement, ReactElement, ComponentClass, ClassAttributes,
 } from 'react';
@@ -23,13 +44,11 @@ import * as Griddle from 'griddle-react';
 import { GriddleConfig, ColumnMetadata } from 'griddle-react';
 import * as _ from 'lodash';
 import * as Immutable from 'immutable';
-import * as Kefir from 'kefir';
 
 import { Cancellation } from 'platform/api/async';
 import { Component } from 'platform/api/components';
 import { SparqlClient } from 'platform/api/sparql';
 import { Rdf } from 'platform/api/rdf';
-import xsd from 'platform/api/rdf/vocabularies/xsd';
 import { getLabels } from 'platform/api/services/resource-label';
 
 import { TemplateItem } from 'platform/components/ui/template';
@@ -40,10 +59,18 @@ import { Pagination, CustomPaginationProps } from './Pagination';
 import { RdfValueDisplay } from './RdfValueDisplay';
 
 import './Table.scss';
+import {
+  makeUniqueColumnNameGenerator,
+  isPrimitiveDatatype,
+  makeCellComparator,
+  KeyedBufferPool,
+  prepareCellMatchQuery,
+  doesCellMatchText,
+} from './tableutils';
 
 export interface TableLayout {
   options?: Griddle.GriddleConfig;
-  tupleTemplate?: Data.Maybe<string>;
+  tupleTemplate?: string;
 
   /**
    * Determines if the table should automatically fetch and display labels for resource IRIs.
@@ -78,7 +105,6 @@ export interface ColumnConfiguration {
    * Custom cell visualization <semantic-link
    *   uri='http://help.metaphacts.com/resource/FrontendTemplating'>template</semantic-link>.
    * Template has access to all projection variables for a single result tuple.
-   * **The template MUST have a single HTML root element.**
    */
   cellTemplate?: string;
 }
@@ -93,10 +119,10 @@ export interface CellRendererProps {
 }
 
 export interface TableConfig {
-  columnConfiguration?: Array<TableColumnConfiguration>;
-  numberOfDisplayedRows: Data.Maybe<number>;
-  layout?: Data.Maybe<TableLayout>;
-  data: Data.Either<ReadonlyArray<any>, SparqlClient.SparqlSelectResult>;
+  columnConfiguration?: ReadonlyArray<TableColumnConfiguration>;
+  numberOfDisplayedRows?: number;
+  layout?: TableLayout;
+  data: TableData;
   currentPage?: number;
   onPageChange?: (page: number) => void;
   showLiteralDatatype?: boolean;
@@ -104,13 +130,17 @@ export interface TableConfig {
   showCopyToClipboardButton?: boolean;
 }
 
+export type TableData = ReadonlyArray<any> | SparqlClient.SparqlStarSelectResult;
+
 export type TableProps = TableConfig & ClassAttributes<Table>;
 
 const DEFAULT_ROWS_PER_PAGE = 10;
 
 interface State {
+  readonly version: number;
   readonly buffer: KeyedBufferPool<Rdf.Iri, string>;
-  readonly griddleConfig?: GriddleConfig;
+  readonly sourceData?: TableConfig['data'];
+  readonly griddleConfig?: ExtendedGriddleConfig;
 }
 
 interface ExtendedGriddleConfig extends GriddleConfig {
@@ -133,6 +163,7 @@ export class Table extends Component<TableProps, State> {
   constructor(props: TableProps, context: any) {
     super(props, context);
     this.state = {
+      version: 1,
       buffer: new KeyedBufferPool(
         Immutable.Map(),
         this.cancellation,
@@ -159,8 +190,8 @@ export class Table extends Component<TableProps, State> {
     let showLabels = true;
     let prefetchLabels = true;
 
-    if (props.layout.isJust) {
-      const layout = props.layout.get();
+    if (props.layout) {
+      const {layout} = props;
       if (layout.showLabels !== undefined) {
         showLabels = layout.showLabels;
       }
@@ -183,25 +214,47 @@ export class Table extends Component<TableProps, State> {
 
     const griddleConfig = this.buildConfig(props, renderingState);
 
+    const sameDataAndMetadata = Boolean(
+      state.griddleConfig &&
+      sameColumnMetadata(state.griddleConfig.columnMetadata, griddleConfig.columnMetadata) &&
+      state.sourceData &&
+      state.sourceData === props.data
+    );
+    if (sameDataAndMetadata) {
+      // keep the same prepared results if source data and columns are the same
+      // to prevent resetting current page to zero on every external update
+      griddleConfig.results = state.griddleConfig.results;
+    } else {
+      griddleConfig.results = prepareTableData(props.data, griddleConfig.columnMetadata);
+    }
+
     if (prefetchLabels) {
       const newTargets = findReferencedResources(griddleConfig, state.buffer.targets);
       state.buffer.load(newTargets);
     }
 
+    const metadataChanged = state.griddleConfig && !sameColumnMetadata(
+      state.griddleConfig.columnMetadata, griddleConfig.columnMetadata
+    );
     return {
+      version: metadataChanged ? (state.version + 1) : state.version,
       buffer: state.buffer,
+      sourceData: props.data,
       griddleConfig,
     };
   }
 
   private buildConfig(config: TableProps, renderingState: RenderingState): ExtendedGriddleConfig {
+    const {currentPage, onPageChange} = config;
     const paginationProps: CustomPaginationProps = {
-      externalCurrentPage: config.currentPage,
-      onPageChange: config.onPageChange,
+      // Griddle uses page indexing from 0:
+      // https://griddlegriddle.github.io/v0-docs/customization.html#custom-paging-component
+      externalCurrentPage: currentPage - 1,
+      onPageChange: onPageChange ? page => onPageChange(page + 1) : undefined,
     };
 
     const baseConfig: Partial<GriddleConfig> = {
-      resultsPerPage: config.numberOfDisplayedRows.getOrElse(DEFAULT_ROWS_PER_PAGE),
+      resultsPerPage: config.numberOfDisplayedRows ?? DEFAULT_ROWS_PER_PAGE,
       showFilter: true,
       useGriddleStyles: false,
       tableClassName: 'table',
@@ -214,22 +267,15 @@ export class Table extends Component<TableProps, State> {
       customFilterer: makeCellFilterer(renderingState),
     };
 
-    let griddleConfig = config.data.fold<ExtendedGriddleConfig>(
-      (json: any[]): any =>
-        this.getGriddlePropsForFlatDataArray(baseConfig, json, config, renderingState),
-      (res: SparqlClient.SparqlSelectResult) =>
-        this.getGriddlePropsForSparqlResult(baseConfig, res, config, renderingState)
-    );
+    let griddleConfig = isArrayTableData(config.data)
+      ? this.getGriddlePropsForFlatDataArray(baseConfig, config.data, config, renderingState)
+      : this.getGriddlePropsForSparqlResult(baseConfig, config.data, config, renderingState);
 
-    // Fix erronous array mutation in Griddle v0.8.2 whn providing customCompareFn with 2 arguments:
-    // https://github.com/GriddleGriddle/Griddle/blob/v0.8.2/scripts/griddle.jsx#L578
-    makeSortNonMutating(griddleConfig.results as Array<unknown>);
-
-    if (config.layout.isJust) {
-      const {options, tupleTemplate} = config.layout.get();
+    if (config.layout) {
+      const {options, tupleTemplate} = config.layout;
       griddleConfig = {...griddleConfig, ...(options as ExtendedColumnMetadata)};
-      if (tupleTemplate.isJust) {
-        griddleConfig = this.useCustomLayout(griddleConfig, tupleTemplate.get(), renderingState);
+      if (typeof tupleTemplate === 'string') {
+        griddleConfig = this.useCustomLayout(griddleConfig, tupleTemplate, renderingState);
       }
     }
 
@@ -246,28 +292,26 @@ export class Table extends Component<TableProps, State> {
   }
 
   private renderTableData() {
-    const {buffer, griddleConfig} = this.state;
+    const {version, buffer, griddleConfig} = this.state;
     if (buffer.error) {
-      return createElement(ErrorNotification, {errorMessage: buffer.error});
+      return createElement(ErrorNotification, {errorMessage: buffer.error as any});
     } else if (buffer.loading || !griddleConfig) {
       return createElement(Spinner, {});
     } else {
-      return createElement(Griddle, griddleConfig);
+      return createElement(Griddle, {key: version, ...griddleConfig});
     }
   }
 
   private getGriddlePropsForSparqlResult(
     baseConfig: GriddleConfig,
-    data: SparqlClient.SparqlSelectResult,
+    data: SparqlClient.SparqlStarSelectResult,
     props: TableProps,
     renderingState: RenderingState
   ): ExtendedGriddleConfig {
     const columnsMetadata = this.buildColumnsMetadata(data.head.vars, props, renderingState);
     return {
       ...baseConfig,
-      // push empty literals if binding variable does not exist in binding
-      // entry i.e. missing values due to optional
-      results: this.prepareSparqlResultData(data, columnsMetadata),
+      results: [],
       // workaround for https://github.com/GriddleGriddle/Griddle/issues/114
       columns: _(columnsMetadata).filter('visible').map('columnName').value(),
       columnMetadata: columnsMetadata,
@@ -276,7 +320,7 @@ export class Table extends Component<TableProps, State> {
 
   private getGriddlePropsForFlatDataArray(
     baseConfig: GriddleConfig,
-    data: any[],
+    data: readonly any[],
     props: TableProps,
     renderingState: RenderingState
   ): ExtendedGriddleConfig {
@@ -284,9 +328,7 @@ export class Table extends Component<TableProps, State> {
     const columnsMetadata = this.buildColumnsMetadata(heads, props, renderingState);
     return {
       ...baseConfig,
-      // push empty literals if binding variable does not exist in binding
-      // entry i.e. missing values due to optional
-      results: this.prepareFlatData(data, columnsMetadata),
+      results: [],
       // workaround for https://github.com/GriddleGriddle/Griddle/issues/114
       columns: _(columnsMetadata).filter('visible').map('columnName').value(),
       columnMetadata: columnsMetadata,
@@ -320,31 +362,7 @@ export class Table extends Component<TableProps, State> {
     };
   }
 
-  private prepareFlatData(
-    data: any[],
-    columns: ReadonlyArray<ExtendedColumnMetadata>
-  ): any[] {
-    const additionalColumns = this.getAdditionalColumns(columns);
-    return data.map(item => {
-      for (const column of additionalColumns) {
-        this.defineAdditionalColumnProperty(column, item, '');
-      }
-      return item;
-    });
-  }
 
-  private prepareSparqlResultData(
-    data: SparqlClient.SparqlSelectResult,
-    columns: ReadonlyArray<ExtendedColumnMetadata>
-  ) {
-    const additionalColumns = this.getAdditionalColumns(columns);
-    return data.results.bindings.map(binding => {
-      for (const column of additionalColumns) {
-        this.defineAdditionalColumnProperty(column, binding, undefined);
-      }
-      return binding;
-    });
-  }
 
   private buildColumnsMetadata(
     vars: string[], config: TableProps, renderingState: RenderingState
@@ -410,27 +428,6 @@ export class Table extends Component<TableProps, State> {
     }
   }
 
-  private getAdditionalColumns(columns: ReadonlyArray<ExtendedColumnMetadata>) {
-    return columns.filter(c => c.columnName !== c.variableName);
-  }
-
-  private defineAdditionalColumnProperty(
-    column: ExtendedColumnMetadata, item: any, emptyValue: any
-  ) {
-    if (column.columnName !== column.variableName) {
-      if (column.variableName === undefined) {
-        item[column.columnName] = emptyValue;
-      } else {
-        // define a property to return original value for column even
-        // if columnName differs from variableName
-        Object.defineProperty(item, column.columnName, {
-          enumerable: true,
-          get: () => item[column.variableName],
-        });
-      }
-    }
-  }
-
   private makeCellTemplateComponent(
     template: string | undefined,
     renderingState: RenderingState
@@ -452,7 +449,7 @@ export class Table extends Component<TableProps, State> {
           const {showLabels, preferchLabels} = renderingState;
           return createElement(RdfValueDisplay, {
             data: this.props.data,
-            label: renderingState.getLabel(this.props.data),
+            getLabel: renderingState.getLabel,
             fetchLabel: showLabels && !preferchLabels,
             fetchContext: this.context.semanticContext,
             showLiteralDatatype,
@@ -465,56 +462,14 @@ export class Table extends Component<TableProps, State> {
   }
 }
 
-function isPrimitiveDatatype(data: any): boolean {
-  return _.isString(data)
-    || _.isBoolean(data)
-    || _.isNumber(data)
-    || _.isNull(data)
-    || _.isUndefined(data);
-}
-
-function makeUniqueColumnNameGenerator() {
-  const usedNames = new Set<string>();
-  return (baseName: string) => {
-    let generatedName = baseName;
-    let index = 1;
-    while (usedNames.has(generatedName)) {
-      generatedName = `__${baseName}-${index}`;
-      index++;
-    }
-    usedNames.add(generatedName);
-    return generatedName;
-  };
-}
-
 /**
  * Creates table row filterer based on whether any own object property
  * of a row data item includes query as a substring ignoring case.
  */
 function makeCellFilterer(state: { getLabel(resource: Rdf.Iri): string }) {
   return <T = unknown>(items: ReadonlyArray<T>, query: string): T[] => {
-    const queryLowercase = query.toLowerCase();
-    return items.filter(item => {
-      if (typeof item !== 'object') { return false; }
-      for (const key in item) {
-        if (!Object.hasOwnProperty.call(item, key)) { continue; }
-        const value = item[key];
-        if (isPrimitiveDatatype(value)) {
-          if (String(value).toLowerCase().indexOf(queryLowercase) >= 0) {
-            return true;
-          }
-        } else if (value instanceof Rdf.Node) {
-          const label = value.isIri() ? state.getLabel(value) : undefined;
-          if (label && label.toLowerCase().indexOf(queryLowercase) >= 0) {
-            return true;
-          }
-          if (value.value.toLowerCase().indexOf(queryLowercase) >= 0) {
-            return true;
-          }
-        }
-      }
-      return false;
-    });
+    const textQuery = prepareCellMatchQuery(query);
+    return items.filter(item => doesCellMatchText(item, textQuery, state));
   };
 }
 
@@ -523,32 +478,6 @@ function makeCellFilterer(state: { getLabel(resource: Rdf.Iri): string }) {
  */
 export const _makeCellFilterer = makeCellFilterer;
 
-/**
- * Creates table cell comparator which allows to sort table data based
- * on target column values. This comparator considers prefetched resource labels (if available)
- * and uses XSD datatype to automatically sort numerical columns.
- */
-function makeCellComparator(state: { getLabel(resource: Rdf.Iri): string }) {
-  return (a: unknown, b: unknown): number => {
-    if (isPrimitiveDatatype(a) && isPrimitiveDatatype(b)) {
-      return (
-        a < b ? -1 :
-        a > b ? 1 :
-        0
-      );
-    } else if (a instanceof Rdf.Node && b instanceof Rdf.Node) {
-      return compareRdfNodes(a, b, state);
-    } else {
-      const aKind = getCellDataKind(a);
-      const bKind = getCellDataKind(b);
-      return (
-        aKind < bKind ? -1 :
-        aKind > bKind ? 1 :
-        0
-      );
-    }
-  };
-}
 
 function makeNullableLastComparator(base: <T>(a: T, b: T) => number) {
   return (a: unknown, b: unknown) => {
@@ -568,35 +497,6 @@ function makeNullableLastComparator(base: <T>(a: T, b: T) => number) {
  */
 export const _makeCellComparator = makeCellComparator;
 
-function compareRdfNodes(
-  a: Rdf.Node, b: Rdf.Node, state: { getLabel(resource: Rdf.Iri): string }
-): number {
-  if (a.isLiteral() && b.isLiteral()) {
-    if (xsd.NUMERIC_TYPES.has(a.datatype) && xsd.NUMERIC_TYPES.has(b.datatype)) {
-      const aNumeric = Number(a.value);
-      const bNumeric = Number(b.value);
-      if (!Number.isNaN(aNumeric) && !Number.isNaN(bNumeric)) {
-        return (
-          aNumeric < bNumeric ? -1 :
-          aNumeric > bNumeric ? 1 :
-          0
-        );
-      }
-    }
-  }
-
-  const aValue = a.isIri() && state.getLabel(a) || a.value;
-  const bValue = b.isIri() && state.getLabel(b) || b.value;
-  return aValue.localeCompare(bValue);
-}
-
-function getCellDataKind(data: unknown): number {
-  return (
-    isPrimitiveDatatype(data) ? 0 :
-    data instanceof Rdf.Node ? 1 :
-    /* other kind */ 2
-  );
-}
 
 const NON_MUTATING_ARRAY_SORT = function <T>(
   this: Array<T>,
@@ -621,63 +521,114 @@ function findReferencedResources(
   alreadyFetching: Immutable.Set<Rdf.Iri>
 ) {
   return Immutable.Set<Rdf.Iri>().withMutations(set => {
+    const visit = (t: Rdf.TermLike) => {
+      if (Rdf.isIri(t)) {
+        if (!alreadyFetching.has(t)) {
+          set.add(t);
+        }
+      } else if (Rdf.isQuad(t)) {
+        visit(t.subject);
+        visit(t.predicate);
+        visit(t.object);
+        visit(t.graph);
+      }
+    };
     for (const item of builtConfig.results) {
       for (const column of builtConfig.columnMetadata) {
         if (!column.variableName) { continue; }
         const columnValue = item[column.variableName];
-        if (columnValue instanceof Rdf.Iri && !alreadyFetching.has(columnValue)) {
-          set.add(columnValue);
+        if (Rdf.looksLikeTerm(columnValue)) {
+          visit(columnValue);
         }
       }
     }
   });
 }
 
-class KeyedBufferPool<K, V> {
-  private activeCount = 0;
-  private _targets: Immutable.Set<K>;
-  private _result: Immutable.Map<K, V>;
-  private _error: unknown;
 
-  constructor(
-    initialValue: Immutable.Map<K, V>,
-    private cancellation: Cancellation,
-    private onLoad: (keys: Immutable.Set<K>) => Kefir.Property<Immutable.Map<K, V>>,
-    private onCompleted: () => void
-  ) {
-    this._targets = initialValue.keySeq().toSet();
-    this._result = initialValue;
-  }
+function prepareTableData(
+  data: TableData,
+  columns: ReadonlyArray<ExtendedColumnMetadata>
+) {
+  // push empty literals if binding variable does not exist in binding
+  // entry i.e. missing values due to optional
+  const results = isArrayTableData(data)
+    ? prepareFlatData(data, columns)
+    : prepareSparqlResultData(data, columns);
+  // Fix erronous array mutation in Griddle v0.8.2 whn providing customCompareFn with 2 arguments:
+  // https://github.com/GriddleGriddle/Griddle/blob/v0.8.2/scripts/griddle.jsx#L578
+  makeSortNonMutating(results as Array<unknown>);
+  return results;
+}
 
-  get targets() { return this._targets; }
-  get result() { return this._result; }
-  get error() { return this._error; }
-
-  get loading() {
-    return this.activeCount > 0;
-  }
-
-  load(keys: Immutable.Set<K>): void {
-    if (keys.size === 0) {
-      return;
+function prepareFlatData(
+  data: ReadonlyArray<any>,
+  columns: ReadonlyArray<ExtendedColumnMetadata>
+): ReadonlyArray<unknown> {
+  const additionalColumns = getAdditionalColumns(columns);
+  return data.map(item => {
+    for (const column of additionalColumns) {
+      defineAdditionalColumnProperty(column, item, '');
     }
-    this.activeCount++;
-    this._targets = this._targets.merge(keys);
-    this.cancellation.map(this.onLoad(keys)).observe({
-      value: value => {
-        this._result = this._result.merge(value);
-      },
-      error: error => {
-        this._error = error;
-      },
-      end: () => {
-        this.activeCount--;
-        if (this.activeCount === 0 && !this.cancellation.aborted) {
-          this.onCompleted();
-        }
-      }
-    });
+    return item;
+  });
+}
+
+function prepareSparqlResultData(
+  data: SparqlClient.SparqlStarSelectResult,
+  columns: ReadonlyArray<ExtendedColumnMetadata>
+): ReadonlyArray<unknown> {
+  const additionalColumns = getAdditionalColumns(columns);
+  return data.results.bindings.map(binding => {
+    for (const column of additionalColumns) {
+      defineAdditionalColumnProperty(column, binding, undefined);
+    }
+    return binding;
+  });
+}
+
+function getAdditionalColumns(columns: ReadonlyArray<ExtendedColumnMetadata>) {
+  return columns.filter(c => c.columnName !== c.variableName);
+}
+
+function defineAdditionalColumnProperty(
+  column: ExtendedColumnMetadata, item: any, emptyValue: any
+) {
+  if (column.columnName !== column.variableName) {
+    if (column.variableName === undefined) {
+      item[column.columnName] = emptyValue;
+    } else {
+      // define a property to return original value for column even
+      // if columnName differs from variableName
+      Object.defineProperty(item, column.columnName, {
+        enumerable: true,
+        get: () => item[column.variableName],
+      });
+    }
   }
+}
+
+export function isArrayTableData(data: TableData): data is ReadonlyArray<any> {
+  return Array.isArray(data);
+}
+
+function sameColumnMetadata(
+  left: readonly ColumnMetadata[],
+  right: readonly ColumnMetadata[]
+): boolean {
+  if (left.length !== right.length) { return false; }
+  for (let i = 0; i < left.length; i++) {
+    const a = left[i];
+    const b = right[i];
+    if (!(
+      a.columnName === b.columnName ||
+      a.displayName === b.displayName ||
+      a.visible === b.visible
+    )) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export default Table;

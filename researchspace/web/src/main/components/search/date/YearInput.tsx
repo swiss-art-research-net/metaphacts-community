@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -47,23 +46,23 @@ const AD = 'AD';
 const BC = 'BC';
 
 export class YearInput extends React.PureComponent<YearInputProps, State> {
-  constructor(props, context) {
+  constructor(props: YearInputProps, context: any) {
     super(props, context);
     const isYearValid = this.props.isYearValid;
     this.state = {
       year: props.value ? '' + props.value.year : '',
       isYearValid: isYearValid ? this.booleanToValidState(isYearValid) : undefined,
-      epoch: props.value ? props.value.epoch : AD,
+      epoch: props.value ? props.value.epoch as Epoch : AD,
     };
   }
 
-  componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps(nextProps: YearInputProps) {
     if ( nextProps.value && this.state.year &&
          !(_.isEqual(this.state.year, nextProps.value.year) &&
            _.isEqual(this.state.epoch, nextProps.value.epoch))
        ) {
       this.setState({
-        year: '' + nextProps.value.year, epoch: nextProps.value.epoch,
+        year: '' + nextProps.value.year, epoch: nextProps.value.epoch as Epoch,
         isYearValid: this.booleanToValidState(nextProps.isYearValid),
       });
     }
@@ -75,7 +74,7 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
 
   private isValidYear = (year: string): boolean => !_.isNaN(parseInt(year))
 
-  private onYearChange = (event) => {
+  private onYearChange = (event: any) => {
     const yearText = (event.target as any).value;
     this.setState({
       year: yearText,
@@ -83,7 +82,7 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
     });
   }
 
-  private onEpochChange = (event) => {
+  private onEpochChange = (event: any) => {
     const eventValue = (event.target as any).value;
     this.setState(state => ({
       epoch: eventValue,
@@ -91,7 +90,7 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
     }));
   }
 
-  componentWillUpdate(nextProps, nextState: State) {
+  componentWillUpdate(nextProps: YearInputProps, nextState: State) {
     if (nextState.isYearValid === 'success') {
       const { year, epoch } = nextState;
       const newValue = {year: parseInt(year), epoch: epoch};

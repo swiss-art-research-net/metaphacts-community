@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Maybe from 'data.maybe';
 import * as Kefir from 'kefir';
@@ -23,7 +44,6 @@ import * as _ from 'lodash';
 import { FormControl, FormGroup } from 'react-bootstrap';
 import * as SparqlJs from 'sparqljs';
 
-import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil, SparqlClient } from 'platform/api/sparql';
 import { Component } from 'platform/api/components';
 import { Action } from 'platform/components/utils';
@@ -31,23 +51,38 @@ import { Action } from 'platform/components/utils';
 import { setSearchDomain } from '../commons/Utils';
 import { SemanticSimpleSearchBaseConfig } from '../../simple-search/Config';
 import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
+import * as Model from 'platform/components/semantic/search/data/search/Model';
 
-export interface BaseConfig<T> extends SemanticSimpleSearchBaseConfig {
+export interface SemanticSearchKeywordConfig extends SemanticSimpleSearchBaseConfig {
+  /**
+   * SPARQL SELECT query string.
+   *
+   * Needs to have a variable `?__token__` serving as placeholder for the user input.
+   * Note that the name of this variable can be customized using `searchTermVariable`.
+   */
+  query: string;
+
+  /**
+   * SPARQL SELECT query string to show default suggestions without the need for the user
+   * to type anything if specified.
+   */
+  defaultQuery?: string;
+
   /**
    * Custom css styles for the input element
    */
-  style?: T
+  style?: React.CSSProperties;
 
   /**
    * Custom css classes for the input element
    */
-  className?: string
+  className?: string;
 
   /**
    * Specify search domain category IRI (full IRI enclosed in <>).
    * Required, if component is used together with facets.
    */
-  domain?: string
+  domain?: string;
 
   /**
    * Number of milliseconds to wait after the last keystroke before sending the query.
@@ -57,9 +92,7 @@ export interface BaseConfig<T> extends SemanticSimpleSearchBaseConfig {
   debounce?: number;
 }
 
-export interface SemanticSearchKeywordConfig extends BaseConfig<string> {}
-
-interface KeywordSearchProps extends BaseConfig<React.CSSProperties> {}
+interface KeywordSearchProps extends SemanticSearchKeywordConfig {}
 
 class KeywordSearch extends Component<KeywordSearchProps, {}> {
   render() {
@@ -85,7 +118,6 @@ class KeywordSearchInner extends React.Component<InnerProps, State> {
     searchTermVariable: '__token__',
     minSearchTermLength: 3,
     debounce: 300,
-    escapeLuceneSyntax: true,
   };
 
   private keys = Action<string>();
@@ -102,10 +134,23 @@ class KeywordSearchInner extends React.Component<InnerProps, State> {
     this.initialize(this.props);
   }
 
-  componentWillReceiveProps(props: InnerProps) {
-    const {context} = props;
-    if (context.searchProfileStore.isJust && context.domain.isNothing) {
-      setSearchDomain(props.domain, context);
+  componentDidUpdate(prevProps: InnerProps, prevState: State) {
+    if (this.state.value !== prevState.value) {
+      _.isEmpty(this.state.value) ? this.clearSearch() : this.keys(this.state.value);
+    }
+  }
+
+  componentWillReceiveProps(nextProps: InnerProps) {
+    const {context} = this.props;
+    const {context: nextContext} = nextProps;
+    if (nextContext.searchProfileStore.isJust && nextContext.domain.isNothing) {
+      setSearchDomain(nextProps.domain, nextContext);
+    }
+    if (nextContext.baseQueryStructure.isJust && context.baseQueryStructure.isNothing) {
+      const search = nextContext.baseQueryStructure.get();
+      if (search.kind === Model.SearchKind.Keyword) {
+        this.setState({value: search.value});
+      }
     }
   }
 
@@ -154,23 +199,41 @@ class KeywordSearchInner extends React.Component<InnerProps, State> {
 
     Kefir.merge(initializers)
       .onValue(
-        q => this.props.context.setBaseQuery(Maybe.Just(q))
+        q => {
+          this.props.context.setBaseQuery(Maybe.Just(q));
+          this.props.context.setBaseQueryStructure(
+            Maybe.Just({
+              kind: Model.SearchKind.Keyword,
+              value: this.state.value,
+              domain: this.props.context.domain.getOrElse(undefined),
+            })
+          );
+        }
       );
   }
 
   private onKeyPress = (event: React.FormEvent<FormControl>) =>
-    this.keys((event.target as any).value)
+    this.setState({value: (event.target as HTMLInputElement).value})
 
   private buildQuery =
     (baseQuery: SparqlJs.SelectQuery) => (token: string): SparqlJs.SelectQuery => {
+      // tslint:disable-next-line: deprecation
       const {searchTermVariable, escapeLuceneSyntax, tokenizeLuceneQuery} = this.props;
+      const defaults = SparqlUtil.findTokenizationDefaults(baseQuery.where, searchTermVariable);
       const value = SparqlUtil.makeLuceneQuery(
-        token, escapeLuceneSyntax, tokenizeLuceneQuery,
+        token,
+        escapeLuceneSyntax ?? defaults.escapeLucene,
+        tokenizeLuceneQuery ?? defaults.tokenize
       );
       return SparqlClient.setBindings(
         baseQuery, {[searchTermVariable]: value}
       );
     }
+
+  private clearSearch() {
+    this.props.context.setBaseQuery(Maybe.Nothing());
+    this.props.context.setBaseQueryStructure(Maybe.Nothing());
+  }
 }
 
 export default KeywordSearch;

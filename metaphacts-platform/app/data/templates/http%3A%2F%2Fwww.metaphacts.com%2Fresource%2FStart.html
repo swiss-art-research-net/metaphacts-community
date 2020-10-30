@@ -1,0 +1,107 @@
+<style>
+  .component-page-toolbar{
+    display: none;
+  }
+</style>
+<div class="page">
+  <div class='page__body'>
+      <h1>Welcome to the metaphacts GLAM platform</h1>
+
+      <p>The metaphacts GLAM platform provides a comprehensive platform to publish research data modelled using the <a href="http://www.cidoc-crm.org/">CIDOC-CRM</a> ontology for <a href="https://en.wikipedia.org/wiki/Cultural_heritage">Cultural Heritage</a> and <a href="https://en.wikipedia.org/wiki/Digital_humanities">Digital Humanities</a> in the Galeries, Libraries, Archives and Museums <a href="https://en.wikipedia.org/wiki/GLAM_(industry_sector">(GLAM) sector</a>.</p>
+      Please take a look at the <semantic-link title="Help" uri='[[resolvePrefix "Help:Changelog"]]'>changelog</semantic-link> for latest updates and developments.
+
+      <h2 id="use-cases">Use Cases</h2>
+      <h3 id="semantic-web-database">Semantic Web Database</h3>
+      <ul>
+      <li><p>Definition of new patterns of knowledge using <a
+        href="http://www.cidoc-crm.org/">CIDOC-CRM</a> to capture contextual details based on expert requirements</p>
+      </li>
+      <li><p>Authoring of ontology and instance data for better model management and data quality assurance</p>
+      </li>
+      <li><p>Ability to integrate patterns of knowledge into search and visualization components using metadata</p>
+      </li>
+      <li><p>Ability to share knowledge patterns with the community</p>
+      </li>
+      </ul>
+      <h3 id="semantic-search">Semantic Search</h3>
+      <ul>
+      <li><p>Semantic search across heterogeneous datasets using contextual relationships</p>
+      </li>
+      <li><p>Simple text search components featuring auto-completion and semantic disambiguation</p>
+      </li>
+      <li><p>Interactive expert search system based on a user-friendly graphical interface for query construction</p>
+      </li>
+      <li><p>Search functions across spatial and temporal dimensions</p>
+      </li>
+      <li><p>Intelligent semantic clipboard allowing users to save searches and search results to their personalized research space, create own datasets, create arguments, and underpin narratives - all of this privately or collaboratively</p>
+      </li>
+      </ul>
+      <h3 id="semantic-annotations-narratives">Semantic Annotations &amp; Narratives</h3>
+      <ul>
+      <li><p>Innovative functionalities to support text-based annotations, represent assertions, and create general narratives backed up by semi-formalized arguments with clear data provenance</p>
+      </li>
+      <li><p>Ability to track the development of arguments and assertions over time</p>
+      </li>
+      <li><p>Functionalities to visualize narratives and create digital essays that are related to the resources they reference</p>
+      </li>
+      <li><p>Semantic annotation of images leveraging the IIIF standard for streaming high-resolution images</p>
+      </li>
+      </ul>
+
+      <h2 id="technology">Technology</h2>
+      <p>The metaphacts GLAM platform provides building blocks for building semantic web applications around <a href="https://en.wikipedia.org/wiki/Knowledge_Graph">Knowledge Graphs</a>. Examples for well-known public knowledge graphs are <a href="https://www.wikidata.org/">Wikidata</a> or <a href="https://wiki.dbpedia.org/">DBpedia</a>, but there are also many non-public Enterprise Knowledge Graphs.</p>
+      <p><a href="https://en.wikipedia.org/wiki/Cultural_heritage">Cultural Heritage</a> and <a href="https://en.wikipedia.org/wiki/Digital_humanities">Digital Humanities</a> data sets are typically modelled using the <a href="http://www.cidoc-crm.org/">CIDOC Conceptual Reference Model</a> ontology as the knowledge representation system, although other conceptual reference models can also be implemented.</p>
+      <h3 id="technical-overview">Technical Overview</h3>
+      <p>See <a href="DevelopmentInstructions.md">Development Instructions</a> for details on source code structure and how to build the platform.</p>
+      <h3 id="built-on-open-standards">Built on open standards</h3>
+      <p>The platform is built on open standards and technologies:</p>
+      <ul>
+        <li><p>Semantic Web standards defined by the <a href="https://www.w3.org/">W3C</a> and other organizations such as the <a href="https://www.w3.org/RDF/">Resource Description Format (RDF)</a>, the <a href="https://www.w3.org/TR/rdf-sparql-query/">SPARQL Query Language</a>, the <a href="https://www.w3.org/OWL/">Web Ontology Language</a>, and the <a href="https://www.w3.org/TR/ldp/">Linked Data Platform</a></p>
+        </li>
+        <li><p>Data sets are typically modelled using the <a href="http://www.cidoc-crm.org/">CIDOC Conceptual Reference Model</a> ontology or using the <a href="https://www.w3.org/2004/02/skos/">Simple Knowledge Organization System (SKOS)</a></p>
+        </li>
+        <li><p>Web standards such as <a href="https://html.spec.whatwg.org/">HTML5</a>, <a href="https://www.webcomponents.org/">Web Components</a></p>
+        </li>
+        <li><p>Widely used technologies such as the <a href="https://www.oracle.com/java/technologies/">Java</a> programming language, Web Services and <a href="https://en.wikipedia.org/wiki/Representational_state_transfer">REST APIs</a></p>
+        </li>
+      </ul>
+
+
+      <h2 id="support-and-commercial-services">Support and Commercial Services</h2>
+      <p>metaphacts offers commercial support for the platform in the form of developer and production support subscriptions. Please contact info@metaphacts.com for details.</p>
+      <p>Some use cases might need extensions or additional features. metaphacts offers custom development to support these use cases. Please contact info@metaphacts.com to enquire about options.</p>
+      <h2 id="demos-public-projects">Demo Project</h2>
+      Here you find a demo app that illustrates the capabalities of the platform for one use case:
+      <h3 id="sphaera-corpustracer-mpiwg-">Sphaera CorpusTracer (MPIWG)</h3>
+      <p>The <a href="https://sphaera.mpiwg-berlin.mpg.de/">Sphaera CorpusTracer</a> (<a href="http://db.sphaera.mpiwg-berlin.mpg.de/resource/Start">demo system</a>, <a href="https://academic.oup.com/dsh/article/33/2/336/4085304">paper</a>) project reconstructs the transformation process of the original treatise &#39;Tractatus de sphaera&#39; by Johannes de Sacrobosco &amp; explores the evolutionary path of the scientific system pivoted around  cosmological knowledge by:</p>
+      <ul>
+      <li><p>Cataloguing text parts and context to trace how certain parts have been disseminated</p>
+      </li>
+      <li><p>Determining how successful certain texts were and how the knowledge conveyed in those texts was spread in space and time</p>
+      </li>
+      <li><p>Identifying the roles, relationships and social context of different actors</p>
+      </li>
+      </ul>
+      <p><a href="https://metaphacts.com/images/bitbucket/corpustracer.png"><img src="https://metaphacts.com/images/bitbucket/corpustracer_small.png" alt="Sphaera CorpusTracer"></a>
+      <a href="https://metaphacts.com/images/bitbucket/semantic-web-database.png"><img src="https://metaphacts.com/images/bitbucket/semantic-web-database_small.png" alt="Semantic Web Database"></a></p>
+
+      <h2 id="contributors-and-acknowledgements">Contributors and Acknowledgements</h2>
+      <p>Many thanks to the following organizations for contributions and funding:</p>
+      <ul>
+        <li><p><a href="https://www.researchspace.org/">ResearchSpace</a>, a project funded by the <a href="https://mellon.org">Andrew W. Mellon Foundation</a> working in partnership with the <a href="https://www.britishmuseum.org">British Museum</a></p>
+        </li>
+        <li><p><a href="https://www.biblhertz.it/">BHMPI - Bibliotheca Hertziana – Max Planck Institute for Art History</a></p>
+        </li>
+        <li><p><a href="http://itatti.harvard.edu/">Villa I Tatti, The Harvard University Center for Italian Renaissance Studies</a></p>
+        </li>
+        <li><p><a href="https://www.mpiwg-berlin.mpg.de/">MPIWG - Max Planck Institute for History of Science</a></p>
+        </li>
+        <li><p><a href="https://swissartresearch.net/">SARI - The Swiss Art Research Infrastructure</a></p>
+        </li>
+        <li><p><a href="https://ethz.ch/">ETH Zürich</a></p>
+        </li>
+        <li><p><a href="https://www.uzh.ch/">UZH - Uni Zürich</a></p>
+        </li>
+      </ul>
+  </div>
+</div>

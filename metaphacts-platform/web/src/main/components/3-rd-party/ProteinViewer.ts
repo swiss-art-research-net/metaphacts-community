@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Component, HTMLProps, createFactory, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import { findDOMNode } from 'react-dom';
@@ -57,7 +78,7 @@ const modes: {[index: string]: MODE} = {
 };
 
 export class ProteinViewerComponent extends Component<ProteinViewerConfig, ProteinViewerState> {
-  private viewer;
+  private viewer: pv.Viewer;
   constructor(props: ProteinViewerConfig, context: any) {
     super(props, context);
     this.state = {
@@ -81,7 +102,7 @@ export class ProteinViewerComponent extends Component<ProteinViewerConfig, Prote
          .get(this.props.url)
          .type('application/x-pdb');
 
-     Kefir.fromNodeCallback(
+     Kefir.fromNodeCallback<string>(
        (cb) => req.end((err, res) => {
          cb(err, res ? res.text : null);
        })
@@ -93,12 +114,12 @@ export class ProteinViewerComponent extends Component<ProteinViewerConfig, Prote
        ),
      }));
 
-      window.onresize = (event) => {
+      window.onresize = () => {
         this.viewer.fitParent();
       };
   }
 
-  renderProtein = (responseText) => {
+  renderProtein = (responseText: string) => {
     const structure = pv.io.pdb(responseText);
     this.preset(structure);
     this.viewer.centerOn(structure);
@@ -106,7 +127,7 @@ export class ProteinViewerComponent extends Component<ProteinViewerConfig, Prote
     this.setState({structure: maybe.Just(structure)});
   }
 
-  preset = (structure) => {
+  preset = (structure: pv.Structure) => {
       this.viewer.clear();
       const ligand = structure.select({rnames : ['RVP', 'SAH']});
       this.viewer.ballsAndSticks('ligand', ligand);

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,21 +37,56 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import * as moment from 'moment';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
+import { CompositeValue } from 'platform/components/forms';
 import { Resource } from '../Common';
 export { Resource, Resources } from '../Common';
 
 import { Category, Relation } from '../profiles/Model';
 export { Category, Relation, Categories, Relations, RelationKey, AvailableDomains } from '../profiles/Model';
 
-export interface Search {
-  readonly domain: Category
-  readonly conjuncts: Conjuncts
+export type Search = StructuredSearch | KeywordSearch | FormBasedSearch | GraphScopeSearch |
+  ConstantSearch;
+
+export interface StructuredSearch {
+  readonly kind: SearchKind.Structured;
+  readonly domain: Category;
+  readonly conjuncts: Conjuncts;
+}
+
+export interface KeywordSearch {
+  readonly kind: SearchKind.Keyword;
+  readonly value: string;
+  readonly domain?: Category;
+}
+
+export interface FormBasedSearch {
+  readonly kind: SearchKind.FormBased;
+  readonly model: CompositeValue;
+  readonly domain?: Category;
+}
+
+export interface GraphScopeSearch {
+  kind: SearchKind.GraphScope;
+  translationId: string;
+  keywords: string;
+}
+
+export interface ConstantSearch {
+  readonly kind: SearchKind.Constant;
+  readonly domain?: Category;
+}
+
+// Do not change values because the existing serialized searches will become incorrect.
+export enum SearchKind {
+  Structured = 1,
+  Keyword = 2,
+  FormBased = 3,
+  GraphScope = 4,
+  Constant = 5,
 }
 
 export type Conjunct = RelationConjunct | TextConjunct;
@@ -123,12 +180,14 @@ export const NumericRangeDisjunctKind = 'NumericRange';
 
 export type DisjunctKind = typeof EntityDisjunctKinds.Resource | typeof EntityDisjunctKinds.Set |
   typeof EntityDisjunctKinds.SavedSearch | typeof EntityDisjunctKinds.Search |
-  typeof TextDisjunctKind | typeof TemporalDisjunctKinds.Date |
-  typeof TemporalDisjunctKinds.DateRange | typeof TemporalDisjunctKinds.DateDeviation |
-  typeof TemporalDisjunctKinds.Year | typeof TemporalDisjunctKinds.YearRange |
-  typeof TemporalDisjunctKinds.YearDeviation | typeof SpatialDisjunctKinds.Distance |
+  typeof TextDisjunctKind | TemporalDisjunctT | typeof SpatialDisjunctKinds.Distance |
   typeof SpatialDisjunctKinds.BoundingBox |
   typeof LiteralDisjunctKind | typeof NumericRangeDisjunctKind;
+export type TemporalDisjunctT =
+  typeof TemporalDisjunctKinds.Date | typeof TemporalDisjunctKinds.DateRange |
+  typeof TemporalDisjunctKinds.DateDeviation |
+  typeof TemporalDisjunctKinds.Year | typeof TemporalDisjunctKinds.YearRange |
+  typeof TemporalDisjunctKinds.YearDeviation;
 
 export interface ResourceDisjunct extends AbstractDisjunct<Resource> {
   readonly kind: typeof EntityDisjunctKinds.Resource
@@ -145,7 +204,7 @@ export interface SavedSearchValue {
 export interface SavedSearchDisjunct extends AbstractDisjunct<SavedSearchValue> {
   readonly kind: typeof EntityDisjunctKinds.SavedSearch
 }
-export interface SearchDisjunct extends AbstractDisjunct<Search> {
+export interface SearchDisjunct extends AbstractDisjunct<StructuredSearch> {
   readonly kind: typeof EntityDisjunctKinds.Search
 }
 export interface TextDisjunct extends AbstractDisjunct<string> {
@@ -237,21 +296,6 @@ interface AbstractDisjunct<T> {
   readonly kind: DisjunctKind
   readonly value: T
 }
-
-type DisjunctKind =
-  EntityDisjunctKind | TemporalDisjunctT | SpatialDisjunctKind | typeof TextDisjunctKind |
-  typeof LiteralDisjunctKind | typeof NumericRangeDisjunctKind;
-type EntityDisjunctKind =
-  typeof EntityDisjunctKinds.Resource | typeof EntityDisjunctKinds.Set |
-  typeof EntityDisjunctKinds.Search | typeof EntityDisjunctKinds.SavedSearch;
-export type TemporalDisjunctT =
-  typeof TemporalDisjunctKinds.Date | typeof TemporalDisjunctKinds.DateRange |
-  typeof TemporalDisjunctKinds.DateDeviation |
-  typeof TemporalDisjunctKinds.Year | typeof TemporalDisjunctKinds.YearRange |
-  typeof TemporalDisjunctKinds.YearDeviation;
-type SpatialDisjunctKind =
-  typeof SpatialDisjunctKinds.Distance | typeof SpatialDisjunctKinds.BoundingBox;
-
 
 // matchers
 export interface ConjunctMatcher<T> {
@@ -390,16 +434,11 @@ export function matchSpatialDisjunct<T>(matcher: SpatialDisjunctMatcher<T>) {
   };
 }
 
-export interface GraphScopeSearch {
-  translationId: string;
-  keywords: string;
-}
-
 export interface GraphScopeResults {
   relations: Array<{ domain: string; range: string; relation: { iri: string; label: string } }>;
   columns: ReadonlyArray<GraphScopeColumn>;
   /** variableName looks like this: ?v0 (0...n) */
-  cardinality: ReadonlyArray<{ [variableName: string]: number }>;
+  cardinality: { [variableName: string]: number };
 }
 
 export type GraphScopeColumn = GraphScopeConceptColumn | GraphScopeValueColumn;

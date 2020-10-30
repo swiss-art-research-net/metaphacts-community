@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,14 +37,17 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import { WorkspaceProps, Workspace } from 'ontodia';
+import * as React from 'react';
+import { WorkspaceProps, WorkspaceMethods } from 'ontodia';
 
 import { ExtensionPoint } from 'platform/api/module-loader';
 
+import { OntodiaPersistenceMode } from './authoring/FieldConfigurationCommon';
 import { OntodiaPersistence } from './authoring/OntodiaPersistence';
-import { OntodiaProps, OntodiaPersistenceMode } from './Ontodia';
+import { OntodiaProps } from './Ontodia';
 import { ToolbarProps } from './Toolbar';
+import { CanvasProps } from './Canvas';
+import { ElementSearchProps } from './ElementSearch';
 
 // Important! This module is an extension point definition or an implementation, so it
 // should limit it's imports to only base platform APIs and type definitions.
@@ -35,15 +60,17 @@ import { ToolbarProps } from './Toolbar';
 
 export interface OntodiaFactory {
   createWorkspace(
-    componentProps: OntodiaProps, workspaceProps: WorkspaceProps
+    componentProps: OntodiaProps,
+    workspaceProps: WorkspaceProps,
+    useDefaultLayout: boolean,
   ): JSX.Element;
-  createToolbar(
-    componentProps: OntodiaProps, toolbarProps: ToolbarProps
-  ): JSX.Element;
+  createToolbar(props: ToolbarProps): JSX.Element;
   onNewDigaramInitialized(
-    componentProps: OntodiaProps, workspace: Workspace
+    componentProps: OntodiaProps, workspace: WorkspaceMethods
   ): void;
   getPersistence(mode: OntodiaPersistenceMode): OntodiaPersistence;
+  createCanvas(props: CanvasProps): JSX.Element;
+  createElementSearch(props: ElementSearchProps): JSX.Element;
 }
 
 export const OntodiaExtension = new ExtensionPoint<OntodiaFactory>();

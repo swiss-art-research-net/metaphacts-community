@@ -1,0 +1,101 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Customizing the page layout (e.g. Header)</h1>
+    
+    <p>The platform supports customizing various parts of the page layout, including <i>header</i>, <i>footer</i> and <i>login</i> page.</p>
+    
+    <p>This can be achieved by providing a handlebars HTML template to the <code>config/page-layout</code> folder of the <semantic-link iri="[[resolvePrefix "Help:Apps"]]">app</semantic-link>, e.g. <code>config/page-layout/header.hbs</code> for the header. Typical customizations include the addition of a logo or modifications of the menu.</p>
+    
+    <p><b>Remarks:</b></p>
+    
+    <ul>
+      <li>the contents of the HTML template must be in-line with the pre-bundled versions of the product</li>
+      <li>it is recommended to upgrade any customized template when upgrading the version of the platform</li>
+    </ul>
+    
+    <p>The default content of the pre-bundled templates is provided below for reference (Click <i>File contents</i> to show).</p>
+    <br/>
+     
+    <h3>header.hbs</h3>
+    
+    <p>Header file containing the menu bar and the logo.</p>
+    
+<mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>File contents</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+			  <mp-code-block>
+<![CDATA[
+[[pageLayout "header.hbs"]]
+]]>
+	  		</mp-code-block>
+      </mp-collapsible-div-content>
+    </mp-collapsible-div>
+    <br/>
+
+    
+    
+    <h3>html-head.hbs</h3>
+    
+    <p>Additional definitions for the &lt;head&gt; section of the rendered page (e.g. to include additional JavaScript files)</p>
+      
+		<mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>File contents</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+			  <mp-code-block>
+<![CDATA[
+[[pageLayout "html-head.hbs"]]
+]]>
+	  		</mp-code-block>
+      </mp-collapsible-div-content>
+    </mp-collapsible-div>
+    <br/>
+      
+    
+    
+    <h3>footer.hbs</h3>
+    
+    <p>Contents of the footer area.</p>
+    
+    <mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>File contents</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+			  <mp-code-block>
+<![CDATA[
+[[pageLayout "footer.hbs"]]
+]]>
+	  		</mp-code-block>
+      </mp-collapsible-div-content>
+    </mp-collapsible-div>
+    <br/>
+        
+    
+    
+    <h3>login.hbs</h3>
+    
+    <p>Template for the login screen providing a form for the user to authenticate.</p>
+    
+    <mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>File contents</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+			  <mp-code-block>
+<![CDATA[
+[[pageLayout "login.hbs"]]
+]]>
+	  		</mp-code-block>
+      </mp-collapsible-div-content>
+    </mp-collapsible-div>
+    <br/>
+      
+    
+  </div>
+</div>

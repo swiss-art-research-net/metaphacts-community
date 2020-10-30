@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as maybe from 'data.maybe';
 import * as SparqlJs from 'sparqljs';
@@ -38,7 +59,7 @@ import { convertToSerializedDiagram } from 'ontodia';
 
 import { ontodiaNsv0 } from './OntodiaVocabulary';
 
-export const OntodiaContextV1 = require('ontodia/schema/context-v1.json');
+export const OntodiaContextV1 = require('../../../../../../../ontodia/schema/context-v1.json');
 
 /**
  * Returns dictionary of images by sparql query
@@ -170,7 +191,7 @@ function makeDiagramResource(
   // warning! this heavily assumes that RDF will only place predicates to diagram resource
   // otherwise proper ttl-to-jsonld parsing is required, assumed to be done in 3.0
   metadata.forEach(row => {
-    jsonldDiagram[row.p.value] = row.o.isLiteral() ? row.o.value : {'@id': row.o.value};
+    jsonldDiagram[row.p.value] = Rdf.isLiteral(row.o) ? row.o.value : {'@id': row.o.value};
   });
 
   return jsonldDiagram;
@@ -189,7 +210,7 @@ export function saveDiagram(
     VocabPlatform.OntodiaDiagramContainer,
     {data: JSON.stringify(jsonldDiagram), format: 'application/ld+json'},
     maybe.Just(name)
-  ).map(iri => new Rdf.Iri(iri));
+  ).map(iri => Rdf.iri(iri));
 }
 
 /**
@@ -222,7 +243,7 @@ export function suggestProperties(
   };
 
   const term = Rdf.literal(token.toLowerCase());
-  const queryParams = [];
+  const queryParams: Array<{ property: Rdf.Node }> = [];
 
   properties.forEach(prop => {
     queryParams.push({property: Rdf.iri(prop)});

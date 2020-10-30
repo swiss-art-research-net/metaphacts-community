@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import static java.util.stream.Collectors.toMap;
@@ -32,6 +53,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.DescriptionCache;
 import com.metaphacts.thumbnails.ThumbnailServiceRegistry;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
@@ -46,7 +69,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.metaphacts.cache.LabelCache;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
 
@@ -58,9 +80,11 @@ import com.metaphacts.rest.feature.CacheControl.NoCache;
 @NoCache
 @Path("data/rdf/utils")
 public class ResourceUtilsEndpoint {
-
     @Inject
     private LabelCache labelCache;
+
+    @Inject
+    private DescriptionCache descriptionCache;
 
     @Inject
     private ThumbnailServiceRegistry thumbnailServiceRegistry;
@@ -99,6 +123,48 @@ public class ResourceUtilsEndpoint {
                         output.writeStringField(
                             iriToUriString.get(iri),
                             LabelCache.resolveLabelWithFallback(label, iri)
+                        );
+                    }
+
+                    // clear temp data structures
+                    output.writeEndObject();
+                }
+            }
+        };
+        return Response.ok(stream).build();
+    }
+
+    @POST
+    @Path("getDescriptionForRdfValue")
+    @Produces(APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    public Response getDescriptionsForRdfValues(
+        @QueryParam("repository") final Optional<String> repositoryId,
+        @QueryParam("preferredLanguage") Optional<String> preferredLanguage,
+        final JsonParser jp
+    ) throws IOException, RepositoryException {
+        Repository repo = repositoryManager.getRepository(repositoryId).orElse(repositoryManager.getDefault());
+        StreamingOutput stream = new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException,
+                    WebApplicationException {
+                JsonFactory jsonFactory = new JsonFactory();
+                try(JsonGenerator output = jsonFactory.createGenerator(os)) {
+                    output.writeStartObject();
+
+                    Map<IRI, String> iriToUriString = readResourceIris(jp);
+
+                    Optional<String> normalizedLanguageTag = preferredLanguage
+                            .flatMap(tag -> Optional.ofNullable(Literals.normalizeLanguageTag(tag)));
+
+                    Map<IRI, Optional<Literal>> descriptionMap = descriptionCache.getDescriptions(
+                        iriToUriString.keySet(), repo, normalizedLanguageTag.orElse(null));
+                    // write final bulk
+                    for (IRI iri : descriptionMap.keySet()) {
+                        Literal description = descriptionMap.get(iri).orElse(null);
+                        output.writeStringField(
+                            iriToUriString.get(iri),
+                            description == null ? null : description.stringValue()
                         );
                     }
 

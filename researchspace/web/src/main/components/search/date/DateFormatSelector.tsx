@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -23,7 +22,9 @@
 import * as React from 'react';
 import * as maybe from 'data.maybe';
 import * as classNames from 'classnames';
-import ReactSelect from 'react-select';
+import ReactSelect, {
+  OnChangeHandler, OptionRendererHandler, ValueRendererHandler
+} from 'react-select';
 import { FormControl, FormGroup } from 'react-bootstrap';
 import * as _ from 'lodash';
 
@@ -59,7 +60,7 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
     value: maybe.Nothing<DateDisjunctValue>(),
   };
 
-  constructor(props) {
+  constructor(props: DateFormatSelectorProps) {
     super(props);
     this.state = this.initialState;
   }
@@ -110,7 +111,7 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
       state => ({
         value: maybe.Just({
           begin: date,
-          end: state.value.map((v: DateRange)  => v.end).getOrElse(null),
+          end: (state.value as Data.Maybe<DateRange>).map(v  => v.end).getOrElse(null),
         }),
       })
     );
@@ -119,7 +120,7 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
     this.setState(
       state => ({
         value: maybe.Just({
-          begin: state.value.map((v: DateRange)  => v.begin).getOrElse(null),
+          begin: (state.value as Data.Maybe<DateRange>).map(v  => v.begin).getOrElse(null),
           end: date,
         }),
       })
@@ -131,10 +132,10 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
     <span className={styles.dateSeparator}>±</span>,
     <FormGroup>
       <FormControl key='date-deviation' type='number' className={styles.deviationInput}
-                   placeholder='Days' required onChange={this.setDateDeviation}
-                   value={
-                     this.state.value.map((v: DateDeviation) => v.deviation).getOrElse(undefined)
-                   }
+        placeholder='Days' required onChange={this.setDateDeviation}
+        value={
+          (this.state.value as Data.Maybe<DateDeviation>).map(v => v.deviation).getOrElse(undefined)
+        }
       />
     </FormGroup>,
   ];
@@ -143,7 +144,8 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
       state => ({
         value: maybe.Just({
           date: date,
-          deviation: state.value.map((v: DateDeviation)  => v.deviation).getOrElse(null),
+          deviation: (state.value as Data.Maybe<DateDeviation>)
+            .map(v  => v.deviation).getOrElse(null),
         }),
       })
     );
@@ -152,7 +154,7 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
     this.setState(
       state => ({
         value: maybe.Just({
-          date: state.value.map((v: DateDeviation)  => v.date).getOrElse(null),
+          date: (state.value as Data.Maybe<DateDeviation>).map(v  => v.date).getOrElse(null),
           deviation: value,
         }),
       })
@@ -175,7 +177,7 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
       state => ({
         value: maybe.Just({
           begin: year,
-          end: state.value.map((v: YearRange)  => v.end).getOrElse(null),
+          end: (state.value as Data.Maybe<YearRange>).map(v  => v.end).getOrElse(null),
         }),
       })
     );
@@ -183,7 +185,7 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
     this.setState(
       state => ({
         value: maybe.Just({
-          begin: state.value.map((v: YearRange)  => v.begin).getOrElse(null),
+          begin: (state.value as Data.Maybe<YearRange>).map(v  => v.begin).getOrElse(null),
           end: year,
         }),
       })
@@ -194,11 +196,12 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
     <span className={styles.dateSeparator}>±</span>,
     <FormGroup>
       <FormControl key='year-deviation' type='number' className={styles.deviationInput}
-                   placeholder='Years' required
-                   value={
-                     this.state.value.map((v: YearDeviation) => v.deviation).getOrElse(undefined)
-                   }
-                   onChange={this.setYearDeviation} />
+        placeholder='Years' required
+        value={
+          (this.state.value as Data.Maybe<YearDeviation>).map(v => v.deviation).getOrElse(undefined)
+        }
+        onChange={this.setYearDeviation}
+      />
     </FormGroup>,
   ];
   private setYearDeviationYear = (year: YearValue) =>
@@ -206,7 +209,8 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
       state => ({
         value: maybe.Just({
           year: year,
-          deviation: state.value.map((v: YearDeviation)  => v.deviation).getOrElse(null),
+          deviation: (state.value as Data.Maybe<YearDeviation>)
+            .map(v => v.deviation).getOrElse(null),
         }),
       })
     );
@@ -215,7 +219,7 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
     this.setState(
       state => ({
         value: maybe.Just({
-          year: state.value.map((v: YearDeviation)  => v.year).getOrElse(null),
+          year: (state.value as Data.Maybe<YearDeviation>).map(v  => v.year).getOrElse(null),
           deviation: value,
         }),
       })
@@ -225,18 +229,18 @@ export class DateFormatSelectorComponent extends React.Component<DateFormatSelec
   private dateSelectorDropdown = () => {
     const options = _.keys(TemporalDisjunctKinds).map(v => ({value: v, label: v}));
     return <ReactSelect className={classNames(styles.dateFormatSelect)}
-                        options={options}
-                        value={this.state.dateFormat.getOrElse(undefined)}
-                        clearable={false}
-                        onOpen={() => {
-                          if (this.props.onOpen) {
-                            this.props.onOpen();
-                          }
-                        }}
-                        onChange={this.selectDateFormat.bind(this)}
-                        optionRenderer={this.dateSelectorOptions}
-                        valueRenderer={this.dateSelectorOptions}
-                        placeholder='Select Date or Range Type'
+      options={options}
+      value={this.state.dateFormat.getOrElse(undefined)}
+      clearable={false}
+      onOpen={() => {
+        if (this.props.onOpen) {
+          this.props.onOpen();
+        }
+      }}
+      onChange={this.selectDateFormat.bind(this) as OnChangeHandler<any>}
+      optionRenderer={this.dateSelectorOptions as OptionRendererHandler<any>}
+      valueRenderer={this.dateSelectorOptions as ValueRendererHandler<any>}
+      placeholder='Select Date or Range Type'
     />;
   }
 

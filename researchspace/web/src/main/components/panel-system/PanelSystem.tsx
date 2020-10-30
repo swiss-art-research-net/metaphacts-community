@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as SplitPane from 'react-split-pane';
 
@@ -91,7 +90,7 @@ export class PanelSystem extends React.Component<Props, State> {
         paneStyle={{overflow: 'hidden'}}
         pane1Style={{borderBottom: '1px solid #a2a2a2'}}
         onChange={size => this.setState({size, expandedPanelKey: undefined})}>
-        {React.Children.map(this.props.children, this.renderPanel)}
+        {React.Children.map(this.props.children as any, this.renderPanel)}
       </SplitPane>
     );
   }

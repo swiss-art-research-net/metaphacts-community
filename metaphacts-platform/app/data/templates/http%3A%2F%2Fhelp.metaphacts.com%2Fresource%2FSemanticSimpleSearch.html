@@ -1,15 +1,5 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li>
-    <semantic-link title="Components" uri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
-  </li>
-  <li class="active">Simple Search Component</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
 
 <div class="page">
   <div class='page__body'>
@@ -46,8 +36,12 @@
 
     <mp-documentation type="SemanticSimpleSearchConfig"></mp-documentation>
 
+    <h3>Data Client</h3>
+    <p>
+      Besides using SPARQL queries for search, the <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> can be used to look up entities based on the provided search terms. See <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> for details and examples.
+    </p>
 
-    <h3>Hybrid Search (Textindex)</h3><br>  
+    <h3>Hybrid Search (Textindex)</h3>
     <p>
     	Performance for displaying query results instantly (i.e. in one of two search modes) depends on several aspects such as client-side performance, complexity of the query as well as number of results to be rendered. 
     </p>
@@ -60,7 +54,7 @@
     <h3> Customizable Autosuggestion Entries </h3>
     <div class="documentation__example">
       <div class="documentation__example__description">
-        The following example uses a custom html template to format the autosuggestion entries i.e. adds an additional icon in front of the entry.
+        The following example uses a custom html template to format the autosuggestion entries i.e. sets the text color to blue.
       </div>
       <div class="documentation__example__demo">
         <mp-code-example>

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 
 import { Rdf, turtle } from 'platform/api/rdf';
@@ -56,8 +77,7 @@ export function computeValuePatch(base: FieldValue, changed: FieldValue): ValueP
   switch (base.type) {
     case AtomicValue.type:
       const changedAtomic = changed as AtomicValue;
-      const isEqual = base.value.equals(changedAtomic.value)
-        && base.label === changedAtomic.label;
+      const isEqual = base.value.equals(changedAtomic.value);
       return isEqual ? null : asPatch(changedAtomic);
     case CompositeValue.type:
       return computeCompositePatch(base, changed as CompositeValue);
@@ -83,7 +103,7 @@ function computeCompositePatch(base: CompositeValue, changed: CompositeValue): V
     visited[fieldId] = true;
 
     if (!baseState && changedState) {
-      const values = changedState.values.map(asPatch).toArray();
+      const values = changedState.values.map(asPatch);
       patchFields[fieldId] = {baseLength: values.length, values};
       hasAtLeastOnePatch = true;
     } else if (baseState && changedState) {
@@ -120,10 +140,10 @@ function equalRdfTerms(
 
 function computeFieldPatch(base: FieldState, changed: FieldState): FieldPatch {
   const values = changed.values.map((changedValue, index) => {
-    const baseValue = base.values.get(index, FieldValue.empty);
+    const baseValue = base.values[index] || FieldValue.empty;
     return computeValuePatch(baseValue, changedValue);
-  }).toArray();
-  return {baseLength: base.values.size, values};
+  });
+  return {baseLength: base.values.length, values};
 }
 
 function asPatch(value: FieldValue): ValuePatch {
@@ -140,7 +160,7 @@ function asPatch(value: FieldValue): ValuePatch {
       discriminator: value.discriminator
         ? turtle.serialize.nodeToN3(value.discriminator) : undefined,
       fields: value.fields.map((state): FieldPatch => {
-        const values = state.values.map(asPatch).toArray();
+        const values = state.values.map(asPatch);
         return {baseLength: values.length, values};
       }).toObject(),
     };
@@ -153,7 +173,7 @@ export function applyValuePatch(base: FieldValue, patch: ValuePatch): FieldValue
   switch (base.type) {
     case EmptyValue.type:
       const value = asValue(patch);
-      // prevent reusing exising entity from patch by clearing the subject
+      // prevent reusing existing entity from patch by clearing the subject
       return FieldValue.isComposite(value)
         ? CompositeValue.set(value, {subject: Rdf.iri('')})
         : value;
@@ -192,11 +212,11 @@ function applyFieldPatch(base: FieldState, patch: FieldPatch): FieldState {
   if (!isValidValues) { return base; }
 
   const values = patch.values.map((valuePatch, index) => {
-    const baseValue = base.values.get(index, FieldValue.empty);
+    const baseValue = base.values[index] || FieldValue.empty;
     return valuePatch ? applyValuePatch(baseValue, valuePatch) : baseValue;
   });
 
-  return FieldState.set(base, {values: Immutable.List(values)});
+  return FieldState.set(base, {values});
 }
 
 function asValue(patch: ValuePatch): FieldValue {
@@ -204,7 +224,7 @@ function asValue(patch: ValuePatch): FieldValue {
   switch (patch.type) {
     case AtomicValue.type:
       const nodeValue = tryDeserializeN3(patch.value);
-      isValid = nodeValue && (nodeValue.isLiteral() || nodeValue.isIri()) && (
+      isValid = nodeValue && (Rdf.isLiteral(nodeValue) || Rdf.isIri(nodeValue)) && (
         typeof patch.label === 'undefined' ||
         typeof patch.label === 'string'
       );
@@ -219,27 +239,24 @@ function asValue(patch: ValuePatch): FieldValue {
       break;
     case CompositeValue.type:
       const subjectIri = tryDeserializeN3(patch.subject);
-      if (subjectIri && subjectIri instanceof Rdf.Iri) {
+      if (subjectIri && Rdf.isIri(subjectIri)) {
         const states = Object.keys(patch.fields).map((fieldId): [string, FieldState] => {
           const statePatch = patch.fields[fieldId];
           const values = statePatch && Array.isArray(statePatch.values)
             ? statePatch.values.map(v => v ? asValue(v) : FieldValue.empty)
             : [];
           return [fieldId, {
-            values: Immutable.List(values),
+            values,
             errors: FieldError.noErrors,
           }];
         });
         const discriminator = patch.discriminator
           ? tryDeserializeN3(patch.discriminator) : undefined;
-        return {
-          type: CompositeValue.type,
-          definitions: Immutable.Map<string, FieldDefinition>(),
+        return CompositeValue.set(CompositeValue.empty, {
           subject: subjectIri,
           discriminator,
           fields: Immutable.Map<string, FieldState>(states),
-          errors: FieldError.noErrors,
-        };
+        });
       }
   }
   return FieldValue.empty;

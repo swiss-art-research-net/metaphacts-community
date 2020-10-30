@@ -23,6 +23,9 @@ wd:Q12418
 <http://data.europeana.eu/item/04802/243FA8618938F4117025F17A8B813C5F9AA4D619>
     dcterms:subject wd:Q12418 .
 
+foaf:knows rdfs:domain foaf:Agent .
+
+schema:birthDate rdfs:range xsd:date .
 
 # labels
 

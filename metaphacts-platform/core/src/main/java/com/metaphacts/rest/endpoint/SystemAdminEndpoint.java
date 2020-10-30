@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,28 +37,44 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.servlet.ServletContext;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 
+import com.google.common.collect.Maps;
+import com.google.inject.Provider;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.security.Permissions.SYSTEM;
+import com.metaphacts.util.SystemPropUtils;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -45,7 +83,42 @@ import com.metaphacts.security.Permissions.SYSTEM;
 @Singleton
 @Path("admin/system")
 public class SystemAdminEndpoint {
+    @Inject
+    private Provider<ServletContext> sc;
+
     private static final Logger logger = LogManager.getLogger(SystemAdminEndpoint.class);
+
+    @GET()
+    @Path("platform-info")
+    @NoCache
+    @RequiresAuthentication
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPlatformInfo() {
+        HashMap<String, Object> info = Maps.newHashMap();
+        info.put("Platform Version", SystemPropUtils.getVersionFromManifest(sc.get()));
+        return Response.ok().entity(info).build();
+    }
+
+    @GET()
+    @Path("jvm-properties")
+    @NoCache
+    @RequiresAuthentication
+    @RequiresPermissions(SYSTEM.JVM_PROPERTIES)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getJvmProperties() {
+        List<String> whitelist = Arrays.asList("file.encoding", "java.vm", "com.metaphacts","config.mutablePluginApps",
+                "config.environment.","config.ui.", "config.global.",  "java.class", "java.version", "log4j.configurationFile",
+                "runtimeDirectory", "pf4j.pluginsDir", "org.eclipse.jetty", "jetty.git.hash",
+                "user.timezone", "path.separator");
+        RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
+        final Map<String, String> properties = bean.getSystemProperties();
+        final Map<String, String> filteredProperties = properties.entrySet().stream()
+                .filter(entry -> whitelist.stream()
+                        .anyMatch(listEntry -> entry.getKey().startsWith(listEntry)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        // DO NOT expose all input arguments bean.getInputArguments(), since they expose secretes
+        return Response.ok().entity(new TreeMap<String, String>(filteredProperties)).build();
+    }
 
     @POST()
     @Path("restart")

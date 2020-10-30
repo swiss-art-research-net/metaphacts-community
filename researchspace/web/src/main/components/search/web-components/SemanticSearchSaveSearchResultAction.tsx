@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -91,7 +90,8 @@ class SaveSearchResultActionInner extends React.Component<InnerProps, {}> {
         label: name,
         structure: serializeSearch(
           this.props.context.baseQueryStructure.getOrElse(undefined),
-          this.props.context.facetStructure.getOrElse(undefined)
+          this.props.context.facetStructure.getOrElse(undefined),
+          this.props.context.resultState
         )
       }).flatMap(
         res => this.props.addToDefaultSet ?

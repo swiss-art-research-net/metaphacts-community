@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -31,7 +30,7 @@ import { disjunctToString } from 'platform/components/semantic/search/data/searc
 import * as styles from './SearchSummary.scss';
 
 interface Props {
-  search: Model.Search
+  search: Model.StructuredSearch
 }
 
 interface ChunkText {
@@ -71,7 +70,10 @@ export class SearchSummary extends Component<Props, {}> {
    * Converts search AST into human readable query representation.
    * E.g. 'Find Actors has met The Portland Vase Disc' etc.
    */
-  public static summaryToString(search): string {
+  public static summaryToString(search: Model.Search): string {
+    if (search.kind !== Model.SearchKind.Structured) {
+      return `(${Model.SearchKind[search.kind]} search)`;
+    }
     const textAst = (new SearchSummary(null)).searchSummary(search);
     return _(textAst).map(
       statement => [statement.text, ' ']
@@ -80,7 +82,7 @@ export class SearchSummary extends Component<Props, {}> {
     );
   }
 
-  private htmlSummary(search: Model.Search): Array<ReactElement<any>> {
+  private htmlSummary(search: Model.StructuredSearch): Array<ReactElement<any>> {
     return this.searchSummary(search)
       .map(
         statement =>
@@ -91,11 +93,11 @@ export class SearchSummary extends Component<Props, {}> {
       );
   }
 
-  private searchSummary(search: Model.Search): Array<ChunkText> {
+  private searchSummary(search: Model.StructuredSearch): Array<ChunkText> {
     return this.searchText(search);
   }
 
-  private searchText(search: Model.Search): Array<ChunkText> {
+  private searchText(search: Model.StructuredSearch): Array<ChunkText> {
     return [this.domainText(search.domain)].concat(
       this.clausesText(search.conjuncts)
     );
@@ -157,12 +159,13 @@ export class SearchSummary extends Component<Props, {}> {
   private disjunctText = (disjunct: Model.Disjunct): DisjunctText => {
     if (disjunct.kind === Model.EntityDisjunctKinds.Search) {
       return {
-        className: styles[disjunct.kind],
+        // TODO: disjunct.kind should be "Search" here, so styles[kind] is undefined?
+        className: styles[disjunct.kind as keyof typeof styles],
         text: disjunct.value.domain.label + ' where ' + SearchSummary.summaryToString(disjunct.value),
       };
     } else {
       return {
-        className: styles[disjunct.kind],
+        className: styles[disjunct.kind as keyof typeof styles],
         text: disjunctToString(disjunct),
       };
     }

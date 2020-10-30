@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { createFactory, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import { uniqueId, keyBy, isEqual } from 'lodash';
@@ -37,12 +36,26 @@ import { LdpAnnotationEndpoint } from '../../data/iiif/AnnotationEndpoint';
 
 import { renderMirador, removeMirador, scrollToRegions } from './mirador/Mirador';
 
-interface Props {
-  selection: Array<Rdf.Iri | string>;
-  repositories?: Array<string>;
+export interface SideBySideComparisonConfig {
+  /**
+   * Images IRIs to be compared.
+   */
+  selection: Array<string>;
+  /**
+   * Pattern to generate image ID from image IRI.
+   */
   imageIdPattern: string;
+  /**
+   * IIIF server URL.
+   */
   iiifServerUrl: string;
+  /**
+   * Repositories to query the image.
+   */
+  repositories?: Array<string>;
 }
+
+type Props = SideBySideComparisonConfig;
 
 interface State {
   loading: boolean;
@@ -64,11 +77,11 @@ type Request = Data.Maybe<Props>;
  * Due to usage of Mirador, you must place it in a html element with defined height.
  *
  * @example
- * <rs-iiif-mirador-side-by-side-comparison
- *   compared-images='[<image1>, <image2>, <region3>]'
+ * <rs-iiif-side-by-side
+ *   selection='[<image1>, <image2>, <region3>]'
  *   image-id-pattern='BIND(REPLACE(?imageIRI, "^http://example.com/(.*)$", "$1") as ?imageID)'
  *   iiif-server-url='<iiif-server>'>
- * </rs-iiif-mirador-side-by-side-comparison>
+ * </rs-iiif-side-by-side>
  */
 export class SideBySideComparison extends Component<Props, State> {
   private requests: Kefir.Pool<Request>;
@@ -81,7 +94,7 @@ export class SideBySideComparison extends Component<Props, State> {
     repositories: ['default'],
   };
 
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.requests = Kefir.pool<Request>();
     this.miradorElementId = uniqueId('mirador_');
@@ -123,9 +136,8 @@ export class SideBySideComparison extends Component<Props, State> {
     const serviceUrl = ImageApi.getIIIFServerUrl(request.iiifServerUrl);
 
     const metadataTasks = request.selection
-      .map(iri => typeof iri === 'string' ? Rdf.iri(iri) : iri)
       .map(iri => queryIIIFImageOrRegion(
-        iri, request.imageIdPattern, repositories
+        Rdf.iri(iri), request.imageIdPattern, repositories
       ).flatMap(imageInfo => {
         // creating image API request url for given image
         const serviceRequestUri = ImageApi.constructServiceRequestUri(
@@ -275,7 +287,7 @@ export function chooseMiradorLayout(slotCount: number) {
 }
 
 class SideBySideAnnotationEndpoint extends LdpAnnotationEndpoint {
-  metadataByIri: any;
+  metadataByIri: { [iri: string]: Metadata };
 
   constructor(metadataByIri: any) {
     super({});

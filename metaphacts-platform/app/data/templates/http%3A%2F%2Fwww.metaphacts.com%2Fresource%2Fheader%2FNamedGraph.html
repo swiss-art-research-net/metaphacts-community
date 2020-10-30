@@ -1,0 +1,25 @@
+<div class="knowledgeGraphBar">
+  <div class='knowledgeGraphBar__thumbnail'>
+    <h2><div class='named-graph-icon'></div></h2>
+  </div>
+
+  <div class="knowledgeGraphBar__summary">
+    <div class="knowledgeGraphBar__summaryTitle">
+      <h1>Named Graph</h1>
+    </div>
+    <div class="knowledgeGraphBar__uriRow">
+      <b>URI</b>: <i style="font-size: 12px;">[[urlParam "graph"]]</i> <mp-copy-to-clipboard text="[[urlParam "graph"]]">
+      <button class="btn btn-default knowledgeGraphBar__copyIri"></button>
+      </mp-copy-to-clipboard>
+    </div>
+    <semantic-if query='ASK { ?? a ?type . }' then='{{> then}}'>
+      <template id='then'>
+        <div>
+          <b>Type</b>: <semantic-query query="SELECT DISTINCT ?type WHERE { ?? [[#if type]][[type]][[else]]a[[/if]] ?type }" style="display:inline;"></semantic-query>
+        </div>
+      </template>
+    </semantic-if>
+  </div>
+
+  [[> "http://www.metaphacts.com/resource/KnowledgeGraphBarViewControls" ]]
+</div>

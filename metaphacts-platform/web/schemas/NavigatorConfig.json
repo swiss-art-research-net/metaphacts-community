@@ -1,0 +1,52 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "WidgetDock": {
+            "enum": [
+                "e",
+                "n",
+                "ne",
+                "nw",
+                "s",
+                "se",
+                "sw",
+                "w"
+            ],
+            "type": "string"
+        }
+    },
+    "properties": {
+        "dock": {
+            "$ref": "#/definitions/WidgetDock"
+        },
+        "expanded": {
+            "type": "boolean"
+        },
+        "height": {
+            "type": "number"
+        },
+        "id": {
+            "type": "string"
+        },
+        "margin": {
+            "type": "number"
+        },
+        "scalePadding": {
+            "type": "number"
+        },
+        "width": {
+            "type": "number"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "dock",
+        "margin",
+        "width",
+        "height",
+        "scalePadding",
+        "expanded"
+    ],
+    "type": "object"
+}
+

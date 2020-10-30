@@ -1,15 +1,5 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" iri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li>
-    <semantic-link title="Components" iri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
-  </li>
-  <li class="active">Semantic Form</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
 
 <div class="page">
   <div class='page__body'>
@@ -19,10 +9,10 @@
       The form component can be used to create declarative authoring forms for knowledge graphs.
     </p>
 
-    The <code><semantic-form></semantic-form></code> component needs to be configured mainly on two levels:
+    The <code>&lt;semantic-form&gt;</code> component needs to be configured mainly on two levels:
     <ul>
       <li><a href="#fielddefinitions">Field Definitions</a></li>
-      <li><a href="#html5markup">HTML5 Markup</a></li>
+      <li><a href="#formattributes">Form Attributes</a> and <a href="#html5markup">HTML5 Markup</a></li>
     </ul>
 
 
@@ -37,156 +27,9 @@
     <p>
       Attributes of a field definition are (mandatory attributes marked with *):
     </p>
-      <table class="table table-striped table-bordered">
-      <tbody>
-        <tr>
-          <th>Property</th>
-          <th>Comment</th>
-        </tr>
-        <tr>
-          <td>id*</td>
-          <td>Unique identifier of the field definition, in most cases it
-          will be the URI of the field definition</td>
-        </tr>
-        <tr>
-          <td>label*</td>
-          <td>
-            <p>A human readable label for the field. Will be used as default label for the input elements within the form.</p>
-          </td>
-        </tr>
-        <tr>
-          <td>description</td>
-          <td>
-            <p>A human readable description of the field.</p>
-          </td>
-        </tr>
-        <tr>
-          <td>categories</td>
-          <td>
-            <p>An unordered array of category IRIs as additional metadata for improved organisation.</p>
-          </td>
-        </tr>
-        <tr>
-          <td>domain</td>
-          <td>Domain restriction on classes this field applicable to.</td>
-        </tr>
-        <tr>
-          <td>xsdDatatype</td>
-          <td>
-            <p>A full or prefix XSD URI datatype identifier as
-            specified in <a href="https://www.w3.org/TR/rdf11-concepts/#xsd-datatypes">RDF 1.1</a></p>
-          </td>
-        </tr>
-        <tr>
-          <td>range</td>
-          <td>
-            <p>Range restriction on allowed classes of objects for the field values.</p>
-            <p>Only applicable if <strong>xsdDatatype</strong> is <code>xsd:anyURI</code>.</p>
-          </td>
-        </tr>
-        <tr>
-          <td>minOccurs</td>
-          <td>XSD schema min cardinality number of <code>0:N</code>. <code>0</code> for not required. Defaults to <code>0</code>.</td>
-        </tr>
-        <tr>
-          <td>maxOccurs</td>
-          <td>XSD schema max cardinality number of <code>1:N</code> or <code>unbound</code> for infinite (default).</td>
-        </tr>
-        <tr>
-          <td>defaultValues</td>
-          <td>An array of default values (represented as text) assigned to the field if subject doesn't contain a value for it.</td>
-        </tr>
-        <tr>
-          <td>selectPattern</td>
-          <td>
-            <p>SPARQL SELECT query string</p>
-            <ul>
-              <li><strong>MUST</strong> expose a <em>$value</em> projection variable
-              which binds the current value(s)</li>
-              <li><em>$subject</em> refers to the current entity to be created/edited</li>
-              <li><em>$value</em> refers to the current atomic values(s) connected to the <em>$subject</em> through the graph pattern</li>
-            </ul>
-          </td>
-        </tr>
-        <tr>
-          <td>insertPattern*</td>
-          <td>
-            <p>SPARQL INSERT query string to create new values</p>
-            <ul>
-              <li><strong>MUST</strong> use a <em>$subject</em> and <em>$value</em> variable inside of the query</li>
-              <li><em>$subject</em> refers to the current entity to be created/edited</li>
-              <li><em>$value</em> refers to the new atomic values(s) connected to the <em>$subject</em> through the graph pattern</li>
-            </ul>
-          </td>
-        </tr>
-        <tr>
-          <td>deletePattern</td>
-          <td>
-            <p>SPARQL DELETE query string to delete old values (only required if running in SPARQL mode)</p>
-            <p>The following conventions apply:</p>
-            <ul>
-              <li><strong>MUST</strong> use a <em>$subject</em> and <em>$value</em> variable inside of the query</li>
-              <li><em>$subject</em> refers to the current entity to be edited</li>
-              <li><em>$value</em> refers to the old (to be deleted) atomic values(s) connected to the $subject through the graph pattern</li>
-            </ul>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <p>askPattern</p>
-          </td>
-          <td>
-            <p>SPARQL ASK query string, parameterized with the current $subject and new $value. Will be execute while typing to validate user inputs against the database. </p>
-            <p>The following conventions apply:</p>
-            <div>
-              <ul>
-                <li><em>$value</em> refers to the new atomic values connected to the $subject through the graph pattern</li>
-                <li><em>$subject</em> can be used inside the query, referring to the current entity to be created/edited</li>
-              </ul>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>autosuggestionPattern</td>
-          <td>
-            <p>SPARQL SELECT query string for autosuggestion lookups</p>
-            <p>The following convention apply:</p>
-            <ul>
-              <li><strong>MUST</strong> expose a <em>$value</em> and <em>$label</em> projection variable
-              which binds the autosuggestion value(s) and a human readable label</li>
-              <li><em>$subject</em> can be used inside the query, referring to the current entity to be created/edited</li>
-              <li>if query contains a <b>?token</b> variable, this will be
-              syntactically replaced by the actual token the user is typing i.e.
-              into the autosuggestion field</li>
-            </ul>
-          </td>
-        </tr>
-        <tr>
-          <td>valueSetPattern</td>
-          <td>
-            <p>SPARQL SELECT query string for populating set choices such as in dropdown</p>
-            <p>The following conventions apply:</p>
-            <ul>
-              <li><strong>MUST</strong> expose a <em>$value</em> projection variable
-              which binds the current value(s)</li>
-              <li><em>$subject</em> can be used inside the query, referring to the current entity to be created/edited</li>
-            </ul>
-          </td>
-        </tr>
-        <tr>
-          <td>treePatterns</td>
-          <td>
-            <p>SPARQL configuration to select terms from an hierarchical thesaurus.
-            Can be either <code>simple</code> or <code>full</code> (specified in the <code>type</code> attribute).</p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <mp-documentation type='FieldDefinitionConfig' disable-transform-attributes=true></mp-documentation>
 
-    <b>Note:</b><br>
-    <p>Whether <b>$</b> or <b>?</b> are being used as SPARQL variable identifier does not matter (both are valid in SPARQL). However, we recommend using <b>$</b> for variables to be replaced/injected by the form, for example, <b>$subject</b> or <b>$value.</b> We recommend this just for sake of readability i.e. the one is reminded when reading or modifying these patterns, that certain variables will be replaced/injected later.</p>
-
-    <h2 id="html5markup">HTML5 Markup</h2>
+    <h2 id="formattributes">Form Attributes</h2>
     <p>While field definitions are being defined on an abstract level, forms and corresponding input elements can be instantiated using custom HTML5 components including references to the field definitions. </p>
 
     <p>The basic structure of a form markup looks as follows:</p>
@@ -199,55 +42,21 @@
     "id": "name",
     "label": "Name",
     "insertPattern": "INSERT { $subject foaf:name $value } WHERE {}"
-    }]'
->
+    }]'>
+
   ... children ...
 
 </semantic-form>
 ]]></mp-code-block>
 
     Furthermore, the following attributes can be configured:
-    <style>
-      dt { margin-left: 1em; }
-      dd { margin-left: 3em; }
-    </style>
-    <dl>
-      <dt><code>subject: IRI string</code></dt>
-      <dd>
-        <p>IRI of instance described by the form.</p>
-        <p>If this attribute is set to a non-empty value then the form will operate
-        in the "editing existing instance" mode instead of "creating a new instance".</p>
-      </dd>
-      <dt><code>new-subject-template: string</code></dt>
-      <dd>
-        <p>IRI template to customize subject generation in the "creating a new instance" form mode.</p>
-        <p>The template allows to reference form values, e.g if there is field with ID equal to <code>ABC</code>
-        that uniquely identify record, we can specify subject template as
-        <code>http://example.com/records/{{ABC}}</code>, where ABC will be substituted with value of the field <code>ABC</code>.</p>
-        <p><code>{{UUID}}</code> placeholder allows to substitute a random UUID.<p>
-      </dd>
-      <dt id="prop-browser-persistence"><code>browser-persistence: boolean</code></dt>
-      <dd>
-        <p>Whether to save intermediate changes in browser's local storage.</p>
-        <p>Use <code>form-id</code> attribute to assign an storage ID and <code><semantic-form-recover-notification></semantic-form-recover-notification></code>
-        to display notification to user whether a form state was recovered from the local storage.</p>
-        <p>Default: <code>false</code></p>
-      </dd>
-      <dt><code>persistence: string ('sparql' | 'ldp')</code></dt>
-      <dd>
-        <p>Persistence and operation mode to use for creating and modifying data. Both modes require dedicated ACL permissions.</p>
-        <p>In <code>ldp</code> mode, all generated statements for a form subject are being stored into a dedicated LDP container and as such can easily be updated or even reverted and have provenance information attached. However, <code>ldp</code> requires to enable quads mode in the graph database.</p>
-        <p>In the <code>sparql</code> mode no provenance can be captured.</p>
-        <p>Default: <code>ldp</code></p>
-      </dd>
-      <dt><code>post-action: string ('reload' | 'redirect')</code></dt>
-      <dd>
-        <p>Optional post-action to be performed after saving the form. Can be either <code>reload</code> or <code>redirect</code>
-          (redirects to the subject of the form) or any IRI string to which the form will redirect.</p>
-        <p>Default: <code>reload</code> (refreshes current resource page).</p>
-      </dd>
-    </dl>
+    <mp-documentation type='ResourceEditorFormConfig'></mp-documentation>
+    
+    <p>For <code>persistence</code> attribute the <code>'rest'</code> mode allows transferring the collected form data to a REST endpoint, e.g. to trigger an action. This requires additional configuration, see <semantic-link iri="[[resolvePrefix "Help:SemanticFormRestPersistence"]]">REST-based Form Persistence</semantic-link> for details.</p>
+    
+    <p>See <semantic-link iri="[[resolvePrefix "Help:SemanticFormDependenciesConstraints"]]">Form Dependencies and Constraints</semantic-link> for details on how to configure multi-field dependencies and constraints.</p>
 
+    <h2 id="html5markup">HTML5 Markup</h2>
     <p>
       Within the form component, arbitrary standard and custom HTML5 elements can be nested as
       children elements e.g. for layout purpose tabs can be used.
@@ -290,7 +99,7 @@
           </td>
           <td>
             <p>Commonly used for Literal values. However, can also be used for IRIs if corresponding xsdDatatype of field definition is <code>xsd:anyURI</code>.</p>
-            <p>Accepts an optional attribute <code>languages=["de","en"]</code>, which can be used to let the user select a language tag if xsdDatatype is <code>xsd:langString</code>.</p>
+            <p>Accepts an optional attribute <code>languages=["de","en"]</code>, which can be used to let the user select a language tag if xsdDatatype is <code>rdf:langString</code>.</p>
             <p>The optional attribute <code>require-language=true</code> selects the first language by default and disables non-language option.</p>
             <p>Setting the optional HTML attribute <code>multiline</code> to <code>multiline=true</code> will render a autoresizable text area.</p>
           </td>
@@ -317,6 +126,8 @@
           </td>
           <td>
             <p>Dynamic autosuggestion while user enters search token, using the <code>autosuggestionPattern</code> from the referenced field definition.</p>
+            <p>Besides using SPARQL queries for search, the <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> can be used to look up entities based on the provided search terms. See <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> for details and examples.</p>
+
           </td>
         </tr>
         <tr>
@@ -358,6 +169,7 @@
           <td>
             <p>Represents field value as a sub-form which should be saved in the same container as the parent form.</p>
             <p>E.g. suppose a field for a <strong>TimeSpan</strong> value with <strong>begin</strong> and <strong>end</strong> values. In this case <strong>TimeSpan</strong> is tightly coupled to the record, so it should be saved, edited and removed together with the record.</p>
+            <p><code>new-subject-template</code> for this component can be a relative IRI. If it's set as <code>'.'</code> the IRI will be equal to the parent form IRI.</p>
           </td>
         </tr>
         <tr>
@@ -373,9 +185,24 @@
     default-values='["Emmett Brown", "Marty McFly"]'>
 </semantic-form-hidden-input>
             ]]></mp-code-block>
+            <mp-code-block mode='text/html'><![CDATA[
+<semantic-form-hidden-input for='{field-id}'
+    append-value='&lbrack;&lbrack;singleValueFromSelect "SELECT ?user WHERE { BIND(?__useruri__ as ?user) }" ]]'>
+</semantic-form-hidden-input>
+            ]]></mp-code-block>
+            <mp-code-block mode='text/html'><![CDATA[
+<semantic-form-hidden-input for='{field-id}'
+    replace-value='&lbrack;&lbrack;currentDateTime format="yyyy-MM-dd'T'hh:mm:ss"]]'>
+</semantic-form-hidden-input>
+            ]]></mp-code-block>
           </td>
           <td>
             <p>Represents a hidden field, which will not be visible to the user and which will be automatically saved as soon as the form is saved. Values to be saved can be provided through the <code>default-value</code> or <code>default-values</code> attributes.</p>
+            <p>In addition to saving default values, the hidden field supports to replace or append values using the <code>replace-value</code> or <code>replace-values</code> and <code>append-value</code> or <code>append-values</code> settings, respectively.</p>
+            <p><strong>replace-value</strong> or <strong>replace-values</strong> allows to rewrite value(s) on each save operation of the form.</p>
+            <p><strong>append-value</strong> or <strong>append-values</strong> allows to append the new value(s) to the current object dataset.</p>
+            <p>When one of these attributes is used, the parameters <code>default-value</code> and <code>default-values</code> are ignored.</p>
+            <p><span style='color:red;font-weight:bold;'>Please note:</span> <code>default-value</code> and <code>default-values</code> work only if the forms are in creation mode using the <code>new-subject-template</code>. Please use the <code>replace-value</code> or <code>replace-values</code> otherwise.</p>
           </td>
         </tr>
         <tr>
@@ -409,8 +236,8 @@
             <p><strong>type:</strong> allows users to select the type of the component: radio-button list or checkbox list.
               By default using 'checkbox'. <code>type='radio'</code> for radio-button.
             </p>
-            <p><strong>row:</strong> allows users to select horizontal or vertical position of items. 
-              By default - vertical position. If <code>row=true</code> - horizontal position. 
+            <p><strong>row:</strong> allows users to select horizontal or vertical position of items.
+              By default - vertical position. If <code>row=true</code> - horizontal position.
             </p>
             <p><strong>class:</strong> allows users to assign custom css classes to the checklist.
             </p>
@@ -493,24 +320,24 @@
         </tr>
       </tbody>
     </table>
-    
+
     <p>Furthermore, additional static form elements can be placed anywhere within the form:</p>
     <dl>
       <dt><code><semantic-form-errors></semantic-form-errors></code></dt>
       <dd><p>Displays all errors for every form input at one convenient place.</p></dd>
-      
+
       <dt><code><semantic-form-recover-notification></semantic-form-recover-notification></code></dt>
       <dd><p>Display dismissable notification that form state was recovered from local storage (see <a href="#prop-browser-persistence">browser-persistence</a> form property for details).</p></dd>
-      
+
       <dt><code><button name='submit'>Save</button></code></dt>
       <dd><p>Submits form content.<p></dd>
-      
+
       <dt><code><button name='reset'>Reset</button></code></dt>
       <dd><p>Resets form to the initial state.</p></dd>
-      
+
       <dt><code><button name='save-state'>Export</button></code></dt>
       <dd><p>Allows to download form state as a file to load it back later.</p></dd>
-      
+
       <dt><code><button name='load-state'>Import</button></code></dt>
       <dd><p>Loads previously exported form state.</p></dd>
     </dl>
@@ -523,21 +350,21 @@
 
     <ul>
       <li>
-        <b>Read all field definitions:</b> <code>[[{{documentation}}]][[fieldDefinitions]][[{{/documentation}}]]</code><br>
+        <b>Read all field definitions:</b> <code>&lbrack;&lbrack;fieldDefinitions]]</code><br>
         Returns a JSON object array with all field definitions stored in the system. To reference a specific field definition from the form input elements, the full IRI of the field identifier needs to be used. Example:
         <mp-code-block mode='text/html'>
-<semantic-form fields=[[{{documentation}}]][[fieldDefinitions]][[{{/documentation}}]]>
+<semantic-form fields=&lbrack;&lbrack;fieldDefinitions]]>
   <semantic-form-text-input for='http://www.researchspace.org/instances/fields/expressionDisplayLabel'>
   </semantic-form-text-input>
 </semantic-form>
         </mp-code-block>
       </li>
       <li>
-        <b>Read specific field definitions:</b> <code>[[{{documentation}}]][[fieldDefinitions alias1="http://www.researchspace.org/instances/fields/expressionDisplayLabel"]][[{{/documentation}}]]</code><br>
+        <b>Read specific field definitions:</b> <code>&lbrack;&lbrack;fieldDefinitions alias1="http://www.researchspace.org/instances/fields/expressionDisplayLabel"]]</code><br>
         Reads the specified field definitions (identified by its IRI) and re-writes the identifier to a local alias for reference from the input element.
          Example:
         <mp-code-block mode='text/html'>
-<semantic-form fields='[[{{documentation}}]][[fieldDefinitions alias1="http://www.researchspace.org/instances/fields/expressionDisplayLabel"]][[{{/documentation}}]]'>
+<semantic-form fields='&lbrack;&lbrack;fieldDefinitions alias1="http://www.researchspace.org/instances/fields/expressionDisplayLabel"]]'>
   <semantic-form-text-input for='alias1'></semantic-form-text-input>
 </semantic-form>
         </mp-code-block>
@@ -545,11 +372,53 @@
     </ul>
 
     <h1>Examples</h1>
-    The following two examples show how to create 1) simple field definitions and 2) complex field definitions that create sub-graphs for the <a href="http://www.cidoc-crm.org/comprehensive_intro.html" target="_blank">CIDOC Conceptual Reference Model</a> ontology.
+    
 
-    <h3>Example 1: Simple field definitions</h3>
-    In the following we show a very simple example form with two simple field definitions to create a new CRM object.
-    The fields capture an RDFS label as well as the CRM type, which can be selected from a given set of CRM type.
+    <h3>Example 1: Basic form</h3>
+    
+    <p>The following example illustrates the basic definition of a form to create a person. It defines two fields (<code>name</code> and <code>knows</code>) and places the form components.</p>
+    
+    <mp-code-example>
+    <![CDATA[
+<semantic-form 
+          new-subject-template='http://www.example.com/id/person-{{UUID}}'
+          post-action='redirect'
+          form-id='example-1' 
+          fields='[
+            {
+              "id": "name",
+              "label": "Full Name",
+              "xsdDatatype": "xsd:string",
+              "minOccurs": "1",
+              "maxOccurs": "1",
+              "insertPattern": "INSERT { $subject <http://xmlns.com/foaf/0.1/name> ?value } WHERE {}"
+            }, {
+              "id": "knows",
+              "label": "Knows",
+              "insertPattern": "INSERT { $subject <http://xmlns.com/foaf/0.1/knows> ?value } WHERE {}",
+              "autosuggestionPattern" : "PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
+                  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+                  SELECT ?value ?label WHERE {
+                    SERVICE Repository:lookup {
+                      ?value lookup:token ?__token__ .
+                      ?value lookup:type foaf:Person .
+                    }
+                  }"
+            }]'
+          >
+  <semantic-form-text-input for="name"></semantic-form-text-input>
+  <semantic-form-autocomplete-input for="knows"></semantic-form-autocomplete-input>
+  <button name="submit" class="btn btn-default">Save</button>
+  <button name="reset" class="btn btn-default">Reset</button>
+</semantic-form>         
+]]>
+    </mp-code-example>
+    
+    <h3>Example 2: Simple field definitions</h3>
+      
+    <p>In the following we show a very simple example form with two simple field definitions to create a new object using the <a href="http://www.cidoc-crm.org/comprehensive_intro.html" target="_blank">CIDOC Conceptual Reference Model</a> (CRM) ontology.
+    The fields capture an RDFS label as well as the CRM type, which can be selected from a given set of CRM type.</p>
+      
     <mp-code-example>
 <![CDATA[
       <semantic-form new-subject-template='http://www.example.com/id/{{UUID}}'
@@ -627,7 +496,7 @@
 ]]>
     </mp-code-example>
 
-    <h3>Example 2: Complex field definitions</h3>
+    <h3>Example 3: Complex field definitions</h3>
     The following example shows more complex field definitions, where the field definition patterns map to complex CRM graph structures. We also show how to create a more complex, tabbed layout for the form.
     <mp-code-example>
 <![CDATA[
@@ -807,7 +676,7 @@
                   (<http://collection.britishmuseum.org/id/person-institution/170898> \"British Consulate General, Atlanta\")
                   (<http://collection.britishmuseum.org/id/person-institution/188537> \"British Association for the Advancement of Science\")
                 }
-                FILTER REGEX($label, \"?token\", \"i\")
+                FILTER REGEX($label, $__token__, \"i\")
               }
             ",
             "insertPattern": "
@@ -847,7 +716,7 @@
 ]]>
     </mp-code-example>
 
-    <h3>Example 3: Composite inputs</h3>
+    <h3>Example 4: Composite inputs</h3>
     <mp-code-example>
 <![CDATA[
       <bs-panel>
@@ -862,17 +731,35 @@
               "xsdDatatype": "xsd:string",
               "minOccurs": "1",
               "maxOccurs": "1",
-              "selectPattern": "SELECT ?value WHERE { $subject <test:label> ?value }",
-              "insertPattern": "INSERT { $subject <test:label> ?value } WHERE {}",
-              "deletePattern": "DELETE { $subject <test:label> ?value } WHERE {}"
+              "selectPattern": "
+                PREFIX example: <http://example.com/>
+                SELECT ?value WHERE { $subject example:label ?value }
+              ",
+              "insertPattern": "
+                PREFIX example: <http://example.com/>
+                INSERT { $subject example:label ?value } WHERE {}
+              ",
+              "deletePattern": "
+                PREFIX example: <http://example.com/>
+                DELETE { $subject example:label ?value } WHERE {}
+              "
             },
             {
               "id": "owner",
               "label": "Owner",
               "xsdDatatype": "xsd:anyURI",
-              "selectPattern": "SELECT ?value WHERE { $subject <test:owner> ?value }",
-              "insertPattern": "INSERT { $subject <test:owner> ?value } WHERE {}",
-              "deletePattern": "DELETE { $subject <test:owner> ?value } WHERE {}"
+              "selectPattern": "
+                PREFIX example: <http://example.com/>
+                SELECT ?value WHERE { $subject example:owner ?value }
+              ",
+              "insertPattern": "
+                PREFIX example: <http://example.com/>
+                INSERT { $subject example:owner ?value } WHERE {}
+              ",
+              "deletePattern": "
+                PREFIX example: <http://example.com/>
+                DELETE { $subject example:owner ?value } WHERE {}
+              "
             }
           ]'>
           <semantic-form-recover-notification></semantic-form-recover-notification>
@@ -884,18 +771,36 @@
               "xsdDatatype": "xsd:string",
               "minOccurs": "1",
               "maxOccurs": "1",
-              "selectPattern": "SELECT ?value WHERE { $subject <test:id> ?value }",
-              "insertPattern": "INSERT { $subject <test:id> ?value } WHERE {}",
-              "deletePattern": "DELETE { $subject <test:id> ?value } WHERE {}"
+              "selectPattern": "
+                PREFIX example: <http://example.com/>
+                SELECT ?value WHERE { $subject example:id ?value }
+              ",
+              "insertPattern": "
+                PREFIX example: <http://example.com/>
+                INSERT { $subject example:id ?value } WHERE {}
+              ",
+              "deletePattern": "
+                PREFIX example: <http://example.com/>
+                DELETE { $subject example:id ?value } WHERE {}
+              "
             },
             {
               "id": "name",
               "label": "Owner name",
               "xsdDatatype": "xsd:string",
               "minOccurs": "1",
-              "selectPattern": "SELECT ?value WHERE { $subject <test:name> ?value }",
-              "insertPattern": "INSERT { $subject <test:name> ?value } WHERE {}",
-              "deletePattern": "DELETE { $subject <test:name> ?value } WHERE {}"
+              "selectPattern": "
+                PREFIX example: <http://example.com/>
+                SELECT ?value WHERE { $subject example:name ?value }
+              ",
+              "insertPattern": "
+                PREFIX example: <http://example.com/>
+                INSERT { $subject example:name ?value } WHERE {}
+              ",
+              "deletePattern": "
+                PREFIX example: <http://example.com/>
+                DELETE { $subject example:name ?value } WHERE {}
+              "
             }
           ]'>
             <semantic-form-text-input for="id"></semantic-form-text-input>
@@ -910,7 +815,7 @@
 ]]>
     </mp-code-example>
 
-    <h3>Example 4: Independent resource creation in modal dialog</h3>
+    <h3>Example 5: Independent resource creation in modal dialog</h3>
     <mp-code-example>
 <![CDATA[
       <bs-panel>
@@ -925,9 +830,18 @@
               "xsdDatatype": "xsd:string",
               "minOccurs": "1",
               "maxOccurs": "1",
-              "selectPattern": "SELECT ?value WHERE { $subject <test:id> ?value }",
-              "insertPattern": "INSERT { $subject <test:id> ?value } WHERE {}",
-              "deletePattern": "DELETE { $subject <test:id> ?value } WHERE {}",
+              "selectPattern": "
+                PREFIX example: <http://example.com/>
+                SELECT ?value WHERE { $subject example:id ?value }
+              ",
+              "insertPattern": "
+                PREFIX example: <http://example.com/>
+                INSERT { $subject example:id ?value } WHERE {}
+              ",
+              "deletePattern": "
+                PREFIX example: <http://example.com/>
+                DELETE { $subject example:id ?value } WHERE {}
+              ",
               "askPattern": "ASK { FILTER(REGEX($value, \"^[a-zA-Z0-9]+$\")) }"
             },
             {
@@ -936,19 +850,27 @@
               "xsdDatatype": "xsd:anyURI",
               "selectPattern": "
                 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX example: <http://example.com/>
                 SELECT ?value ?label WHERE {
-                  $subject <test:feature> ?value .
+                  $subject example:feature ?value .
                   OPTIONAL { ?value rdfs:label ?label }
                 }
               ",
-              "insertPattern": "INSERT { $subject <test:feature> ?value } WHERE {}",
-              "deletePattern": "DELETE { $subject <test:feature> ?value } WHERE {}",
+              "insertPattern": "
+                PREFIX example: <http://example.com/>
+                INSERT { $subject example:feature ?value } WHERE {}
+              ",
+              "deletePattern": "
+                PREFIX example: <http://example.com/>
+                DELETE { $subject example:feature ?value } WHERE {}
+              ",
               "autosuggestionPattern": "
                 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX example: <http://example.com/>
                 SELECT $value $label WHERE {
-                  $value a <test:Feature> .
+                  $value a example:feature .
                   $value rdfs:label $label .
-                  FILTER REGEX($label, \"?token\", \"i\")
+                  FILTER REGEX($label, $__token__, \"i\")
                 }
               "
             },
@@ -973,7 +895,7 @@
               ",
               "treePatterns": {
                 "type": "simple",
-                "schemePattern": "?item <http://www.w3.org/2004/02/skos/core#inScheme> <test:scheme/location>"
+                "schemePattern": "?item <http://www.w3.org/2004/02/skos/core#inScheme> <http://example.com/scheme/location>"
               }
             }
           ]'>
@@ -1015,9 +937,18 @@
                 "id": "dimension",
                 "label": "Dimension",
                 "xsdDatatype": "xsd:positiveInteger",
-                "selectPattern": "SELECT ?value WHERE { $subject <test:dimension> ?value }",
-                "insertPattern": "INSERT { $subject <test:dimension> ?value } WHERE {}",
-                "deletePattern": "DELETE { $subject <test:dimension> ?value } WHERE {}"
+                "selectPattern": "
+                  PREFIX example: <http://example.com/>
+                  SELECT ?value WHERE { $subject example:dimension ?value }
+                ",
+                "insertPattern": "
+                  PREFIX example: <http://example.com/>
+                  INSERT { $subject example:dimension ?value } WHERE {}
+                ",
+                "deletePattern": "
+                  PREFIX example: <http://example.com/>
+                  DELETE { $subject example:dimension ?value } WHERE {}
+                "
               }]'>
               <semantic-form-hidden-input for='type' default-value='test:Feature'></semantic-form-hidden-input>
               <semantic-form-text-input for='label'></semantic-form-text-input>
@@ -1058,16 +989,18 @@
                 "selectPattern": "SELECT $value WHERE { $subject a $value }",
                 "insertPattern": "
                   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+                  PREFIX scheme: <http://example.com/scheme/>
                   INSERT {
                     $subject a $value .
-                    $subject skos:inScheme <test:scheme/location>
+                    $subject skos:inScheme scheme:location
                   } WHERE {}
                 ",
                 "deletePattern": "
                   PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+                  PREFIX scheme: <http://example.com/scheme/>
                   DELETE {
                     $subject a $value .
-                    $subject skos:inScheme <test:scheme/location>
+                    $subject skos:inScheme scheme:location
                   } WHERE {}
                 "
               },
@@ -1090,7 +1023,7 @@
                 ",
                 "treePatterns": {
                   "type": "simple",
-                  "schemePattern": "?item <http://www.w3.org/2004/02/skos/core#inScheme> <test:scheme/location>"
+                  "schemePattern": "?item <http://www.w3.org/2004/02/skos/core#inScheme> <http://example.com/scheme/location>"
                 }
               }]'>
               <semantic-form-hidden-input for='type' default-value='test:Location'></semantic-form-hidden-input>
@@ -1110,7 +1043,7 @@
 ]]>
     </mp-code-example>
 
-    <h3>Example 5: Default values and hidden fields</h3>
+    <h3>Example 6: Default values and hidden fields</h3>
     <mp-code-example>
 <![CDATA[
       <semantic-form new-subject-template='http://www.example.com/id/{{UUID}}'
@@ -1155,7 +1088,7 @@
       </semantic-form>
 ]]>
     </mp-code-example>
-    <h3>Example 6: Checklist</h3>
+    <h3>Example 7: Checklist</h3>
     <mp-code-example>
 <![CDATA[
     <semantic-form new-subject-template='http://www.example.com/id/{{UUID}}'
@@ -1233,7 +1166,7 @@
     </semantic-form>
 ]]>
     </mp-code-example>
-    <h3>Example 7: Checkbox</h3>
+    <h3>Example 8: Checkbox</h3>
     <mp-code-example>
 <![CDATA[
     <semantic-form new-subject-template='http://www.example.com/id/{{UUID}}'
@@ -1264,7 +1197,7 @@
 ]]>
       </mp-code-example>
 
-      <h3>Example 8: Switch</h3>
+      <h3>Example 9: Switch</h3>
       <mp-code-example>
 <![CDATA[
       <semantic-form new-subject-template='http://www.example.com/switch/actions/{{UUID}}'
@@ -1452,5 +1385,116 @@
       </semantic-form>
 ]]>
 </mp-code-example>
+
+    <h3>Example 10: Ordered list</h3>
+    <mp-code-example>
+      <![CDATA[
+      <bs-panel>
+        <semantic-form new-subject-template='http://www.example.com/id/{{name}}'
+          post-action='redirect'
+          form-id='example-9'
+          fields='[
+            {
+              "id": "name",
+              "label": "Name",
+              "xsdDatatype": "xsd:string",
+              "minOccurs": "1",
+              "selectPattern": "
+                PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+                PREFIX example: <http://example.com/>
+                SELECT ?value ?index WHERE {
+                  $subject crm:P1_is_identified_by ?appellation .
+                  ?appellation a crm:E41_Appellation ;
+                    rdfs:label ?value ;
+                    example:hasIndex ?index .
+                }",
+              "insertPattern": "
+                PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+                PREFIX example: <http://example.com/>
+                INSERT {
+                  $subject crm:P1_is_identified_by ?appellation .
+                  ?appellation a crm:E41_Appellation ;
+                    rdfs:label ?value ;
+                    example:hasIndex ?index .
+                } WHERE {
+                  BIND(URI(CONCAT(STR($subject),\"/appellation/\",STRUUID())) as ?appellation)
+                }",
+              "deletePattern": "
+                PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+                PREFIX example: <http://example.com/>
+                DELETE {
+                  $subject crm:P1_is_identified_by ?appellation .
+                  ?appellation a crm:E41_Appellation ;
+                    rdfs:label ?value ;
+                    example:hasIndex ?index .
+                } WHERE {
+                  ?appellation a crm:E41_Appellation ;
+                    rdfs:label ?value ;
+                    example:hasIndex ?index .
+                }",
+              "orderedWith": "index-property"
+            },
+            {
+              "id": "artwork",
+              "label": "Artwork",
+              "xsdDatatype": "xsd:anyURI",
+              "minOccurs": "1",
+              "selectPattern": "
+                PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+                PREFIX example: <http://example.com/>
+                SELECT ?value ?index WHERE {
+                  $subject crm:P14i_performed ?production .
+                  ?production a crm:E12_Production ;
+                    crm:P108_has_produced ?value ;
+                    example:hasIndex ?index .
+                }",
+              "insertPattern": "
+                PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+                PREFIX example: <http://example.com/>
+                INSERT {
+                  $subject crm:P14i_performed ?production .
+                  ?production a crm:E12_Production ;
+                    crm:P108_has_produced ?value ;
+                    example:hasIndex ?index .
+                } WHERE {
+                  BIND(URI(CONCAT(STR($subject),\"/production/\",STRUUID())) as ?production)
+                }",
+              "deletePattern": "
+                PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+                PREFIX example: <http://example.com/>
+                DELETE {
+                  $subject crm:P14i_performed ?production .
+                  ?production a crm:E12_Production ;
+                    crm:P108_has_produced ?value ;
+                    example:hasIndex ?index .
+                } WHERE {
+                  ?production a crm:E12_Production ;
+                    crm:P108_has_produced ?value ;
+                    example:hasIndex ?index .
+                }",
+              "valueSetPattern": "
+                PREFIX example: <http://example.com/>
+                SELECT $value $label WHERE {
+                  VALUES ($value $label) {
+                    (example:artwork1 \"Artwork1\")
+                    (example:artwork2 \"Artwork2\")
+                  }
+                }
+              ",
+              "orderedWith": "index-property"
+            }
+          ]'>
+          <semantic-form-recover-notification></semantic-form-recover-notification>
+          <semantic-form-text-input for="name"></semantic-form-text-input>
+          <semantic-form-select-input for="artwork"></semantic-form-select-input>
+          <semantic-form-errors></semantic-form-errors>
+          <!-- save and reset button for form -->
+          <button name="submit" class="btn btn-default">Save</button>
+          <button name="reset" class="btn btn-default">Reset</button>
+        </semantic-form>
+      </bs-panel>
+      ]]>
+    </mp-code-example>
+
   </div>
 </div>

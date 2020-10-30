@@ -11,9 +11,9 @@
       "researchspace/*": ["researchspace/web/src/main/*"],
       "graphscope/*": ["graphscope/web/src/*"],
 
-
       "d3-color": ["metaphacts-platform/web/node_modules/@types/d3-color"],
       "tslib" : ["metaphacts-platform/web/node_modules/tslib/tslib.d.ts"],
+      "prop-types": ["metaphacts-platform/web/node_modules/@types/prop-types"],
       "rc-slider": ["metaphacts-platform/web/node_modules/@types/rc-slider"],
       "react": ["metaphacts-platform/web/node_modules/@types/react"],
       "react-transition-group": ["metaphacts-platform/web/node_modules/@types/react-transition-group"],
@@ -23,28 +23,35 @@
       "react-datetime": ["metaphacts-platform/web/node_modules/react-datetime"],
       "react-infinite": ["metaphacts-platform/web/node_modules/@types/react-infinite"],
       "react-select": ["metaphacts-platform/web/node_modules/@types/react-select"],
-      "immutable": ["metaphacts-platform/web/node_modules/immutable/dist/immutable"],
+      "immutable": ["metaphacts-platform/web/node_modules/immutable/dist/immutable-nonambient"],
       "lodash": ["metaphacts-platform/web/node_modules/@types/lodash"],
-      "sparqljs": ["metaphacts-platform/web/node_modules/@types/sparqljs"],
+      "sparqljs": ["metaphacts-platform/web/typings-modules/sparqljs"],
       "superagent": ["metaphacts-platform/web/node_modules/@types/superagent"],
       "uuid": ["metaphacts-platform/web/node_modules/@types/uuid"],
       "ol/*": ["metaphacts-platform/web/node_modules/@types/ol/*"],
-      "ol/proj": ["metaphacts-platform/web/typings/ol/proj"]
+      "ol/proj": ["metaphacts-platform/web/typings/ol/proj"],
+      "jquery": ["metaphacts-platform/web/node_modules/@types/jquery"],
+      "jsonlint-mod": ["metaphacts-platform/web/typings/jsonlint-mod"],
+      "ontodia": ["metaphacts-platform/ontodia"],
+      "sputniq": ["metaphactory/ontodia"]
     },
     "typeRoots": ["metaphacts-platform/web/node_modules/@types"],
     "types": ["systemjs"],
     "target": "es5",
     "module": "commonjs",
-    "declaration": false,
-    "noImplicitAny": false,
-    "removeComments": true,
     "lib": ["dom", "es2015"],
-    "preserveConstEnums": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "noImplicitUseStrict": true,
-    "importHelpers": true,
     "jsx": "react",
+    "declaration": false,
+    "strict": true,
+    "strictNullChecks": false,
+    "alwaysStrict": false,
+    "noImplicitUseStrict": true,
+    "noFallthroughCasesInSwitch": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "importHelpers": true,
     "skipLibCheck": true,
     "plugins": [
       {
@@ -61,8 +68,5 @@
   ],
   "include": [
     "*/web/**/*"
-  ],
-  "atom": {
-    "rewriteTsconfig": false
-  }
+  ]
 }

@@ -1,7 +1,14 @@
 {
   "rs-iiif-image-thumbnail": "researchspace/components/iiif/ImageThumbnail.ts",
   "rs-image-upload": "researchspace/widgets/image-upload-widget.ts",
-  "rs-annotation": "researchspace/components/annotations/AnnotationComponent.ts",
+  "rs-annotation": {
+    "path": "researchspace/components/annotations/AnnotationComponent.ts",
+    "deferJsonProperties": {
+      "drop-template-config": {
+        "template": true
+      }
+    }
+  },
 
   "rs-iiif-overlay": "researchspace/components/iiif/OverlayComparison.ts",
   "rs-iiif-side-by-side": "researchspace/components/iiif/SideBySideComparison.ts",
@@ -12,31 +19,130 @@
   "rs-iiif-mirador": "researchspace/components/iiif/ImageRegionEditor.ts",
 
   "rs-argument-simple-belief-selector": "researchspace/components/arguments/Belief.tsx",
-  "rs-quick-assertion": "researchspace/components/arguments/QuickAssertionComponent.tsx",
-  "rs-simple-assertion": "researchspace/components/arguments/SimpleAssertion.tsx",
+  "rs-quick-assertion": {
+    "path": "researchspace/components/arguments/QuickAssertionComponent.tsx",
+    "deferAttributes": {
+      "value-template": true,
+      "form-template": true
+    }
+  },
+  "rs-simple-assertion": {
+    "path": "researchspace/components/arguments/SimpleAssertion.tsx",
+    "deferAttributes": {
+      "value-template": true,
+      "form-template": true
+    }
+  },
 
-  "rs-assertion": "researchspace/components/arguments/AssertionComponent.tsx",
-  "rs-premise": "researchspace/components/arguments/premise/PremiseComponent.tsx",
+  "rs-assertion": {
+    "path": "researchspace/components/arguments/AssertionComponent.tsx",
+    "deferAttributes": {
+      "value-template": true,
+      "form-template": true
+    }
+  },
+  "rs-premise": {
+    "path": "researchspace/components/arguments/premise/PremiseComponent.tsx",
+    "deferAttributes": {
+      "assertion-based-belief-template": true,
+      "field-based-belief-template": true
+    }
+  },
 
-  "rs-object-representations":  "researchspace/widgets/ObjectRepresentationsWidget.ts",
+  "rs-object-representations":  {
+    "path": "researchspace/widgets/ObjectRepresentationsWidget.ts",
+    "deferAttributes": {
+      "template": true
+    }
+  },
   "rs-visibility": "researchspace/components/common/ShareComponent.tsx",
-  "rs-collapsible": "researchspace/components/collapsible/CollapsibleComponent.tsx",
+  "rs-collapsible": {
+    "path": "researchspace/components/collapsible/CollapsibleComponent.tsx",
+    "deferAttributes": {
+      "toggle-collapsible-template": true
+    }
+  },
   "rs-semantic-narrative-editor": "researchspace/components/narratives/SemanticNarrativeEditor.tsx",
   "rs-browse-history": "researchspace/widgets/BrowseHistoryComponent.tsx",
 
-  "rs-alignment-tool": "researchspace/components/alignment/AlignmentTool.tsx",
+  "rs-alignment-tool": {
+    "path": "researchspace/components/alignment/AlignmentTool.tsx",
+    "deferAttributes": {
+      "info-template": true
+    }
+  },
   "rs-alignment-tool-create-alignment-action": "researchspace/components/alignment/CreateAlignmentAction.tsx",
 
-  "semantic-search-result-context": "researchspace/components/search/web-components/SemanticSearchContextualizedResult.tsx",
-  "semantic-search-facet": "researchspace/components/search/web-components/SemanticSearchFacet.tsx",
+  "rs-search-result-context": {
+    "path": "researchspace/components/search/web-components/SemanticSearchContextualizedResult.tsx",
+    "deferAttributes": {
+      "tuple-template": true
+    }
+  },
+  "semantic-search-facet": {
+    "path": "researchspace/components/search/web-components/SemanticSearchFacet.tsx",
+    "deferAttributes": {
+      "default-value-template": true
+    },
+    "deferJsonProperties": {
+      "categories": {
+        "tupleTemplate": true
+      },
+      "relations": {
+        "tupleTemplate": true
+      },
+      "value-categories": {
+        "tupleTemplate": true
+      },
+      "value-relations": {
+        "tupleTemplate": true
+      }
+    }
+  },
   "semantic-search-facet-breadcrumbs": "researchspace/components/search/web-components/SemanticSearchFacetBreadcrumbs.tsx",
-  "semantic-search-query-builder": "researchspace/components/search/query-builder/QueryBuilder.tsx",
+  "semantic-search-query-builder": {
+    "path": "researchspace/components/search/query-builder/QueryBuilder.tsx",
+    "deferAttributes": {
+      "category-view-template": true,
+      "relation-view-template": true
+    },
+    "deferJsonProperties": {
+      "resource-selector": {
+        "suggestionTupleTemplate": true,
+        "noSuggestionsTemplate": true
+      },
+      "resource-selector-categories": {
+        "suggestionTupleTemplate": true,
+        "noSuggestionsTemplate": true
+      },
+      "resource-selector-relations": {
+        "suggestionTupleTemplate": true,
+        "noSuggestionsTemplate": true
+      },
+      "geo-selector": {
+        "suggestionTupleTemplate": true,
+        "noSuggestionsTemplate": true
+      }
+    }
+  },
   "semantic-search-action-use-result-in-extended-search": "researchspace/components/search/web-components/SemanticSearchUseResultInExtendedSearchAction.tsx",
   "semantic-search-action-use-result-item-in-extended-search": "researchspace/components/search/web-components/SemanticSearchUseResultItemInExtendedSearchAction.tsx",
   "semantic-search-action-save-set-result": "researchspace/components/search/web-components/SemanticSearchSaveSetResultAction.tsx",
   "semantic-search-action-save-search-result": "researchspace/components/search/web-components/SemanticSearchSaveSearchResultAction.tsx",
   "semantic-search-configuration-editor": "researchspace/components/search/configuration/ConfigurationSelector",
-  "semantic-timeline": "researchspace/components/timeline/SemanticTimeline.tsx",
+  "semantic-timeline": {
+    "path": "researchspace/components/timeline/SemanticTimeline.tsx",
+    "deferAttributes": {
+      "tuple-template": true,
+      "no-result-template": true,
+      "loading-template": true
+    },
+    "deferJsonProperties": {
+      "options": {
+        "groupTemplate": true
+      }
+    }
+  },
 
   "rs-guided-tour": "researchspace/components/guided-tour/GuidedTour.tsx",
 
@@ -46,9 +152,29 @@
   "rs-ontodia-panel": "researchspace/components/panel-system/OntodiaPanel.tsx",
   "rs-ontodia-metadata-from-fields": "researchspace/components/ontodia/MetadataFromFields.tsx",
 
-  "rs-text-annotation-workspace": "researchspace/components/text-annotation/components/TextAnnotationWorkspace.tsx",
-  "rs-text-annotation-type": "researchspace/components/text-annotation/components/TextAnnotationType.tsx",
+  "rs-text-annotation-workspace": {
+    "path": "researchspace/components/text-annotation/components/TextAnnotationWorkspace.tsx",
+    "deferAttributes": {
+      "annotation-tooltip": true,
+      "fallback-template": true
+    }
+  },
+  "rs-text-annotation-type": {
+    "path": "researchspace/components/text-annotation/components/TextAnnotationType.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
 
-  "rs-dashboard": "researchspace/components/dashboard/DashboardComponent.tsx",
+  "rs-dashboard": {
+    "path": "researchspace/components/dashboard/DashboardComponent.tsx",
+    "deferJsonProperties": {
+      "views": {
+        "template": true,
+        "itemLabelTemplate": true,
+        "itemBodyTemplate": true
+      }
+    }
+  },
   "rs-image-graph-authoring": "researchspace/components/iiif/image-graph-authoring/ImageGraphAuthoring.tsx"
 }

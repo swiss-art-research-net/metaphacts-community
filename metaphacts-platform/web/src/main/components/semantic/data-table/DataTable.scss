@@ -1,0 +1,257 @@
+/*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, you can receive a copy
+ * of the GNU Lesser General Public License from http://www.gnu.org/
+ */
+.table-grid-layout {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.header-container {
+  padding: 18px 0 17px 0;
+
+  &--background {
+    background-color: #DDDDDD;
+    padding: 18px 32px 17px 20px;
+
+    button {
+      background-color: rgba(250,250,245, 0.75);
+      border-radius: 4px;
+      border: none;
+      height: 32px;
+      padding: 7px 15px 8px 15px;
+      font-size: 14px;
+    }
+
+    .global-filter {
+      height: 32px;
+      border-radius: 4px;
+      border: none;
+    }
+  }
+
+  > *:not(:first-child) {
+    margin-left: 7px;
+  }
+}
+
+.button-icon-left {
+  margin-right: 7px;
+}
+.button-icon-right {
+  margin-left: 7px;
+}
+
+.global-filter-container {
+  display: flex;
+}
+.global-filter {
+  width: 365px;
+  margin-right: -14px;
+}
+.global-filter-icon {
+  position: relative;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  color: #888888;
+}
+
+.semantic-data-table {
+  position: relative;
+}
+
+.table > thead > tr > th {
+  background-color: #F7F7F7;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  vertical-align: middle;
+  height: 36px;
+}
+
+.grouping-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 22px;
+
+  &:not(:last-child) {
+    margin-bottom: 10px;
+  }
+
+  &-spacer {
+    flex: 1;
+  }
+
+  &-index {
+    height: 22px;
+    width: 22px;
+    margin-left: 8px;
+    border-radius: 2px;
+    background-color: #F1F1F1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  label, &-index {
+    font-size: 14px;
+  }
+
+  label {
+    margin: 0;
+  }
+  input {
+    margin-right: 9px;
+  }
+}
+
+.grouping-cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.grouping-chevron {
+  font-size: 10px;
+  color: #888888;
+  margin-right: 8px;
+  width: 7px;
+  margin-left: -15px;
+}
+
+.header-cell {
+  display: flex;
+  align-items: center;
+
+  > *:not(:last-child) {
+    margin-right: 7px;
+  }
+}
+.header-cell-spacer {
+  flex: 1;
+  margin: 0;
+}
+
+.column-indicator-text {
+  color: white;
+  text-shadow: 0px 0px 1px #555;
+}
+.column-indicator-trigger {
+  padding: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+.header-cell:hover .column-indicator-trigger, .column-indicator-active {
+  background-color: rgb(212, 232, 253);
+  border-radius: 50%;
+}
+.header-cell:hover .column-indicator-text, .column-indicator-active .column-indicator-text {
+  color: rgb(51, 128, 246);
+}
+
+.popover {
+  background-color: white;
+  color: #222;
+  min-width: 200px;
+
+  :global(.popover-content) {
+    padding: 0;
+  }
+  :global(.arrow) {
+    border-bottom-color: rgba(0, 0, 0, 0.2) !important;
+  }
+  :global(.arrow::after) {
+    border-bottom-color: white !important;
+  }
+
+  &-content {
+    padding: 24px 24px 17px 24px;
+  }
+  &-footer {
+    border-top: 1px solid #F1F1EC;
+    padding: 13px 24px 18px 24px;
+
+    :global(.btn-link) {
+      padding: 0;
+    }
+  }
+}
+
+.filter-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  background-color: white;
+  box-shadow: -6px 0 14px 0 rgba(0,0,0,0.12);
+
+  &-title {
+    font-size: 18px;
+    padding: 23px 24px 12px 22px;
+    border-bottom: 1px solid #F1F1EC;
+  }
+  &-content {
+    padding: 19px 24px;
+    border-bottom: 1px solid #F1F1EC;
+  }
+
+  &-filter {
+    margin-bottom: 17px;
+  }
+  &-filter-label {
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+
+  &-actions {
+    padding: 16px 23px 16px 24px;
+  }
+
+  &-close {
+    background: none;
+    border: none;
+  }
+
+}

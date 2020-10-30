@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +15,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Mike Kelly <mkelly@britishmuseum.org>
  */
 
-import { createElement, createFactory } from 'react';
+import { createElement, createFactory, KeyboardEvent, EventHandler } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
 import * as classNames from 'classnames';
@@ -31,7 +30,7 @@ import * as _ from 'lodash';
 import { Component } from 'platform/api/components';
 import {SparqlClient} from 'platform/api/sparql';
 
-import TemplateItem from 'platform/components/ui/template/TemplateItem';
+import { TemplateItem } from 'platform/components/ui/template/TemplateItem';
 import { Spinner } from 'platform/components/ui/spinner';
 
 
@@ -120,7 +119,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
     maxModalWidth: 1200
   };
 
-  constructor(props: ObjectRepsWidgetProps, context) {
+  constructor(props: ObjectRepsWidgetProps, context: any) {
     super(props, context);
     this.state = {
       modalIsDisplayed: false,
@@ -234,7 +233,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
         className: 'object-representations__image--focused',
         style: style,
         onClick: this.showModal.bind(this),
-        onLoad: this.handleImageChanges,
+        onLoad: this.handleImageChanges as EventHandler<any>,
       },
       createElement(TransitionGroup,
         {
@@ -406,7 +405,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
     ); // end modal
   }
 
-  private updateFocusedImage(url) {
+  private updateFocusedImage(url: string) {
     let newFocusedRep = _.find(this.allReps, rep => rep.imgURL === url);
     this.setState(
       {
@@ -416,7 +415,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
     );
   }
 
-  private handleImageChanges = (e) => {
+  private handleImageChanges = (e: { target: HTMLImageElement }) => {
     let aspectRatio = e.target.offsetHeight / e.target.offsetWidth;
     if (this.LARGEST_PREVIEW_REP_WIDTH * aspectRatio > this.largestPreviewRepHeight) {
       this.largestPreviewRepHeight = this.LARGEST_PREVIEW_REP_WIDTH * aspectRatio;
@@ -425,7 +424,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
     this.setState({imagesAreLoading: !this.allImagesAreLoaded()});
   };
 
-  private setImageLoaded(e) {
+  private setImageLoaded(e: { target: HTMLImageElement }) {
     const maxHeight = window.innerHeight - 50;
     _.forEach(this.allReps, (rep) => {
       if (rep.imgURL === e.target.currentSrc) {
@@ -448,7 +447,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
     });
   }
 
-  private addToAllReps(url) {
+  private addToAllReps(url: string) {
     if ( !_.some(this.allReps, ['imgURL', url]) ) {
       this.allReps.push({
         imgURL: url,
@@ -508,7 +507,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
     }
   };
 
-  private handleModalKeyEvents = (e) => {
+  private handleModalKeyEvents = (e: KeyboardEvent<unknown>) => {
     if (e.keyCode === 37) {
       this.prevModalImage();
     } else if (e.keyCode === 39) {

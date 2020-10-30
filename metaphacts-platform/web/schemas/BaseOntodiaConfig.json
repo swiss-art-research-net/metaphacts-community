@@ -1,0 +1,206 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "JSX.Element": {
+            "type": "object"
+        }
+    },
+    "properties": {
+        "addToDefaultSet": {
+            "default": false,
+            "description": "`true` if persisted component should be added to the default set of the current user",
+            "type": "boolean"
+        },
+        "children": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSX.Element"
+                },
+                {
+                    "items": {
+                        "$ref": "#/definitions/JSX.Element"
+                    },
+                    "type": "array"
+                }
+            ],
+            "description": "Custom workspace layout, data provider and authoring config."
+        },
+        "diagram": {
+            "description": "Diagram identifier to display saved diagram.",
+            "type": "string"
+        },
+        "findRelationshipQuery": {
+            "description": "Sparql query to find a relationship between two elements.",
+            "type": "string"
+        },
+        "graph": {
+            "description": "Graph to display on initialization.",
+            "type": "string"
+        },
+        "groupBy": {
+            "description": "Links to group the nodes",
+            "items": {
+                "properties": {
+                    "linkDirection": {
+                        "enum": [
+                            "in",
+                            "out"
+                        ],
+                        "type": "string"
+                    },
+                    "linkType": {
+                        "type": "string"
+                    }
+                },
+                "propertyOrder": [
+                    "linkType",
+                    "linkDirection"
+                ],
+                "required": [
+                    "linkDirection",
+                    "linkType"
+                ],
+                "type": "object"
+            },
+            "type": "array"
+        },
+        "hideNavigationConfirmation": {
+            "description": "Disable navigation confirmation dialog, resource links will be followed without confirmation.",
+            "type": "boolean"
+        },
+        "id": {
+            "description": "Used as source id for emitted events.",
+            "type": "string"
+        },
+        "iri": {
+            "description": "Iri to be used as a single diagram element\nIf property diagram or query is defined, this will be ignored.",
+            "type": "string"
+        },
+        "iris": {
+            "description": "Elements to display on initialization",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "linkSettings": {
+            "description": "Custom options for the links",
+            "items": {
+                "properties": {
+                    "property": {
+                        "type": "string"
+                    },
+                    "showLabel": {
+                        "type": "boolean"
+                    },
+                    "visible": {
+                        "type": "boolean"
+                    }
+                },
+                "propertyOrder": [
+                    "property",
+                    "visible",
+                    "showLabel"
+                ],
+                "required": [
+                    "property",
+                    "visible"
+                ],
+                "type": "object"
+            },
+            "type": "array"
+        },
+        "metadata": {
+            "description": "Additional turtle data that will be parsed and attached to the saved diagram.",
+            "type": "string"
+        },
+        "navigateTo": {
+            "description": "URI to navigate after diagram created.\nNewly created diagram IRI will be appended as `diagram` query parameter.",
+            "type": "string"
+        },
+        "nodeStyles": {
+            "additionalProperties": {
+                "properties": {
+                    "color": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string"
+                    }
+                },
+                "propertyOrder": [
+                    "image",
+                    "color"
+                ],
+                "required": [
+                    "color",
+                    "image"
+                ],
+                "type": "object"
+            },
+            "description": "Custom images and colors of the elements",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "postSaving": {
+            "description": "Controls whether Ontodia should navigate to a newly saved diagram.",
+            "enum": [
+                "navigate",
+                "none"
+            ],
+            "type": "string"
+        },
+        "propertySuggestionQuery": {
+            "description": "Sparql query to get suggested properties of elements.",
+            "type": "string"
+        },
+        "query": {
+            "description": "SPARQL query to display data on layout.\nIf property diagram is defined, this property will be ignored.",
+            "type": "string"
+        },
+        "queryParams": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "description": "Query parameters that will be appended to URL after diagram created.",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "queryRepository": {
+            "default": "'default'",
+            "description": "Repository which is used to execute SPARQL query specified in `query` property.",
+            "type": "string"
+        },
+        "requestLinksOnInit": {
+            "default": true,
+            "description": "Controls if component should re-request all links from data provider when showing existing\ngraph (via loading the diagram or executing CONSTRUCT query), if link is not found in the\ndata, it is shown as dashed. Setting this to false speeds up initialization and the links on\nthe diagram will be shown exactly as they were when the diagram was saved.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "diagram",
+        "query",
+        "queryRepository",
+        "graph",
+        "iri",
+        "iris",
+        "requestLinksOnInit",
+        "metadata",
+        "navigateTo",
+        "queryParams",
+        "addToDefaultSet",
+        "nodeStyles",
+        "groupBy",
+        "linkSettings",
+        "propertySuggestionQuery",
+        "findRelationshipQuery",
+        "hideNavigationConfirmation",
+        "postSaving",
+        "children"
+    ],
+    "type": "object"
+}
+

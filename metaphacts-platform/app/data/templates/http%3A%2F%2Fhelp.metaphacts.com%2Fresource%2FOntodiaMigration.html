@@ -1,0 +1,451 @@
+<ol class='page-breadcrumb'>
+  <li>
+    <mp-link title='Home' url='/'>Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title='Help' iri='http://help.metaphacts.com/resource/Start'>Help</semantic-link>
+  </li>
+  <li class='active'>Ontodia Migration</li>
+</ol>
+
+<div class='page'>
+  <div class='page__body'>
+    <h1>Ontodia Migration</h1>
+
+    <p>
+      As of 3.4 the configuration of Ontodia was revised to support multiple use cases by using "composable" workspace, allowing to include/exclude certain components from an instance of Ontodia, as well as providing the configuration for dedicated components rather on the Ontodia instance level. This change is not backwards compatible and users are required to update customized Ontodia configurations in overridden templates. The following table provides an overview of the modified configuration settings.
+    </p>
+
+    <table class='table table-striped table-bordered'>
+      <thead>
+      <tr>
+        <th>Old property</th>
+        <th>New property</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td><code>provision-query</code></td>
+        <td>
+          Moved to <code>ontodia-rdf-provider</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-data-providers>
+                <ontodia-rdf-provider provision-query='...'></ontodia-rdf-provider>
+              </ontodia-data-providers>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>image-query</code></td>
+        <td>
+          Moved to <code>ontodia-sparql-provider</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-data-providers>
+                <ontodia-sparql-provider image-query='...'></ontodia-sparql-provider>
+              </ontodia-data-providers>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>image-iris</code></td>
+        <td>
+          Moved to <code>ontodia-sparql-provider</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-data-providers>
+                <ontodia-sparql-provider image-iris='...'></ontodia-sparql-provider>
+              </ontodia-data-providers>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>settings</code></td>
+        <td>Removed. Use <code>provider-settings</code> instead.</td>
+      </tr>
+      <tr>
+        <td><code>provider-settings</code></td>
+        <td>
+          Moved to <code>ontodia-sparql-provider</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-data-providers>
+                <ontodia-sparql-provider provider-settings='...'></ontodia-sparql-provider>
+              </ontodia-data-providers>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>readonly</code></td>
+        <td>
+          Removed. To implement readonly mode, one should override the default Ontodia workspace,
+          collapse side panels by default and exclude <code>ontodia-save-button</code> from
+          <code>ontodia-toolbar</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <mp-workspace-layout>
+                <mp-workspace-row>
+                  <mp-workspace-column default-size=275 default-collapse=true>
+                    <mp-workspace-item id='classes' heading='Classes'>
+                      <ontodia-class-tree></ontodia-class-tree>
+                    </mp-workspace-item>
+                    <mp-workspace-item id='instances' heading='Instances'>
+                      <ontodia-instances-search></ontodia-instances-search>
+                    </mp-workspace-item>
+                  </mp-workspace-column>
+                  <mp-workspace-item id='canvas'>
+                    <ontodia-canvas>
+                      <ontodia-toolbar>
+                        <!-- toolbar controls -->
+                      </ontodia-toolbar>
+                      <!-- canvas widgets -->
+                    </ontodia-canvas>
+                  </mp-workspace-item>
+                  <mp-workspace-column default-size=275 default-collapse=true>
+                    <mp-workspace-item id='connections' heading='Connections'>
+                      <ontodia-connections></ontodia-connections>
+                    </mp-workspace-item>
+                    <mp-workspace-item id='search' heading='Search in diagram'>
+                      <ontodia-element-search></ontodia-element-search>
+                    </mp-workspace-item>
+                  </mp-workspace-column>
+                </mp-workspace-row>
+              </mp-workspace-layout>
+              <ontodia-data-providers>
+                <ontodia-sparql-provider provider-settings='...'></ontodia-sparql-provider>
+              </ontodia-data-providers>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>node-templates</code></td>
+        <td>
+          Moved to <code>ontodia-canvas</code>
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas node-templates='{...}'>
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>default-node-template</code></td>
+        <td>
+          Moved to <code>ontodia-canvas</code>
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas default-node-template='<div>{{label}}</div>'>
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>edge-styles</code></td>
+        <td>
+          Moved to <code>ontodia-canvas</code>
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas edge-styles='{...}'>
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>default-edge-style</code></td>
+        <td>
+          Moved to <code>ontodia-canvas</code>
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas default-edge-style='{...}'>
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>repositories</code></td>
+        <td>
+          Removed. Use the <code>repository</code> attribute of the
+          <code>ontodia-sparql-provider</code> component instead.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-data-providers>
+                <ontodia-sparql-provider repository='assets'></ontodia-sparql-provider>
+              </ontodia-data-providers>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>hide-panels</code></td>
+        <td>
+          Removed. To hide panels, one should override the default Ontodia workspace.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas></ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>hide-navigator</code></td>
+        <td>
+          Removed. To hide navigator, one should override the default Ontodia workspace and exclude
+          <code>ontodia-navigator</code> from the canvas widgets.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas>
+                <!-- canvas widgets -->
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>collapse-navigator</code></td>
+        <td>
+          Removed. To collapse navigator, set <code>expanded=false</code> for
+          <code>ontodia-navigator</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas>
+                <ontodia-navigator expanded=false></ontodia-navigator>
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>hide-toolbar</code></td>
+        <td>
+          Removed. To hide the toolbar, one should override the default Ontodia workspace and
+          exclude <code>ontodia-toolbar</code> from the canvas widgets.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas>
+                <!-- canvas widgets -->
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>zoom-require-ctrl</code></td>
+        <td>
+          Removed. Set <code>zoom-options='{"requireCtrl": true}'</code> for
+          <code>ontodia-canvas</code> instead. By default, requireCtrl is <code>true</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas zoom-options='{"requireCtrl": true}'></ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>hide-scroll-bars</code></td>
+        <td>Removed. By default, scrollbars are hidden.</td>
+      </tr>
+      <tr>
+        <td><code>auto-zoom</code></td>
+        <td>
+          Moved to <code>ontodia-canvas</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas auto-zoom=true></ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>hide-halo</code></td>
+        <td>
+          Removed. To hide halo, one should override the default Ontodia workspace and exclude
+          <code>ontodia-halo</code> from the canvas widgets.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-canvas>
+                <!-- canvas widgets -->
+              </ontodia-canvas>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>accept-blank-nodes</code></td>
+        <td>
+          Moved to <code>ontodia-sparql-provider</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-data-providers>
+                <ontodia-sparql-provider accept-blank-nodes=true></ontodia-sparql-provider>
+              </ontodia-data-providers>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>save-diagram-label</code></td>
+        <td>
+          Moved to <code>ontodia-save-button</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-save-button save-diagram-label='Custom label'></ontodia-save-button>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>persist-changes-label</code></td>
+        <td>
+          Moved to <code>ontodia-save-button</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-save-button persist-changes-label='Custom label'></ontodia-save-button>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>authoring-mode</code></td>
+        <td>
+          Moved to <code>ontodia-field-configuration</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-field-configuration authoring-mode=true>
+                <!-- semantic forms -->
+              </ontodia-field-configuration>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      <tr>
+        <td><code>persistence</code></td>
+        <td>
+          Moved to <code>ontodia-field-configuration</code>.
+          <mp-code-block>
+            <![CDATA[
+            <ontodia>
+              <ontodia-field-configuration persistence='{...}'>
+                <!-- semantic forms -->
+              </ontodia-field-configuration>
+            </ontodia>
+            ]]>
+          </mp-code-block>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Ontodia Authoring Migration</h2>
+    <p>
+      Ontodia authoring configuration was revised to support auto generated forms. This change is not backwards compatible and users are required to update Ontodia authoring configurations.
+    </p>
+    <div class='container-fluid'>
+  		<div class='row'>
+    		<div class='col col-xs-6'>
+          <b>Old Authoring Configuration</b>
+      		<div style='position: relative'>
+        		<i class='fa fa-arrow-right' style='position: absolute; top: 0; left: 100%; margin: 9px'></i>
+            <mp-code-block>
+            <![CDATA[
+            <ontodia authoring-mode=true>
+              <semantic-form
+                new-subject-template='http://example.com/example/{{UUID}}'
+                fileds='[[{{documentation}}]][[fieldDefinitions
+                  type="http://example.com/field/type"
+                  label="http://example.com/field/label"
+                  note="http://example.com/field/note"]][[{{/documentation}}]]'>
+
+                <ontodia-entity-metadata
+                  entity-type-iri='http://example.com/example'
+                  type-iri='http://example.com/field/type'
+                  label-iri='http://example.com/field/label'
+                >
+                </ontodia-entity-metadata>
+
+                <semantic-form-text-input for='label'></semantic-form-text-input>
+                <semantic-form-text-input for='note'></semantic-form-text-input>
+              </semantic-form>
+            </ontodia>
+            ]]>
+            </mp-code-block>
+      		</div>
+    		</div>
+        <div class='col col-xs-6'>
+          <b>New Authoring Configuration</b>
+          <mp-code-block>
+          <![CDATA[
+          <ontodia>
+            <ontodia-field-configuration
+              authoring-mode=true
+              type-iri='http://example.com/field/type'
+              default-label-iri='http://example.com/field/label'
+              fileds='[[{{documentation}}]][[fieldDefinitions
+                type="http://example.com/field/type"
+                label="http://example.com/field/label"
+                note="http://example.com/field/note"]][[{{/documentation}}]]'
+            >
+             <ontodia-entity-metadata
+               entity-type-iri='http://example.com/example'
+               label-iri='http://example.com/field/label'
+               fields='["http://example.com/field/note"]'>
+             </ontodia-entity-metadata>
+            </ontodia-field-configuration>
+          </ontodia>
+          ]]>
+          </mp-code-block>
+    		</div>
+  		</div>
+		</div>
+  </div>
+</div>

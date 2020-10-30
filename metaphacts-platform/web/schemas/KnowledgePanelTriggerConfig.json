@@ -1,0 +1,69 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        },
+        "JSX.Element": {
+            "type": "object"
+        }
+    },
+    "properties": {
+        "children": {
+            "$ref": "#/definitions/JSX.Element",
+            "description": "Inner markup that should be used instead of the default modes. Will override 'modes' parameter."
+        },
+        "className": {
+            "description": "Custom CSS class.",
+            "type": "string"
+        },
+        "data": {
+            "additionalProperties": true,
+            "description": "Additional data that can be passed with the event.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "id": {
+            "description": "Unique ID to be used in the event system. Default value is `undefined`.",
+            "type": "string"
+        },
+        "iri": {
+            "description": "Resource IRI.",
+            "type": "string"
+        },
+        "mode": {
+            "default": "icon",
+            "description": "Mode - chooses which element acts as Knowledge panel trigger.\nicon: The link navigates to page, the icon opens the knowledge panel.\nfull: Both the label and icon open the knowledge panel.",
+            "enum": [
+                "full",
+                "icon"
+            ],
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Custom CSS styles."
+        },
+        "target": {
+            "description": "Knowledge Panel Frame component ID. Default value is `undefined`.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "iri",
+        "id",
+        "target",
+        "data",
+        "className",
+        "style",
+        "mode",
+        "children"
+    ],
+    "required": [
+        "children",
+        "iri"
+    ],
+    "type": "object"
+}
+

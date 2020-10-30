@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { ConfigHolder } from 'platform/api/services/config-holder';
 import { SEMANTIC_SEARCH_VARIABLES, FACET_VARIABLES, Patterns } from './SearchConfig';
 
@@ -99,19 +120,20 @@ export const DefaultSearchProfileRelationsQuery = `
 `;
 
 export function DefaultTextPattern(): Patterns {
+  const lookupNamespace = 'http://www.metaphacts.com/ontologies/platform/repository/lookup#';
   return {
   'http://www.metaphacts.com/ontologies/platform/semantic-search-profile/TextCategory': [
     {
       kind: 'text',
       queryPattern: `
            {
-             $subject a ?__domain__ .
-             $subject ${ConfigHolder.getUIConfig().labelPropertyPattern} ?label .
-             SERVICE <http://www.bigdata.com/rdf/search#search> {
-               ?label bds:search ?__value__ ;
-                      bds:minRelevance "0.3" ;
-                      bds:matchAllTerms "true"  .
+             SERVICE Repository:lookup {
+                $subject <${lookupNamespace}token> ?__value__;
+                  <${lookupNamespace}limit> 400 .
+                # might not be used depending on lookup configuration
+                $subject a ?__domain__ .
              }
+             $subject a ?__domain__ .
            }
       `,
     },
@@ -211,14 +233,12 @@ export const DefaultFacetCategoriesTupleTemplate = `
 
 export function DefaultResourceSelectorQuery() {
   return `
-    prefix bds: <http://www.bigdata.com/rdf/search#>
+    PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
     SELECT DISTINCT ?suggestion ?label WHERE {
-      ?label bds:search ?__token__ ;
-      bds:relevance ?score ;
-      bds:minRelevance "0.5" ;
-      bds:matchAllTerms "true"  .
-
-      ?suggestion ${ConfigHolder.getUIConfig().labelPropertyPattern} ?label .
+      SERVICE Repository:lookup {
+        ?suggestion lookup:token ?__token__ ;
+          lookup:limit 100 .
+      }
       FILTER(EXISTS {
         { FILTER(?${SEMANTIC_SEARCH_VARIABLES.RELATION_PATTERN_VAR}) }
       })

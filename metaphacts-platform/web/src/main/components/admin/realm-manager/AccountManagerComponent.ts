@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,18 +37,15 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Component, createFactory, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import * as maybe from 'data.maybe';
-import * as Either from 'data.either';
 
-import { SparqlClient } from 'platform/api/sparql';
 import { Util as SecurityService, Account } from 'platform/api/services/security';
-import { Table } from 'platform/components/semantic/table';
+import { Table, TableLayout } from 'platform/components/semantic/table';
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
-import {default as AccountForm} from './AccountFormComponent';
+import { default as AccountForm } from './AccountFormComponent';
 
 import'./RealmManager.scss';
 
@@ -38,7 +57,7 @@ interface State {
 }
 
 class AccountManagerComponent extends Component<{}, State> {
-    constructor(props) {
+    constructor(props: {}) {
       super(props);
       this.state = {
         isLoading: true,
@@ -79,17 +98,14 @@ class AccountManagerComponent extends Component<{}, State> {
 
     private renderAccountTable() {
       const griddleOptions = {
-           onRowClick: this.onRowClick.bind(this),
-           rowMetadata: { 'bodyCssClassName' : this.getRowClass },
-         };
+        onRowClick: this.onRowClick.bind(this),
+        rowMetadata: { 'bodyCssClassName' : this.getRowClass },
+      };
 
       return  D.div({}, createElement(Table, {
-         layout: maybe.Just<{}>({
-           options: griddleOptions,
-           tupleTemplate: maybe.Nothing<string>(),
-         }),
-         numberOfDisplayedRows: maybe.Just<number>(10),
-         data: Either.Left<any[], SparqlClient.SparqlSelectResult>(this.state.data.get()),
+         layout: {options: griddleOptions as TableLayout['options']},
+         numberOfDisplayedRows: 10,
+         data: this.state.data.get(),
          columnConfiguration: [
            {variableName: 'principal', displayName: 'User Principal'},
            {variableName: 'roles', displayName: 'Roles'},
@@ -97,9 +113,9 @@ class AccountManagerComponent extends Component<{}, State> {
          ],
        }));
     }
-    
-    private onRowClick = (e: Component<{}, {}>): void => {
-      const account = <Account>e.props['data'];
+
+    private onRowClick = (e: Component<{ data: Account }, {}>): void => {
+      const account = e.props['data'];
       const stateAccount = this.state.selectedAccount.map(currentSelected =>
         currentSelected.principal === account.principal
           ? maybe.Nothing<Account>()

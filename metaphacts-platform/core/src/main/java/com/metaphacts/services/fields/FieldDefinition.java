@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,16 +37,25 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.services.fields;
+
+import static java.util.stream.Collectors.toList;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Value;
 
-import javax.annotation.Nullable;
-import java.util.HashSet;
-import java.util.Set;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.metaphacts.data.json.JsonUtil;
+import com.metaphacts.vocabulary.XsdUtils;
 
 public final class FieldDefinition {
     private IRI iri;
@@ -67,6 +98,9 @@ public final class FieldDefinition {
 
     @Nullable
     private String treePatterns;
+
+    @Nullable
+    private OrderedWith orderedWith;
 
     public IRI getIri() {
         return iri;
@@ -194,5 +228,90 @@ public final class FieldDefinition {
 
     public void setTreePatterns(@Nullable String treePatterns) {
         this.treePatterns = treePatterns;
+    }
+
+    public OrderedWith getOrderedWith() {
+        return orderedWith;
+    }
+
+    public void setOrderedWith(OrderedWith orderedWith) {
+        this.orderedWith = orderedWith;
+    }
+
+    public Map<String, Object> toJson() {
+        Map<String, Object> json = new HashMap<>();
+        if (getIri() != null) {
+            json.put("id", getIri().stringValue());
+            json.put("iri", getIri().stringValue());
+        }
+        if (getDescription() != null) {
+            json.put("description", getDescription().stringValue());
+        }
+        if (getMinOccurs() != null) {
+            String datatype = getMinOccurs().getDatatype().stringValue();
+            try {
+                json.put("minOccurs",
+                        XsdUtils.isIntegerDatatype(datatype) ? Integer.parseInt(getMinOccurs().stringValue())
+                                : getMinOccurs().stringValue());
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Failed to serialize field " + getIri()
+                        + " to JSON: invalid minOccurs value " + getMinOccurs(), e);
+            }
+        }
+        if (getMaxOccurs() != null) {
+            String datatype = getMaxOccurs().getDatatype().stringValue();
+            try {
+                json.put("maxOccurs",
+                        XsdUtils.isIntegerDatatype(datatype) ? Integer.parseInt(getMaxOccurs().stringValue())
+                                : getMaxOccurs().stringValue());
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Failed to serialize field " + getIri()
+                        + " to JSON: invalid maxOccurs value " + getMaxOccurs(), e);
+            }
+        }
+        if (getXsdDatatype() != null) {
+            json.put("xsdDatatype", getXsdDatatype().stringValue());
+        }
+    
+        json.put("domain", getDomain().stream().map(Value::stringValue).sorted().collect(toList()));
+        json.put("range", getRange().stream().map(Value::stringValue).sorted().collect(toList()));
+        json.put("defaultValues", getDefaultValues().stream().map(Value::stringValue).sorted().collect(toList()));
+    
+        if (getSelectPattern() != null) {
+            json.put("selectPattern", getSelectPattern());
+        }
+        if (getInsertPattern() != null) {
+            json.put("insertPattern", getInsertPattern());
+        }
+        if (getDeletePattern() != null) {
+            json.put("deletePattern", getDeletePattern());
+        }
+        if (getAskPattern() != null) {
+            json.put("askPattern", getAskPattern());
+        }
+        if (getAutosuggestionPattern() != null) {
+            json.put("autosuggestionPattern", getAutosuggestionPattern());
+        }
+        if (getValueSetPattern() != null) {
+            json.put("valueSetPattern", getValueSetPattern());
+        }
+        if (getTreePatterns() != null) {
+            ObjectMapper mapper = JsonUtil.getDefaultObjectMapper();
+            try {
+                Object treePatternsJson = mapper.readTree(getTreePatterns());
+                json.put("treePatterns", treePatternsJson);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to serialize field " + getIri()
+                        + " to JSON: invalid treePatterns value " + getTreePatterns(), e);
+            }
+        }
+        if (getOrderedWith() != null) {
+            OrderedWith orderedWith = getOrderedWith();
+            if (orderedWith.equals(OrderedWith.INDEX_PROPERTY)) {
+                json.put("orderedWith", "index-property");
+            }
+        }
+
+        return json;
     }
 }

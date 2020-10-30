@@ -27,6 +27,21 @@
 
 }
 
+<http://localhost:10214/container/queryContainer/test-query-with-user/context> {
+
+  <http://localhost:10214/container/queryContainer/test-query-with-user> <http://spinrdf.org/sp#text> """PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
+  SELECT ?user WHERE {
+    BIND(?__useruri__ AS ?user)
+}""" ;
+	 a <http://spinrdf.org/sp#Query> , <http://spinrdf.org/sp#Select> , <http://www.w3.org/ns/ldp#Resource> , <http://www.w3.org/ns/prov#Entity> ;
+	 <http://www.w3.org/2000/01/rdf-schema#label> "test-query-user" ;
+	 <http://www.w3.org/ns/prov#generatedAtTime> "2017-08-14T16:12:32.603+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+	 <http://www.w3.org/ns/prov#wasAttributedTo> <http://www.metaphacts.com/resource/user/admin> .
+
+<http://www.metaphacts.com/ontologies/platform#queryContainer> <http://www.w3.org/ns/ldp#contains> <http://localhost:10214/container/queryContainer/test-query-with-user> .
+
+}
+
 <http://localhost:10214/container/queryTemplateContainer/test-query/context> {
 
 <http://localhost:10214/container/queryTemplateContainer/test-query> <http://spinrdf.org/spin#body> <http://localhost:10214/container/queryContainer/test-query> ;
@@ -110,6 +125,20 @@
 	<http://www.w3.org/2000/01/rdf-schema#label> "label" .
 
 <http://www.metaphacts.com/ontologies/platform#queryTemplateContainer> <http://www.w3.org/ns/ldp#contains> <http://localhost:10214/container/queryTemplateContainer/test-query-label> .
+
+}
+
+<http://localhost:10214/container/queryTemplateContainer/test-query-with-user/context> {
+
+<http://localhost:10214/container/queryTemplateContainer/test-query-with-user> <http://spinrdf.org/spin#body> <http://localhost:10214/container/queryContainer/test-query-with-user> ;
+	a <http://spinrdf.org/spin#SelectTemplate> , <http://spinrdf.org/spin#Template> , <http://www.w3.org/ns/ldp#Resource> , <http://www.w3.org/ns/prov#Entity> ;
+	<http://www.w3.org/2000/01/rdf-schema#comment> "test-query-with-user" ;
+	<http://www.w3.org/2000/01/rdf-schema#label> "test-query-label" ;
+	<http://www.w3.org/ns/prov#generatedAtTime> "2017-08-14T16:12:32.629+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+	<http://www.w3.org/ns/prov#wasAttributedTo> <http://www.metaphacts.com/resource/user/admin> .
+
+
+<http://www.metaphacts.com/ontologies/platform#queryTemplateContainer> <http://www.w3.org/ns/ldp#contains> <http://localhost:10214/container/queryTemplateContainer/test-query-with-user> .
 
 }
 

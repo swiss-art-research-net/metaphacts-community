@@ -1,5 +1,16 @@
+<style>
+  /* make sure that the column width of the issue key is sufficient to not line-break*/
+  th.colHeaderLink.headerrow-issuekey {
+    width: 90px;
+	}
+</style>
 [[!-- inline handlebars partial to avoid boilerplating the changelog table layout --]]
 [[#*inline "releasenote-table"]]
+   <mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>Show full list of changes</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
     <table id="issuetable" style="border:0px;" cellpadding="3" cellspacing="1" width="100%">
       <thead>
         <tr class="rowHeader">
@@ -21,6 +32,8 @@
           [[> @partial-block ]]
       </tbody>
     </table>
+    </mp-collapsible-div-content>
+    </mp-collapsible-div>
 [[/inline]]
 [[#if GettingStarted]]
 [[else]]
@@ -38,7 +51,313 @@
   <div class="page__header page__header--no-image"><h2>Changelog</h2></div>
 
   <div class='page__body'>
+  
+      <h2 id="3.6.0">3.6.0</h2>
+    <hr>
+    <h3>Release Notes</h3>
+    <p>3.6.0 is a minor release of the platform. </p>
+
+
     
+    <h3>Upgrade Notes</h3>
+    
+    <h4>New underlying implementation for <code>semantic-table</code> (incl. new features for groupings and filtering)</h4>
+    
+    <p>In 3.6 the <code>semantic-table</code> component was evolved to a new level: based on the <code>react-table</code> library the table provides a modernized foundation and design. The new implementation is fully backwards compatible in terms of configuration. Additionally, it offers new features for groupings and filtering (see the <semantic-link iri="[[resolvePrefix "Help:SemanticTable"]]">table documentation</semantic-link> for details).</p>
+    
+    <p>Note that the new table uses a modernized design (including CSS) which means that existing style customizations may need to be upgraded. A quite common style customization is that of adjusting the appearance of rows (previously addressed using the CSS class <code>griddle-custom-row</code>): as of 3.6 the CSS class <code>table-custom-row</code> needs to be used.</p>
+    
+    <p>The legacy table implementation is considered deprecated, but can still be used as <code>&lt;semantic-table-deprecated&gt;</code>. Note that this component will be removed in a future release.</p>
+    
+
+    
+    <h4>No longer require single HTML root element in templates</h4>
+    
+    <p>As of 3.6 the templating mechanism is improved to no longer require single HTML root elements. As depicted below this avoids quite a bit of boiler plate markup.</p>
+   
+    <p>Before:</p>
+    
+    <mp-code-block>
+<![CDATA[
+<template id='template'>
+	<div><i class=\"fa fa-user\" style=\"margin-right: 5px\"></i>{{obj.value}}</div>
+</template>
+]]>
+     </mp-code-block>
+    
+    <p>Now:</p>
+    
+        <mp-code-block>
+<![CDATA[
+<template id='template'>
+	<i class=\"fa fa-user\" style=\"margin-right: 5px\"></i>{{obj.value}}
+</template>
+]]>
+     </mp-code-block>
+    
+    <p>Note that root elements inside templates can still be used (e.g. for layouting or styling purposes).</p>
+    
+    
+    <h4>Contents of page-layout templates accessible in the documentation</h4>
+    
+    <p>Using special handlebars templates in the page-layout folder of an app (e.g. <code>config/page-layout/header.hbs</code>) various customizations are possible. Typical use-cases include adding a custom logo and modifications to the menu.</p>
+    
+    <p>As of 3.6 we provide the content of the pre-bundled default templates as part of the <semantic-link iri="[[resolvePrefix "Help:CustomPageLayout"]]">documentation</semantic-link> for reference.</p>
+
+
+    <h4>Deprecated: use of <code>escape-lucene-syntax</code> and <code>tokenize-lucene-query</code> options in search and auto-suggestion components</h4>
+    
+    <p>A number of components offered support for influencing escaping and tokenization of user-provided inputs in search and auto-suggestions. This was for instance required previously when making use of the <semantic-link iri="[[resolvePrefix "Help:LookupService"]]">lookup service</semantic-link>. As of 3.6 the client-side components provide logic to automatically detect the most suitable defaults for the actual use-case, which is:</p>
+    <ul>
+      <li>Lookup Query: no modification of user input token</li>
+      <li>REGEX filtering: use <code>.*</code> as wild card character (e.g. <code>Albert.* Einstein.*</code>)</li>
+      <li>Blazegraph Search and others: use <code>*</code> as Lucene wild card character (e.g. <code>Albert* Einstein*</code>)</li>
+    </ul>
+    <p>Thus it is no longer required to use these settings, and more particularly we encourage users to remove occurence to get the best client side experience.</p>
+    
+
+
+    <h4>Deprecated: specification of table options using <code>layout</code> attribute</h4>
+
+    <p>In early versions it was supported to specify table options using the <code>layout</code> attribute (see below). For quite a while this is already removed from the documentation and examples. As of 3.6 we explicitly deprecate specifying table options through the <code>layout</code> attribute and encourage users to upgrade any potential occurrence.</p>
+    
+    <p>Additionally, support for the <code>resultsPerPage</code> setting in the table <code>options</code> has been removed. It has been replaced by the <code>number-of-displayed-rows</code> attribute on the <code>semantic-table</code>.</p>
+    
+    <p>Deprecated variant:</p>
+    
+    <mp-code-block>
+<![CDATA[
+layout='{
+  "options": {"showFilter": false}
+}'
+]]>
+     </mp-code-block>
+    
+    <p>Correct version (as direct attribute):</p>
+    
+        <mp-code-block>
+<![CDATA[
+  options='{"showFilter": false}'
+]]>
+     </mp-code-block>
+
+
+    <h4>Permissions</h4>
+    <p>In 3.6 the following permissions have been introduced or refined. Existing installations may require an update of the role definitions (e.g. in custom roles) for new functionality to properly work.</p>
+
+    <table>
+      <tr>
+        <th><b>Permission</b></th>
+        <th><b>Description</b></th>
+        <th><b>Change</b></th></tr>
+      <tr>
+        <td><code>sparql:platformMetadata:query:SELECT</code></td>
+        <td>Grants permission to reading metadata from the platform repository (e.g. required for breadcrumbs in help pages)</td>
+        <td>New Permission. May need to be added to existing shiro-roles.ini (or shiro.ini for older systems). In the default shiro-roles.ini it will be part of the guest role. Admin role inherits this permission implicitly.</td>
+      </tr>
+    </table>
+    
+    
+    <hr>
+    <h2 id="3.5.0">3.5.0</h2>
+    <hr>
+    <h3>Release Notes</h3>
+    <p><i>To be done</i></p>
+
+    <h3>Breaking Changes</h3>
+    
+    <h4>Dynamic HTML used in templates can only contain simple markup</h4>
+    
+    <p>As of 3.5.0 due to performance and security we no restrict dynamic HTML from template variables to only allow simple markup, i.e. we no longer allow the usage of platform components code in the inserted HTML. In the example below the <code>semantic-map</code> component cannot be dynamically defined in a literal produced by a SPARQL query. Such code will show a meaningful error, while without <code>semantic-map</code> it properly works:</p>
+    <mp-code-example show-code-by-default='true'>
+<![CDATA[
+<semantic-query query='select ("<b>Test</b><semantic-map></semantic-map>" as ?x) where {}' template="{{>template}}">
+  <template id="template">
+    <ul>
+      <li><b>Markup: </b>{{bindings.0.x.value}}</li>
+      <li><b>Rendered: </b>{{{bindings.0.x.value}}}</li>
+    </ul>
+  </template>
+</semantic-query>
+]]>
+     </mp-code-example>
+    <p>Applications that make use of such patterns need to upgrade accordingly.</p>
+
+    <h3>Upgrade Notes</h3>
+    
+           
+    <h4>A new take to visual interaction and page structure</h4>
+    
+    <p>In the 3.5.0 release we have spent quite a bit of effort in improving user experience and visual interaction. Most obviuos are the changes to the application header which now provide quick links to all functionalities and assets in metaphactory. In addition, we have introduced a knowledge graph bar to get a unified view on RDF resources. The bar shows the main information for a resource and provides means for switching views (page, statements, graph).</p>
+    
+    <p>For further details on this see the <semantic-link uri="[[resolvePrefix "Help:Start"]]" urlqueryparam-tab="Tutorial" >tutorial</semantic-link> and the detailed <semantic-link uri="[[resolvePrefix "Help:PageStructure"]]">documentation</semantic-link>.</p>
+    
+    <p>The changes to the knowledge graph bar and page structure should be fully backwards compatible for most applications. In rare cases slight adjustments to CSS of the breadcrumbs may be required. Please contact the <a href="mailto:support@metaphacts.com">support</a> in case of questions.</p>
+    
+    <p>Note that applications which customized the application header (i.e. <code>header.hbs</code>) may need to upgrade their customizations to get the new experience. Please contact our <a href="mailto:support@metaphacts.com">support</a> for further details.</p>
+    
+    
+    <h4>Front-end templating changes</h4>
+    <p>The front-end templating system has undergone a major update in the 3.5.0 release: while maintaining backwards compatibility (for most cases), the revised version significantly improves performance and addresses earlier inconsistencies (which caused hard to diagnose and debug errors). The defails are explained in the following.</p>
+    
+    <h5>Performance improvements</h5>
+    <p>The templating system has been refactored to reduce the number of steps required to present a rendered template. One of these optimizations is the reduction of the number of times a template needs to be parsed – previously the template was parsed on every execution, while now a single parsing step only is required. This makes use-cases, where the same template is repeatedly used significantly more performant (e.g. for cell templates in the <code>semantic-table</code>, or items in <code>semantic-query</code>). This performance improvement also allows to enable templating in highly dynamic components such as the <code>semantic-lazy-tree</code>.</p>
+
+    <h5>Consistent template context in attributes</h5>
+    
+    <p>Evaluation of templates within component attributes is changed to be more aligned with developer expectations. Consider the following template:</p>
+     <mp-code-example show-code-by-default='true'>
+<![CDATA[
+<semantic-query query='SELECT (1 as ?x) WHERE {}' template='{{>t x=42}}'>
+  <template id='t'>
+    <semantic-table
+      query='
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+        PREFIX person: <http://example.com/person/>
+        SELECT ?person ?name WHERE {
+          VALUES (?person ?name) {
+            (person:alice "Alice")
+            (person:carol "Carol")
+            (person:bob "\"Bob\"")
+            (person:mike "Mike")
+          }
+        }
+      '
+      column-configuration='[
+        {
+          "variableName": "name",
+          "displayName": "Name (inline)",
+          "cellTemplate": "{{name.value}} (x: {{x}})"
+        },
+        {
+          "variableName": "name",
+          "displayName": "Name (reference)",
+          "cellTemplate": "{{> cell}}"
+        }
+      ]'
+    >
+      <template id='cell'>{{name.value}} (x: {{x}})</template>
+    </semantic-table>
+  </template>
+</semantic-query>
+]]>
+     </mp-code-example>
+    <p>There are two columns in the table: the first one uses inline template syntax, and the other a template reference.
+      Prior to 3.5.0 the value of <code>{{name.value}} (x: {{x}})</code> was executed when processing the ‘t’ template of the <code>semantic-query</code>, the ‘name’ variable was unavailable (as only ‘x’ and `bindings` are defined in template scope), `name` was substituted with an empty value and the output missed person names. Meanwhile, in the second column ‘name’ was referenced in a ‘cell’ template and it was processed correctly, giving the desired output of person names.</p>
+    
+      <p>Starting with 3.5.0, the templating system is aware that column-configuration attribute of <code>semantic-table</code> contains a template, and it defers the evaluation of the handlebars syntax in the template inside of an attribute until it is processed by <code>semantic-table</code> template. This awareness is implemented for all platform components that make use of templating.
+    </p>
+
+    <h4>Deprecated: use of syntactical <code>?token</code> placeholder in autosuggestion patterns</h4>
+
+    <p>In autosuggestion patterns of <semantic-link uri='[[resolvePrefix "Help:SemanticForm"]]'>form</semantic-link> and <semantic-link uri='[[resolvePrefix "Help:SemanticSearch"]]'>search</semantic-link> configuration a token variable can be used as placeholder for the user-provided input. This is typically done using <code>$__token__</code> as a regular SPARQL variable in the query pattern. As of this release we deprecate a legacy functionality that allows to reference the token syntactically using <code>?token</code>, e.g. for a Blazegraph full text search <code>?label bds:search \"?token*\"</code>. Users are encouraged to upgrade any potentially existing configurations to the new pattern: <code>?label bds:search $__token__</code>. In rare cases the deprecated functionality may behave slightly different to previous releases, namely in escaping Lucene specific characters.</p>
+
+    <h4>Deprecated: use of <code>xsd:langString</code> in field definitions and query template arguments</h4>
+
+    <p>In field definitions and query template arguments it is possible to specify the datatype of input values. As of this release we explicitly deprecate the use of <code>xsd:langString</code> and encourage users to upgrade to the standard compliant <code>rdf:langString</code> datatype. Existing configurations are still read for backwards compatibility reasons and are implicitly processed as <code>rdf:langString</code>. For updating field definitions use the respective UI or modify them in their inline definitions if used embedded in template pages (i.e. use <code>"xsdDatatype" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString"</code>. Note that the field and query template UIs will show a corresponding deprecation notice. Support for <code>xsd:langString</code> may be removed completely in a future version,</p>
+
+    <h4>Customization of the page header</h4>
+
+    <p>The links in the page header have been changed such that they can now be interacted with on right click. If the <code>header.hbs</code> has been overridden, the <i>Admin</i> and <i>Help</i> links need to be changed to the following format, to fully profit from this change:</p>
+    <mp-code-block>
+    <![CDATA[
+<li title="Help">
+  <mp-resource-link iri="http://help.metaphacts.com/resource/Start">
+    <i class="fa fa-question-circle"></i>
+  </mp-resource-link>
+</li>
+    ]]>
+    </mp-code-block>
+
+    <p>Also <code>mp-resource-link-container</code> that wrap a <code>bs-menu-item</code> need to get the following attribute: <code>propagate-link="true" </code>.</p>
+
+    <h4>handlebars.java</h4>
+    <p>The dependency handlebars.java has been updated to version 4.2.0. While this is mostly backwards compatible, custom handlers may require adjustments. Also note that <code>{{documentation}}</code> can no longer be used to escape backend helper invocations (e.g. for documentation purposes). Instead HTML escape characters can be used, e.g  <code>&amp;lbrack;</code> for <code>[</code>.</p>
+
+    <h4>Permissions</h4>
+    <p>In 3.5 the following permissions have been introduced or refined. Existing installations may require an update of the role definitions (e.g. in custom roles) for new functionality to properly work.</p>
+
+    <table>
+      <tr>
+        <th><b>Permission</b></th>
+        <th><b>Description</b></th>
+        <th><b>Change</b></th></tr>
+      <tr>
+        <td><code>api:spec:list</code></td>
+        <td>Grants permission to read the list of OpenAPI specifications.</td>
+		<td>New Permission. May need to be added to existing shiro-roles.ini (or shiro.ini for older systems). In the default shiro-roles.ini it will be part of the admin role.</td>
+      </tr>
+      <tr>
+        <td><code>ui:page:knowledge-graph-bar:toggle</code></td>
+        <td>Grants permission to toggle the knowledge graph bar on resources it is not shown on by default.</td>
+		<td>New Permission. May need to be added to existing shiro-roles.ini (or shiro.ini for older systems). In the default shiro-roles.ini it will be part of the admin role.</td>
+      </tr>
+      <tr>
+        <td><code>api:page:pageViewConfig:*</code></td>
+        <td>Grants permission to manage page view configurations.</td>
+		<td>New Permission. May need to be added to existing shiro-roles.ini (or shiro.ini for older systems). In the default shiro-roles.ini it will be part of the root role.</td>
+      </tr>
+    </table>
+
+    <hr>
+    <h2 id="3.4.0">3.4.0</h2>
+    <hr>
+    <h3>Release Notes</h3>
+    [[#> releasenote-table]]
+      [[> Help:ReleaseNoteTable_3.4.0]]
+    [[/releasenote-table]]
+
+    <h3>Breaking Changes</h3>
+    <h4>Ontodia</h4>
+
+    <p>As of 3.4 the configuration of Ontodia was revised to support multiple use cases by using a "composable" workspace, allowing to include/exclude certain components from an instance of Ontodia, as well as providing the configuration for dedicated components rather on the Ontodia instance level. This change is not backwards compatible and users are required to update customized Ontodia configurations in overridden templates. See <semantic-link title="Ontodia migration" uri='[[resolvePrefix "Help:OntodiaMigration"]]'>here</semantic-link> for a detailed migration guide.</p>
+
+    <h3>Upgrade Notes</h3>
+
+    <h4>Role definitions</h4>
+
+    <p>As of 3.4 role definitions are separated from local users, i.e. roles and their permissions are no longer defined in <code>shiro.ini</code>, but in <code>shiro-roles.ini</code>. While role definitions from existing <code>shiro.ini</code> will still be read and evaluated, users are encouraged to migrate the role definitions. If no modifications to roles were done, this essentially means to remove the entire roles section from <code>shiro.ini</code> as they are now pre-defined by the platform. Otherwise, newly created roles need to be defined in <code>shiro-roles.ini</code> as documented <semantic-link title="Help Security" uri='[[resolvePrefix "Help:Security"]]'>here</semantic-link>.</p>
+
+    <p>Generally, all platform-provided roles are immutable and cannot be overridden. If custom role definitions are required, they can be defined by providing a <code>config/shiro-roles.ini</code> file, either using <semantic-link uri="[[resolvePrefix "Help:Apps"]]">Apps</semantic-link> or in the runtime storage. Once defined, they can be mapped to users.</p>
+
+    <p>Refer to the <semantic-link title="Help Security" uri='[[resolvePrefix "Help:Security"]]'>security documentation</semantic-link> for further details.</p>
+
+    <h4>Permissions</h4>
+
+    <p>In 3.4 the following permissions have been introduced or refined. Existing installations may require an update of the role definitions (e.g. in custom roles) for new functionality to properly work.</p>
+
+    <table>
+      <tr>
+        <th><b>Permission</b></th>
+        <th><b>Description</b></th>
+        <th><b>Change</b></th></tr>
+      <tr>
+        <td><code>system:jvm-properties</code></td>
+        <td>Grants permission to read the white-liste JVM system properties.</td>
+        <td>New Permission. May need to be added to existing shiro.ini. In the default shiro.ini it will be part of the root role.</td>
+      </tr>
+      <tr>
+        <td><code>reconciliation:manifest:read</code></td>
+        <td>Grants permission to read the manifest of the reconciliation service using <code>(GET without parameters)/rest/reconciliation</code> rest endpoint.</td>
+        <td>New Permission. May need to be added to existing <b>shiro.ini / shiro-roles.ini</b>. In the default <b>shiro-roles.ini</b> it will be part of the <b>admin</b> role.</td>
+      </tr>
+      <tr>
+        <td><code>reconciliation:lookup:*</code></td>
+        <td>Grants permission to use <code>(GET/POST with parameters)/rest/reconciliation</code> endpoint for searching through the data.</td>
+        <td>New Permission. May need to be added to existing <b>shiro.ini / shiro-roles.ini</b>. In the default <b>shiro-roles.ini</b> it will be part of the <b>admin</b> role.</td>
+      </tr>
+      <tr>
+        <td><code>app:remove</code></td>
+        <td>Grants permission to remove installed apps on <semantic-link title="Admin:Apps" uri='[[resolvePrefix "Admin:Apps"]]'>Admin:Apps</semantic-link>.</td>
+        <td>New Permission. May need to be added to existing <b>shiro.ini / shiro-roles.ini</b>. In the default <b>shiro.ini</b> it will be part of the root role.</td>
+      </tr>
+    </table>
+
+    <br/>
+    <p>
+      Refer to the <semantic-link title="Help Security" uri='[[resolvePrefix "Help:Security"]]'>security documentation</semantic-link> for further details.
+    </p>
+
     <hr>
     <h2 id="3.3.0">3.3.0</h2>
     <hr>
@@ -48,20 +367,20 @@
     [[/releasenote-table]]
 
     <h3>Breaking Changes</h3>
-    
+
     <h4>Escape-Lucene-Syntax setting in semantic search components</h4>
-    
+
     <p>In the semantic search components (e.g. the <code>semantic-simple-search</code> component) the <code>escape-lucene-syntax</code> setting is now split into two distinct settings: <code>escape-lucene-syntax</code> and <code>tokenize-lucene-query</code>. This is to avoid overloading the setting with two orthogonal configurations and provide more control to the application developer. In some applications where <code>escape-lucene-syntax</code> was explicitly set to <code>false</code> it may now be required to also set <code>tokenize-lucene-query</code> to <code>false</code>.</p>
-    
+
 
     <h3>Upgrade Notes</h3>
-    
+
     <h4>Retrieving and rendering labels in tables</h4>
-    
+
     <p>Starting with 3.3.0 labels in tables are pre-fetched at rendering time of the table. This allows for client-side sorting and filtering using the displayed values. Previously labels were fetched on-demand (e.g. while paging). If required by an existing application (e.g. for performance reasons for very large tables) the previous behavior can be configured on the <code>semantic-table</code> instance using the <code>prefetch-labels</code> setting.</p>
-    
-   
-    
+
+
+
     <hr>
 	<h2 id="3.2.0">3.2.0</h2>
     <hr>
@@ -76,25 +395,25 @@
     In <i>3.2.0</i> the Docker container has been optimized:
     <ul>
       <li>The Jetty web server does not run as <code>root</code> and no longer changes file ownership in volumes so the (existing) file permissions matter!</li>
-      <li>The <code>docker-compose</code> files have been adjusted accordingly. Any local copy should be updated to the latest version from our public <a href="https://bitbucket.org/metaphacts/metaphactory-docker-compose" target="_blank">docker-compose GIT repository</a> before using it with the released <i>3.2.0</i> Docker container!</li>
+      <li>The <code>docker-compose</code> files have been adjusted accordingly. Any local copy should be updated to the latest version from our public <a href="https://github.com/metaphacts/metaphactory-docker-compose" target="_blank">docker-compose GIT repository</a> before using it with the released <i>3.2.0</i> Docker container!</li>
       <li>See <a title="Installation and Deployment" href="/resource/Help:Installation#docker-volumes">Installation and Deployment</a> for using volumes and best practices on file permissions.</li>
     </ul>
-    
+
     <h3>Upgrade Notes</h3>
-    
+
     <h4>Permissions</h4>
-    
+
     <p>In 3.2 the following permissions have been introduced or refined. Existing installations may require an update of the role definitions in <code>shiro.ini</code> for new functionality to properly work.</p>
-    
+
     <table>
       <tr><th><b>Permission</b></th><th><b>Description</b></th></tr>
       <tr><td><code>logs:read:*</code></td><td>Permissions for displaying log files</td></tr>
       <tr><td><code>logs:configure:*</code></td><td>Permissions for configuring the logging system (e.g. the logging profile).</td></tr>
     </table>
-    
+
     <br/>
     <p>Refer to the <semantic-link title="Help Security" uri='[[resolvePrefix "Help:Security"]]'>security documentation</semantic-link> for further details.</p>
- 
+
 
     <hr>
 	  <h2 id="3.1.0">3.1.0</h2>
@@ -103,10 +422,10 @@
     [[#> releasenote-table]]
       [[> Help:ReleaseNoteTable_3.1.0]]
     [[/releasenote-table]]
-   
+
 
 		<h3>Breaking Changes</h3>
-    
+
     <p>No breaking changes in 3.1.0</p>
     <hr>
     <h2 id="3.0.0">3.0.0</h2>
@@ -137,6 +456,6 @@
       You may run, for example, <code>find /data/templates /config  -newermt "Dec 11, 2017" | zip extract.zip -@</code> to extract all changed files after a certain date (typically the date of the deployment, i.e. run <code>ls -all /data/templates</code> to see all files and modification dates) into a zip file. It is recommended to clean this initial extract, i.e. to reduce, for example, the entries in <code>/config/namespaces.prop</code> to your domain / use-case specific entries to not shadow any defaults.<br>
       LDP assets (for example, queries or fields) from your old installation can be exported using the <semantic-link title="LDP" iri='[[resolvePrefix "Platform:rootContainer"]]'>the LDP Container export</semantic-link>. Importing the container into the new installation through the LDP admin interface will save these LDP artefacts as *.trig files to the <code>/runtime-data/ldp</code> folder, i.e. they become part of the runtime app and can be extracted / ported to other installations as all other app artefacts.
     </p>
-    
+
   </div>
 </div>

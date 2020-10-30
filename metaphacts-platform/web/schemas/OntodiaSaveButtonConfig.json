@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Special control that combine multiple actions such as `save`, `saveAs`, `persist` and `persistAndSave`.\nDepending on Ontodia state, it displays different UI.",
+    "properties": {
+        "dropup": {
+            "description": "Toggles dropdown menu above the button.",
+            "type": "boolean"
+        },
+        "persistChangesLabel": {
+            "description": "Custom label for \"Save data\" button.",
+            "type": "string"
+        },
+        "saveDiagramLabel": {
+            "description": "Custom label for \"Save diagram\" button.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "saveDiagramLabel",
+        "persistChangesLabel",
+        "dropup"
+    ],
+    "type": "object"
+}
+

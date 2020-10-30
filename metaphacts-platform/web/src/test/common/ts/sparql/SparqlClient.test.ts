@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import { use, expect, assert } from 'chai';
 import * as sinon from 'sinon';
@@ -78,10 +99,10 @@ describe('SparqlClient', function() {
       },
     });
 
-    const expectedResponse = {
+    const expectedResponse: SparqlClient.SparqlSelectResult = {
       'head' : {
         'vars' : [ 'x', 'y' ],
-      },
+      } as SparqlClient.SparqlSelectResult['head'],
       'results' : {
         'distinct': undefined,
         'ordered': undefined,
@@ -152,11 +173,11 @@ describe('SparqlClient', function() {
     expect(this.request.requestBody).to.be.equalIgnoreSpaces(query);
     expect(this.request.requestHeaders).to.be.deep.equal({
       'Content-Type': 'application/sparql-query;charset=utf-8',
-      'Accept': 'text/turtle',
+      'Accept': 'application/x-turtlestar',
     });
 
     this.request.respond(
-      200, {'Content-Type': 'text/turtle'}, rawResponse
+      200, {'Content-Type': 'application/x-turtlestar'}, rawResponse
     );
   });
 
@@ -194,14 +215,16 @@ describe('SparqlClient', function() {
 
     const expectedQuery = `
       SELECT * WHERE {
-        VALUES (?s) {
-          (<http://example.com>)
+        VALUES (?s ?o) {
+          (<http://example.com> 42)
         }
         ?s ?p ?o.
       }`;
 
-    const parametrizedQuery =
-        SparqlClient.prepareQuery(query, [{s: Rdf.iri('http://example.com')}]);
+    const {xsd} = vocabularies;
+    const parametrizedQuery = SparqlClient.prepareQuery(query, [
+      {s: Rdf.iri('http://example.com'), o: Rdf.literal('42', xsd.integer)},
+    ]);
 
     parametrizedQuery.onValue(
       preparedQuery => {
@@ -223,8 +246,8 @@ describe('SparqlClient', function() {
     const expectedQuery = `
       SELECT * WHERE {
         VALUES (?s ?p) {
-          (<http://example.com/1> "example1"^^<http://www.w3.org/2001/XMLSchema#string>)
-          (<http://example.com/2> "example2"^^<http://www.w3.org/2001/XMLSchema#string>)
+          (<http://example.com/1> "example1")
+          (<http://example.com/2> "example2")
         }
         ?s ?p ?o.
       }`;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 import * as React from 'react';
@@ -81,7 +80,7 @@ export class MetadataFromFields extends React.Component<MetadataFromFieldsProps,
     );
     const fieldIris: Rdf.Iri[] = [];
     for (const {field} of results.bindings) {
-      if (field && field.isIri()) {
+      if (field && field.termType === 'NamedNode') {
         fieldIris.push(field);
       }
     }
@@ -190,7 +189,7 @@ function queryAllRelatedTypes(
   return SparqlClient.select(preparedQuery).map(({results}) => {
     const relatedTypes = new Set<ElementTypeIri>();
     for (const {relatedType} of results.bindings) {
-      if (relatedType && relatedType.isIri()) {
+      if (relatedType && Rdf.isIri(relatedType)) {
         relatedTypes.add(relatedType.value as ElementTypeIri);
       }
     }

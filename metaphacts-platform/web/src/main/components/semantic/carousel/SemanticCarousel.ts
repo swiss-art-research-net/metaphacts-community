@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,17 +37,16 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import { createFactory, createElement, Props } from 'react';
+import { ClassAttributes, createFactory, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import Slider from 'react-slick';
 import * as _ from 'lodash';
 import * as assign from 'object-assign';
 
 import { BuiltInEvents, trigger } from 'platform/api/events';
+import { Rdf } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Component, ComponentContext } from 'platform/api/components';
-import { prepareResultData } from 'platform/components/utils';
 import { TemplateItem } from 'platform/components/ui/template';
 import { Spinner } from 'platform/components/ui/spinner';
 
@@ -220,13 +241,12 @@ interface ReactSlickOptions {
   vertical?: boolean
 }
 
-export type SemanticCarouselProps = SemanticCarouselConfig & Props<SemanticCarousel>;
+export type SemanticCarouselProps = SemanticCarouselConfig & ClassAttributes<SemanticCarousel>;
 
 interface SemanticCarouselState {
   isLoading: boolean;
   noResults?: boolean;
-  data?: SparqlClient.SparqlSelectResult;
-
+  data?: SparqlClient.SparqlStarSelectResult;
 }
 
 export class SemanticCarousel extends Component<SemanticCarouselProps, SemanticCarouselState> {
@@ -249,7 +269,7 @@ export class SemanticCarousel extends Component<SemanticCarouselProps, SemanticC
     );
   }
 
-  public getSliderComponent(data: SparqlClient.SparqlSelectResult) {
+  public getSliderComponent(data: SparqlClient.SparqlStarSelectResult) {
     const defaultSettings = {
           dots: true,
           infinite: true,
@@ -297,7 +317,7 @@ export class SemanticCarousel extends Component<SemanticCarouselProps, SemanticC
 
   private prepareConfigAndExecuteQuery =
     (props: SemanticCarouselProps, context: ComponentContext) => {
-      const stream = SparqlClient.select(props.query, {context: context.semanticContext});
+      const stream = SparqlClient.selectStar(props.query, {context: context.semanticContext});
       stream.onValue(
         res => this.setState({data: res, isLoading: false})
       ).onEnd(() => {
@@ -320,7 +340,7 @@ export class SemanticCarousel extends Component<SemanticCarouselProps, SemanticC
       console.warn(
         'layout property in semantic-carousel is deprecated, please use flat properties instead'
       );
-      return this.props['layout']['tupleTemplate'];
+      return (this.props as any)['layout']['tupleTemplate'];
     }
     return this.props.tupleTemplate;
   }
@@ -330,9 +350,24 @@ export class SemanticCarousel extends Component<SemanticCarouselProps, SemanticC
       console.warn(
         'layout property in semantic-carousel is deprecated, please use flat properties instead'
       );
-      return this.props['layout']['options'];
+      return (this.props as any)['layout']['options'];
     }
     return this.props.options;
   }
 }
+
+/**
+ * Transform sparql results to make sure that there are values in the bindings
+ * for all projection variables. This simplify handling of results in visualization
+ * components.
+ */
+function prepareResultData(data: SparqlClient.SparqlStarSelectResult) {
+  return _.each(
+    data.results.bindings,
+    binding => _.map(
+      data.head.vars, bindingVar => binding[bindingVar] ? binding[bindingVar] : Rdf.literal('')
+    )
+  );
+}
+
 export default SemanticCarousel;

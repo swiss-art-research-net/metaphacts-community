@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,16 +37,13 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as React from 'react';
 import { Component } from 'react';
 import * as maybe from 'data.maybe';
 import * as _ from 'lodash';
 import { Button } from 'react-bootstrap';
-import * as Either from 'data.either';
 
-import { SparqlClient } from 'platform/api/sparql';
 import * as ConfigService from 'platform/api/services/config';
 import {
   Table, TableLayout, TableColumnConfiguration, CellRendererProps
@@ -33,6 +52,8 @@ import { ErrorNotification, ErrorPresenter } from 'platform/components/ui/notifi
 import { Alert, AlertType } from 'platform/components/ui/alert';
 import { RemovableBadge } from 'platform/components/ui/inputs';
 import { Spinner } from 'platform/components/ui/spinner';
+import { ModuleRegistry } from 'platform/api/module-loader';
+import { Popover, OverlayTrigger } from 'react-bootstrap';
 
 import { InlineValuesEditor, ConfigRecord } from './InlineValuesEditor';
 
@@ -108,10 +129,10 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
     };
     const submitProperty = (values: ReadonlyArray<string>, targetApp: string) => {
       this.onSetConfig(editedProperty, values, targetApp);
-    }
+    };
     const deleteProperty = (propertyName: string, targetApp: string) => {
       this.onDeleteConfig(propertyName, targetApp);
-    }
+    };
 
     const writableApps = new Set<string>();
     for (const app of apps) {
@@ -136,24 +157,24 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
         } else {
           const hasRelatedError = alertError && record.name === alertError.propertyName;
           return <div>
-            {record.values.length === 0 ?
-              <div className={styles.noValue}>(no value)</div> : (
-                <div className={styles.propertyValuesCell}>
+            <div className={styles.propertyValuesCell}>
+              {record.values.length === 0 ?
+                <div className={styles.noValue}>(no value)</div> : (
                   <div className={styles.propertyValues}>
                     {record.values.map((value, index) =>
                       <div key={index} className={styles.propertyValue}>{value}</div>
                     )}
                   </div>
-                  <Button className={styles.editValue}
-                    bsSize='xs'
-                    disabled={!editable || savingProperty}
-                    onClick={() => setEditedProperty(record.name)}>
-                    <span className='fa fa-pencil' /> Edit
-                  </Button>
-                </div>
-              )
-            }
-            {hasRelatedError ? 
+                )
+              }
+              <Button className={styles.editValue}
+                bsSize='xs'
+                disabled={!editable || savingProperty || record.shadowed}
+                onClick={() => setEditedProperty(record.name)}>
+                <span className='fa fa-pencil' /> Edit
+              </Button>
+            </div>
+            {hasRelatedError ?
               <Alert alert={alertType} message={''}>
                 <ErrorPresenter error={alertError.originalError} />
               </Alert> : ''
@@ -185,15 +206,66 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
       }
     };
 
+    const nameRenderer = class extends Component<CellRendererProps,
+      {parsedTemplate: Data.Maybe<React.ReactNode>}> {
+      constructor(props: CellRendererProps) {
+        super(props);
+        this.state = {
+          parsedTemplate: maybe.Nothing<React.ReactNode>()
+        }
+      }
+
+      componentDidMount() {
+        const record = this.props.rowData as ConfigRecord;
+        ModuleRegistry.parseHtmlToReact(record.description).observe({
+          value: parsedTemplate => {
+            this.setState({
+              parsedTemplate: maybe.Just(parsedTemplate)
+            });
+          }
+        });
+      }
+
+      render() {
+        if (this.state.parsedTemplate.isJust) {
+          const record = this.props.rowData as ConfigRecord;
+          return <div>
+            <span className={styles.propertyName}>
+              {record.name}
+              {record.restartRequired ?
+                <span className={styles.propertyRestartRequired}>*</span> : ''}
+            </span>
+            {record.description !== '' ?
+              <OverlayTrigger
+                placement='top'
+                trigger={['click', 'hover', 'focus']}
+                overlay={
+                  <Popover id='description__popover'>
+                    <div>
+                      {this.state.parsedTemplate.get()}
+                    </div>
+                  </Popover>
+                }
+              >
+                <i className='fa fa-info-circle fa-sm' aria-hidden='true'></i>
+              </OverlayTrigger>
+              : ''
+            }
+          </div>
+        } else {
+          return <Spinner />;
+        }
+      }
+    };
+
     const columnConfig: TableColumnConfiguration[] = [
-      {displayName: 'Name', variableName: 'name'},
+      {displayName: 'Name', cellComponent: nameRenderer},
       {displayName: 'Value', cellComponent: valueRenderer},
       {displayName: 'Defined by apps', cellComponent: definedByAppsRenderer},
       {displayName: 'Shadowed', cellComponent: shadowedRenderer},
     ];
 
     const layout: TableLayout = {
-      tupleTemplate: maybe.Nothing<string>(),
       options: {
         resultsPerPage: 20,
       },
@@ -201,10 +273,10 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
 
     return (
       <Table
-        numberOfDisplayedRows={maybe.Just(10)}
+        numberOfDisplayedRows={10}
         columnConfiguration={columnConfig}
-        data={Either.Left<ReadonlyArray<any>, SparqlClient.SparqlSelectResult>(this.state.data)}
-        layout={maybe.Just(layout)}
+        data={this.state.data}
+        layout={layout}
       />
     );
   }
@@ -231,6 +303,8 @@ export class ConfigManager extends Component<ConfigManagerProps, State> {
             values: ConfigService.configValueToArray(v.value),
             definedByApps: v.definedByApps,
             shadowed: v.shadowed,
+            description: v.description,
+            restartRequired: v.restartRequired
           })),
         });
       },

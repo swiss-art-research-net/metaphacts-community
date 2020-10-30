@@ -1,0 +1,66 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "WidgetDock": {
+            "enum": [
+                "e",
+                "n",
+                "ne",
+                "nw",
+                "s",
+                "se",
+                "sw",
+                "w"
+            ],
+            "type": "string"
+        }
+    },
+    "description": "Birds-eye view component, helps to navigate through the diagram.\n**Can be used only inside `ontodia-canvas`.**",
+    "properties": {
+        "dock": {
+            "$ref": "#/definitions/WidgetDock",
+            "default": "'se'",
+            "description": "Position on the canvas."
+        },
+        "expanded": {
+            "default": true,
+            "description": "Expanded by default.",
+            "type": "boolean"
+        },
+        "height": {
+            "default": 160,
+            "description": "Height.",
+            "type": "number"
+        },
+        "id": {
+            "description": "Unique ID.",
+            "type": "string"
+        },
+        "margin": {
+            "default": 25,
+            "description": "Margin.",
+            "type": "number"
+        },
+        "scalePadding": {
+            "default": 0.2,
+            "description": "Scale padding.",
+            "type": "number"
+        },
+        "width": {
+            "default": 300,
+            "description": "Width.",
+            "type": "number"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "dock",
+        "margin",
+        "width",
+        "height",
+        "scalePadding",
+        "expanded"
+    ],
+    "type": "object"
+}
+

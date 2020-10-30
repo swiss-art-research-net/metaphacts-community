@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Mike Kelly <MKelly@britishmuseum.org>
  * @author Olga Belyaeva
@@ -24,7 +23,7 @@
 import * as React from 'react';
 import * as _ from 'lodash';
 import ReactJoyride from 'react-joyride';
-import { Props as JoyrideProps } from 'react-joyride';
+import { Props as JoyrideProps, Step } from 'react-joyride';
 import { Overlay } from 'react-bootstrap';
 
 import { listen, Event } from 'platform/api/events';
@@ -135,7 +134,7 @@ export class GuidedTour extends React.Component<Props, State> {
   }
 
   private listenToStepsEvents() {
-    const uniqueEvents = _.uniqWith(this.props.steps, (step, otherStep) =>
+    const uniqueEvents = _.uniqWith(this.props.steps, (step: Step, otherStep: Step) =>
       step.progressEvent && otherStep.progressEvent &&
       step.progressEvent.eventType === otherStep.progressEvent.eventType &&
       step.progressEvent.source === otherStep.progressEvent.source

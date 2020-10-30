@@ -1,15 +1,5 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li>
-    <semantic-link title="Components" uri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
-  </li>
-  <li class="active">Chart Component</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
 
 <div class="page documentation">
   <div class='page__body'>
@@ -91,32 +81,6 @@
     <mp-documentation type="SemanticChartConfig"></mp-documentation>
 
     <h2>Examples</h2>
-    <h3>Sample dataset</h3>
-    <mp-code-block mode='text/turtle'>
-<![CDATA[
-    @prefix foaf: <http://xmlns.com/foaf/0.1/> .
-    @prefix person: <http://example.com/person/>; .
-    @prefix org: <http://example.com/org/> .
-    @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-
-    person:alice foaf:knows person:bob, person:carol, person:mike ;
-                 foaf:member org:W3C, org:IEEE, org:IETF;
-                 rdfs:label "alice" .
-
-    person:carol foaf:knows person:mike ;
-             foaf:member org:W3C;
-                 rdfs:label "carol" .
-
-    person:bob foaf:knows person:carol ;
-               rdfs:label "bob" .
-
-    person:mike foaf:member org:W3C, org:IEEE, org:IETF;
-                foaf:knows person:carol ;
-                rdfs:label "mike" .
-]]>
-    </mp-code-block>
-
 
     <h3>Simple bar chart</h3>
     <div>

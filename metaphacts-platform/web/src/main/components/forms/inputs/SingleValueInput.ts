@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,26 +37,28 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 
 import { Component } from 'platform/api/components';
 import { Rdf, vocabularies, XsdDataTypeValidation } from 'platform/api/rdf';
 
 import { FieldDefinition } from '../FieldDefinition';
+import { DependencyContext } from '../FieldDependencies';
 import {
-  FieldValue, AtomicValue, CompositeValue, LabeledValue,
-  EmptyValue, DataState, FieldError, ErrorKind,
+  FieldValue, AtomicValue, CompositeValue, LabeledValue, EmptyValue, DataState, ErrorKind,
 } from '../FieldValues';
 
 export interface SingleValueInputProps {
   /** Key to associate with FieldDefinition by name */
   for?: string;
+  defaultValue?: string | number | boolean;
+  defaultValues?: ReadonlyArray<string>;
   handler?: SingleValueHandler;
   definition?: FieldDefinition;
   dataState?: DataState;
   value?: FieldValue;
   updateValue?: (reducer: (value: FieldValue) => FieldValue) => void;
+  dependencyContext?: DependencyContext;
   /** @see MultipleValuesProps.renderHeader */
   renderHeader?: boolean;
 }
@@ -60,6 +84,10 @@ interface SingleValueInputStatic {
   makeHandler(props: SingleValueHandlerProps<any>): SingleValueHandler;
 }
 
+export interface SingleValueInputGroup {
+  inputGroupType: 'composite' | 'switch';
+}
+
 export abstract class SingleValueInput<P extends SingleValueInputProps, S> extends Component<P, S> {
   constructor(props: P, context: any) {
     super(props, context);
@@ -80,6 +108,7 @@ export abstract class SingleValueInput<P extends SingleValueInputProps, S> exten
   };
 
   static assertStatic(constructor: SingleValueInputStatic) { /* nothing */ }
+  static assertInputGroup(constructor: SingleValueInputGroup) { /* nothing */ }
 
   static getHandlerOrDefault(
     componentType: Partial<SingleValueInputStatic>,
@@ -133,7 +162,7 @@ export class AtomicValueHandler implements SingleValueHandler {
       errors: atomic.errors
         .filter(error => error.kind !== ErrorKind.Input &&
           error.kind !== ErrorKind.Validation)
-        .toList().concat(FieldValue.getErrors(newValue)),
+        .concat(FieldValue.getErrors(newValue)),
     });
   }
 
@@ -157,7 +186,7 @@ export function validateType(
   if (!datatype) { return FieldValue.fromLabeled(selected); }
 
   if (XsdDataTypeValidation.sameXsdDatatype(datatype, vocabularies.xsd.anyURI)) {
-    if (selected.value.isLiteral()) {
+    if (Rdf.isLiteral(selected.value)) {
       const literal = selected.value as Rdf.Literal;
       return withInputError(selected,
         `Selected value is ${XsdDataTypeValidation.datatypeToString(literal.datatype)} ` +
@@ -173,7 +202,7 @@ export function validateType(
       }
     }
   } else {
-    if (selected.value.isLiteral()) {
+    if (Rdf.isLiteral(selected.value)) {
       const literal = selected.value as Rdf.Literal;
       const coerced = coerceTo(datatype, literal);
       if (coerced) {
@@ -214,8 +243,8 @@ function coerceTo(datatype: Rdf.Iri, value: Rdf.Literal): Rdf.Literal {
 }
 
 function withInputError(value: LabeledValue, error: string) {
-  return FieldValue.fromLabeled(value, FieldError.noErrors.push({
+  return FieldValue.fromLabeled(value, [{
     kind: ErrorKind.Input,
     message: error,
-  }));
+  }]);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Component, createElement, createFactory } from 'react';
 import * as D from 'react-dom-factories';
 import { MenuItem, DropdownButton } from 'react-bootstrap';
@@ -163,7 +162,7 @@ class LightBoxTable extends Component<LightboxTableProps, any> {
   }
 
   private getSelectedItems = (): Set<Rdf.Node> => {
-    return this.refs.table.getSelected().map(item => item.node);
+    return this.refs.table.getSelected().map((item: any) => item.node);
   }
 
   private showDialogAction = (title: string, component: any, iiifServerUrl: string) => {
@@ -177,7 +176,7 @@ class LightBoxTable extends Component<LightboxTableProps, any> {
           title: title,
           children: component({
             iiifServerUrl: iiifServerUrl,
-            comparedImages: images,
+            selection: images,
           }),
         }
       )

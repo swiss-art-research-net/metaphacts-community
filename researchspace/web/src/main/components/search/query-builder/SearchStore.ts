@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Alexey Morozov
@@ -26,6 +25,7 @@ import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
 
+import { Rdf } from 'platform/api/rdf';
 import { Action } from 'platform/components/utils';
 
 import { SemanticSearchConfig } from 'platform/components/semantic/search/config/SearchConfig';
@@ -129,15 +129,15 @@ export enum EditKinds {
 }
 
 export class SearchStore {
-  private _searchProperty = Action<Data.Maybe<Model.Search>>();
-  private _search: Data.Maybe<Model.Search>;
+  private _searchProperty = Action<Data.Maybe<Model.StructuredSearch>>();
+  private _search: Data.Maybe<Model.StructuredSearch>;
 
   private _profileStore: SearchProfileStore;
 
   private _searchStateProperty = Action<SearchState>();
   private _searchState: SearchState;
   private config: SemanticSearchConfig;
-  private projectionVariable: string;
+  private projectionVariable: Rdf.Variable;
 
   /**
    * We need to assign unique id to every new clause to facilitate integration testing.
@@ -146,15 +146,15 @@ export class SearchStore {
 
   constructor(
     profileStore: SearchProfileStore, baseConfig: SemanticSearchConfig,
-    projectionVariable: string,
-    initialSearch: Data.Maybe<Model.Search>,
+    projectionVariable: Rdf.Variable,
+    initialSearch: Data.Maybe<Model.StructuredSearch>,
     nestedSearch: Data.Maybe<{value: ExtendedSearchValue, range: Model.Category}>
   ) {
     this.config = baseConfig;
     this.projectionVariable = projectionVariable;
     this._profileStore = profileStore;
     if (nestedSearch.isJust) {
-      this.search = Maybe.Nothing<Model.Search>();
+      this.search = Maybe.Nothing<Model.StructuredSearch>();
       this.searchState = {
         kind: 'extended-domain-selection',
         domains: this.domains(),
@@ -243,6 +243,7 @@ export class SearchStore {
   public selectExtendedRelation = (relation: Model.Relation) => {
     const state = this._searchState as ExtendedRelationSelection;
     this.search = Maybe.Just({
+      kind: Model.SearchKind.Structured,
       domain: state.domain,
       conjuncts: [{
         kind: Model.ConjunctKinds.Relation,
@@ -265,12 +266,12 @@ export class SearchStore {
   }
 
 
-  public set search(search: Data.Maybe<Model.Search>) {
+  public set search(search: Data.Maybe<Model.StructuredSearch>) {
     this._search = search;
     this._searchProperty(search);
   }
 
-  public get currentSearch(): Kefir.Property<Data.Maybe<Model.Search>> {
+  public get currentSearch(): Kefir.Property<Data.Maybe<Model.StructuredSearch>> {
     return this._searchProperty.$property;
   }
 
@@ -284,7 +285,7 @@ export class SearchStore {
 
   public edit = (kind: EditKinds, conjunct?: Model.RelationConjunct, disjunct?: Model.Disjunct) => {
     if (kind === EditKinds.Domain) {
-      this.search = Maybe.Nothing<Model.Search>();
+      this.search = Maybe.Nothing<Model.StructuredSearch>();
       this.searchState = {
         kind: 'domain-selection',
         domains: this.domains(),
@@ -618,9 +619,11 @@ export class SearchStore {
     const searchState = this._searchState as TermSelection;
     const {domain, range, conjunctIndex} = searchState;
     if (this._search.isJust) {
-      if (_.isEqual((searchState as any).termKind, ['nested-search'])) {
+      if (_.isEqual((searchState as Partial<TermSelectionSearch>).termKind, ['nested-search'])) {
         this.search = Maybe.Just(
-          this.updateNestedSearchTerm(this._search.get(), searchState as any, value, termType)
+          this.updateNestedSearchTerm(
+            this._search.get(), searchState as TermSelectionSearch, value, termType
+          )
         );
       } else {
         const existingConjunct = this.getConjunctByIndex(this._search.get(), conjunctIndex) as Model.RelationConjunct;
@@ -638,17 +641,19 @@ export class SearchStore {
             kind: this.getConjunctType(searchState),
             range: range,
             conjunctIndex: conjunctIndex,
-            disjuncts: [],
-          } as any;
+            disjuncts: [] as Model.Disjunct[],
+          };
           if (conjunct.kind === Model.ConjunctKinds.Relation) {
-            conjunct['relation'] = searchState['relation'];
+            type HasRelation = { relation?: Model.RelationConjunct['relation'] };
+            (conjunct as HasRelation)['relation'] =
+              (searchState as RelationTermSelection)['relation'];
           }
           conjunct.disjuncts.push({
             kind: this.getDisjunctType(searchState, termType, value),
-            disjunctIndex: this.newDisjunctIndex(conjunct),
+            disjunctIndex: this.newDisjunctIndex(conjunct as Model.Conjunct),
             value: this.getDisjunctValue(value),
           });
-          searhBase.conjuncts.push(conjunct);
+          searhBase.conjuncts.push(conjunct as Model.Conjunct);
           this.search = this._search;
         }
       }
@@ -661,8 +666,8 @@ export class SearchStore {
   }
 
   private updateNestedSearchTerm = (
-    search: Model.Search, searchState: TermSelectionSearch, resource: any, termType: TermType
-  ): Model.Search => {
+    search: Model.StructuredSearch, searchState: TermSelectionSearch, resource: any, termType: TermType
+  ): Model.StructuredSearch => {
     const nestedState = searchState.state as TermSelection;
     const existingParentConjunct = this.getConjunctByIndex(search, searchState.conjunctIndex) as Model.RelationConjunct;
     if (existingParentConjunct) {
@@ -686,6 +691,7 @@ export class SearchStore {
       existingParentConjunct.disjuncts.push({
         kind: Model.EntityDisjunctKinds.Search,
         value: {
+          kind: Model.SearchKind.Structured,
           domain: nestedState.domain,
           conjuncts: [conjunct],
         },
@@ -721,6 +727,7 @@ export class SearchStore {
         kind: Model.EntityDisjunctKinds.Search,
         disjunctIndex: newDisjunctIndex,
         value: {
+          kind: Model.SearchKind.Structured,
           domain: nestedState.domain,
           conjuncts: [nestedConjunct],
         },
@@ -730,9 +737,10 @@ export class SearchStore {
     }
   }
 
-  private createInitialSearch = (state: TermSelection, resource: any, termType: TermType, n = 1): Model.Search => {
+  private createInitialSearch = (state: TermSelection, resource: any, termType: TermType, n = 1): Model.StructuredSearch => {
     const isNestedSearch = _.includes((state as any).termKind, 'nested-search');
     return {
+      kind: Model.SearchKind.Structured,
       domain: state.domain,
       conjuncts: [{
         uniqueId: this._counter++,
@@ -803,7 +811,7 @@ export class SearchStore {
         kind: 'domain-selection',
         domains: this.domains(),
       };
-      this.search = Maybe.Nothing<Model.Search>();
+      this.search = Maybe.Nothing<Model.StructuredSearch>();
     } else {
       this.search = this._search;
     }
@@ -819,7 +827,7 @@ export class SearchStore {
         kind: 'domain-selection',
         domains: this.domains(),
       };
-      this.search = Maybe.Nothing<Model.Search>();
+      this.search = Maybe.Nothing<Model.StructuredSearch>();
     } else {
       this.search = this._search;
     }
@@ -836,7 +844,7 @@ export class SearchStore {
     }
   }
 
-  private normalizeSearch = (search: Model.Search) => {
+  private normalizeSearch = (search: Model.StructuredSearch) => {
     const conjuncts =
       _.reject(
         search.conjuncts,
@@ -912,8 +920,8 @@ export class SearchStore {
   }
 
   private getSearchBaseForConjunct = (
-    search: Model.Search, conjunctIndex: ConjunctIndex
-  ): Model.Search => {
+    search: Model.StructuredSearch, conjunctIndex: ConjunctIndex
+  ): Model.StructuredSearch => {
     if (conjunctIndex.length <= 1) {
       return search;
     } else {
@@ -927,7 +935,7 @@ export class SearchStore {
     }
   }
 
-  private getConjunctByIndex = (search: Model.Search, conjunctIndex: Array<number>) => {
+  private getConjunctByIndex = (search: Model.StructuredSearch, conjunctIndex: Array<number>) => {
     const baseSearch = this.getSearchBaseForConjunct(search, conjunctIndex);
     if (baseSearch) {
       return baseSearch.conjuncts[_.last(conjunctIndex)];

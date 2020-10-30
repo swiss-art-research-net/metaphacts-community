@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
@@ -58,7 +57,9 @@ export interface OARegionAnnotation {
       item: { value: string };
     };
   }>;
+  'http://www.w3.org/2000/01/rdf-schema#label'?: string;
   'http://www.researchspace.org/ontology/viewport': string;
+  endpoint?: any;
 }
 
 /**
@@ -247,39 +248,36 @@ export function getAnnotationTextResource(annotation: OARegionAnnotation): {char
 export function convertAnnotationToCompositeValue(
   annotation: OARegionAnnotation
 ): Forms.CompositeValue {
-  const initial: Forms.CompositeValue = {
-    type: Forms.CompositeValue.type,
+  const initial = Forms.CompositeValue.set(Forms.CompositeValue.empty, {
     subject: Rdf.iri(annotation['@id']),
     definitions: Immutable.Map<string, Forms.FieldDefinition>(
       ImageRegionFields.map(field => [field.id, field])
     ),
-    fields: Immutable.Map<string, Forms.FieldState>(),
-    errors: Forms.FieldError.noErrors,
-  };
+  });
   const textResource = getAnnotationTextResource(annotation);
   const fieldStates: Array<[string, Forms.FieldState]> = ImageRegionFields.map(field => {
-    let values: Immutable.List<Forms.FieldValue>;
+    let values: ReadonlyArray<Forms.FieldValue>;
     let fieldState = Forms.FieldState.empty;
     if (field.id === ImageRegionType.id) {
-      values = Immutable.List<Forms.FieldValue>(
+      values = (
         [rso.EX_Digital_Image_Region, crmdig.D35_Area].map(value => {
           return Forms.FieldValue.fromLabeled({value});
         })
       );
     } else if (field.id === ImageRegionLabel.id) {
       const value = Rdf.literal(textResource.chars);
-      values = Immutable.List<Forms.FieldValue>(
+      values = (
         [Forms.FieldValue.fromLabeled({value})]
       );
     } else if (field.id === ImageRegionBoundingBox.id) {
-      values = Immutable.List<Forms.FieldValue>(
+      values = (
         annotation.on.map(on => {
           const value = Rdf.literal(on.selector.default.value);
           return Forms.FieldValue.fromLabeled({value});
         })
       );
     } else if (field.id === ImageRegionValue.id) {
-      values = Immutable.List<Forms.FieldValue>(
+      values = (
         annotation.on.map(on => {
           const value = Rdf.literal(on.selector.item.value);
           return Forms.FieldValue.fromLabeled({value});
@@ -289,11 +287,11 @@ export function convertAnnotationToCompositeValue(
       const value = Rdf.literal(
         annotation['http://www.researchspace.org/ontology/viewport']
       );
-      values = Immutable.List<Forms.FieldValue>(
+      values = (
         [Forms.FieldValue.fromLabeled({value})]
       );
     } else if (field.id === ImageRegionIsPrimaryAreaOf.id) {
-      values = Immutable.List<Forms.FieldValue>(
+      values = (
         annotation.on.map(on => {
           const value = Rdf.iri(on.full);
           return Forms.FieldValue.fromLabeled({value});
@@ -311,26 +309,21 @@ export function convertAnnotationToCompositeValue(
 function fetchInitialAnnotationModel(
   annotationIri: Rdf.Iri
 ): Kefir.Property<Forms.CompositeValue> {
-  const initial: Forms.CompositeValue = {
-    type: Forms.CompositeValue.type,
+  const initial = Forms.CompositeValue.set(Forms.CompositeValue.empty, {
     subject: annotationIri,
     definitions: Immutable.Map<string, Forms.FieldDefinition>(
       ImageRegionFields.map(field => [field.id, field])
     ),
-    fields: Immutable.Map<string, Forms.FieldState>(),
-    errors: Forms.FieldError.noErrors,
-  };
+  });
   const valuesFetching = ImageRegionFields.map(field =>
     Forms.queryValues(field.selectPattern, annotationIri).map(bindings => {
-      const values = Immutable.List(
-        bindings.map(b => Forms.FieldValue.fromLabeled(b))
-      );
+      const values = bindings.map(b => Forms.FieldValue.fromLabeled(b));
       const state = Forms.FieldState.set(Forms.FieldState.empty, {values});
       return [field.id, state] as [string, Forms.FieldState];
     })
   );
   return Kefir.zip(valuesFetching).map(fields => {
-    const nonEmpty = fields.filter(([id, state]) => state.values.size > 0);
+    const nonEmpty = fields.filter(([id, state]) => state.values.length > 0);
     return Forms.CompositeValue.set(initial, {fields: Immutable.Map(nonEmpty)});
   }).toProperty();
 }

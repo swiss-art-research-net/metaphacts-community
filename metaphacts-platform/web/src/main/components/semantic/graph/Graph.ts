@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { identity } from 'core.lambda';
 import { Component, Props as ReactProps, createFactory } from 'react';
 import * as D from 'react-dom-factories';
@@ -25,9 +46,9 @@ import * as cytoscape from 'cytoscape';
 import * as regCose from 'cytoscape-cose-bilkent';
 import * as maybe from 'data.maybe';
 import * as _ from 'lodash';
+import * as Handlebars from 'handlebars';
 
 import { vocabularies } from 'platform/api/rdf';
-import { TemplateScope, CompiledTemplate } from 'platform/api/services/template';
 import { CytoscapeContext, CytoscapeContextTypes, DATA_LOADED_EVENT } from './api/Api';
 
 // need to register jquery instance in Cytoscape, to make sure that we're using the same instance
@@ -251,9 +272,9 @@ export class Graph extends Component<Props, State> {
     return assign(opts, this.props, style);
   }
 
-  private static styleTemplateFunction: (template: CompiledTemplate, x: string) =>
+  private static styleTemplateFunction: (template: HandlebarsTemplateDelegate, x: string) =>
     (obj: Cy.CollectionFirstElement) => string =
-    function(template: CompiledTemplate, x: string) {
+    function(template: HandlebarsTemplateDelegate, x: string) {
       return function(obj: Cy.CollectionFirstElement): string {
         return template(obj.data());
       };
@@ -301,7 +322,7 @@ export class Graph extends Component<Props, State> {
       style, value => {
         if (this.HANDLEBARS_REGEX.test(value)) {
           return Graph.styleTemplateFunction(
-            TemplateScope.default.compileWithoutRemote(value), value
+            Handlebars.compile(value), value
           );
         } else {
           return value;

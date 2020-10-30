@@ -16,14 +16,14 @@
   }
 </style>
 
-<mp-resource-link-container title="[[title]]" uri="[[pageLink]]" [[#if assets]]	urlqueryparam-repository="assets"[[/if]]>
+<mp-resource-link title="[[title]]" uri="[[pageLink]]" [[#if assets]]	urlqueryparam-repository="assets"[[/if]]>
   <div class="text-center panel panel-default admin-icon-panel">
-      <div class="panel-body">
-        [[#if faIcon]]<span class="[[faIcon]]">&nbsp;</span>[[/if]]
+      <div class="panel-body text-color">
+        [[#if faIcon]]<span class="[[faIcon]]"></span>[[/if]]
         [[#if imgIcon]]<img src="[[imgIcon]]" height="60" />[[/if]]
       </div>
       <div class="panel-footer" style="position: relative">
-        <a>[[title]]</a>
+        [[title]]
       </div>
   </div>
-</mp-resource-link-container>
+</mp-resource-link>

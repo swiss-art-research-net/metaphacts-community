@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Component, MouseEvent } from 'react';
 import * as _ from 'lodash';
@@ -56,7 +55,7 @@ const DEFAULT_GROUPS_QUERY = `
 `;
 
 export class ShareComponent extends Component<Props, State> {
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       visibility: visibility.private,
@@ -91,7 +90,7 @@ export class ShareComponent extends Component<Props, State> {
   render() {
     return <div className='share-component'>
       <fieldset id='visibility-input'>
-        {_.keys(visibility).map(
+        {(_.keys(visibility) as Array<keyof typeof visibility>).map(
           v =>
             <div className='radio'>
               <label className='control-label' key={'visibility' + v}>
@@ -119,7 +118,7 @@ export class ShareComponent extends Component<Props, State> {
   isSelected = (s: string) => this.state.visibility === s;
 
   private onClick = (evt: MouseEvent<HTMLInputElement>) => {
-    const value = evt.target['value'];
+    const value = (evt.target as HTMLInputElement)['value'];
     const stream = LdpService.setVisibility(
       getCurrentResource(), Rdf.iri(value), []
     );

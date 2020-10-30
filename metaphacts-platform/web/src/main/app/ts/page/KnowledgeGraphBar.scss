@@ -1,0 +1,237 @@
+/*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, you can receive a copy
+ * of the GNU Lesser General Public License from http://www.gnu.org/
+ */
+@import "~basic-styles.scss";
+
+.knowledgeGraphBar {
+  display: flex;
+  align-items: start;
+
+  &__content {
+    overflow: hidden;
+    padding: 15px 27px 10px 12px;
+    background-color: #f9f9f9;
+    transition: all 0.3s;
+  }
+
+  &__summary, &__graphInfos, &__description {
+    flex: 1;
+  }
+
+  &__uriRow, &__graphInfos {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  &__copyIri {
+    background: none;
+    padding: 0;
+    border: 0;
+    margin-left: 1rem;
+    @include icon(clipboard);
+    visibility: hidden;
+  }
+  &__uriRow:hover &__copyIri {
+    visibility: visible;
+  }
+
+  &--collapsed &__content {
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  &--expanded &__content {
+    height: $knowledge-graph-bar-height;
+    border-bottom: 1px solid lightgray;
+  }
+
+  &__toggle {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    /* show above toolbar but behind modal backdrop */
+    z-index: $zindex-graph-bar-toggle;
+    transform: translateY(-50%);
+  }
+  .page--hasBreadcrumbs.page--knowledgeGraphBarExpanded &__toggle {
+    /* behind breadcrumb when scrolling out of view */
+    z-index: $zindex-behind-breadcrumb;
+  }
+  .page--noBreadcrumbs.page--knowledgeGraphBarCollapsed &__toggle {
+    /* toggle button behind metaphactory header, reduce hidden part */
+    transform: translateY(-40%);
+  }
+
+  .page--knowledgeGraphBarCollapsed &__toggle {
+    position: fixed;
+  }
+
+  &__toggleButton {
+    border-radius: 100%;
+    border: 2px solid #17b;
+    background-color: #fff;
+    width: 20px;
+    height: 20px;
+    font-size: 8px;
+    color: #b3b3b3;
+    transform: rotate(-90deg);
+    transition: 0.3s;
+    padding:0;
+
+    &:hover {
+      background-color: #17b;
+      color: white;
+    }
+  }
+  &--collapsed &__toggleButton {
+    transform: rotate(90deg);
+  }
+
+  &--hidden {
+    display: none;
+  }
+
+  &__summary {
+    overflow: hidden;
+  }
+  &__summaryTitle {
+    h1 {
+      font-size: 32px;
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+  }
+
+  &__summaryLabel {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__thumbnail {
+    width: 8.33333%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      max-width: 100px;
+      /* height minus padding */
+      max-height: $knowledge-graph-bar-height - 25px;
+      padding: 0;
+    }
+  }
+
+  &__bottomRow {
+    display: flex;
+    flex-direction: row;
+  }
+
+  &__description {
+    padding: 0 5px 0 70px;
+  }
+
+
+  &__actions {
+    align-self: center;
+  }
+
+  .page--graphActive &__graphAction,
+  .page--statementsActive &__statementsAction,
+  .page--pageActive &__pageAction {
+    background-color: #e6e6e6;
+  }
+
+  &__graphAction:before {
+    content: "";
+    background: url("/images/noun_flow_2317686.svg") no-repeat;
+    background-size: contain;
+    display: block;
+    height: 20px;
+    width: 20px;
+  }
+
+  &__statementsAction:before {
+    content: "";
+    background: url("/images/noun_List_2804874.svg") no-repeat;
+    background-size: contain;
+    display: block;
+    height: 20px;
+    width: 20px;
+  }
+
+  &__pageAction:before {
+    content: "";
+    background: url("/images/noun_Document_1830658.svg") no-repeat;
+    background-size: contain;
+    display: block;
+    height: 20px;
+    width: 20px;
+  }
+}
+
+.page--knowledgeGraphBarShown .page__body-navtabs {
+  /* spacing between knowledge graph bar and default page tabs */
+  background-color: #F9F9F9;
+  padding-top: 10px;
+}
+.page--knowledgeGraphBarShown.page--knowledgeGraphBarExpanded .page {
+  /* remove padding from page if knowledge graph bar is visible, as the space is taken by the elements */
+  padding-top: 0;
+}
+
+.page--knowledgeGraphBarShown.page--knowledgeGraphBarExpanded .page-breadcrumb {
+  position: static;
+}
+
+.page__toggle-knowledge-graph-bar-button {
+  border: 0 none;
+}
+
+.page__toggle-knowledge-graph-bar-button:before {
+  content: "";
+  background: url("/images/noun_Detective_1783308.svg") no-repeat;
+  background-size: contain;
+  display: block;
+  height: 15px;
+  width: 15px;
+}

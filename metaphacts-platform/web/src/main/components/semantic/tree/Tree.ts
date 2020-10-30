@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,8 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import { Component, createElement, MouseEvent } from 'react';
+import { Component, createElement, MouseEvent, ReactNode } from 'react';
 import * as D from 'react-dom-factories';
 import * as _ from 'lodash';
 import * as ReactTreeView from 'react-treeview';
@@ -92,7 +113,7 @@ export class Tree extends Component<TreeProps, State> {
     }
 
     private getNodeKey = (node: TreeNode): string => {
-      return node[this.props.nodeKey];
+      return node.key;
     }
 
     private getAllKeys = (node: TreeNode): any[] => {
@@ -101,7 +122,7 @@ export class Tree extends Component<TreeProps, State> {
       }
       return _.reduce(node['children'],
         (all, current) => all.concat(this.getAllKeys(current)),
-        [node[this.props.nodeKey]]
+        [node.key]
       );
     }
 
@@ -114,7 +135,7 @@ export class Tree extends Component<TreeProps, State> {
         });
     }
 
-    private handleCollapsibleClick = (i) => {
+    private handleCollapsibleClick = (i: string) => {
       this.setState(state => {
         const collapsedBookkeeping = this.state.collapsedBookkeeping;
         collapsedBookkeeping[i] = !collapsedBookkeeping[i];
@@ -122,13 +143,13 @@ export class Tree extends Component<TreeProps, State> {
       });
     }
 
-    private getTrees = (data: ReadonlyArray<TreeNode>) => {
+    private getTrees = (data: ReadonlyArray<TreeNode>): ReactNode => {
         return data.map((node, i: number) =>
             this.renderNode(node, i)
         );
     }
 
-    private renderNode = (node: any, i: number) => {
+    private renderNode = (node: TreeNode, i: number) => {
       const nodeLabelTemplate = createElement(TemplateItem, {
             template: {
                 source: this.props.tupleTemplate,
@@ -137,8 +158,8 @@ export class Tree extends Component<TreeProps, State> {
         });
         const hasChildren = this.nodeHasChildren(node);
 
-        const nodeKey = _.isUndefined(this.props.nodeKey) ? i : node[this.props.nodeKey];
-        const children = (hasChildren && !this.isCollapsed(nodeKey, node))
+        const nodeKey = node.key;
+        const children: ReactNode = (hasChildren && !this.isCollapsed(nodeKey, node))
           ? this.getTrees(node['children'])
           : null;
 
@@ -146,7 +167,9 @@ export class Tree extends Component<TreeProps, State> {
         const renderedNode = D.span(
             {
               key: this.key + nodeKey + i,
-              className: this.getCssClassesForNode(children, (this.state.activeNode === node)),
+              className: this.getCssClassesForNode(
+                Boolean(children), (this.state.activeNode === node)
+              ),
               onClick: this.handleClick.bind(null, node),
             },
             nodeLabelTemplate
@@ -195,5 +218,3 @@ export class Tree extends Component<TreeProps, State> {
       return false;
     }
 }
-
-export default Tree;

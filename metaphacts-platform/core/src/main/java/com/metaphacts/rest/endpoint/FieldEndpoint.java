@@ -1,4 +1,26 @@
 /*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
  * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
@@ -20,7 +42,9 @@ package com.metaphacts.rest.endpoint;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -40,7 +64,7 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
 import com.metaphacts.services.fields.FieldDefinition;
-import com.metaphacts.services.fields.FieldDefinitionManager;
+import com.metaphacts.services.fields.FieldDefinitionGeneratorChain;
 
 /**
  * Endpoint for retrieval of {@link FieldDefinition}s
@@ -48,8 +72,7 @@ import com.metaphacts.services.fields.FieldDefinitionManager;
  * Usage:
  * <ul>
  * <li><code>POST /rest/fields/definitions</code> with a JSON body of the form
- * <code>{ "fields": [ "iri1", "iri2" ] }</code> retrieves field definitions for
- * the given field identifiers.</li>
+ * <code>{ "fields": [ "iri1", "iri2" ] }</code> retrieves field definitions for the given identifiers.</li>
  * </ul>
  * 
  * @author Jeen Broekstra <jb@metaphacts.com>
@@ -62,7 +85,7 @@ public class FieldEndpoint {
     private static final Logger logger = LogManager.getLogger(FieldEndpoint.class);
 
     @Inject
-    private FieldDefinitionManager fieldDefinitionManager;
+    private FieldDefinitionGeneratorChain generators;
 
     @POST()
     @Path("definitions")
@@ -81,12 +104,17 @@ public class FieldEndpoint {
     }
 
     private Response handleFieldDefinitionsRequest(List<IRI> fields) {
-        final Map<IRI, FieldDefinition> definitions = fields.isEmpty()
-                ? fieldDefinitionManager.queryAllFieldDefinitions()
-                : fieldDefinitionManager.queryFieldDefinitions(fields);
+        Map<IRI, FieldDefinition> result = generators.handleAll(fields);
 
-        List<Map<String, Object>> json = definitions.values().stream()
-                .map(field -> fieldDefinitionManager.jsonFromField(field)).collect(Collectors.toList());
+        Stream<FieldDefinition> fieldDefStream;
+        if (fields.isEmpty()) {
+            fieldDefStream = result.values().stream();
+        } else {
+            fieldDefStream = fields.stream().map(result::get).filter(Objects::nonNull);
+        }
+        List<Map<String, Object>> json = fieldDefStream
+                .map(FieldDefinition::toJson)
+                .collect(Collectors.toList());
         return Response.ok(json).build();
     }
 

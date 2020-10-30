@@ -1,0 +1,614 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Entity Lookup</h1>
+    <p>
+      Entity Lookup is a commonly-used functionality provided by the platform's central <i>Lookup Service</i>.
+    </p>
+
+    <p>The <i>Lookup Service</i> covers multiple use cases:</p>
+    <ul>
+      <li>looking up entities from the knowledge graph, e.g. to create links between resources</li>
+      <li>finding the canonical identifier for an entity</li>
+      <li>fetching additional data for a resource identified by a set of properties such as its label or description.
+      </li>
+    </ul>
+    </p>
+
+    <p>
+      The <i>Lookup Service</i> can be used for search based on keywords (including wildcards) or to perform a lookup
+      based on an exact term or label.
+    </p>
+
+    <p>
+      The service returns a set of lookup candidates with identifier, matching score, label, type(s) and description
+      which can be used e.g. for disambiguation.
+    </p>
+
+    <h2>Architecture</h2>
+
+    <div style='position: relative'>
+      <img src='/images/help/lookupservice-architecture.png' />
+      <div style='
+        position: absolute;
+        top: 45px;
+        left: 65px;
+        width: 200px;
+        height: 222px;
+        background-color: white;
+        pointer-events: none;
+      '></div>
+    </div>
+
+    <p>
+      The <i>Lookup Service</i> provides a keyword search abstraction which can be used from multiple entry points.
+      Multiple implementations of this abstraction provide deep integration with the respective search technologies of
+      supported databases.
+    </p>
+
+    <p>
+      A <i>Lookup Service</i> instance is always configured as a companion service for a databases or repository.
+      Its configuration is stored together with the repository configuration in a Turtle (<code>*.ttl</code>) file. The
+      <i>Lookup Service</i>
+      instance is named after the database it is configured with, e.g. <code>default</code> for the main RDF database.
+    </p>
+
+    <p>
+      Multiple instances of the <i>Lookup Service</i> can be configured to cater for specialized search needs. There is always one default instance, typically associated with the default database, which is used for all lookup requests unless defined otherwise.
+    </p>
+
+    <p>
+      Lookup requests can be performed using different entry points:
+    </p>
+    <ul>
+      <li><b>Reconciliation API</b>: can be used from external applications, e.g. to perform keyword searches or entity
+        lookups in the knowledge graph</li>
+      <li><b>Data Client</b>: internal API for some components</li>
+    </ul>
+
+    <h3>Entry points</h3>
+
+
+    <h4>Reconciliation API</h4>
+    <p>The Lookup Service is exposed to the outside world via the <a
+        href="https://reconciliation-api.github.io/specs/latest/" target="_BLANK">W3C / OpenRefine Reconciliation
+        API</a> which allows integration into data integration scenarios for entity reconciliation, disambiguation and
+      lookup.</p>
+
+    <p>See <semantic-link title="Reconciliation API" uri='[[resolvePrefix "Help:ReconciliationApi"]]'>Reconciliation API
+      </semantic-link> for details.</p>
+
+    <h4>Internal API (Data Client)</h4>
+
+    <p>Lookup service can be used via the Data Client interface from a set of UI components.</p>
+
+    <p>The Data Client is available in the following components:</p>
+
+    <ul>
+      <li><code>semantic-form-autocomplete-input</code> (in semantic-form) (<semantic-link title="Semantic Form"
+          uri='[[resolvePrefix "Help:SemanticForm"]]'>Semantic Form</semantic-link>)</li>
+      <li><code>semantic-simple-search</code> (<semantic-link title="Semantic SimpleSearch"
+          uri='[[resolvePrefix "Help:SemanticSimpleSearch"]]'>Semantic SimpleSearch</semantic-link>)</li>
+      <li><code>resource-selector</code> (structured search) (<semantic-link title="Semantic Search"
+          uri='[[resolvePrefix "Help:SemanticSearch"]]'>Semantic Search</semantic-link>)</li>
+    </ul>
+
+    <p>See <semantic-link title="Data Client" uri='[[resolvePrefix "Help:DataClient"]]'>Data Client</semantic-link> for
+      details.</p>
+
+
+    <h2>Lookup Service</h2>
+
+    <h3>Configuration</h3>
+    <p>
+      The <code>LookupServiceManager</code> maintains a set of <code>LookupService</code> impementations which are
+      configured together with a repository, i.e. each <code>LookupService</code> is typically configured as a companion
+      service to a repository.
+      The repository configuration might contain additional configuration parameters specifically for the corresponding
+      lookup service.
+    </p>
+
+    <p>
+      When scanning all configured repositories on start-up the <code>LookupServiceManager</code> reads the explicit
+      lookup service configuration provided using the predicate <code>lookup:configuration</code>.
+      If there is none it tries to identify the implicit configuration based on the repository type by querying the
+      corresponding repository factory for configuration information.
+    </p>
+
+    <p>Example configuration for a <code>RemoteLookupService</code>:</p>
+
+    <mp-code-block mode='text/turtle'>
+      <![CDATA[
+  @prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix rep: <http://www.openrdf.org/config/repository#> .
+  @prefix sail: <http://www.openrdf.org/config/sail#> .
+  @prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+  [] a rep:Repository;
+    lookup:configuration [
+        lookup:remoteQueryMethod "postDataForm";
+        lookup:remoteServiceUrl "https://wikidata.metaphacts.com/rest/reconciliation";
+        # lookup:remoteServiceUser "user";
+        # lookup:remoteServicePassword "password";
+        lookup:cacheConfig "expireAfterWrite=10m,maximumSize=1000";
+        lookup:type "metaphacts:remoteLookup"
+      ];
+    rep:repositoryID "remote-lookup";
+    rep:repositoryImpl [
+        rep:repositoryType "openrdf:SailRepository";
+        sr:sailImpl [
+            sail:sailType "openrdf:MemoryStore"
+          ]
+      ];
+    rdfs:label "Remote Lookup" .
+  ]]>
+    </mp-code-block>
+
+    <p>
+      When no explicit configuration exists for the default repository <code>DefaultLookupServiceManager</code> applies
+      some heuristics to determine whether it is a Blazegraph database and if so automatically configures
+      the endpoint as such. Alternatively, <code>RegexLookupService</code> is used as fallback. To disable creation of a
+      <code>LookupService</code> for the default repository the type <code>none</code> can be used:
+    </p>
+
+    <mp-code-block mode='text/turtle'>
+      <![CDATA[
+  @prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+  # ...
+
+  [] a rep:Repository;
+    lookup:configuration [
+        lookup:type "none"
+      ];
+    rep:repositoryID "default";
+    rep:repositoryImpl [
+  # ...
+    ];
+    rdfs:label "Default repository" .
+  ]]>
+    </mp-code-block>
+
+    <p>
+      By default all lookup requests are delegated to the <code>LookupService</code> for the <code>default</code>
+      repository. Alternatively, the default <code>LookupService</code> for all lookup requests can be explicitly
+      defined using config property <code>experimental.defaultLookupServiceName</code> in
+      <code>config/lookup.prop</code>.
+    </p>
+
+    <p>
+      Each implementation can be parameterized using the following properties:
+    </p>
+
+    <ul>
+      <li><code>lookup:datasetId</code> id of dataset for all candidates provided by this Lookup Service (optional,
+        default: unset)</li>
+      <li><code>lookup:datasetName</code> id of dataset for all candidates provided by this Lookup Service (optional,
+        default: unset)</li>
+      <li><code>lookup:cacheConfig</code> cache configuration for this service implementation. See
+        <a href="https://guava.dev/releases/snapshot-jre/api/docs/com/google/common/cache/CacheBuilderSpec.html">CacheBuilderSpec
+          documentation</a> for available options. Example:<br>
+        <code>expireAfterWrite=10m,maximumSize=1000</code>. Caching can be disabled using <code>maximumSize=0</code>
+      </li>
+    </ul>
+    <p>
+      Additional implementation-specific parameters may be provided for a service, see below for all available
+      properties.
+    </p>
+    <p>
+      Note that these configuration properties are only read when at least the <code>lookup:type</code> is provided in
+      the configuration.
+      For implicitly configured lookup services (e.g. based on an auto-detected database type) the type must be
+      specified when providing
+      additional options!
+    </p>
+
+
+    <h3>Implementations</h3>
+
+    <h4>RegEx</h4>
+
+    <p>
+      The <code>RegexLookupService</code> (type <code>metaphacts:regexLookup</code>) uses regular expressions to perform
+      search queries. This works in any database with SPARQL 1.1 support but may be slower than using specific search
+      indexes.
+    </p>
+
+    <p>This is the default implementation if no other lookup service is configured.</p>
+
+    <p>Example configuration:</p>
+
+    <mp-code-block mode='text/turtle'>
+      <![CDATA[
+  #
+  # platform configuration template for a public SPARQL repository
+  # (with the possibility of enabling quad mode)
+  #
+  @prefix rep: <http://www.openrdf.org/config/repository#> .
+  @prefix sail: <http://www.openrdf.org/config/sail#> .
+  @prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+  @prefix sparqlr: <http://www.openrdf.org/config/repository/sparql#> .
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
+  @prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+
+  [] a rep:Repository ;
+    rep:repositoryID "default" ; # Replace with your repository ID or leave default if this is the main repository
+    rdfs:label "SPARQL repository" ; # Replace with a meaningful description for this repository
+    rep:repositoryImpl [
+        rep:repositoryType "metaphactory:SPARQLRepository" ;
+        # sparqlr:update-endpoint <http://example.org/update> ; # (Optional) Uncomment and replace with the update endpoint (only if different from the query endpoint)
+        sparqlr:query-endpoint <http://example.org/query> # Replace with the URL of the SPARQL endpoint to submit queries to
+    ];
+    lookup:configuration [
+      lookup:type "metaphacts:regexLookup";
+    ].
+  ]]>
+    </mp-code-block>
+
+    <h4>Blazegraph Full-text Search</h4>
+
+    <p>The <code>BlazegraphFtsLookupService</code> (type <code>metaphacts:blazegraphLookup</code>) uses the Blazegraph
+      <a href="https://github.com/blazegraph/database/wiki/FullTextSearch">Full-Text Search API</a>.</p>
+
+    <p>Note that the platform attempts to detect the underlying database automatically. Thus in most cases it is not
+      required to explicitly specify the <code>lookup:type</code> for Blazegraph.</p>
+
+    <p>Example configuration:</p>
+
+    <mp-code-block mode='text/turtle'>
+      <![CDATA[
+  #
+  # platform configuration template for a public SPARQL repository
+  # (with the possibility of enabling quad mode)
+  #
+  @prefix rep: <http://www.openrdf.org/config/repository#> .
+  @prefix sail: <http://www.openrdf.org/config/sail#> .
+  @prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+  @prefix sparqlr: <http://www.openrdf.org/config/repository/sparql#> .
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
+  @prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+
+  [] a rep:Repository ;
+    rep:repositoryID "default" ; # Replace with your repository ID or leave default if this is the main repository
+    rdfs:label "SPARQL repository" ; # Replace with a meaningful description for this repository
+    rep:repositoryImpl [
+        rep:repositoryType "metaphactory:SPARQLRepository" ;
+        # sparqlr:update-endpoint <http://example.org/update> ; # (Optional) Uncomment and replace with the update endpoint (only if different from the query endpoint)
+        sparqlr:query-endpoint <http://example.org/query> # Replace with the URL of the SPARQL endpoint to submit queries to
+    ];
+    lookup:configuration [
+      lookup:type "metaphacts:blazegraphLookup";
+    ].
+  ]]>
+    </mp-code-block>
+
+    <h4>RemoteLookupService</h4>
+
+    <p>
+      The <code>RemoteLookupService</code> (type <code>metaphacts:remoteLookup</code>) connects to systems implementing
+      the <a href="https://reconciliation-api.github.io/specs/latest/" target="_BLANK">W3C / OpenRefine Reconciliation
+        API</a>.
+      A list of such systems is maintained e.g. in the <a href="https://reconciliation-api.github.io/testbench/"
+        target="_BLANK">Reconciliation Service Test Bench</a>. The metaphacts platform also implements such an endpoint
+      so this can be used to connect to upstream services and create a chain of delegated systems for reference data
+      lookup.
+    </p>
+
+    <p>Note: using the <code>FederatedLookupService</code> (see below) it is possible to combine both local and remote
+      services.</p>
+
+    <p>Example configuration:</p>
+
+    <mp-code-block mode='text/turtle'>
+      <![CDATA[
+  @prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix rep: <http://www.openrdf.org/config/repository#> .
+  @prefix sail: <http://www.openrdf.org/config/sail#> .
+  @prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+  [] a rep:Repository;
+    lookup:configuration [
+        lookup:remoteQueryMethod "postDataForm";
+        lookup:remoteServiceUrl "https://wikidata.metaphacts.com/rest/reconciliation";
+        # lookup:remoteServiceUser "user";
+        # lookup:remoteServicePassword "password";
+        lookup:type "metaphacts:remoteLookup"
+      ];
+    rep:repositoryID "remote-lookup";
+    rep:repositoryImpl [
+        rep:repositoryType "openrdf:SailRepository";
+        sr:sailImpl [
+            sail:sailType "openrdf:MemoryStore"
+          ]
+      ];
+    rdfs:label "Remote Lookup" .
+  ]]>
+    </mp-code-block>
+
+    <h4>FederatedLookupService</h4>
+
+    <p>The <code>FederatedLookupService</code> (type <code>metaphacts:federatedLookup</code>) delegates all lookup
+      requests to its members. Members are either configured explicitly as a named set of Lookup Services or comprise of
+      all locally configured Lookup Services known to the <code>LookupServiceManager</code>.</p>
+
+    <p>Configuration example:</p>
+
+    <mp-code-block mode='text/turtle'>
+      <![CDATA[
+  @prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix rep: <http://www.openrdf.org/config/repository#> .
+  @prefix sail: <http://www.openrdf.org/config/sail#> .
+  @prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+  [] a rep:Repository;
+    lookup:configuration [
+        # if no members are specified all lookup services are used
+        #lookup:serviceMember "default", "remote-lookup";
+        lookup:type "metaphacts:federatedLookup"
+      ];
+    rep:repositoryID "federated-lookup";
+    rep:repositoryImpl [
+        rep:repositoryType "openrdf:SailRepository";
+        sr:sailImpl [
+            sail:sailType "openrdf:MemoryStore"
+          ]
+      ];
+    rdfs:label "Federated Lookup" .
+  ]]>
+    </mp-code-block>
+
+
+    <h4>Generic SPARQL</h4>
+
+    <p>
+      The <code>GenericSparqlLookupService</code> (type <code>metaphacts:sparqlLookup</code>) implements lookup through
+      generic SPARQL queries and can be configured by providing snippets or patterns for SPARQL queries.
+      This allows defining any SPARQL-based search query, e.g. making use of database specific implementations.
+    </p>
+
+    <p>An example using a custom search query pattern to do keyword matching:</p>
+
+    <mp-code-block mode='text/turtle'>
+      <![CDATA[
+  @prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix rep: <http://www.openrdf.org/config/repository#> .
+  @prefix sail: <http://www.openrdf.org/config/sail#> .
+  @prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+  [] a rep:Repository;
+    lookup:configuration [
+        lookup:type "metaphacts:sparqlLookup";
+        lookup:searchBlockTemplate '''
+                    ?candidate a ?type.
+                    ?candidate ?keyProp ?key.
+                    FILTER ISLITERAL(?key)
+                    BIND(IF(
+                            STRLEN(?key) > STRLEN(?__token__),
+                            STRLEN(?__token__) - STRLEN(?key),
+                            IF(
+                              STRLEN(?key) < STRLEN(?__token__),
+                              STRLEN(?key) - STRLEN(?__token__),
+                              "0"
+                            )
+                         )  as ?score_private)
+                    FILTER(CONTAINS(LCASE(?key), LCASE(?__token__))) .
+        ''';
+      ];
+    rep:repositoryID "default";
+    ...
+  ]]>
+    </mp-code-block>
+    <p>
+      The implementation can be parameterized using the following properties:
+    </p>
+
+    <ul>
+      <li><code>lookup:entityTypesQuery</code> SPARQL query to retrieve a set of available Entity-types.</li>
+      <li><code>lookup:datasetQuery</code> SPARQL query to retrieve a candidate's dataset.</li>
+      <li><code>lookup:queryTemplate</code> query template with insertion patterns which are filled by additional
+        fragments.</li>
+      <li><code>lookup:searchBlockTemplate</code> template for search block</li>
+      <li><code>lookup:typeBlockTemplate</code> template for type constraints</li>
+      <li><code>lookup:objectPropertyBlockTemplate</code> template for object property constraints</li>
+      <li><code>lookup:dataPropertyBlockTemplate</code> template for datatype property constraints</li>
+    </ul>
+
+    <h5>Generating the search query</h5>
+
+    <b><code>lookup:queryTemplate</code></b>
+    <p>Defines a layout of the result query. It's possible to use following placeholders in this template:</p>
+    <ul>
+      <li><code>{{static_uuid}}</code></li>
+      <li><code>{{search_block}}</code>, will be replaced with vsaliue of property
+        <code>lookup:searchBlockTemplate</code></li>
+      <li><code>{{properties_block}}</code></li>
+      <li><code>{{limit_block}}</code></li>
+      <li><code>{{type_block}}</code></li>
+    </ul>
+    <p>It is expected to have following variables as a result: <code>?candidate</code>, <code>?types</code>,
+      <code>?score</code>.</p>
+    <p>In the default configuration it's expected to have following variables as input from inner blocks:
+      <code>?type</code> and <code>?score_private</code> (from <code>{{search_block}}</code>).
+    </p>
+
+    <p>Example:</p>
+    <mp-code-block mode='application/sparql-query'>
+      <![CDATA[
+  SELECT
+      ?candidate
+      (GROUP_CONCAT(DISTINCT ?type ; separator=",") as ?types)
+      (MAX(?score_private) as ?score)
+  WHERE {
+      {{type_block}}
+      {{search_block}}
+      {{properties_block}}
+  } GROUP BY ?candidate ORDER BY DESC(?score) {{limit_block}}
+  ]]>
+    </mp-code-block>
+
+    <b><code>lookup:searchBlockTemplate</code></b>
+    <p>Defines custom template for <code>{{search_block}}</code> part in the queryTemplate. This part in general
+      performs filtration by token,
+      but also returns <code>?score_private</code> and <code>?type</code> variables (In the default implementation).
+    </p>
+    <p>Available placeholders: <code>{{static_uuid}}</code>.</p>
+    <p>Available bindings: <code>?__token__</code>.</p>
+    <p>In the default configuration it is expected to have following variables as a result: <code>?type</code>,
+      <code>?score_private</code>.</p>
+
+    <p>Example:</p>
+    <mp-code-block mode='application/sparql-query'>
+      <![CDATA[
+  ?candidate a ?type.
+  ?candidate ?keyProp ?key.
+  FILTER ISLITERAL(?key)
+  BIND(IF(
+      STRLEN(?key) > STRLEN(?__token__),
+      STRLEN(?__token__) - STRLEN(?key),
+      IF(
+          STRLEN(?key) < STRLEN(?__token__),
+          STRLEN(?key) - STRLEN(?__token__),
+          "0"
+      )
+  )  as ?score_private)
+  FILTER REGEX(LCASE(?key), LCASE(?__token__), "i").
+  ]]>
+    </mp-code-block>
+
+    <b><code>lookup:typeBlockTemplate</code></b>
+    <p>Defines custom template for <code>{{type_block}}</code> part in the queryTemplate.
+      Performs filtering by selected type. Depending on lookup request can be skipped by builder.</p>
+    <p>Available placeholders: <code>{{static_uuid}}</code>. Available bindings: <code>?__type__</code>.</p>
+
+    <p>Example:</p>
+    <mp-code-block mode='application/sparql-query'>
+      <![CDATA[
+  ?candidate a ?__type__.
+  ]]>
+    </mp-code-block>
+
+    <b><code>lookup:objectPropertyBlockTemplate</code></b>
+    <p>Defines custom template for all object property blocks from the <code>{{properties_block}}</code> part in the
+      queryTemplate.</p>
+    <p>Available placeholders: <code>{{static_uuid}}</code>.</p>
+    <p>Available bindings: <code>?__property__</code>, <code>?__object__</code>.</p>
+
+    <p>Example:</p>
+    <mp-code-block mode='application/sparql-query'>
+      <![CDATA[
+  ?candidate ?__property__ ?__object__.
+  ]]>
+    </mp-code-block>
+
+    <b><code>lookup:dataPropertyBlockTemplate</code></b>
+    <p>Defines custom template for all data property blocks from the <code>{{properties_block}}</code> part in
+      the queryTemplate.Available placeholders: <code>{{static_uuid}}</code>.</p>
+    <p>Available bindings: <code>?__property__</code>, <code>?__literal__</code>.</p>
+
+    <p>Example:</p>
+    <mp-code-block mode='application/sparql-query'>
+      <![CDATA[
+  ?candidate ?__property__ ?value{{static_uuid}}.
+  FILTER ISLITERAL(?value{{static_uuid}})
+  FILTER (STR(?value{{static_uuid}}) = STR(?__literal__))
+  ]]>
+    </mp-code-block>
+
+
+    [[> Help:LookupServiceExtensions]]
+
+    <h3>OpenRefine integration</h3>
+
+    <p>We implement the OpenRefine API, specifically the main reconciliation service and the
+      <code>PreviewService</code>. We also implement its successor, the Reconciliation API, an API defined by a W3C
+      Community Group, which is mostly compatible with the OpenRefine API and defines its future.</p>
+
+    <h4>PreviewService</h4>
+
+    <p>
+      The PreviewService (as per <a href="https://reconciliation-api.github.io/specs/latest/">W3C / OpenRefine
+        Reconciliation API</a>) is impemented in the
+      ReconciliationEndpoint and returns a HTML snippet containing an entity’s label and description.
+    </p>
+    <p>
+      It can be overridden using page layout template config/page-layout/entity-description.hbs and the provided
+      parameters resourceLabel and resourceDescription.
+      The service fetches the description from a set of graph patterns or predicates, e.g. <code>rdfs:comment</code> or
+      <code>schema:description</code>.
+      The predicates and graph patterns can be configured using config parameter <code>preferredDescriptions</code> in
+      <code>config/ui.prop</code>.
+    </p>
+    <p>
+      Note: the PreviewService currently only provides information from local databases, i.e. description and label
+      might not be available when connecting
+      to remote lookup services!
+    </p>
+
+    <h4>OpenRefine mini tutorial</h4>
+
+    <h4>How to make the ReconciliationEndpoint accessible to OpenRefine</h4>
+    <ul>
+      <li>allow anonymous users</li>
+      <li>assign lookup role to anonymous user. Example in <code>shiro.ini</code>:<br>
+        <code>
+        anonymous=$shiro1$SHA-256$500000$LRgzF+Iayekl6VfDVkVWIA==$/s38LlLsNeaGzsD0Z3VTvfurv68HpReieOaNlrcKaPI=,tableau-anonymous,guest,lookup
+      </code>
+      </li>
+      <li>
+        Alternatively, create a lookup user for access from other metaphactory/platform instances. Example in
+        <code>shiro.ini</code>:<br>
+        <code>
+        lookup=$shiro1$SHA-256$500000$mnl/OAfz2JLvFhSGuJ1z3g==$hOS9h4jLq87vE0kpUMGjJaRVSLmqZR94yB2+10yagj8=,lookup
+      </code>
+      </li>
+    </ul>
+
+
+    <h4>How to use OpenRefine</h4>
+
+    <ul>
+      <li>Launch OpenRefine</li>
+      <li>Load a project, e.g. a CSV file</li>
+      <li>select a column and in its context menu Reconcile → Start reconciling…
+        <div class="documentation__intro__demo">
+          <img src="/images/help/openrefine-step-1.png" height=400px />
+        </div>
+      </li>
+      <li>
+        Add or select the desired metaphactory / platform service. The URL is <a
+          href="http://localhost:10214/rest/reconciliation">http://localhost:10214/rest/reconciliation</a> (replace
+        <code>localhost</code> and port with the URL of the target system)
+      </li>
+      <li>
+        Optionally set some parameters like the desired target type of the entities to reconcile.
+        All properties provided in this step are used to limit the search results.
+        <div class="documentation__intro__demo">
+          <img src="/images/help/openrefine-step-2.png" height=400px />
+        </div>
+      </li>
+      <li>
+        Inspect automatically chosen results...
+        <div class="documentation__intro__demo">
+          <img src="/images/help/openrefine-step-3.png" height=200px />
+        </div>
+      </li>
+      <li>
+        ... and/or select other candidates
+        <div class="documentation__intro__demo">
+          <img src="/images/help/openrefine-step-4.png" height=200px />
+        </div>
+      </li>
+    </ul>
+
+  </div>
+</div>

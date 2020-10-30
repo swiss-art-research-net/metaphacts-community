@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.services.storage.git;
 
 import java.io.IOException;
@@ -81,6 +102,40 @@ import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.services.storage.api.StorageLocation;
 import com.metaphacts.services.storage.api.StoragePath;
 
+/**
+ * An {@link ObjectStorage} implementation that makes use of a local GIT
+ * repository, potentially synching changes to a configured remote.
+ * 
+ * <p>
+ * The local GIT repository must exist and the configured branch must be
+ * initialized with a commit. Configuration of a remote is optional.
+ * </p>
+ * 
+ * <p>
+ * The general approach is that commits are always synchronously done to the
+ * local GIT repository. All remote push operations are added to a queue and are
+ * executed as background operations.
+ * </p>
+ * 
+ * <p>
+ * The assumption of the {@link GitStorage} is that it is typically the only
+ * client interacting with the remote GIT repository.
+ * </p>
+ * 
+ * <p>
+ * If a remote GIT push fails (e.g. due to a non-fast-forward push), the local
+ * commit will always be kept, and a warning is written to the log. It is left
+ * to the system administrator to bring the local and remote GIT repositories
+ * back into synch. Note that temporary outages (e.g. the remote is not
+ * reachable) are recovered automatically with the next push operation, i.e. in
+ * that case a number of locally available commits are pushed to the remote as
+ * fast-forward operation.
+ * </p>
+ * 
+ * @author Alexey Morozov
+ * @author Andreas Schwarte
+ *
+ */
 public class GitStorage implements ObjectStorage {
     private static final Logger logger = LogManager.getLogger(GitStorage.class);
 
@@ -419,6 +474,9 @@ public class GitStorage implements ObjectStorage {
 
     @Nullable
     private static RevCommit parseCommitOrNull(RevWalk walk, ObjectId commitId) throws IOException {
+        if (commitId == null) {
+            return null;
+        }
         RevCommit commit = walk.lookupCommit(commitId);
         if (commit == null) {
             return null;
@@ -568,20 +626,19 @@ public class GitStorage implements ObjectStorage {
                 logger.debug("Successfully pushed changes to remote as commit " + committedChanges.getId().getName());
                 return;
             case REJECTED_NONFASTFORWARD:
-                logger.debug("Remote repository has other changes; trying to pull them and commit again");
-                try {
-                    lock.writeLock().lock();
-                    performRollback(headCommitId);
-                    pullChangesInFastForwardMode();
-                } finally {
-                    lock.writeLock().unlock();
-                }
-                break;
+                logger.warn(
+                        "Fast forward merge to remote not possible: remote has other changes. Commit {} will not be pushed to remote Git repository. "
+                                + "Make sure to synch the repository manually from the commandline.",
+                        committedChanges.getId().getName());
+                return;
+            case UP_TO_DATE:
+                logger.debug("Remote is up to date and contains commit {}. All local changes are pushed",
+                        committedChanges.getId().getName());
+                return;
+
             default:
-                logger.debug("Failed to push due to unexpected reason: {}; resetting to initial state",
-                        pushStatus.name());
-                performRollback(headCommitId);
-                throw new StorageException("Unexpected update status from pushing changes: " + pushStatus.name());
+                logger.warn("Failed to push to remote Git repository due to unexpected reason: {}, push status: {}",
+                        committedChanges.getId().getName(), pushStatus);
             }
 
             attempts++;
@@ -614,6 +671,7 @@ public class GitStorage implements ObjectStorage {
         }
     }
 
+    @SuppressWarnings("unused")
     private void pullChangesInFastForwardMode() throws GitAPIException {
         try (Git git = new Git(repository)) {
             git.pull()

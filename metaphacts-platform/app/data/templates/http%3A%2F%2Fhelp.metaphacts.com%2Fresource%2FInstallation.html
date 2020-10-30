@@ -1,0 +1,75 @@
+<ol class="page-breadcrumb">
+  <li>
+    <mp-link title="Home" url="/">Home</mp-link>
+  </li>
+  <li>
+    <semantic-link title="Help" iri='[[resolvePrefix "Help:Start"]]'>Help</semantic-link>
+  </li>
+  <li class="active">Installation and Deployment</li>
+</ol>
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Installation and Deployment</h1>
+
+
+    <h2>Docker Deployment</h2>
+    <p>Please verify the following prerequisites before proceeding</p>
+    <ul>
+      <li>Docker Version >= 17.x - Follow the official documentation and test by running <code>docker --version</code></li>
+      <li>Docker-Compose Version >= 1.14 - Test by running <code>docker-compose --version</code></li>
+    </ul>
+    <p>
+      Instead of deploying docker containers manually, we strongly recommend to use docker-compose. With docker-compose you can easily manage one or several deployments on your docker host, without copy-pasting docker commands manually.
+    </p>
+
+    <h3>Deployment via docker-compose (RECOMMENDED)</h3>
+    <p>
+      You will find various examples and templates in our public <a href="https://github.com/metaphacts/metaphactory-docker-compose" target="_blank">docker-compose GIT repository</a>, including pre-defined service stacks for connecting to graph databases like Blazegraph, Amazon Neptune or Stardog.
+    </p>
+    Please read the <b><a href="https://github.com/metaphacts/metaphactory-docker-compose/blob/master/README.md" target="_blank">README.md</a></b> in our GIT repository for the various deployment options. The simplest setting is to deploy the platform with Blazegraph; on a local machine, without additional Nginx proxy (i.e. without additional security and ingress routing, which is <b>not</b> recommended in production).
+
+    <h3>Deployment via docker (manually)</h3>
+    <ol>
+      <li>Login into docker hub with the account that has been activated for the private repository: <code>docker login</code></li>
+      <li>Pull latest platform (and Blazegraph image)</li>
+      <ul>
+        <li><code>docker pull metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.18-jre8-alpine-0b8d0de</code></li>
+        <li><code>docker pull metaphacts/metaphacts-platform:3.4.0</code></li>
+      </ul>
+      <li>Create network for container interconnect</li>
+      <ul>
+        <li><code>docker network create metaphacts_platform_network</code></li>
+      </ul>
+      <li>(Optional) Prepare and run Blazegraph container</li>
+      <ul>
+        <li>Run Blazegraph container
+          <code>docker run --name blazegraph -d --restart=always --network=metaphacts_platform_network --env JAVA_OPTS="" -v /blazegraph-data metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.18-jre8-alpine-0b8d0de</code>
+        </li>
+      </ul>
+      <li>Prepare and Run Platform container</li>
+      <ul>
+        <li>Run platform container: <code>docker run --name metaphacts-platform -d --restart=always -p 10214:8080 -v /runtime-data -v /apps --env JAVA_OPTS="" --network=metaphacts_platform_network --env PLATFORM_OPTS="-Dconfig.environment.sparqlEndpoint=http://blazegraph:8080/blazegraph/sparql -Dlog4j.configurationFile=file:///var/lib/jetty/webapps/etc/log4j2.xml" metaphacts/metaphacts-platform:3.4.0</code>
+        </li>
+      </ul>
+      <li>Open <a href="http://127.0.0.1:10214/" target="_blank">http://127.0.0.1:10214/</a> in your browser. The default login is: <code>admin/admin</code></li>
+    </ol>
+    <h3 id="docker-volumes">Docker volume considerations</h3>
+    When using Docker volumes as storage for runtime data and apps a few best practices should be observed:
+    <ul>
+       <li>The Jetty web server does not run as <code>root</code> and also does not change file ownership in volumes so the (existing) file permissions matter!</li>
+       <li>The container by default runs as user <code>jetty</code> with uid <code>100</code> and group <code>root</code> with gid <code>0</code>. 
+       In some environments such as OpenShift the user might be completely different and defined by the runtime environment, 
+       but as long as it is a member of group <code>root</code> (gid <code>0</code>) this still works.</li>
+       <li>Any existing volume or local mount will need to have read and/or write permissions for either that user or group</li>
+       <li>There might not be a local user with the same uid or gid or some user with different names, but what matters are the numeric ids, not the names, as those are saved in the file permissions</li>
+       <li>So you might simply run <code>chown -R 100:0 my/local/path</code> or <code>chgrp -R 0 my/local/path</code> before mounting that into the docker container</li>
+       <li>Note that this might mean that you cannot access those files with your local user anymore. This is not a <i>platform</i> issue, but how generally Linux (or Unix) file permissions work, also in a Docker setup. This would be the same with NFS or similar shared file systems.</li>
+       <li>Creating a new container or docker-compose app should not lead to any problems as the volumes are initially empty or pre-defined from within the container</li>
+       <li>The container can also be run as any other user (e.g. in an OpenShift environment), hence the use of group <code>root</code> (which has no special permissions!)</li>
+     </ul>
+     See <a title="Docker Volumes" href="https://docs.docker.com/storage/volumes/">Docker Volumes</a> and <a title="Troubleshoot volume errors" href="https://docs.docker.com/storage/troubleshooting_volume_errors/">Troubleshoot volume errors</a> for documentation and hints.
+
+
+</div>
+

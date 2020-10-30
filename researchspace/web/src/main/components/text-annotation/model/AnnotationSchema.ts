@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 import * as moment from 'moment';
@@ -248,19 +247,16 @@ function makeComposite(
     value: Forms.FieldValue | ReadonlyArray<Forms.FieldValue>;
   }>
 ): Forms.CompositeValue {
-  const composite: Forms.CompositeValue = {
-    type: Forms.CompositeValue.type,
+  const composite = Forms.CompositeValue.set(Forms.CompositeValue.empty, {
     definitions: Immutable.Map(
       fields.map(p => [p.def.id, p.def] as [string, Forms.FieldDefinition])
     ),
-    subject: Rdf.iri(''),
     fields: Immutable.Map(fields.map(p => {
-      const values = Immutable.List(Array.isArray(p.value) ? p.value : [p.value]);
+      const values = Array.isArray(p.value) ? p.value : [p.value];
       const state: Forms.FieldState = {values, errors: Forms.FieldError.noErrors};
       return [p.def.id, state] as [string, Forms.FieldState];
     })),
-    errors: Forms.FieldError.noErrors,
-  };
+  });
   return Forms.CompositeValue.set(composite, {
     subject: Forms.generateSubjectByTemplate(subjectTemplate, ownerIri, composite),
   });
@@ -274,7 +270,7 @@ export function addField(
   return Forms.CompositeValue.set(base, {
     definitions: base.definitions.set(def.id, def),
     fields: base.fields.set(def.id, {
-      values: Immutable.List(values),
+      values,
       errors: Forms.FieldError.noErrors,
     }),
   });
@@ -314,7 +310,7 @@ export function fetchAnnotations(
     .flatMap(({results}) => {
       const iris: Rdf.Iri[] = [];
       for (const {annotation} of results.bindings) {
-        if (annotation && annotation.isIri()) {
+        if (annotation && Rdf.isIri(annotation)) {
           iris.push(annotation);
         }
       }

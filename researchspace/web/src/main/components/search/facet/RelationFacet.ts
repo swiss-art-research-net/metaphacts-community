@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Denis Ostapenko
@@ -41,7 +40,7 @@ import * as F from 'platform/components/semantic/search/data/facet/Model';
 import * as Model from 'platform/components/semantic/search/data/search/Model';
 
 import FacetValue from './FacetValue';
-import { FacetSlider, SliderRange } from './slider/FacetSlider';
+import { FacetSlider, FacetSliderProps } from './slider/FacetSlider';
 import {Literal, NumericRange, DateRange} from 'platform/components/semantic/search/data/search/Model';
 import { SemanticFacetConfig } from 'platform/components/semantic/search/config/SearchConfig';
 import {
@@ -69,7 +68,7 @@ interface RelationFacetState {
  * Component which displays all facet values specific to the given relation.
  */
 export class RelationFacetComponent extends PureComponent<RelationFacetProps, RelationFacetState> {
-  constructor(props, context) {
+  constructor(props: RelationFacetProps, context: any) {
     super(props, context);
     this.state = {};
   }
@@ -201,12 +200,12 @@ export class RelationFacetComponent extends PureComponent<RelationFacetProps, Re
     });
     return FacetSlider({
       kind: kind,
-      data: facetValues,
-      value: value,
+      data: facetValues as NumericRange[] | DateRange[],
+      value: value as Data.Maybe<NumericRange> | Data.Maybe<DateRange>,
       actions: {
         toggleFacetValue: this.props.actions.selectFacetValue(this.props.relation)
       }
-    });
+    } as FacetSliderProps);
   }
 
   private onRelationClick() {

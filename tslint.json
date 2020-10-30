@@ -3,6 +3,7 @@
     "class-name": true,
     "comment-format": [true, "check-space"],
     "curly": true,
+    "deprecation": true,
     "eofline": true,
     "forin": true,
     "indent": [true, "spaces"],

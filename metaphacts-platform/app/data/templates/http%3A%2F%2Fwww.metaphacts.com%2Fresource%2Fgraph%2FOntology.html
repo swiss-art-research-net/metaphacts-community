@@ -1,0 +1,38 @@
+[[> "http://www.metaphacts.com/resource/OntodiaUserTemplates" ]]
+[[> "http://www.metaphacts.com/resource/assets/OntodiaPresetUtils"]]
+
+[[> "http://www.metaphacts.com/resource/assets/OntodiaOntologyViewPreset"]]
+
+<style>
+  #ontology-graph-ontodia {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+</style>
+[[#*inline "NewOntologyGraphParameters"]]
+query='construct {
+  ?class1 rdfs:subClassOf ?class2.
+  ?class <http://dummy> "literal to be ignored"
+} where {
+  GRAPH ?g {
+    <[[this]]> a owl:Ontology.
+    {?class1 rdfs:subClassOf ?class2.}
+    UNION
+    {
+      VALUES ?classType {owl:Class rdfs:class}
+      ?class a ?classType
+    }
+  }
+}'
+start-layout='owlHorizontalLayout'
+[[/inline]]
+
+<div class="page--fullheight">
+[[#> OntologyGraphSettings ontologyIri=(this)]]
+  <div id="ontology-graph-ontodia">
+    [[> OntologyGraphBody]]
+  </div>
+[[/OntologyGraphSettings]]
+</div>
+

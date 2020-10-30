@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,18 +37,20 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.querycatalog;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-import javax.annotation.Nullable;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-import com.metaphacts.security.Permissions;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.permission.WildcardPermission;
@@ -35,7 +59,7 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.query.BooleanQuery;
 import org.eclipse.rdf4j.query.GraphQuery;
 import org.eclipse.rdf4j.query.Operation;
@@ -68,6 +92,7 @@ import com.metaphacts.api.dto.querytemplate.UpdateQueryTemplate;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.api.sparql.SparqlUtil;
 import com.metaphacts.cache.QueryTemplateCache;
+import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 
 /**
@@ -108,6 +133,7 @@ public final class QueryCatalogRESTService {
     private final QueryTemplateCache queryTemplateCache;
     private final String id;
     private final RepositoryManager repositoryManager;
+    private final NamespaceRegistry namespaceRegistry;
     private final Map<String, String> standardPrefixes;
 
     protected static Value interpretInputParameter(
@@ -125,7 +151,7 @@ public final class QueryCatalogRESTService {
         if (arg.getValueType() == null) {
             return VF.createLiteral(val);
         } else if (arg.getValueType().equals(RDFS.RESOURCE) 
-                        || arg.getValueType().equals(XMLSchema.ANYURI)) {
+                || arg.getValueType().equals(XSD.ANYURI)) {
             return VF.createIRI(val);
         } else {
             return VF.createLiteral(val, arg.getValueType());
@@ -141,19 +167,21 @@ public final class QueryCatalogRESTService {
      * @param queryTemplateCache A wrapper over the LDP API
      *              retrieving {@link SelectQueryTemplate} objects.
      * @param repositoryManager reference to the system repository manager.
+     * @param namespaceRegistry the global {@link NamespaceRegistry}
      */
     public QueryCatalogRESTService(
         String id,
         PropertiesConfiguration configuration,
         QueryTemplateCache queryTemplateCache,
         RepositoryManager repositoryManager,
-        Map<String, String> standardPrefixes
+        NamespaceRegistry namespaceRegistry
     ) {
         this.id = id;
         this.configuration = configuration;
         this.queryTemplateCache = queryTemplateCache;
         this.repositoryManager = repositoryManager;
-        this.standardPrefixes = standardPrefixes;
+        this.namespaceRegistry = namespaceRegistry;
+        this.standardPrefixes = namespaceRegistry.getPrefixMap();
     }
 
     public String getId() {
@@ -326,6 +354,7 @@ public final class QueryCatalogRESTService {
         TupleQuery tq = SparqlOperationBuilder.
                 <TupleQuery>create(query.getQueryString(), TupleQuery.class)
                 .setNamespaces(this.standardPrefixes)
+                .resolveUser(namespaceRegistry.getUserIRI())
                 .build(connection);
         bindArguments(tq, queryTemplate, arguments);
         TupleQueryResultHandler handler 
@@ -345,7 +374,9 @@ public final class QueryCatalogRESTService {
         ConstructQuery query = queryTemplate.getQuery();
         GraphQuery gq = SparqlOperationBuilder
                 .<GraphQuery>create(query.getQueryString(), GraphQuery.class)
-                .setNamespaces(this.standardPrefixes).build(connection);
+                .setNamespaces(this.standardPrefixes)
+                .resolveUser(namespaceRegistry.getUserIRI())
+                .build(connection);
         bindArguments(gq, queryTemplate, arguments);
         RDFWriter handler = SparqlUtil.getRDFWriterForAcceptedMediaTypes(
                                             output, 
@@ -364,6 +395,7 @@ public final class QueryCatalogRESTService {
         BooleanQuery bq = SparqlOperationBuilder
                 .<BooleanQuery>create(query.getQueryString(), BooleanQuery.class)
                 .setNamespaces(this.standardPrefixes)
+                .resolveUser(namespaceRegistry.getUserIRI())
                 .build(connection);
         bindArguments(bq, queryTemplate, arguments);
         BooleanQueryResultWriter handler = SparqlUtil.getBooleanQueryResultWriterForAcceptedMediaTypes(
@@ -383,6 +415,7 @@ public final class QueryCatalogRESTService {
         Update uq = SparqlOperationBuilder.
                 <Update>create(query.getQueryString(), Update.class)
                 .setNamespaces(this.standardPrefixes)
+                .resolveUser(namespaceRegistry.getUserIRI())
                 .build(connection);
         bindArguments(uq, queryTemplate, arguments);
         uq.execute();

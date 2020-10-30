@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.plugin;
 
 import static org.junit.Assert.assertEquals;
@@ -29,8 +50,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
-
-import ro.fortsoft.pf4j.PluginException;
+import org.pf4j.Plugin;
+import org.pf4j.PluginDescriptor;
+import org.pf4j.PluginDescriptorFinder;
+import org.pf4j.PluginRuntimeException;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -51,20 +74,20 @@ public class PlatformPluginDescriptorFinderTest extends AbstractIntegrationTest{
     public PlatformPluginManager manager;
     
     @Test
-    public void testExceptionNoPluginId() throws IOException, PluginException{
+    public void testExceptionNoPluginId() throws IOException {
         File pulginDirectory = tempFolderRule.newFolder();
         
         File pluginProperties = new File(pulginDirectory, "plugin.properties");
         pluginProperties.createNewFile();
         
-        PlatformPluginDescriptorFinder finder = new PlatformPluginDescriptorFinder();
-        exception.expect(PluginException.class);
-        exception.expectMessage("id cannot be empty");
+        PluginDescriptorFinder finder = manager.createPluginDescriptorFinder();
+        exception.expect(PluginRuntimeException.class);
+        exception.expectMessage("Field 'id' cannot be empty");
         manager.validatePluginDescriptor(finder.find(pulginDirectory.toPath()));
     }
 
     @Test
-    public void testExceptionNoPluginVersion() throws IOException, PluginException{
+    public void testExceptionNoPluginVersion() throws IOException {
         File pulginDirectory = tempFolderRule.newFolder();
         
         Collection<String> lines = Lists.newArrayList(
@@ -72,25 +95,25 @@ public class PlatformPluginDescriptorFinderTest extends AbstractIntegrationTest{
         );
         FileUtils.writeLines(new File(pulginDirectory, "plugin.properties"), lines);
         
-        PlatformPluginDescriptorFinder finder = new PlatformPluginDescriptorFinder();
-        exception.expect(PluginException.class);
-        exception.expectMessage("version cannot be empty");
+        PluginDescriptorFinder finder = manager.createPluginDescriptorFinder();
+        exception.expect(PluginRuntimeException.class);
+        exception.expectMessage("Field 'version' cannot be empty");
         manager.validatePluginDescriptor(finder.find(pulginDirectory.toPath()));
     }
     
     @Test
-    public void testDefaults() throws IOException, PluginException{
-        File pulginDirectory = tempFolderRule.newFolder();
+    public void testDefaults() throws IOException {
+        File pluginDirectory = tempFolderRule.newFolder();
         
         Collection<String> lines = Lists.newArrayList(
                 "plugin.id=testPlugin",
                 "plugin.version=1.0.0"
                 );
-        FileUtils.writeLines(new File(pulginDirectory, "plugin.properties"), lines);
-        PlatformPluginDescriptorFinder finder = new PlatformPluginDescriptorFinder();
-        PlatformPluginDescriptor descriptor = (PlatformPluginDescriptor) finder.find(pulginDirectory.toPath());
+        FileUtils.writeLines(new File(pluginDirectory, "plugin.properties"), lines);
+        PluginDescriptorFinder finder = manager.createPluginDescriptorFinder();
+        PluginDescriptor descriptor = (PluginDescriptor) finder.find(pluginDirectory.toPath());
         
-        // if not plugin is class is defined, default PlatformPlugin class should be returned
-        assertEquals(PlatformPlugin.class.getCanonicalName(), descriptor.getPluginClass());
+        // if not plugin is class is defined, default Plugin class should be returned
+        assertEquals(Plugin.class.getCanonicalName(), descriptor.getPluginClass());
     }
 }

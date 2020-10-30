@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Kefir from 'kefir';
 import * as Immutable from 'immutable';
@@ -25,7 +46,7 @@ import { Rdf } from 'platform/api/rdf';
 
 import { FieldDefinition } from '../FieldDefinition';
 import {
-  FieldValue, ErrorKind, LabeledValue, EmptyValue, CompositeValue, FieldError
+  FieldState, FieldValue, ErrorKind, LabeledValue, EmptyValue, CompositeValue, FieldError,
 } from '../FieldValues';
 import {
   MultipleValuesInput, MultipleValuesProps, MultipleValuesHandler, MultipleValuesHandlerProps,
@@ -72,10 +93,8 @@ export class CheckboxInput extends MultipleValuesInput<CheckboxInputProps, {}> {
   private createNewValues = (checked: boolean) => {
     const {updateValues, handler} = this.props;
     updateValues(({values, errors}) => {
-      const newValue: LabeledValue = {value: Rdf.literal(checked)};
-      let newValues = Immutable.List<FieldValue>();
-      newValues = newValues.push(FieldValue.fromLabeled(newValue));
-      const validated = handler.validate({values: newValues, errors: errors});
+      const newValue = FieldValue.fromLabeled({value: Rdf.literal(checked)});
+      const validated = handler.validate({values: [newValue], errors});
       return validated;
     });
   }
@@ -99,7 +118,7 @@ export class CheckboxInput extends MultipleValuesInput<CheckboxInputProps, {}> {
   }
 
   render() {
-    const { className, values } = this.props;
+    const {className, values} = this.props;
     const checkboxState = getCheckboxState(values);
     return (
       <div className={classnames(className, {[CHECKBOX_CLASS]: true})}>
@@ -121,42 +140,41 @@ class CheckboxHandler implements MultipleValuesHandler {
   }
 
   validate({values, errors}: ValuesWithErrors) {
-    const otherErrors = errors.filter(e => e.kind !== ErrorKind.Input).toList();
-    const checkboxErrors = this.appendCheckboxErrors(values, otherErrors);
+    const otherErrors = errors.filter(e => e.kind !== ErrorKind.Input);
+    const checkboxErrors = this.validateCheckboxValues(values);
     return {
       values: values,
-      errors: checkboxErrors,
+      errors: otherErrors.concat(checkboxErrors),
     };
   }
 
-  private appendCheckboxErrors = (
-    values: Immutable.List<FieldValue>, errors: Immutable.List<FieldError>
-  ): Immutable.List<FieldError> => {
-    errors = errors.filter(e => e.kind !== ErrorKind.Configuration).toList();
-    if (values.size > 1) {
-      errors = errors.push({
-        kind: ErrorKind.Configuration,
-        message: `Uncorrect data size = ${values.size}. Should be size = 1`,
+  private validateCheckboxValues(values: ReadonlyArray<FieldValue>): ReadonlyArray<FieldError> {
+    const errors: FieldError[] = [];
+    if (values.length > 1) {
+      errors.push({
+        kind: ErrorKind.Input,
+        message: `Incorrect values count = ${values.length}; should be equal to 1`,
       });
     }
-    if (this.definition.minOccurs > 1) {
-      errors = errors.push({
-        kind: ErrorKind.Configuration,
-        message: `Uncorrect cardinality (minOccurs = ${this.definition.minOccurs}) > 1.`,
+    const {minOccurs} = this.definition;
+    if (minOccurs > 1) {
+      errors.push({
+        kind: ErrorKind.Input,
+        message: `Incorrect cardinality (minOccurs = ${minOccurs}); should be equal to 0 or 1`,
       });
     }
-    const value = values.first();
+    const value = FieldState.getFirst(values);
     if (value && FieldValue.isComposite(value)) {
-      errors = errors.push({
-        kind: ErrorKind.Configuration,
-        message: `Uncorrect field value type = ${value.type}. Should be "atomic"`,
+      errors.push({
+        kind: ErrorKind.Input,
+        message: `Incorrect field value type = "${value.type}"; should be "atomic"`,
       });
     }
     if (value && FieldValue.isAtomic(value)) {
       if (!value.value.equals(TRUE_VALUE) && !value.value.equals(FALSE_VALUE)) {
-        errors = errors.push({
-          kind: ErrorKind.Configuration,
-          message: `Uncorrect datatype. Should be "boolean"`,
+        errors.push({
+          kind: ErrorKind.Input,
+          message: `Incorrect datatype; should be "xsd:boolean"`,
         });
       }
     }
@@ -164,9 +182,9 @@ class CheckboxHandler implements MultipleValuesHandler {
   }
 
   finalize(
-    values: Immutable.List<FieldValue>,
+    values: ReadonlyArray<FieldValue>,
     owner: EmptyValue | CompositeValue
-  ): Kefir.Property<Immutable.List<FieldValue>> {
+  ): Kefir.Property<ReadonlyArray<FieldValue>> {
     const defaultValues = createDefaultValue(values);
     if (defaultValues) {
       return Kefir.constant(defaultValues);
@@ -175,14 +193,14 @@ class CheckboxHandler implements MultipleValuesHandler {
   }
 }
 
-function getCheckboxState(values: Immutable.List<FieldValue>): CheckboxState {
-  if (values.size === 0) {
+function getCheckboxState(values: ReadonlyArray<FieldValue>): CheckboxState {
+  if (values.length === 0) {
     return CheckboxState.Unchecked;
-  } else if (values.size > 1) {
+  } else if (values.length > 1) {
     return CheckboxState.Indeterminate;
   }
 
-  const value = values.first();
+  const value = FieldState.getFirst(values);
   if (FieldValue.isAtomic(value)) {
     if (value.value.equals(TRUE_VALUE)) {
       return CheckboxState.Checked;
@@ -196,14 +214,13 @@ function getCheckboxState(values: Immutable.List<FieldValue>): CheckboxState {
 }
 
 function createDefaultValue (
-  values: Immutable.List<FieldValue>
-): Immutable.List<FieldValue> | undefined {
-  const isDefaultValue = values.size === 0 ||
-    (values.size === 1 && FieldValue.isEmpty(values.first()));
+  values: ReadonlyArray<FieldValue>
+): ReadonlyArray<FieldValue> | undefined {
+  const isDefaultValue = values.length === 0 ||
+    (values.length === 1 && FieldValue.isEmpty(FieldState.getFirst(values)));
   if (isDefaultValue) {
-    const newValue: LabeledValue = {value: Rdf.literal(false)};
-    let newValues = Immutable.List<FieldValue>();
-    return newValues.push(FieldValue.fromLabeled(newValue));
+    const newValue = FieldValue.fromLabeled({value: Rdf.literal(false)});
+    return [newValue];
   }
   return undefined;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import {
   DiagramModel, AuthoringState, sameElement, ElementTypeIri,
@@ -253,7 +252,7 @@ export class ImageGraphAuthoringComponent extends Component<ImageGraphAuthoringC
     model: DiagramModel,
     authoringState: AuthoringState
   ): MiradorRegions {
-    const newRegions = {};
+    const newRegions: MiradorRegions = {};
     model.elements.forEach(element => {
       if (element.data.types.indexOf(rso.EX_Digital_Image.value as ElementTypeIri) >= 0) {
         if (!newRegions[element.iri]) {
@@ -324,7 +323,7 @@ export class ImageGraphAuthoringComponent extends Component<ImageGraphAuthoringC
     this.miradorInstance.eventEmitter.subscribe('windowUpdated', this.windowUpdateHandler);
   }
 
-  private windowUpdateHandler = (event, data) => {
+  private windowUpdateHandler = (event: {}, data: { canvasID: string }) => {
     if (data.canvasID) {
       trigger({
         eventType: OntodiaEvents.FocusOnElement,

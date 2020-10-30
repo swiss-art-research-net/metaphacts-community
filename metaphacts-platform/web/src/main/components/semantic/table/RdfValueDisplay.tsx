@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,26 +37,96 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Kefir from 'kefir';
 
 import { Rdf } from 'platform/api/rdf';
-import { ResourceLink } from 'platform/api/navigation/components';
+import { ResourceLink } from 'platform/components/navigation';
 import { SparqlUtil, QueryContext } from 'platform/api/sparql';
-import { getLabel } from 'platform/api/services/resource-label';
+import * as LabelService from 'platform/api/services/resource-label';
 
 import { CopyToClipboardComponent } from 'platform/components/copy-to-clipboard';
 
-export interface RdfValueDisplayProps {
-  data: Rdf.Node;
+interface CommonProps {
   className?: string;
-  label?: string;
   fetchLabel?: boolean;
   fetchContext?: QueryContext;
   showLiteralDatatype?: boolean;
   linkParams?: {};
   showCopyToClipboardButton?: boolean;
+}
+
+export interface RdfValueDisplayProps extends CommonProps {
+  data: Rdf.TermLike;
+  getLabel: (resource: Rdf.Iri) => string | undefined;
+}
+
+export class RdfValueDisplay extends React.Component<RdfValueDisplayProps> {
+  render() {
+    const {data, getLabel, ...otherProps} = this.props;
+    if (!Rdf.isKnownTerm(data)) {
+      return null;
+    }
+    switch (data.termType) {
+      case 'NamedNode':
+      case 'BlankNode':
+      case 'Literal': {
+        const label = Rdf.isIri(data) ? getLabel(data) : undefined;
+        return <NodeDisplay {...otherProps} data={data} label={label} />;
+      }
+      case 'Quad': {
+        return renderQuad(data, this.props);
+      }
+    }
+    return null;
+  }
+}
+
+function renderQuad(quad: Rdf.Triple, props: RdfValueDisplayProps): React.ReactNode {
+  let copyButton: React.ReactNode = null;
+  if (props.showCopyToClipboardButton) {
+    copyButton = (
+      <CopyToClipboardComponent text={starTermToString(quad)}>
+        <button className='btn btn-link btn-xs' title='Copy triple'>
+          <i className='fa fa-clipboard text-muted'></i>
+        </button>
+      </CopyToClipboardComponent>
+    );
+  }
+  const nestedProps: RdfValueDisplayProps = {...props, showCopyToClipboardButton: false};
+  return (
+    <>
+      <span>&lt;&lt;&nbsp;</span>
+      <RdfValueDisplay {...nestedProps} data={quad.subject} />
+      {' '}<RdfValueDisplay {...nestedProps} data={quad.predicate} />
+      {' '}<RdfValueDisplay {...nestedProps} data={quad.object} />
+      {quad.graph.termType === 'DefaultGraph'
+        ? null : <>{' '}<RdfValueDisplay {...nestedProps} data={quad.graph} /></>}
+      <span>&nbsp;&gt;&gt;</span>
+      {copyButton}
+    </>
+  );
+}
+
+function starTermToString(term: Rdf.TermLike) {
+  if (Rdf.isQuad(term)) {
+    let result = '<< ';
+    result += starTermToString(term.subject) + ' ';
+    result += starTermToString(term.predicate) + ' ';
+    result += starTermToString(term.object) + ' ';
+    if (term.graph.termType !== 'DefaultGraph') {
+      result += starTermToString(term.graph) + ' ';
+    }
+    result += '>>';
+    return result;
+  } else if (Rdf.isKnownTerm(term)) {
+    return Rdf.termToString(term);
+  }
+}
+
+interface NodeDisplayProps extends CommonProps {
+  data: Rdf.Node;
+  label: string | undefined;
 }
 
 interface State {
@@ -43,10 +135,10 @@ interface State {
 
 const NON_BREAKABLE_SPACE = '\xa0';
 
-export class RdfValueDisplay extends React.Component<RdfValueDisplayProps, State> {
+class NodeDisplay extends React.Component<NodeDisplayProps, State> {
   private subscription: Kefir.Subscription | undefined;
 
-  constructor(props: RdfValueDisplayProps) {
+  constructor(props: NodeDisplayProps) {
     super(props);
     this.state = {label: props.label};
   }
@@ -55,15 +147,15 @@ export class RdfValueDisplay extends React.Component<RdfValueDisplayProps, State
       this.fetchLabelForIri(this.props);
   }
 
-  componentWillReceiveProps(nextProps: RdfValueDisplayProps) {
+  componentWillReceiveProps(nextProps: NodeDisplayProps) {
     if (!nextProps.data.equals(this.props.data) || nextProps.fetchLabel !== this.props.fetchLabel) {
         this.fetchLabelForIri(nextProps);
     }
   }
 
-  fetchLabelForIri(props: RdfValueDisplayProps) {
+  fetchLabelForIri(props: NodeDisplayProps) {
     const node = props.data;
-    if (node instanceof Rdf.Iri) {
+    if (Rdf.isIri(node)) {
       if (this.subscription) {
         this.subscription.unsubscribe();
         this.subscription = undefined;
@@ -72,7 +164,7 @@ export class RdfValueDisplay extends React.Component<RdfValueDisplayProps, State
         // display non-breakable space instead of nothing to
         // prevent vertical size changes in most circumstances
         this.setState({label: NON_BREAKABLE_SPACE});
-        this.subscription = getLabel(node, {context: props.fetchContext}).observe({
+        this.subscription = LabelService.getLabel(node, {context: props.fetchContext}).observe({
           value: label => this.setState({label}),
           error: () => this.setState({label: node.value})
         });
@@ -98,11 +190,11 @@ export class RdfValueDisplay extends React.Component<RdfValueDisplayProps, State
 }
 
 function renderRdfNode(
-  props: RdfValueDisplayProps,
+  props: NodeDisplayProps,
   label: string | undefined
 ): JSX.Element | string | undefined {
   const {data} = props;
-  if (data.isIri()) {
+  if (Rdf.isIri(data)) {
     const content = typeof label === 'string' ? label : data.value;
     const resourceLink = (
       <ResourceLink
@@ -118,21 +210,23 @@ function renderRdfNode(
       return resourceLink;
     }
     return (
-      <span>
+      <>
         {resourceLink}
         <CopyToClipboardComponent text={data.value}>
           <button className='btn btn-link btn-xs' title='Copy IRI'>
             <i className='fa fa-clipboard text-muted'></i>
           </button>
         </CopyToClipboardComponent>
-      </span>
+      </>
     );
-  } else if (data.isLiteral()) {
-    const dataType = props.showLiteralDatatype
-      ? <i>{` (${SparqlUtil.compactIriUsingPrefix(data.datatype)})`}</i>
+  } else if (Rdf.isLiteral(data)) {
+    const suffix = props.showLiteralDatatype
+      ? data.language
+        ? <i>{` (@${data.language})`}</i>
+        : <i>{` (${SparqlUtil.compactIriUsingPrefix(data.datatype)})`}</i>
       : undefined;
-    return <span>{data.value}{dataType}</span>;
-  } else if (data.isBnode()) {
+    return <span>{data.value}{suffix}</span>;
+  } else if (Rdf.isBnode(data)) {
     return data.value;
   } else {
     return null;

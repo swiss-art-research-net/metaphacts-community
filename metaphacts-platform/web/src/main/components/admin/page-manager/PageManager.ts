@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,21 +37,18 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { createFactory, createElement, Component, CSSProperties } from 'react';
 import * as D from 'react-dom-factories';
 
 import * as maybe from 'data.maybe';
 import * as _ from 'lodash';
 import * as ReactBootstrap from 'react-bootstrap';
-import * as Either from 'data.either';
 import * as Kefir from 'kefir';
 import * as moment from 'moment';
 import * as request from 'platform/api/http';
 import * as fileSaver from 'file-saver';
-import ReactSelectComponent from 'react-select';
+import ReactSelectComponent, { ReactSelectProps, OnChangeHandler } from 'react-select';
 
-import { SparqlClient } from 'platform/api/sparql';
 import { PageService, RevisionInfo, TemplateInfo } from 'platform/api/services/page';
 import { Table, TableColumnConfiguration } from 'platform/components/semantic/table';
 import { TemplateItem } from 'platform/components/ui/template';
@@ -173,7 +192,7 @@ export class PageManager extends Component<{}, PageAdminState> {
       resultsPerPage: 10,
       rowMetadata : { 'bodyCssClassName' : this.getRowClass.bind(this)},
     };
-    const selectOptions = {
+    const selectOptions: ReactSelectProps<unknown> = {
            className: 'dataset-selector__multi-select',
            multi: false,
            options: [
@@ -181,9 +200,8 @@ export class PageManager extends Component<{}, PageAdminState> {
              { value: FILTER.ALL, label: 'All' },
              { value: FILTER.MODIFIEDTODAY, label: 'Modified today' },
            ],
-           optionRenderer: (o) => o.label,
+           optionRenderer: (o: any) => o.label,
            clearable: true,
-           allowCreate: false,
            autoload: true,
            clearAllText: 'Remove all',
            clearValueText: 'Remove filter',
@@ -195,7 +213,7 @@ export class PageManager extends Component<{}, PageAdminState> {
            noResultsText: '',
            searchable: false,
            placeholder: 'Filter',
-           onChange: this.onFilter,
+           onChange: this.onFilter as OnChangeHandler<any>,
            value: this.state.filter,
     };
     const rowStyle: CSSProperties = {
@@ -205,16 +223,14 @@ export class PageManager extends Component<{}, PageAdminState> {
       };
 
     return D.div(
-      {className: 'mph-page-admin-widget', onChange: this.onChange.bind(this)},
+      {className: 'mph-page-admin-widget', onChange: this.onChange.bind(this) as any},
       createElement(Table, {
         ref: 'table-ref',
         key: 'table',
-        numberOfDisplayedRows: maybe.Just(10) ,
-        data: Either.Left<any[], SparqlClient.SparqlSelectResult>(this.state.data as any[]),
+        numberOfDisplayedRows: 10,
+        data: this.state.data,
         columnConfiguration: columnConfig,
-        layout: maybe.Just<{}>(
-          { options: griddleOptions, tupleTemplate: maybe.Nothing<string>() }
-        ),
+        layout: {options: griddleOptions},
       }),
       D.div(
         {className: 'row', style: rowStyle, key: 'selected-pages'},
@@ -267,7 +283,7 @@ export class PageManager extends Component<{}, PageAdminState> {
     const props = {
       message: 'Do you want to delete the selected templates?',
       onHide,
-      onConfirm: confirm => {
+      onConfirm: (confirm: boolean) => {
         onHide();
         if (confirm) {
           this.deleteSelectedPages();

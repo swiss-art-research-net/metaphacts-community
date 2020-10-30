@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,9 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
-import { Map, List } from 'immutable';
+import * as Immutable from 'immutable';
 
 import {
   QuerySearchProfileConfig, InlineSearchProfileConfig, RELATION_PROFILE_VARIABLES,
@@ -72,14 +93,14 @@ export function fetchSearchProfilesInline(
       categories: categories,
       relations: relations,
     };
-  const profiles = Map([[ dummyProfile, theProfile]]);
+  const profiles = Immutable.Map([[ dummyProfile, theProfile]]);
   return Kefir.constant(profiles);
 }
 
-type ProfilesCategories = Map<Rdf.Iri, Categories>;
+type ProfilesCategories = Immutable.Map<Rdf.Iri, Categories>;
 function constructCategories(bindings: SparqlClient.Bindings): ProfilesCategories {
   const categoriesByProfile =
-    List(bindings).groupBy(
+    Immutable.List(bindings).groupBy(
       binding => binding[RELATION_PROFILE_VARIABLES.PROFILE_PROJECTION_VAR] as Rdf.Iri
     );
 
@@ -89,7 +110,7 @@ function constructCategories(bindings: SparqlClient.Bindings): ProfilesCategorie
 }
 
 function constructCategoriesFromInline(inlineConfigs: Array<InlineCategory>): Categories {
-  return List(inlineConfigs).map(constructCategoryFromInline)
+  return Immutable.List(inlineConfigs).map(constructCategoryFromInline)
     .groupBy(
       category => category.iri
     ).toOrderedMap().map(
@@ -112,7 +133,9 @@ function constructCategoryFromInline(inlineConfig: InlineCategory): Category {
   };
 }
 
-function constructCategoriesFromBindings(bindings: List<SparqlClient.Binding>): Categories {
+function constructCategoriesFromBindings(
+  bindings: Immutable.Iterable<unknown, SparqlClient.Binding>
+): Categories {
   return bindings
     .map(
       constructCategoryBromBinding
@@ -134,23 +157,23 @@ function constructCategoryBromBinding(binding: SparqlClient.Binding): Category {
   };
 }
 
-type ProfilesRelations = Map<Rdf.Iri, Relations>;
+type ProfilesRelations = Immutable.Map<Rdf.Iri, Relations>;
 function constructRelations(
   bindings: SparqlClient.Bindings, categories: ProfilesCategories
 ): ProfilesRelations {
   const relationsByProfile =
-    List(bindings).groupBy(
+    Immutable.List(bindings).groupBy(
       binding => binding[RELATION_PROFILE_VARIABLES.PROFILE_PROJECTION_VAR] as Rdf.Iri
     );
 
   return relationsByProfile.map(
-    (profileBindings: List<SparqlClient.Binding>, profile: Rdf.Iri) =>
+    (profileBindings: Immutable.Iterable<number, SparqlClient.Binding>, profile: Rdf.Iri) =>
       constructRelationsFromBindings(profileBindings, categories.get(profile) as Categories)
   ).toMap();
 }
 
 function constructRelationsFromBindings(
-  bindings: List<SparqlClient.Binding>, categories: Categories
+  bindings: Immutable.Iterable<number, SparqlClient.Binding>, categories: Categories
 ): Relations {
     return bindings
     .map(
@@ -177,7 +200,7 @@ function constructRelationBromBinding(
       binding[RELATION_PROFILE_VARIABLES.RELATION_DOMAIN_PROJECTION_VAR] as Rdf.Iri
     ),
     tuple: binding,
-    hashCode: () => iri.hashCode(),
+    hashCode: () => Rdf.hashTerm(iri),
     equals: (other: Relation) => iri.equals(other.iri)
   };
 }
@@ -185,7 +208,7 @@ function constructRelationBromBinding(
 function constructRelationsFromInline(
   inlineConfigs: Array<InlineRelation>, categories: Categories
 ): Relations {
-    return List(inlineConfigs)
+    return Immutable.List(inlineConfigs)
       .map(inlineRelation => constructRelationFromInline(inlineRelation, categories))
       .groupBy(({iri, hasDomain, hasRange}) =>
         RelationKey.key({iri, domain: hasDomain.iri, range: hasRange.iri})
@@ -207,7 +230,7 @@ function constructRelationFromInline(
     hasRange: categories.get(
       Rdf.fullIri(inlineConfig.hasRange)),
     tuple: {iri: Rdf.fullIri(inlineConfig.iri), label: Rdf.literal(inlineConfig.label)},
-    hashCode: () => iri.hashCode(),
+    hashCode: () => Rdf.hashTerm(iri),
     equals: (other: Relation) => iri.equals(other.iri)
   };
 }

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,20 +37,14 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.services.fields;
 
-import static java.util.stream.Collectors.toList;
-
-import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import javax.annotation.Nullable;
@@ -46,76 +62,57 @@ import org.eclipse.rdf4j.query.GraphQueryResult;
 import org.eclipse.rdf4j.queryrender.RenderUtils;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.PlatformCache;
-import com.metaphacts.data.json.JsonUtil;
+import com.metaphacts.config.Configuration;
 import com.metaphacts.data.rdf.container.FieldDefinitionContainer;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.vocabulary.FIELDS;
-import com.metaphacts.vocabulary.XsdUtils;
 
-public class FieldDefinitionManager implements PlatformCache {
-
-    public static final String CACHE_ID = "repository.FieldDefinitionManager";
+public class FieldDefinitionManager implements FieldDefinitionGenerator {
 
     private static final Logger logger = LogManager.getLogger(FieldDefinitionManager.class);
 
     private final RepositoryManager repositoryManager;
-    private final LoadingCache<IRI, Optional<FieldDefinition>> cache;
 
     @Inject
-    public FieldDefinitionManager(RepositoryManager repositoryManager, CacheManager cacheManager) {
+    public FieldDefinitionManager(RepositoryManager repositoryManager, CacheManager cacheManager,
+            Configuration config) {
         this.repositoryManager = repositoryManager;
-        this.cache = cacheManager
-            .newBuilder(CACHE_ID, cacheBuilder -> cacheBuilder.maximumSize(1000)
-                        .expireAfterAccess(30, TimeUnit.MINUTES))
-            .build(new CacheLoader<IRI, Optional<FieldDefinition>>() {
-                @Override
-                public Optional<FieldDefinition> load(IRI key) {
-                    return loadFieldDefinitions(Collections.singletonList(key)).get(key);
-                }
 
-                @Override
-                public Map<IRI, Optional<FieldDefinition>> loadAll(Iterable<? extends IRI> keys) throws Exception {
-                    return loadFieldDefinitions(keys);
-                }
-            });
-        cacheManager.register(this);
     }
 
-    @Override
-    public String getId() {
-        return CACHE_ID;
-    }
-
-    @Override
-    public void invalidate() {
-        this.cache.invalidateAll();
-    }
-
-    @Override
-    public void invalidate(Set<IRI> iris) {
-        this.cache.invalidateAll(iris);
-    }
-
+    /**
+     * @deprecated use {@link #generateAll(Collection)} instead.
+     */
+    @Deprecated
     public Map<IRI, FieldDefinition> queryFieldDefinitions(Iterable<? extends IRI> fieldIris) {
-        try {
-            logger.trace("Querying field definitions: {}", fieldIris);
-            Map<IRI, Optional<FieldDefinition>> found = this.cache.getAll(fieldIris);
-            return flattenOptionMap(found);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        logger.trace("Querying field definitions: {}", fieldIris);
+        Map<IRI, Optional<FieldDefinition>> found = loadFieldDefinitions(fieldIris);
+        return flattenOptionMap(found);
     }
 
+    @Override
+    public Optional<FieldDefinition> generate(IRI fieldIdentifier) {
+        logger.trace("Querying field definition: {}", fieldIdentifier);
+        return loadFieldDefinitions(Collections.singletonList(fieldIdentifier)).get(fieldIdentifier);
+    }
+
+    @Override
+    public Map<IRI, FieldDefinition> generateAll(Collection<IRI> iris) {
+        if (iris.isEmpty()) {
+            return queryAllFieldDefinitions();
+        }
+        return queryFieldDefinitions(iris);
+    }
+
+    /**
+     * @deprecated use {@link #generateAll(Collection)} instead.
+     */
+    @Deprecated
     public Map<IRI, FieldDefinition> queryAllFieldDefinitions() {
         logger.trace("Querying all field definitions");
         Map<IRI, Optional<FieldDefinition>> found = loadFieldDefinitions(null);
-        this.cache.putAll(found);
         return flattenOptionMap(found);
     }
 
@@ -129,8 +126,8 @@ public class FieldDefinitionManager implements PlatformCache {
 
     private Map<IRI, Optional<FieldDefinition>> loadFieldDefinitions(@Nullable Iterable<? extends IRI> fieldIris) {
         String constructQuery = makeFieldDefinitionQuery(fieldIris);
-        SparqlOperationBuilder<GraphQuery> operationBuilder =
-            SparqlOperationBuilder.create(constructQuery, GraphQuery.class);
+        SparqlOperationBuilder<GraphQuery> operationBuilder = SparqlOperationBuilder.create(constructQuery,
+                GraphQuery.class);
 
         Map<IRI, FieldDefinition> foundFields;
         try (RepositoryConnection connection = repositoryManager.getAssetRepository().getConnection()) {
@@ -155,8 +152,7 @@ public class FieldDefinitionManager implements PlatformCache {
     }
 
     private String makeFieldDefinitionQuery(@Nullable Iterable<? extends IRI> fieldIris) {
-        String valuesClause = fieldIris == null
-            ? "" : renderValuesClause("?iri", fieldIris, Collections::singletonList);
+        String valuesClause = fieldIris == null ? "" : renderValuesClause("?iri", fieldIris, Collections::singletonList);
         return "PREFIX field: <http://www.metaphacts.com/ontology/fields#>" +
             "\nPREFIX ldp: <http://www.w3.org/ns/ldp#>" +
             "\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>" +
@@ -176,6 +172,7 @@ public class FieldDefinitionManager implements PlatformCache {
             "\n  ?iri field:autosuggestionPattern ?autosuggestionPattern ." +
             "\n  ?iri field:valueSetPattern ?valueSetPattern ." +
             "\n  ?iri field:treePatterns ?treePatterns ." +
+            "\n  ?iri field:orderedWith ?orderedWith ." +
             "\n} WHERE {" +
             "\n  " + valuesClause +
             "\n  <" + FieldDefinitionContainer.IRI_STRING + "> ldp:contains ?iri ." +
@@ -194,14 +191,15 @@ public class FieldDefinitionManager implements PlatformCache {
             "\n  OPTIONAL { ?iri field:autosuggestionPattern/sp:text ?autosuggestionPattern }" +
             "\n  OPTIONAL { ?iri field:valueSetPattern/sp:text ?valueSetPattern }" +
             "\n  OPTIONAL { ?iri field:treePatterns ?treePatterns }" +
+            "\n  OPTIONAL { ?iri field:orderedWith ?orderedWith }" +
             "\n}";
     }
 
     private static <T> String renderValuesClause(
-        String rowSpecification,
-        Iterable<T> values,
-        Function<T, List<Value>> rowMapper
-    ) {
+            String rowSpecification,
+            Iterable<T> values,
+            Function<T, List<Value>> rowMapper
+        ) {
         StringBuilder builder = new StringBuilder();
         builder.append("VALUES (").append(rowSpecification).append(") {\n");
         for (T value : values) {
@@ -223,7 +221,7 @@ public class FieldDefinitionManager implements PlatformCache {
                 continue;
             }
 
-            IRI iri = (IRI)st.getSubject();
+            IRI iri = (IRI) st.getSubject();
             FieldDefinition field = definitions.get(iri);
             if (field == null) {
                 field = new FieldDefinition();
@@ -260,6 +258,11 @@ public class FieldDefinitionManager implements PlatformCache {
                 field.setValueSetPattern(objectAsString(st));
             } else if (predicate.equals(FIELDS.TREE_PATTERNS)) {
                 field.setTreePatterns(objectAsString(st));
+            } else if (predicate.equals(FIELDS.ORDERED_WITH)) {
+                IRI orderedWith = objectAsIRI(st);
+                if (orderedWith.equals(FIELDS.INDEX_PROPERTY)) {
+                    field.setOrderedWith(OrderedWith.INDEX_PROPERTY);
+                }
             }
         }
         return definitions;
@@ -267,7 +270,7 @@ public class FieldDefinitionManager implements PlatformCache {
 
     private static IRI objectAsIRI(Statement st) {
         if (st.getObject() instanceof IRI) {
-            return (IRI)st.getObject();
+            return (IRI) st.getObject();
         }
         throw makeInvalidFieldPropertyError(st, "an IRI", null);
     }
@@ -282,90 +285,27 @@ public class FieldDefinitionManager implements PlatformCache {
     @Nullable
     private static Literal objectAsLiteral(Statement st) {
         if (st.getObject() instanceof Literal) {
-            return (Literal)st.getObject();
+            return (Literal) st.getObject();
         }
         throw makeInvalidFieldPropertyError(st, "a literal", null);
     }
 
     private static RuntimeException makeInvalidFieldPropertyError(Statement st, String expected, Throwable cause) {
         return new RuntimeException(
-            "Field definition " + st.getSubject() +
-            " has invalid " +  st.getPredicate().toString() +
-            " property value " + st.getObject().toString() +
-            " (expected " + expected + ")",
-            cause
-        );
+                "Field definition " + st.getSubject() +
+                " has invalid " +  st.getPredicate().toString() +
+                " property value " + st.getObject().toString() +
+                " (expected " + expected + ")",
+                cause
+            );
     }
 
+    /**
+     * @deprecated use {@link FieldDefinition#toJson()} instead.
+     */
+    @Deprecated
     public Map<String, Object> jsonFromField(FieldDefinition field) {
-        Map<String, Object> json = new HashMap<>();
-        json.put("iri", field.getIri().stringValue());
-
-        if (field.getDescription() != null) {
-            json.put("description", field.getDescription().stringValue());
-        }
-        if (field.getMinOccurs() != null) {
-            String datatype = field.getMinOccurs().getDatatype().stringValue();
-            try {
-                json.put("minOccurs", XsdUtils.isIntegerDatatype(datatype)
-                    ? Integer.parseInt(field.getMinOccurs().stringValue())
-                    : field.getMinOccurs().stringValue());
-            } catch (NumberFormatException e) {
-                throw new RuntimeException(
-                    "Failed to serialize field " + field.getIri() +
-                    " to JSON: invalid minOccurs value " + field.getMinOccurs(), e);
-            }
-        }
-        if (field.getMaxOccurs() != null) {
-            String datatype = field.getMaxOccurs().getDatatype().stringValue();
-            try {
-                json.put("maxOccurs", XsdUtils.isIntegerDatatype(datatype)
-                    ? Integer.parseInt(field.getMaxOccurs().stringValue())
-                    : field.getMaxOccurs().stringValue());
-            } catch (NumberFormatException e) {
-                throw new RuntimeException(
-                    "Failed to serialize field " + field.getIri() +
-                    " to JSON: invalid maxOccurs value " + field.getMaxOccurs(), e);
-            }
-        }
-        if (field.getXsdDatatype() != null) {
-            json.put("xsdDatatype", field.getXsdDatatype().stringValue());
-        }
-
-        json.put("domain", field.getDomain().stream().map(Value::stringValue).sorted().collect(toList()));
-        json.put("range", field.getRange().stream().map(Value::stringValue).sorted().collect(toList()));
-        json.put("defaultValues", field.getDefaultValues().stream().map(Value::stringValue).sorted().collect(toList()));
-
-        if (field.getSelectPattern() != null) {
-            json.put("selectPattern", field.getSelectPattern());
-        }
-        if (field.getInsertPattern() != null) {
-            json.put("insertPattern", field.getInsertPattern());
-        }
-        if (field.getDeletePattern() != null) {
-            json.put("deletePattern", field.getDeletePattern());
-        }
-        if (field.getAskPattern() != null) {
-            json.put("askPattern", field.getAskPattern());
-        }
-        if (field.getAutosuggestionPattern() != null) {
-            json.put("autosuggestionPattern", field.getAutosuggestionPattern());
-        }
-        if (field.getValueSetPattern() != null) {
-            json.put("valueSetPattern", field.getValueSetPattern());
-        }
-        if (field.getTreePatterns() != null) {
-            ObjectMapper mapper = JsonUtil.getDefaultObjectMapper();
-            try {
-                Object treePatternsJson = mapper.readTree(field.getTreePatterns());
-                json.put("treePatterns", treePatternsJson);
-            } catch (IOException e) {
-                throw new RuntimeException(
-                    "Failed to serialize field " + field.getIri() +
-                    " to JSON: invalid treePatterns value " + field.getTreePatterns(), e);
-            }
-        }
-
-        return json;
+        return field.toJson();
     }
+
 }

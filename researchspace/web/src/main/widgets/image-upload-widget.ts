@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { Component, createElement } from 'react';
 import * as React from 'react';
 import * as D from 'react-dom-factories';
@@ -234,7 +233,7 @@ class ImageUploadWidget extends Component<Props, State> {
     }
 
     const title = fieldValues.fields.get('title');
-    if (!title || title.values.size === 0) {
+    if (!title || title.values.length === 0) {
       this.messages.plug(Kefir.constant('Please fill in title to proceed with image upload.<br>'));
       return;
     }
@@ -345,8 +344,7 @@ function parametrizeQueryWithFormValues(
       const bindings = values
         .filter(FieldValue.isAtomic)
         .map(FieldValue.asRdfNode)
-        .map(value => ({[fieldId]: value}) as _.Dictionary<Rdf.Node>)
-        .toArray();
+        .map(value => ({[fieldId]: value}) as _.Dictionary<Rdf.Node>);
       return SparqlClient.prepareParsedQuery(bindings)(query);
     },
     initialQuery

@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "collapsedSize": {
+            "description": "Size in the collapsed state.",
+            "type": "number"
+        },
+        "defaultCollapsed": {
+            "description": "Collapsed by default.",
+            "type": "boolean"
+        },
+        "defaultSize": {
+            "description": "Default size in the expanded state.",
+            "type": "number"
+        },
+        "heading": {
+            "description": "Heading.",
+            "type": "string"
+        },
+        "id": {
+            "description": "Unique ID.",
+            "type": "string"
+        },
+        "minSize": {
+            "description": "Min size in the expanded state.",
+            "type": "number"
+        },
+        "undocked": {
+            "description": "Hide sidebar toggle button.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "heading",
+        "defaultSize",
+        "defaultCollapsed",
+        "collapsedSize",
+        "minSize",
+        "undocked"
+    ],
+    "required": [
+        "id"
+    ],
+    "type": "object"
+}
+

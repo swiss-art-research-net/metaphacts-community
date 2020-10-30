@@ -1,129 +1,139 @@
 [[!--
 
-  1. Only user with create permission will see Save Diagram in ontodia
-  2. If user opens diagram not starting from the ontology we show only first random 1000 top level classes in class view
-  3. In ontodia view for resource, we apply the same logic. But in addition to that when user is looking into resource or class, we are trying to check if we have corresponding ontology and if it is the case restrict classes only to this ontology.
+  1. If the diagramId is provided we fetch the kind and show the diagram
+  2. If another parameter is provided (graph, ontologyIri or vocabularyIri) we provide ability to create a new diagram
+  3. In all other cases we show simple diagram browser
 
+  Diagram Kinds:
+  1) OntologyDiagram:
+    <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramForOntology> ?ontologyIri .
+    <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramKind> <http://www.metaphacts.com/ontologies/platform#OntologyDiagram> .
+  2) GraphDiagram:
+    <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramForGraph> ?graphIri .
+    <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramKind> <http://www.metaphacts.com/ontologies/platform#NamedGraphDiagram> .
+  2) VocabularyDiagram:
+    <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramForVocabulary> ?vocabularyIri .
+    <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramKind> <http://www.metaphacts.com/ontologies/platform#VocabularyDiagram> .
 --]]
 
-[[#*inline "diagram"]]
-      <ontodia
-               [[> "http://www.metaphacts.com/resource/assets/OntodiaSettings" ]]
+[[> "http://www.metaphacts.com/resource/OntodiaUserTemplates" ]]
+[[> "http://www.metaphacts.com/resource/assets/OntodiaPresetUtils"]]
 
-               [[#if (urlParam "diagram")]]
-                 diagram="[[urlParam "diagram"]]"
-               [[/if]]
-
-               [[#if (urlParam "ontologyIri")]]
-                 [[> "http://www.metaphacts.com/resource/OntodiaViewOntologyOnlyClasses" param=(urlParam "ontologyIri") ]]
-                 metadata='<> <http://www.metaphacts.com/ontologies/platform#diagramForOntology> <[[urlParam "ontologyIri"]]> .'
-                 query-params='{"ontologyIri": "[[urlParam "ontologyIri"]]"}'
-                 query="construct {?class rdfs:comment 'dummyprop'} where {  GRAPH ?g {<[[urlParam "ontologyIri"]]> ?prop ?obj. ?class a ?classType. VALUES ?classType {owl:Class rdfs:Class}}}"
-               [[else]]
-                 [[> "http://www.metaphacts.com/resource/OntodiaViewClassCheck" ]]
-               [[/if]]
-
-               [[#if view]]
-                 readonly=true
-                 hide-panels=true
-               [[/if]]
-
-      ></ontodia>
-[[/inline]]
+[[> "http://www.metaphacts.com/resource/assets/OntodiaOntologyViewPreset"]]
+[[> "http://www.metaphacts.com/resource/assets/OntodiaBasicViewPreset"]]
+[[> "http://www.metaphacts.com/resource/assets/OntodiaVocabularyViewPreset"]]
+[[> "http://www.metaphacts.com/resource/assets/OntodiaNamedGraphViewPreset"]]
 
 <style>
-  body { overflow: hidden; }
-  footer { display: none; }
-  #page-with-ontodia {
-    height: calc(100vh - 60px);
-    display: flex;
-    flex-direction: column;
-  }
-  #page-with-ontodia .ontodia {
-    overflow: hidden;
-  }
-  #link-to-ontology-warning {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0px;
+  .page--fullheight {
+    padding-top: 42px;
   }
 </style>
 
-<semantic-context repository="default">
-  <div>
-    <semantic-context repository='default'>
-      <ol class="page-breadcrumb">
-        <li>
-          <mp-link title="Home" url="/">Home</mp-link>
-        </li>
-        <li>
-          <semantic-link title="Assets" iri="http://www.metaphacts.com/resource/assets/">Assets</semantic-link>
-        </li>
-        [[#if (urlParam "ontologyIri")]]
-          <li>
-            <semantic-link title="Ontologies" iri="http://www.metaphacts.com/resource/assets/Ontologies">Ontologies</semantic-link>
-          </li>
-          <li>
-            <semantic-link iri='[[urlParam "ontologyIri"]]'></semantic-link>
-          </li>
-        [[/if]]
-        <li>
-          <semantic-link
-          	title="Assets"
-            iri="http://www.metaphacts.com/resource/assets/OntodiaDiagrams"
-            [[#if (urlParam "ontologyIri")]]urlqueryparam-ontology-iri='[[urlParam "ontologyIri"]]'[[/if]]>
-            Diagrams
-         	</semantic-link>
-        </li>
-        <semantic-context repository='assets'>
-          <li class="active">[[#if (urlParam "diagram")]]<mp-label iri="[[urlParam "diagram"]]"></mp-label>[[else]]New Diagram[[/if]]</li>
-        </semantic-context>
-      </ol>
-    </semantic-context>
 
-    <div id="page-with-ontodia" class="page">
-      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:read:any")]]
-
-        [[#if (urlParam "diagram")]]
-          [[#if (urlParam "ontologyIri")]]
-          [[else]]
-            <semantic-context repository='assets'>
-              <semantic-query
-                 query='SELECT ?ontology WHERE { <[[urlParam "diagram"]]> <http://www.metaphacts.com/ontologies/platform#diagramForOntology> ?ontology } LIMIT 1'
-                 template='{{> warning}}'>
-                <template id='warning'>
-                  <bs-alert bs-style='warning' id='link-to-ontology-warning'>
-                    <i class="fa fa-exclamation-triangle fa-2x" style='margin-right: 15px'></i>
-                    <div>
-                      <p>You are editing the diagram related to the <semantic-context repository='default'><semantic-link iri='{{bindings.0.ontology.value}}'></semantic-link></semantic-context> ontology using the generic diagram editor.</p>
-                      <p>If you save the diagram, the association with the ontology will be lost. Please use the following <semantic-link iri='http://www.metaphacts.com/resource/assets/OntodiaView' urlqueryparam-diagram='[[urlParam "diagram"]]' urlqueryparam-ontology-iri='{{bindings.0.ontology.value}}'>link to edit</semantic-link> the diagram, if you want keep the diagram associated with the ontology.</p>
-                    </div>
-                  </bs-alert>
-                </template>
-              </semantic-query>
-            </semantic-context>
-          [[/if]]
-        [[/if]]
-
-        [[#if (urlParam "diagram")]]
-          [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:any")]]
-            [[> diagram]]
-          [[else]]
-            [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:update:owner")]]
-              [[> diagram]]
-            [[else]]
-              [[> diagram view=true]]
-            [[/if]]
-          [[/if]]
-        [[else]]
-          [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#ontodiaDiagramContainer>:create:any")]]
-            [[> diagram]]
-          [[else]]
-            [[> diagram view=true]]
-          [[/if]]
-        [[/if]]
-
-      [[/if]]
+[[#if (urlParam "diagram")]]
+    [[> ResourceDiagram diagramIri=(urlParam "diagram")]]
+[[else]]
+  [[#if (urlParam "ontologyIri")]]
+    [[#> OntologyGraphSettings ontologyIri=(urlParam "ontologyIri")]]
+    [[> OntologyGraphBreadcrumbs]]
+    <div class="page--fullheight">
+      [[> OntologyGraphBody]]
     </div>
-  </div>
+    [[/OntologyGraphSettings]]
+  [[else]]
+    [[#if (urlParam "graph")]]
+      [[#> NamedGraphGraphSettings graphIri=(urlParam "graph")]]
+      <div>
+        [[> NamedGraphGraphBreadcrumbs]]
+        <div class="page--fullheight">
+          [[> NamedGraphGraphBody]]
+        </div>
+      </div>
+      [[/NamedGraphGraphSettings]]
+    [[else]]
+      [[#if (urlParam "vocabulary")]]
+        [[#> VocabularyGraphSettings vocabularyIri=(urlParam "vocabulary")]]
+        <div>
+          [[> VocabularyGraphBreadcrumbs]]
+          <div class="page--fullheight">
+            [[> VocabularyGraphBody]]
+          </div>
+        </div>
+        [[/VocabularyGraphSettings]]
+      [[else]]
+        [[#> BasicGraphSettings]]
+        <div>
+          [[> BasicGraphBreadcrumbs]]
+          <div class="page--fullheight">
+            [[> BasicGraphBody]]
+          </div>
+        </div>
+        [[/BasicGraphSettings]]
+      [[/if]]
+    [[/if]]
+  [[/if]]
+[[/if]]
+
+
+[[#*inline "ResourceDiagram"]]
+[[!-- Template parameters: diagramIri --]]
+<semantic-context repository='assets'>
+  <semantic-query
+     query="SELECT ?diagramKind WHERE {
+       <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramKind> ?diagramKind .
+     } LIMIT 1"
+     template='{{> body-template diagramKind=bindings.0.diagramKind}}'
+     no-result-template='{{> body-template-null-graph}}'>
+    <template id='body-template'>
+        {{#ifCond diagramKind.value "===" "http://www.metaphacts.com/ontologies/platform#OntologyDiagram"}}
+          [[#> OntologyGraphSettings]]
+          <div>
+            [[> OntologyGraphBreadcrumbs]]
+            <div class="page--fullheight">
+              [[> OntologyGraphBody id='ontodia']]
+            </div>
+          </div>
+          [[/OntologyGraphSettings]]
+        {{else}} {{#ifCond diagramKind.value "===" "http://www.metaphacts.com/ontologies/platform#VocabularyDiagram"}}
+          [[#> VocabularyGraphSettings]]
+          <div>
+            [[> VocabularyGraphBreadcrumbs]]
+            <div class="page--fullheight">
+              [[> VocabularyGraphBody id='ontodia']]
+            </div>
+          </div>
+          [[/VocabularyGraphSettings]]
+        {{else}} {{#ifCond diagramKind.value "===" "http://www.metaphacts.com/ontologies/platform#NamedGraphDiagram"}}
+          [[#> NamedGraphGraphSettings]]
+          <div>
+          [[> NamedGraphGraphBreadcrumbs]]
+            <div class="page--fullheight">
+              [[> NamedGraphGraphBody id='ontodia']]
+            </div>
+          </div>
+          [[/NamedGraphGraphSettings]]
+        {{else}}
+          [[#> BasicGraphSettings]]
+          <div>
+            [[> BasicGraphBreadcrumbs]]
+            <div class="page--fullheight">
+              [[> BasicGraphBody id='ontodia']]
+            </div>
+          </div>
+          [[/BasicGraphSettings]]
+        {{/ifCond}}{{/ifCond}}{{/ifCond}}
+    </template>
+    <template id='body-template-null-graph'>
+        [[#> BasicGraphSettings]]
+        <div>
+          [[> BasicGraphBreadcrumbs]]
+          <div class="page--fullheight">
+            [[> BasicGraphBody id='ontodia']]
+          </div>
+        </div>
+        [[/BasicGraphSettings]]
+    </template>
+  </semantic-query>
 </semantic-context>
+[[/inline]]

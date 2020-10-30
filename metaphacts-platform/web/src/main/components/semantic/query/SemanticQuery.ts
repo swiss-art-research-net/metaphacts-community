@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,8 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-import {ReactElement, CSSProperties, Props, createElement} from 'react';
+import { ReactElement, CSSProperties, ClassAttributes, createElement } from 'react';
 import * as maybe from 'data.maybe';
 import * as _ from 'lodash';
 
@@ -34,35 +55,46 @@ export interface SemanticQueryConfig {
   query: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>, that gets a <a target='_blank' href='https://www.w3.org/TR/sparql11-results-json/#select-results'>bindings</a> object injected as template context i.e. the result binding to iterate over. [each helper](http://handlebarsjs.com/builtin_helpers.html#iteration) can be used to iterate over the bindings.
-   * The template will only be rendered if and only if the result is not empty, so that one does not need to have additional if expressions around the component in order to hide it, for example, a list header if actually no result are to be displayed.
-   * **The template MUST have a single HTML root element.**
+   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>, that gets a <a target='_blank' href='https://www.w3.org/TR/sparql11-results-json/#select-results'>bindings</a> object
+   * injected as template context i.e. the result binding to iterate over.
+   * [each helper](http://handlebarsjs.com/builtin_helpers.html#iteration) can be used to iterate over the bindings.
+   * The template will only be rendered if and only if the result is not empty, so that one
+   * does not need to have additional if expressions around the component in order to hide it,
+   * for example, a list header if actually no result are to be displayed.
+   *
    * **Example:** `My Result: {{#each bindings}}{{bindingName.value}}{{/each}}` .
-   * **Default:** If no template is provided, all tuples for the first projection variable will we rendered as a comma-separated list.
+   *
+   * **Default:** If no template is provided, all tuples for the first projection variable will be
+   * rendered as a comma-separated list.
    */
   template: string;
 
   /**
    * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.
-   * **The template MUST have a single HTML root element.**
    */
   noResultTemplate?: string;
 
   /**
    * CSS classes for component holder element.
+   *
+   * Note that if the template does not have a single HTML root element,
+   * the CSS class is not applied.
    */
   className?: string;
 
   /**
    * CSS styles for component holder element.
+   *
+   * Note that if the template does not have a single HTML root element,
+   * the CSS styles are not applied.
    */
-  style?: string;
+  style?: CSSProperties;
 }
 
-export type SemanticQueryProps = SemanticQueryConfig & Props<SemanticQuery>;
+export type SemanticQueryProps = SemanticQueryConfig & ClassAttributes<SemanticQuery>;
 
 interface SemanticQueryState {
-  result?: Data.Maybe<SparqlClient.SparqlSelectResult>;
+  result?: Data.Maybe<SparqlClient.SparqlStarSelectResult>;
   isLoading?: boolean;
   error?: any;
 }
@@ -147,7 +179,7 @@ export class SemanticQuery extends Component<SemanticQueryProps, SemanticQuerySt
    * will be passed into the template as context.
    */
   private renderResult =
-  (templateString?: string) => (res: SparqlClient.SparqlSelectResult)
+  (templateString?: string) => (res: SparqlClient.SparqlStarSelectResult)
     : ReactElement<any> => {
     if (SparqlUtil.isSelectResultEmpty(res)) {
       return createElement(TemplateItem, {template: {source: this.props.noResultTemplate}});
@@ -197,7 +229,7 @@ export class SemanticQuery extends Component<SemanticQueryProps, SemanticQuerySt
   private executeQuery = (props: SemanticQueryProps, ctx: ComponentContext): void => {
     this.setState({isLoading: true, error: undefined});
     const context = ctx.semanticContext;
-    SparqlClient.select(props.query, {context}).onValue(
+    SparqlClient.selectStar(props.query, {context}).onValue(
       result => this.setState({
         result: maybe.Just(result),
         isLoading: false,

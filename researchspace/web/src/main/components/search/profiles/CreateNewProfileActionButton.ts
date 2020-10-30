@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
@@ -27,7 +26,7 @@ import * as maybe from 'data.maybe';
 import { navigateToResource } from 'platform/api/navigation';
 
 import SearchProfileLdpService from 'platform/components/semantic/search/data/profiles/SearchProfileLdpService';
-import CreateProfileDialog from './CreateProfileDialog';
+import CreateProfileDialog, { ProfileMetadata } from './CreateProfileDialog';
 
 require('../../../less/create-new-profile-action.less');
 
@@ -38,7 +37,7 @@ interface State {
 
 export class CreateNewProfileActionButton extends Component<{}, State> {
 
-  constructor(props) {
+  constructor(props: {}) {
     super(props);
     this.state = {
       showDialog: false,
@@ -74,7 +73,7 @@ export class CreateNewProfileActionButton extends Component<{}, State> {
     });
   }
 
-  private onSave({name, description}) {
+  private onSave({name, description}: ProfileMetadata) {
     SearchProfileLdpService.createProfile(
       name, description
     ).onValue(

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 
@@ -78,7 +77,7 @@ export class AdapterAnnotationEndpoint implements MiradorAnnotationEndpoint {
   }
 
   set(property: string, value: any, options: any) {
-    this[property] = value;
+    (this as any)[property] = value;
   }
 
   userAuthorize(action: any, annotation: OARegionAnnotation): boolean {
@@ -96,7 +95,7 @@ export class AdapterAnnotationEndpoint implements MiradorAnnotationEndpoint {
   ) {
     this.annotationsList = [];
 
-    const task = this.endpoint.search
+    const task: Kefir.Property<OARegionAnnotation[]> = this.endpoint.search
       ? this.endpoint.search(Rdf.iri(options.uri))
       : Kefir.constantError<any>(new Error(
         'AnnotationEndpoint.search is not implemented'));

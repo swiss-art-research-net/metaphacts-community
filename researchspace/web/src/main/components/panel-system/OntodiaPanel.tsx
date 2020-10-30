@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Element, Link, Highlighter, getContentFittingBox } from 'ontodia';
 
@@ -29,7 +28,7 @@ import { Ontodia, OntodiaProps } from 'platform/components/3-rd-party/ontodia/On
 
 /**
  * @example
- * <rs-ontodia-panel-system settings=nostats></rs-ontodia-panel-system>
+ * <rs-ontodia-panel-system></rs-ontodia-panel-system>
  */
 export class OntodiaPanel extends Component<OntodiaProps, {}> {
   private readonly cancellation = new Cancellation();
@@ -78,8 +77,9 @@ export class OntodiaPanel extends Component<OntodiaProps, {}> {
     const model = workspace.getModel();
     const selectedElement = model.elements.find(element => element.iri === iri);
     if (selectedElement) {
-      const bbox = getContentFittingBox([selectedElement], []);
-      workspace.zoomToFitRect(bbox);
+      workspace.forEachCanvas(canvas => {
+        canvas.getCommands().trigger('zoomToContent', {elements: [selectedElement], links: []});
+      });
       workspace.getEditor().setSelection([selectedElement]);
     }
   }

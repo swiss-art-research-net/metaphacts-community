@@ -1,0 +1,216 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Form dependencies and multi-field constraints</h1>
+
+    <p>The <semantic-link uri='[[resolvePrefix "Help:SemanticForm"]]'>Semantic Form</semantic-link> allows to define dependencies between fields as well as multi-field constraints for validation. These features are described in detail below.</p>
+      
+    <h2 id='dependencies'>Dependencies between fields</h2>
+    
+    <p>Often there are use-cases when a given form field should depend on another one, e.g. if a user selects a country, a dependent field for city should auto suggest only cities of that country.</p>
+    
+    <p>The <code>field-dependencies</code> attribute for <code>&lt;semantic-form&gt;</code> allows to configure such dependencies between different fields. The following listing defines the available attributes for a <code>FieldDependency</code>:</p>
+    
+    
+    <mp-documentation type="FieldDependency" disable-transform-attributes=true></mp-documentation>
+    <br/>
+    
+    <p>The following example illustrates how a dependency of the <i>city</i> field can be defined such that it restricts its value set to those of a selected country. Note that the selected <i>country</i> is made available as dependency through an explicit <code>field-dependencies</code> definition: a mapping of the field identifier <code>country</code> to the binding name <code>?selectedCountry</code> makes sure that the selected value (i.e. <code>?selectedCountry</code>) can be used in the query to filter matching inputs.</p>
+    
+    <p>Note that the <code>autosuggestionPattern</code> of the field dependency definition is applied if the user has selected a country in the dependent form element, while the <code>autosuggestionPattern</code> of the field definition is used otherwise (i.e. without restrictions on a country).</p>
+
+   <mp-collapsible-div expanded=false>
+      <mp-collapsible-div-trigger>
+        <span>Show example data</span>
+      </mp-collapsible-div-trigger>
+      <mp-collapsible-div-content>
+        <div>
+        <p>The following sample data can be used to populate the form below.</p>
+    <mp-code-block mode='application/sparql-query'>
+      <![CDATA[
+PREFIX ex: <http://example.com/resource/> 
+INSERT DATA {
+   GRAPH <urn:countryData> { 
+       ex:Germany a ex:Country ;
+         rdfs:label "Germany" .
+       ex:France a ex:Country ;
+         rdfs:label "France" .
+       ex:Walldorf a ex:City ;
+         rdfs:label "Walldorf" .
+       ex:Berlin a ex:City ;
+         rdfs:label "Berlin" .
+       ex:Paris a ex:City ;
+         rdfs:label "Paris" .
+       ex:Germany ex:city ex:Walldorf .
+       ex:Germany ex:city ex:Berlin .
+       ex:France ex:city ex:Paris .
+   }
+} 
+      ]]>
+    </mp-code-block>
+        </div>
+        
+    </mp-collapsible-div-content>
+    </mp-collapsible-div>
+
+    <br/>
+    
+    <mp-code-example show-code-by-default='true'>
+<![CDATA[
+<semantic-form 
+        new-subject-template='http://www.example.com/id/{{UUID}}'
+        post-action='redirect'
+        form-id='field-dependencies-1'
+        fields='[
+            {
+              "id": "country",
+              "label": "Country",
+              "xsdDatatype": "xsd:anyURI",
+              "minOccurs": "1",
+              "maxOccurs": "1",
+              "selectPattern": "SELECT $value WHERE { $subject <http://example.com/country> ?value }",
+              "insertPattern": "INSERT { $subject <http://example.com/country> $value } WHERE {}",
+              "deletePattern": "DELETE { $subject <http://example.com/country> $value } WHERE {}",
+              "valueSetPattern": "
+                PREFIX ex: <http://example.com/resource/> 
+                SELECT ?value WHERE {
+                  ?value a ex:Country .
+                }
+              "
+            },
+            {
+              "id": "city",
+              "label": "City",
+              "xsdDatatype": "xsd:anyURI",
+              "minOccurs": "1",
+              "selectPattern": "SELECT $value WHERE { $subject <http://example.com/city> ?value }",
+              "insertPattern": "INSERT { $subject <http://example.com/city> $value } WHERE {}",
+              "deletePattern": "DELETE { $subject <http://example.com/city> $value } WHERE {}",
+              "autosuggestionPattern": "
+                PREFIX ex: <http://example.com/resource/> 
+                PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
+                SELECT ?value ?label WHERE {
+                   SERVICE Repository:lookup {
+                			?value lookup:token ?__token__ ;
+                          lookup:limit 30 ;
+                          lookup:type ex:City
+                   }
+                }
+              "
+            }
+        ]'
+        field-dependencies='[
+            {
+              "field": "city",
+              "dependencies": {
+                "country": "selectedCountry"
+              },
+              "autosuggestionPattern": "
+                PREFIX ex: <http://example.com/resource/> 
+                PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
+                SELECT (?city AS ?value) ?label WHERE {
+                   SERVICE Repository:lookup {
+                			?city lookup:token ?__token__ ;
+                          lookup:limit 30 ;
+                          lookup:type ex:City
+                   }
+                   FILTER EXISTS { ?selectedCountry ex:city ?city . }
+                }
+                
+              ",
+              "valueSetPattern": "
+                PREFIX ex: <http://example.com/resource/> 
+                PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+                SELECT (?city AS ?value) ?label WHERE {
+                  ?selectedCountry ex:city ?city .
+                  ?city a ex:City ;
+                    rdfs:label ?label .
+                } LIMIT 30
+              "
+            }
+        ]'>
+        <bs-panel>
+          <h4>Country and cities</h4>
+          <semantic-form-select-input for='country'></semantic-form-select-input>
+          <semantic-form-autocomplete-input for='city'></semantic-form-autocomplete-input>
+          <hr>
+          <semantic-form-errors></semantic-form-errors>
+          <!-- save and reset button for form -->
+          <button name="submit" class="btn btn-default">Save</button>
+          <button name="reset" class="btn btn-default">Reset</button>
+        </bs-panel>
+      </semantic-form>
+]]>
+     </mp-code-example>
+    
+    <h2 id='constraints'>Multi-field constraints</h2>
+
+    <p>The <code>field-constraints</code> attribute for <code>&lt;semantic-form&gt;</code> allows to define constraints on how field values are allowed to relate to each other. Unlike <code>askPattern</code> or <code>constraints</code> (which can be defined as part of a field definition), it allows to validate values from different fields in the same query. An example use-case is to check if a start date of an event is before the user-provided end date.</p>
+    
+    <p>The listing below provides an overview of available attributes for a <code>field-constraints</code> item:</p>
+    
+    <mp-documentation type="MultipleFieldConstraint" disable-transform-attributes=true></mp-documentation>
+    <br/>
+    
+    <p>The following example defines a constraint between fields making sure that the start date precedes end date: The mapping declares <code>?start</code> and <code>?end</code> as additional bindings, which are used in the <code>validatePattern</code> to perform the check.</p>
+    
+    <p>Note that the constraint does not apply, if some of the constrained fields are empty or contain multiple values.</p>
+
+        <mp-code-example show-code-by-default='true'>
+          <![CDATA[
+      <semantic-form 
+        new-subject-template='http://www.example.com/id/{{UUID}}'
+        post-action='redirect'
+        form-id='multi-field-validation-1'
+        fields='[
+            {
+              "id": "startDate",
+              "label": "Start Date",
+              "description": "Should be less or equal to end date",
+              "xsdDatatype": "xsd:dateTime",
+              "minOccurs": "1",
+              "maxOccurs": "1",
+              "selectPattern": "SELECT $value WHERE { $subject <http://example.com/startDate> ?value }",
+              "insertPattern": "INSERT { $subject <http://example.com/startDate> $value } WHERE {}",
+              "deletePattern": "DELETE { $subject <http://example.com/startDate> $value } WHERE {}"
+            },
+            {
+              "id": "endDate",
+              "label": "End Date",
+              "description": "Should be equal or greater than start date",
+              "xsdDatatype": "xsd:dateTime",
+              "minOccurs": "1",
+              "maxOccurs": "1",
+              "selectPattern": "SELECT $value WHERE { $subject <http://example.com/endDate> ?value }",
+              "insertPattern": "INSERT { $subject <http://example.com/endDate> $value } WHERE {}",
+              "deletePattern": "DELETE { $subject <http://example.com/endDate> $value } WHERE {}"
+            }
+        ]'
+        field-constraints='[
+            {
+              "validatePattern": "ASK { FILTER(?start <= ?end) }",
+              "message": "Start date should precede or be equal to end date",
+              "fields": {
+                "startDate": "start",
+                "endDate": "end"
+              }
+            }
+        ]'>
+        <bs-panel>
+          <h4>Start and end dates</h4>
+          <semantic-form-datetime-input for='startDate'></semantic-form-datetime-input>
+          <semantic-form-datetime-input for='endDate'></semantic-form-datetime-input>
+          <hr>
+          <semantic-form-errors></semantic-form-errors>
+          <!-- save and reset button for form -->
+          <button name="submit" class="btn btn-default">Save</button>
+          <button name="reset" class="btn btn-default">Reset</button>
+        </bs-panel>
+      </semantic-form>
+]]>
+     </mp-code-example>
+    
+  </div>
+</div>

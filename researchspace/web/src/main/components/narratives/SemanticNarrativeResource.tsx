@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Component } from 'react';
 import * as D from 'react-dom-factories';
@@ -33,13 +32,15 @@ import { Spinner } from 'platform/components/ui/spinner';
 import { SemanticNarrativeEditorProps } from './SemanticNarrativeEditor';
 
 import { BottomToolbar } from 'ory-editor-ui';
-import { SelectField, MenuItem, TextField } from 'material-ui';
 import { AutoCompletionInput } from 'platform/components/ui/inputs';
 import { ControlLabel, FormGroup, Col, Form } from 'react-bootstrap';
 
-
-function getTypesFromRepository(repository: string, resource: Rdf.Iri): Kefir.Property<Array<Rdf.Iri>> {
-  const TYPES_QUERY = new SparqlJs.Parser().parse(`SELECT DISTINCT ?type WHERE { ?__resource__ a ?type }`);
+function getTypesFromRepository(
+  repository: string, resource: Rdf.Iri
+): Kefir.Property<Array<Rdf.Iri>> {
+  const TYPES_QUERY = SparqlUtil.parseQuery(
+    `SELECT DISTINCT ?type WHERE { ?__resource__ a ?type }`
+  );
   return SparqlClient.select(
     SparqlClient.setBindings(TYPES_QUERY, {'__resource__': resource}),
     {context: {repository: repository}}
@@ -58,7 +59,7 @@ function getTypes(resource: Rdf.Iri): Kefir.Property<Array<Rdf.Iri>> {
       )
     )
   ).map(_.flatten).map(types =>
-    _.uniqWith(types, (a, b) => a.equals(b))
+    _.uniqWith(types, (a: Rdf.Iri, b: Rdf.Iri) => a.equals(b))
   ).toProperty();
 }
 
@@ -108,7 +109,7 @@ interface State {
 export class SemanticNarrativeResource extends Component<Props, State> {
   static readonly className = 'ory-resource-component';
 
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       loading: true,

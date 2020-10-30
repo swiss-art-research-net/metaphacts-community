@@ -23,17 +23,14 @@
       {"variableName":"graph", "displayName":"Named Graph", "cellTemplate":"{{> template}}"}                                
     ]'
     no-result-template='Resource [[this]] is not used in a subject in any RDF statement.'
-    options='{
-      "resultsPerPage":10
-    }'
     show-literal-datatype=true
     link-params='[[#if (urlParam "showStatements")]]{"showStatements": [[urlParam "showStatements"]]}[[else]]{}[[/if]]'
 >
     <template id='template'>
       {{#if graph.value}}
-        <semantic-link uri="[[resolvePrefix "Admin:NamedGraphs"]]" urlqueryparam-graph='{{graph.value}}'>{{graph.value}}</semantic-link>
+        <semantic-link uri='[[resolvePrefix "Assets:NamedGraph"]]' urlqueryparam-graph='{{graph.value}}'>{{graph.value}}</semantic-link>
       {{else}}
-        <semantic-link uri="[[resolvePrefix "Admin:NamedGraphs"]]">Default Graph</semantic-link>
+        <semantic-link uri='[[resolvePrefix "Assets:NamedGraph"]]'>Default Graph</semantic-link>
       {{/if}}
     </template>
 </semantic-table>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Component } from 'react';
 import { connect } from 'react-redux';
@@ -35,21 +34,18 @@ import { editableConfig, purifiedNode, node } from 'ory-editor-core/lib/selector
 import { blurAllCells } from 'ory-editor-core/lib/actions/cell';
 import { editMode } from 'ory-editor-core/lib/actions/display';
 
-import { ComponetizedRow } from 'ory-editor-core/src/types/editable';
-
-class Row extends Component<{}, {}> {
-  constructor(props: ComponetizedRow) {
+class Row extends Component<any, {}> {
+  constructor(props: any) {
     super(props);
     const { config: { whitelist } } = props;
     this.Droppable = droppable(whitelist)
   }
 
 
-  shouldComponentUpdate(nextProps, nextState) {
+  shouldComponentUpdate(nextProps: any, nextState: {}) {
     return shouldPureComponentUpdate;
   }
 
-  props: ComponetizedRow;
   Droppable: any;
 
   render() {

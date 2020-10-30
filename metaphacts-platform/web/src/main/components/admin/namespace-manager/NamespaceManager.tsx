@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,29 +37,26 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { KeyboardEvent, MouseEvent } from 'react';
 import { Button, ButtonToolbar, FormControl } from 'react-bootstrap';
 import * as Kefir from 'kefir';
 import { orderBy } from 'lodash';
-import * as maybe from 'data.maybe';
-import * as Either from 'data.either';
 import * as classnames from 'classnames';
 
 import { Cancellation } from 'platform/api/async';
 import { Component } from 'platform/api/components';
-import { SparqlClient } from 'platform/api/sparql';
-import { refresh } from 'platform/api/navigation';
 import * as ConfigService from 'platform/api/services/config';
 import * as NamespaceService from 'platform/api/services/namespace';
 
 import { StorageSelector, chooseDefaultTargetApp } from 'platform/components/admin/config-manager';
 import { Table, TableColumnConfiguration, CellRendererProps } from 'platform/components/semantic/table';
-import { Error, Alert, AlertType, AlertConfig } from 'platform/components/ui/alert';
-import { ErrorNotification, ErrorPresenter } from 'platform/components/ui/notification';
+import { Alert, AlertType } from 'platform/components/ui/alert';
+import { addNotification, ErrorNotification, ErrorPresenter } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
-
+import { AddPrefixes } from './AddPrefixes';
+import { userConfirmationDialog } from './PrefixOverwriteConfirmation';
+import { CollapsibleDiv, CollapsibleDivTrigger, CollapsibleDivContent } from 'platform/components/ui/collapsible-div';
 import * as styles from './NamespaceManager.scss';
 
 interface State {
@@ -45,7 +64,6 @@ interface State {
   data?: ReadonlyArray<NamespaceService.NamespaceRecord>;
   appStatus?: ReadonlyArray<ConfigService.ConfigStorageStatus>;
   loadingError?: any;
-  isApplyingModifications?: boolean;
   modificationError?: any;
   selectedPrefix?: string;
   selectedNamespace?: string;
@@ -86,11 +104,36 @@ export class NamespaceManager extends Component<{}, State> {
           </Alert>
         ) : null}
         {this.getUpdatePanel()}
+        <CollapsibleDiv expanded={false}>
+          <CollapsibleDivTrigger>
+            <span>Add commonly used prefixes</span>
+          </CollapsibleDivTrigger>
+          <CollapsibleDivContent expanded={false}>
+            <AddPrefixes onAddClick={() => this.showNotification('Prefix successfully added.')}
+              data={this.state.data}></AddPrefixes>
+          </CollapsibleDivContent>
+        </CollapsibleDiv>
       </div>
     );
   }
 
   componentDidMount() {
+    this.getNamespaceRecords();
+  }
+
+  componentWillUnmount() {
+    this.cancellation.cancelAll();
+  }
+
+  private showNotification(message: string) {
+    this.getNamespaceRecords();
+    addNotification({
+      message: message,
+      level: 'success',
+    });
+  }
+
+  private getNamespaceRecords() {
     this.cancellation.map(
       Kefir.combine({
         data: NamespaceService.getNamespaceRecords(),
@@ -99,14 +142,14 @@ export class NamespaceManager extends Component<{}, State> {
     ).observe({
       value: ({data, appStatus}) => {
         const selectedAppId = chooseDefaultTargetApp(appStatus);
-        this.setState({isLoading: false, data, appStatus, selectedAppId});
+        this.setState({
+          isLoading: false, data, appStatus, selectedAppId,
+          selectedPrefix: '',
+          selectedNamespace: ''
+        });
       },
       error: loadingError => this.setState({isLoading: false, loadingError}),
     });
-  }
-
-  componentWillUnmount() {
-    this.cancellation.cancelAll();
   }
 
   private getTable() {
@@ -120,6 +163,11 @@ export class NamespaceManager extends Component<{}, State> {
         displayName: 'Actions',
         cellComponent: createActionsCellRenderer({
           onDelete: record => this.deleteNamespace(record),
+          isAppWritable: appId => {
+            if (!appId) { return false; }
+            const appState = this.state.appStatus.find(storage => storage.appId === appId);
+            return appState && appState.writable;
+          }
         }),
       },
     ];
@@ -137,24 +185,19 @@ export class NamespaceManager extends Component<{}, State> {
     ]);
 
     const griddleOptions = {
-      resultsPerPage: 20,
+      resultsPerPage: 10,
     };
     return (
       <Table
-        numberOfDisplayedRows={maybe.Just(10)}
+        numberOfDisplayedRows={10}
         columnConfiguration={columnConfig}
-        data={Either.Left<any[], SparqlClient.SparqlSelectResult>(tableData)}
-        layout={maybe.Just<{}>(
-          { options: griddleOptions, tupleTemplate: maybe.Nothing<string>() }
-        )}
+        data={tableData}
+        layout={{options: griddleOptions}}
       />
     );
   }
 
   private getUpdatePanel() {
-    if (this.state.isApplyingModifications) {
-      return <Spinner />;
-    }
     return (
       <div className={classnames(styles.updatePanel, 'row')}>
         <div className='col-xs-2'>
@@ -184,7 +227,7 @@ export class NamespaceManager extends Component<{}, State> {
             <Button type='submit'
               bsSize='small'
               bsStyle='primary'
-              onClick={this.onSetNamespace}
+              onClick={this.onSetNamespaceClick}
               disabled={!(
                 this.state.selectedPrefix &&
                 this.state.selectedNamespace &&
@@ -217,33 +260,40 @@ export class NamespaceManager extends Component<{}, State> {
   }
 
   private deleteNamespace(record: PrefixRecord) {
-    this.setState({isApplyingModifications: true});
     this.cancellation.map(
       NamespaceService.deletePrefix(record.prefix, record.appId)
     ).observe({
-      value: () => refresh(),
+      value: () => this.showNotification('Prefix successfully deleted.'),
       error: modificationError => this.setState({
-        isApplyingModifications: false,
         modificationError,
       }),
     });
   }
 
-  private onSetNamespace = (e: MouseEvent<ReactBootstrap.Button>) => {
+  private onSetNamespaceClick = (e: MouseEvent<ReactBootstrap.Button>) => {
     e.stopPropagation();
     e.preventDefault();
+    if (this.state.data.some(({prefix}) => prefix === this.state.selectedPrefix)) {
+      userConfirmationDialog(execute => {
+        if (execute) {
+          this.onSetNamespace();
+        }
+      });
+    } else {
+      this.onSetNamespace();
+    }
+  }
 
-    this.setState({isApplyingModifications: true});
+  private onSetNamespace() {
     this.cancellation.map(
       NamespaceService.setPrefix(
         this.state.selectedPrefix,
         this.state.selectedNamespace,
-        this.state.selectedAppId,
+        this.state.selectedAppId
       )
     ).observe({
-      value: () => refresh(),
+      value: () => this.showNotification('Prefix successfully added.'),
       error: modificationError => this.setState({
-        isApplyingModifications: false,
         modificationError,
       }),
     });
@@ -252,6 +302,7 @@ export class NamespaceManager extends Component<{}, State> {
 
 function createActionsCellRenderer(params: {
   onDelete: (record: PrefixRecord) => void;
+  isAppWritable: (appId: string) => boolean;
 }) {
   return class extends Component<CellRendererProps, { confirm?: boolean }> {
     constructor(props: CellRendererProps, context: any) {
@@ -261,7 +312,8 @@ function createActionsCellRenderer(params: {
 
     render() {
       const record = this.props.rowData as PrefixRecord;
-      if (NamespaceService.isSystemNamespacePrefix(record.prefix)) {
+      const {isAppWritable} = params;
+      if (NamespaceService.isSystemNamespacePrefix(record.prefix) || !isAppWritable(record.appId)) {
         return null;
       } else if (this.state.confirm) {
         return (

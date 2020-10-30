@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,9 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
-  Component, ComponentClass, Props as ReactProps, CSSProperties, createElement,
+  Component, ComponentClass, Props as ReactProps, CSSProperties, KeyboardEvent, createElement,
 } from 'react';
 import * as PropTypes from 'prop-types';
 import * as Kefir from 'kefir';
@@ -45,6 +66,9 @@ declare module 'react-select' {
   }
 }
 
+export const DEFAULT_VALUE_BINDING_NAME = 'value';
+export const DEFAULT_SEARCH_TERM_VARIABLE = 'token';
+
 export interface BaseProps {
   disabled?: boolean
   className?: string
@@ -66,7 +90,9 @@ export interface BaseProps {
     displayKey?: (obj: SparqlClient.Binding) => string;
   }
   actions?: {
-    onSelected?: (selected: SparqlClient.Binding | SparqlClient.Binding[]) => void
+    onSelected?:
+      ((selected: SparqlClient.Binding) => void) |
+      ((selected: SparqlClient.Binding[]) => void);
   }
   value?: SparqlClient.Binding | ReadonlyArray<SparqlClient.Binding>
 }
@@ -127,14 +153,9 @@ export class AbstractAutoCompletionInput extends Component<AbstractAutoCompletio
   }
 
   componentDidMount() {
-    // Handles load if defaultQuery is provided
-    if (this.props.defaultQueryFn) {
-      this.initStream.plug(Kefir.constant(''));
-    }
     const requestProperty =
       Kefir.merge([
         this.initStream
-          .take(1)
           .map(query => {
             this.setState({loading: true});
             return query;
@@ -170,7 +191,7 @@ export class AbstractAutoCompletionInput extends Component<AbstractAutoCompletio
     this.cancellation.map(requestProperty)
       .onValue(
         vals => this.setState(state => {
-          return {options: vals, loading: false};
+          return {options: vals as SparqlClient.Binding[], loading: false};
         })
       );
   }
@@ -199,6 +220,9 @@ export class AbstractAutoCompletionInput extends Component<AbstractAutoCompletio
       onChange: this.onChange,
       onInputChange: this.loadOptions,
       onInputKeyDown: this.onKeyDown,
+      onOpen: this.props.defaultQueryFn
+        ? () => this.initStream.plug(Kefir.constant(''))
+        : undefined,
       noResultsText: this.state.loading ? 'Loading ...' : (
         _.isUndefined(this.state.options) ? `Minimum ${this.state.minimumInput} characters to search` :
         this.customSuggestionRenderer(this.state.templates.empty)({})
@@ -237,10 +261,10 @@ export class AbstractAutoCompletionInput extends Component<AbstractAutoCompletio
   private onChange =
     (x: SparqlClient.Binding | SparqlClient.Binding[]) => {
       this.setState({value: x});
-      this.props.actions.onSelected(x);
+      this.props.actions.onSelected(x as SparqlClient.Binding & SparqlClient.Binding[]);
     }
 
-  private onKeyDown = (event) => {
+  private onKeyDown = (event: KeyboardEvent) => {
     if (this.props.allowForceSuggestion) {
       if (event.keyCode === 13) {
         this.forceSuggestionStream.plug(Kefir.constant(event.keyCode));
@@ -265,23 +289,23 @@ export class AbstractAutoCompletionInput extends Component<AbstractAutoCompletio
     return queryToUse(token, this.state.searchTermVariable);
   }
 
-  private applyDefaultProps(props) {
+  private applyDefaultProps(props: AbstractAutoCompletionInputProps) {
     const actions = assign({
-      onSelected: (token) => {/**/},
+      onSelected: (token: unknown) => {/**/},
     }, props.actions);
 
     const templates = assign({
       empty: 'No matches for your query.',
       suggestion: '<span title="{{value.value}}">{{label.value}}</span>',
-      displayKey: (x) => x.label.value,
+      displayKey: (x: SparqlClient.Binding) => x.label.value,
     }, props.templates);
 
     return assign({
       multi: false,
       placeholder: 'search',
-      valueBindingName: 'value',
+      valueBindingName: DEFAULT_VALUE_BINDING_NAME,
       labelBindingName: 'label',
-      searchTermVariable: 'token',
+      searchTermVariable: DEFAULT_SEARCH_TERM_VARIABLE,
       name: 'search-input',
       minimumInput: AbstractAutoCompletionInput.MIN_LENGTH,
       datatype: 'xsd:string',

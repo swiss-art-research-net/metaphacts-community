@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +37,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Maybe from 'data.maybe';
 
 import {
-  LightwightTreePatterns, ComplexTreePatterns,
+  LightweightTreePatterns, ComplexTreePatterns,
 } from 'platform/components/semantic/lazy-tree';
+import { DataQuery } from 'platform/api/dataClient';
 import { Rdf } from 'platform/api/rdf';
 import * as _ from 'lodash';
 
@@ -43,7 +65,7 @@ export const SEMANTIC_SEARCH_VARIABLES = {
   SET_VAR: '__set__',
   RELATION_VAR: '__relation__',
   RELATION_PATTERN_VAR: '__relationPattern__',
-  DATE_BEGING_VAR: '__dateBeginValue__',
+  DATE_BEGIN_VAR: '__dateBeginValue__',
   DATE_END_VAR: '__dateEndValue__',
   GEO_CENTER_VAR: '__geoCenter__',
   GEO_CENTER_LAT_VAR: '__geoCenterLat__',
@@ -97,8 +119,8 @@ export interface QuerySearchProfileConfig {
    *   relation- relation IRI
    *   label - relation label
    *   description - detailed description of the relation
-   *   domain - relation domain IRI
-   *   range - relation range IRI
+   *   hasDomain - relation domain IRI
+   *   hasRange - relation range IRI
    */
   relationsQuery: string
 
@@ -157,7 +179,7 @@ export interface InlineSearchProfileConfig {
     relations: Array<InlineRelation>;
 }
 
-export type TreeSelectorConfig = ComplexTreePatterns | LightwightTreePatterns;
+export type TreeSelectorConfig = ComplexTreePatterns | LightweightTreePatterns;
 export interface TreeSelectorPatterns {
   [key: string]: TreeSelectorConfig;
 }
@@ -250,7 +272,7 @@ export interface ResourceSelectorConfig {
    *   __range__ - conjunct range category IRI
    *   __relation__ - conjunct relation IRI
    */
-  query: string
+  query: string | DataQuery;
 
   /**
    * A flag determining whether any special Lucene syntax will be escaped.
@@ -261,7 +283,7 @@ export interface ResourceSelectorConfig {
   escapeLuceneSyntax?: boolean
 
   /**
-   * A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`. 
+   * A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`.
    * E.g. the search for `Hello World` becomes `Hello* World*`.
    *
    * @default true
@@ -273,6 +295,7 @@ export interface ResourceSelectorConfig {
    *
    * Mandatory projection variables:
    *   suggestion - should contain suggestion item IRI
+   *    (can be redefined by "suggestionVariable" parameter)
    *   label - should contain suggestion item label
    *
    * Variables that will be substituted with user selected value:
@@ -282,6 +305,11 @@ export interface ResourceSelectorConfig {
    *   __relation__ - conjunct relation IRI
    */
   defaultQuery?: string
+
+  /**
+   * Redefines mandatory projection variable
+   */
+  suggestionVariable?: string;
 
   /**
    * Handlebars template that is used when there are no results that match user input.
@@ -297,13 +325,12 @@ export interface ResourceSelectorConfig {
 
 export interface SearchDatasetConfig {
   /**
-   * Service IRI of the dataset's SPARQL endpoint.
-   * If not present, denotes the default repository (having the ID "default" in the RepositoryManager).
+   * The IRI that will be injected as `__dataset__` variable into the datasetPattern.
    */
   iri?: string;
 
   /**
-   * Textual label denoting the repository.
+   * Textual label denoting the dataset.
    */
   label: string;
 
@@ -314,11 +341,13 @@ export interface SearchDatasetConfig {
 
   /**
    * If true, then error from the repository in fedarate query will be ignored (using SILENT from SPARQL 1.1 standard).
+   * @ignore
    */
   silent?: boolean;
 
   /**
    * Optional list of alignments with other datasets.
+   * @ignore
    */
   alignments?: Array<DatasetAlignmentConfig>
 }
@@ -344,19 +373,17 @@ export interface DatasetsConfig {
   /**
    * If true, denotes a federated scenario, in which the search query must be sent
    * to multiple repositories (described in the datasets property).
+   * @ignore
    */
   federated?: boolean
 
   /**
    * The list of datasets which should be queried.
-   * If not provided, only the search will only affect the default repository.
    */
   datasets?: Array<SearchDatasetConfig>
 
   /**
-   * Query pattern that is used to discriminate items between datasets in non-federated mode.
-   * This pattern will be applied to tree selector queries, resource selector queries,
-   * facet queries and final result query. At the runtime `__dataset__`
+   * The query pattern that will be injected into the search queries to restrict the query patterns to a particular dataset. At the runtime `__dataset__`
    * will be bound to dataset selected by the user.
    *
    * @default `
@@ -400,7 +427,6 @@ export interface SemanticSearchConfig {
 
   /**
    * Multi-datasets search configuration.
-   * If not provided, only the search will only affect the default repository.
    */
   datasetsConfig?: DatasetsConfig
 
@@ -423,6 +449,11 @@ export interface SemanticSearchConfig {
    *   `dropdown` - dropdown field.
    */
   selectorMode?: 'stack' | 'dropdown';
+
+  /**
+   * Knowledge panel component id. Default value is `undefined`.
+   */
+  knowledgePanelId?: string;
 }
 
 /**
@@ -553,7 +584,7 @@ export interface Text {
    escapeLuceneSyntax?: boolean;
 
   /**
-   * A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`. 
+   * A flag determining whether the user input is tokenized by whitespace into words postfixed by `*`.
    * E.g. the search for `Hello World` becomes `Hello* World*`.
    *
    * @default true

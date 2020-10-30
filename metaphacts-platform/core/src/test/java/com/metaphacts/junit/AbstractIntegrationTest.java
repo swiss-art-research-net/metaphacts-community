@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,16 +37,18 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.junit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import org.jukito.JukitoRunner;
 import org.jukito.UseModules;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.ExternalResource;
+import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
 
 import com.google.inject.Inject;
@@ -34,28 +58,31 @@ import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.data.rdf.ReadConnection;
 
 /**
- * Extend this class to automatically run your test with {@link JukitoRunner}
+ * Extend this class to automatically run your test with {@link MetaphactsJukitoRunner}
  * and {@link MetaphactsGuiceTestModule}, which will take care of basic
  * configurations (i.e. in temporary folders) as well as binding classes for
  * dynamic and static guice injections.
  *
  * <p>
- * <b>Please note</b> that the runner executes the module only once per class.
- * Consequently test methods access the same configuration and data files and as
- * such custom {@link Rule}s must ensure to reset or reinitialize, for example,
- * the repository or namespaces.
- * 
+ * Note: dependencies such as runtime folder, {@link RepositoryRule}, {@link RuntimeFolderRule}, etc. are 
+ * reset after each test. 
  * </p>
  * 
- * TODO It seems that there is an bug in the {@link JukitoRunner} if running
- * tests in parallel. Until this bug is fixed, it is important to execute tests
- * in sbt with the setting "parallelExecution in Test := false" See
- * https://metaphacts.atlassian.net/browse/ID-142
+ * <p>
+ * When using own {@code @}{@link Rule}s care needs to be taken to properly initialize dependencies.
+ * Everything that is being {@code @}{@link Inject}ed will be initialized by Guice at roughly the same 
+ * time so when injecting JUnit rules this might not work as intended regarding ordering.<br/>
+ * Using {@code @}{@link RuleChain}s to order initialization will not work properly as the {@code @}{@link Inject}ed fields
+ * for {@code @}{@link Rule}s are not necessarily already available when setting up the RuleChain using 
+ * {@code RuleChain.outerRule(outerRule).around(enclosedRule)}. The solution is to call the rule's 
+ * {@link ExternalResource#before} and {@link ExternalResource#before} methods manually in methods annotated 
+ * with {@code @}{@link Before} and {@code @}{@link After}.
+ * </p>
  * 
- *
  * @author Johannes Trame <jt@metaphacts.com>
+ * @author Wolfgang Schell <ws@metaphacts.com>
  */
-@RunWith(JukitoRunner.class)
+@RunWith(MetaphactsJukitoRunner.class)
 @UseModules(MetaphactsGuiceTestModule.class)
 public abstract class AbstractIntegrationTest {
     @Inject
@@ -63,6 +90,10 @@ public abstract class AbstractIntegrationTest {
     
     @Inject
     protected Configuration config;
+    
+    @Inject
+    @Rule
+    public RuntimeFolderRule runtimeFolderRule;
 
     @Inject
     @Rule
@@ -70,7 +101,7 @@ public abstract class AbstractIntegrationTest {
     
     @Rule
     public ExpectedException exception= ExpectedException.none();
-
+    
     /**
      * Dummy test method to prevent JukitoRunner from throwing an exception
      * because of none runnable test methods
@@ -78,11 +109,11 @@ public abstract class AbstractIntegrationTest {
     @Test
     public void dummyTest(){
         // assert that triple store is empty
-        assertEquals(0,repositoryRule.getReadConnection().size());
+        //assertEquals(0,repositoryRule.getReadConnection().size());
+        assertTrue("dummy test", true);
     }
     
     protected ReadConnection connection(){
        return this.repositoryRule.getReadConnection();
     }
-
 }

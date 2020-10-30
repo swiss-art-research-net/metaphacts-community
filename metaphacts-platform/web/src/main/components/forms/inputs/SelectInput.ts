@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +37,11 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { createElement } from 'react';
 import * as D from 'react-dom-factories';
-import ReactSelect from 'react-select';
+import ReactSelect, {
+  OnChangeHandler, OptionRendererHandler, ValueRendererHandler
+} from 'react-select';
 import * as Immutable from 'immutable';
 
 import { Cancellation } from 'platform/api/async/Cancellation';
@@ -47,7 +70,7 @@ const SELECT_TEXT_CLASS = 'select-text-field';
 const OPTION_CLASS = SELECT_TEXT_CLASS + 'option';
 
 export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
-  private readonly cancellation = new Cancellation();
+  private fetchingValueSet = Cancellation.cancelled;
 
   private isLoading = true;
 
@@ -66,10 +89,29 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
   }
 
   componentDidMount() {
-    const {definition} = this.props;
-    if (definition.valueSetPattern) {
-      this.cancellation.map(
-        queryValues(definition.valueSetPattern)
+    this.fetchValueSet(this.props);
+  }
+
+  componentWillReceiveProps(nextProps: SelectInputProps) {
+    if (nextProps.dependencyContext !== this.props.dependencyContext) {
+      this.fetchValueSet(nextProps);
+    }
+  }
+
+  componentWillUnmount() {
+    this.fetchingValueSet.cancelAll();
+  }
+
+  private fetchValueSet(props: SelectInputProps) {
+    this.isLoading = false;
+    this.fetchingValueSet.cancelAll();
+
+    const valueSetPattern = getValueSetPattern(props);
+    if (valueSetPattern) {
+      this.isLoading = true;
+      this.fetchingValueSet = new Cancellation();
+      this.fetchingValueSet.map(
+        queryValues(valueSetPattern)
       ).observe({
         value: valueSet => {
           this.isLoading = false;
@@ -79,24 +121,10 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
         error: error => {
           console.error(error);
           this.isLoading = false;
-          this.props.updateValue(v => {
-            const nonEmpty = FieldValue.isEmpty(v)
-              ? FieldValue.fromLabeled({value: Rdf.iri('')}) : v;
-            const errors = FieldValue.getErrors(nonEmpty).push({
-              kind: ErrorKind.Loading,
-              message: `Failed to load value set`,
-            });
-            return FieldValue.setErrors(nonEmpty, errors);
-          });
+          this.props.updateValue(appendValueSetLoadingError);
         }
       });
-    } else {
-      this.isLoading = false;
     }
-  }
-
-  componentWillUnmount() {
-    this.cancellation.cancelAll();
   }
 
   private onValueChanged = (value?: SparqlBindingValue) => {
@@ -174,15 +202,15 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
       createElement(ReactSelect, {
         name: definition.id,
         placeholder: placeholder,
-        onChange: this.onValueChanged,
+        onChange: this.onValueChanged as OnChangeHandler<any>,
         disabled: !this.canEdit,
         options: options,
         value: selectedValue,
-        optionRenderer: this.optionRenderer,
-        valueRenderer: this.valueRenderer,
+        optionRenderer: this.optionRenderer as OptionRendererHandler<any>,
+        valueRenderer: this.valueRenderer as ValueRendererHandler<any>,
       }),
 
-      createElement(ValidationMessages, {errors: FieldValue.getErrors(this.props.value)}),
+      createElement(ValidationMessages, {errors: FieldValue.getErrors(this.props.value)})
     );
   }
 
@@ -192,6 +220,25 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
   }
 
   static makeHandler = AtomicValueInput.makeAtomicHandler;
+}
+
+function getValueSetPattern(props: SelectInputProps) {
+  const {definition, dependencyContext} = props;
+  if (dependencyContext) {
+    return dependencyContext.valueSetPattern;
+  } else {
+    return definition.valueSetPattern;
+  }
+}
+
+function appendValueSetLoadingError(v: FieldValue): FieldValue {
+  const nonEmpty = FieldValue.isEmpty(v)
+    ? FieldValue.fromLabeled({value: Rdf.iri('')}) : v;
+  const errors = [...FieldValue.getErrors(nonEmpty), {
+    kind: ErrorKind.Loading,
+    message: `Failed to load value set`,
+  }];
+  return FieldValue.setErrors(nonEmpty, errors);
 }
 
 SingleValueInput.assertStatic(SelectInput);

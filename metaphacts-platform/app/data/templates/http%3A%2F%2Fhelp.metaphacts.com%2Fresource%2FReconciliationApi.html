@@ -1,0 +1,329 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>Reconciliation API</h1>
+    <p>
+      The service is the partial implementation of OpenRefine Reconciliation API. Please refer to the  <a href="https://reconciliation-api.github.io/specs/latest/" target="_blank">W3C</a> documentation or the <a href="https://github.com/OpenRefine/OpenRefine/wiki/Reconciliation-Service-API" target="_blank">GitHub Wiki</a> for further details.
+    </p>
+
+    <h2>Implementation</h2>
+    
+    <p>Currently the implementation of Reconciliation API includes a reconciliation service, also referred to as Look-up service. The following RESTful endpoints are available</p>
+    
+    <ul>
+      <li>
+        <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation</code> (without any parameters). Returns the manifest of the service in <b>JSON</b> or <b>JSONP</b> format depending on <b>Accept</b> field in the header. Two types for result are available: <code>application/json</code> or <code>application/javascript</code>
+      </li>
+      <li>
+        <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation?query=</code><b style="margin-left: -5px;"><code>{ReconciliationRequest}</code></b> - where <b>ReconciliationRequest</b> is a URL-encoded JSON-object. Returns <code>ReconciliationResponse</code> in <b>JSON</b> or <b>JSONP</b> format depending on <b>Accept</b> field in the header. Two types for result are available: <code>application/json</code> or <code>application/javascript</code>
+      </li>
+      <li>
+        <b>POST: </b> <code>{SERVER_URL}/rest/reconciliation</code> - similar to the GET variant, with the only difference being that the <code>ReconciliationRequest</code> is provided as JSON-object in the body of POST-request.
+      </li>
+    </ul>
+
+    <h3>Reconciliation request examples</h3>
+    
+    <p>The following examples illustrate API access from the commandline using cURL.</p>
+    
+    <h4>Manifest query example (GET):</h4>
+    <mp-code-block mode="cURL">
+      <![CDATA[
+      curl -X GET \
+        http://localhost:10214/rest/reconciliation \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json'
+      ]]>
+    </mp-code-block>
+
+    <h4>Reconciliation query example (POST):</h4>
+    <mp-code-block mode="cURL">
+      <![CDATA[
+      curl -X POST \
+        http://localhost:10214/rest/reconciliation \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json' \
+        -d '{
+        "q0": {
+          "query": "Mannheim",
+          "limit": "1",
+          "type_strict": "all",
+          "type": "https://d-nb.info/standards/elementset/gnd#Person"
+        }
+      }'
+      ]]>
+    </mp-code-block>
+
+    <h4>Reconciliation query example (GET):</h4>
+    <mp-code-block mode="cURL">
+      <![CDATA[
+      curl -X GET \
+        'http://localhost:10214/rest/reconciliation?queries=%7B%22q0%22%3A%7B%22query%22%3A%22Meinheim%22%2C%22type%22%3A%22http%3A%2F%2Fwww.w3.org%2F2004%2F02%2Fskos%2Fcore%23OrderedCollection%22%7D%7D&callback=alert' \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json'
+      ]]>
+    </mp-code-block>
+
+    <h3>Reconciliation request</h3>
+    
+    <p>The <code>ReconciliationRequest</code> object is a JSON-object, which represents a Map (String to <code>ReconciliationQuery</code>) of reconciliation queries, where the keys are identifiers of the queries.</p>
+    
+    <mp-code-block mode="application/json">
+      <![CDATA[
+      {
+        "query1": {..ReconciliationQuery..},
+        "query2": {..ReconciliationQuery..},
+        ...
+        "queryN": {..ReconciliationQuery..}
+      }
+      ]]>
+    </mp-code-block>
+
+    <h3>Reconciliation query</h3>
+    
+      <p>The <code>ReconciliationQuery</code> defines a query following the specification of the <a href="https://reconciliation-api.github.io/specs/latest/" target="_blank">OpenRefine Reconciliation API</a>. A query object can define the following fields:</p>
+      
+    <div class="panel panel-default">
+      <table>
+        <tbody>
+          <tr>
+            <th rowspan="1" colspan="1">
+              <p><strong>Parameter</strong></p>
+            </th>
+            <th rowspan="1" colspan="1" class="ak-renderer-tableHeader-sortable-column">
+              <p><strong>Description</strong></p>
+            </th>
+          </tr>
+          <tr>
+            <td rowspan="1" colspan="1">
+              <p>"query"</p>
+            </td>
+            <td rowspan="1" colspan="1">
+              <p>A string to search for. Required.</p>
+            </td>
+          </tr>
+          <tr>
+            <td rowspan="1" colspan="1">
+              <p>"limit"</p>
+            </td>
+            <td rowspan="1" colspan="1">
+              <p>An integer to specify how many results to return. Optional.</p>
+            </td>
+          </tr>
+          <tr>
+            <td rowspan="1" colspan="1">
+              <p>"type"</p>
+            </td>
+            <td rowspan="1" colspan="1">
+              <p>A single string, or an array of strings, specifying the types of result e.g., person, product, ... The
+                actual format of each type depends on the service (e.g., "Q515" as a Wikidata type). Optional. (<span
+                  style="color: rgb(255, 86, 48);">Currently we treat this parameter as </span><strong><span
+                    style="color: rgb(255, 86, 48);">rdf:type</span></strong><span style="color: rgb(255, 86, 48);">
+                  property value</span>)</p>
+            </td>
+          </tr>
+          <tr>
+            <td rowspan="1" colspan="1">
+              <p>"type_strict"</p>
+            </td>
+            <td rowspan="1" colspan="1">
+              <p>A string, one of "any", "all", "should". Optional.</p>
+            </td>
+          </tr>
+          <tr>
+            <td rowspan="1" colspan="1">
+              <p>"properties"</p>
+            </td>
+            <td rowspan="1" colspan="1">
+              <p>
+                Array of json object literals or links. Optional. Properties can be one of two types:
+              </p>
+              <ul>
+                <li>literal property: <code>{pid: string, v: string}</code></li>
+                <li>object property: <code>{pid: string, v: {id: string}}</code> - where the <b>id</b> is IRI currently</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Example Reconciliation Query:</h4>
+    
+    <mp-code-block mode="application/json">
+      <![CDATA[
+        {
+          "query" : "Ford Taurus",
+          "limit" : 3,
+          "type" : "Q3231690",
+          "type_strict" : "any",
+          "properties" : [
+            { "pid" : "P571", "v" : 2009 },
+            { "pid" : "P176" , "v" : { "id" : "Q20827633" } }
+          ]
+        }
+      ]]>
+    </mp-code-block>
+
+    <h3>Reconciliation response</h3>
+    
+    <p>In response to a <code>ReconciliationQuery</code> the service returns a <code>ReconciliationResponse</code>. The <code>ReconciliationResponse</code> is a map of results, where keys are identifiers of reconciliation queries and the values are lists of JSON-objects which contain reconciliation candidates.</p>
+
+    <h4>Example:</h4>
+    
+    <mp-code-block mode="application/json">
+      <![CDATA[
+        {
+          "q0" : {
+            "result" : [
+              candidate1,
+              candidate2,
+              ...
+              candidateN,
+            ]
+          },
+          "q1" : {
+            "result" : [
+              candidate1,
+              candidate2,
+              ...
+              candidateN,
+            ]
+          }
+        }
+      ]]>
+    </mp-code-block>
+
+    <h3>Reconciliation candidate</h3>
+    
+    <p>The reconciliation candidate is a JSON-object with the following structure:</p>
+    
+    <mp-code-block mode="application/json">
+      <![CDATA[
+      {
+        "result" : [
+          {
+            "id" : ... string, database ID ...
+            "name" : ... string ...
+            "type" : ... array of strings ...
+            "score" : ... double ...
+            "match" : ... boolean, true if the service is quite confident about the match ...
+          },
+          ... more results ...
+        ],
+        ... potentially some useful envelope data, such as timing stats ...
+      }
+      ]]>
+    </mp-code-block>
+
+    <h3>Service manifest</h3>
+    
+    <p>The service manifest defines metadata that describes the capabilities of the service. Such metadata can be retrieved by invoking the service with just a JSONP callback parameter and no other parameters. The following fields are provided:</p>
+    
+    <ul>
+      <li>"name": the name of the service, which will be used to display the service in the reconciliation menu;</li>
+      <li>"identifierSpace": an URI for the type of identifiers returned by the service;</li>
+      <li>"schemaSpace": an URI for the type of types understood by the service;</li>
+      <li>"view" an object with a template URL to view a given item from its identifier: "view": {"url":"http://example.com/object/{{id}}"}.</li>
+    </ul>
+    
+    <p>The last two parameters are mainly useful to assert that the identifiers returned by two different reconciliation services refer to the same thing. All other fields are optional: they are used to specify the URLs for the other endpoints (suggest, preview and extend) described in the following section.</p>
+
+    <h4>Reconciliation service manifest example:</h4>
+    
+    <mp-code-block mode="application/json">
+      <![CDATA[
+      {
+        "identifierSpace": "http://www.metaphacts.com/ontologies/platform#reconciliation",
+        "name": "mp-reconciliation",
+        "defaultTypes": [
+            {
+                "id": "http://vocab.getty.edu/ontology#Biography",
+                "name": "Biography"
+            },
+            {
+                "id": "https://purl.org/geojson/vocab#Feature",
+                "name": "Feature"
+            },
+            ...
+            {
+                "id": "http://vocab.getty.edu/ontology#GroupConcept",
+                "name": "GroupConcept"
+            }
+        ]
+      }
+      ]]>
+    </mp-code-block>
+
+    <h2>Permissions</h2>
+    
+    <p>The following permissions are required for accessing the reconciliation endpoint:</p>
+    
+    <table>
+      <tbody>
+        <tr>
+          <th rowspan="1" colspan="1">
+            <p><strong>Permission</strong></p>
+          </th>
+          <th rowspan="1" colspan="1" class="ak-renderer-tableHeader-sortable-column">
+            <p><strong>Description</strong></p>
+          </th>
+        </tr>
+        <tr>
+          <td rowspan="1" colspan="1">
+            <code>reconciliation:lookup:*</code>
+          </td>
+          <td rowspan="1" colspan="1">
+            Permission to use lookup service, i.e. to execute <b>GET/POST</b>-requests and read results.
+            <ul>
+              <li>
+                <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation?query=</code><b style="margin-left: -5px;"><code>{ReconciliationRequest}</code></b>;
+              </li>
+              <li>
+                <b>POST: </b> <code>{SERVER_URL}/rest/reconciliation</code>;
+              </li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td rowspan="1" colspan="1">
+            <code>reconciliation:manifest:read</code>
+          </td>
+          <td rowspan="1" colspan="1">
+            Permission to view server manifest by using dedicated <b>GET</b>-request.
+            <ul>
+              <li>
+                <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation</code> (without any parameters).
+              </li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td rowspan="1" colspan="1">
+            <code>reconciliation:description:read</code>
+          </td>
+          <td rowspan="1" colspan="1">
+            Permission for the OpenRefine PreviewService.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    
+    <p>The system ships with a pre-defined role <code>lookup</code> that can be assigned to any user.</p>
+    <p>These permissions are defined for the <code>admin</code> role by default (i.e. the default admin user has all required permissions).</p>
+
+  <p>In order to provide anonymous access the following configuration is required:</p>
+  <ul>
+  <li>anonymous access has to be enabled by adding <code>anon</code> to property <code>shiroAuthenticationFilter</code> in <code>config/environment.prop</code></li>
+  <li>additionally, the user <code>anonymous</code> needs to be associated with the <code>lookup</code> role in <code>shiro.ini</code> or via appropriate role mapping</li>
+  </ul>
+
+  See <semantic-link title="Security" uri='[[resolvePrefix "Help:Security"]]'>Security</semantic-link> for details.
+ In order to support anonymous access to the reconciliation API (e.g. from the OpenRefine toolkit), the permissions need to be assigned to the <code>anonymous</code> user. Please refer to the <semantic-link title="Security" uri='[[resolvePrefix "Help:Security"]]'>security documentation</semantic-link> for details on how to enable anonymous access to the platform, and how to define a new role that can be assigned to the <code>anonymous</code> user.</p>
+      
+  </div>
+</div>
+
+

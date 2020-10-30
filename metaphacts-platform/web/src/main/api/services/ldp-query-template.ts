@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as maybe from 'data.maybe';
 import * as Kefir from 'kefir';
 
@@ -96,7 +117,7 @@ export class QueryTemplateServiceClass extends LdpService {
       return triples;
     });
 
-    const mergedArgsTriples: Rdf.Triple[] = [].concat.apply([], argsTriples);
+    const mergedArgsTriples: Rdf.Triple[] = ([] as Rdf.Triple[]).concat.apply([], argsTriples);
     const categories = template.categories.map(
       category => Rdf.triple(subject, CATEGORIES_PREDICATE, category));
 
@@ -148,14 +169,14 @@ export class QueryTemplateServiceClass extends LdpService {
       const valueType = graph.triples.find(
         t => t.s.equals(item) && t.p.equals(spl.valueTypeProp)).o.value;
       const defaultValue = graph.triples.find(
-        t => t.s.equals(item) && t.p.equals(spl.defaultValue));
+        t => t.s.equals(item) && t.p.equals(spl.defaultValue) && Rdf.isNode(t.o));
 
       return {
         label: label,
         variable: this.extractValueFromIri(variable),
         comment: comment,
         valueType: valueType,
-        defaultValue: defaultValue ? defaultValue.o : undefined,
+        defaultValue: defaultValue ? defaultValue.o as Rdf.Node : undefined,
         optional: optional ? (optional.o.value === 'true') : false,
       };
     });
@@ -166,7 +187,7 @@ export class QueryTemplateServiceClass extends LdpService {
       label: graph.triples.find(t => t.s.equals(iri) && t.p.equals(rdfs.label)).o.value,
       description: graph.triples.find(t => t.s.equals(iri) && t.p.equals(rdfs.comment)).o.value,
       categories: graph.triples
-        .filter(t => t.s.equals(iri) && t.p.equals(CATEGORIES_PREDICATE) && t.o.isIri())
+        .filter(t => t.s.equals(iri) && t.p.equals(CATEGORIES_PREDICATE) && Rdf.isIri(t.o))
         .map(t => t.o as Rdf.Iri).toArray(),
       args: args,
     };

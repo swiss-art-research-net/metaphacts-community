@@ -1,18 +1,78 @@
 {
-  "semantic-link": "platform/api/navigation/components/ResourceLinkComponent.ts",
-  "semantic-link-container": "platform/api/navigation/components/ResourceLinkContainer.ts",
+  "semantic-link": "platform/components/navigation/ResourceLinkComponent.ts",
+  "semantic-link-container": "platform/components/navigation/ResourceLinkContainer.ts",
 
-  "semantic-table": "platform/components/semantic/table/SemanticTable.ts",
+  "semantic-table-deprecated": {
+    "path": "platform/components/semantic/table/SemanticTable.ts",
+    "deferAttributes": {
+      "tuple-template": true,
+      "no-result-template": true
+    },
+    "deferJsonProperties": {
+      "column-configuration": {
+        "cellTemplate": true
+      }
+    }
+  },
   "semantic-table-row-selection": "platform/components/semantic/table/TableSelectionComponent.ts",
 
-  "semantic-query": "platform/components/semantic/query/SemanticQuery.ts",
-  "semantic-carousel": "platform/components/semantic/carousel/SemanticCarousel.ts",
-  "semantic-chart": "platform/components/semantic/chart/SemanticChart.ts",
-  "semantic-chart-type-selector": "platform/components/semantic/chart/SemanticChartTypeSelector.tsx",
-  "semantic-tree": "platform/components/semantic/tree/SemanticTree.ts",
-  "semantic-map": "platform/components/semantic/map/SemanticMap.ts",
+  "semantic-table": {
+    "path": "platform/components/semantic/data-table/SemanticDataTable.tsx",
+    "deferAttributes": {
+      "tuple-template": true,
+      "no-result-template": true
+    },
+    "deferJsonProperties": {
+      "column-configuration": {
+        "cellTemplate": true,
+        "aggregationCellTemplate": true
+      }
+    }
+  },
 
-  "semantic-graph": "platform/components/semantic/graph/SemanticGraph.ts",
+  "semantic-query": {
+    "path": "platform/components/semantic/query/SemanticQuery.ts",
+    "deferAttributes": {
+      "template": true,
+      "no-result-template": true
+    }
+  },
+  "semantic-carousel": {
+    "path": "platform/components/semantic/carousel/SemanticCarousel.ts",
+    "deferAttributes": {
+      "tuple-template": true,
+      "no-result-template": true
+    }
+  },
+  "semantic-chart": {
+    "path": "platform/components/semantic/chart/SemanticChart.ts",
+    "deferAttributes": {
+      "tooltip-template": true,
+      "no-result-template": true
+    }
+  },
+  "semantic-chart-type-selector": "platform/components/semantic/chart/SemanticChartTypeSelector.tsx",
+  "semantic-tree": {
+    "path": "platform/components/semantic/tree/SemanticTree.ts",
+    "deferAttributes": {
+      "tuple-template": true,
+      "no-result-template": true
+    }
+  },
+  "semantic-map": {
+    "path": "platform/components/semantic/map/SemanticMap.ts",
+    "deferAttributes": {
+      "tuple-template": true,
+      "no-result-template": true
+    }
+  },
+
+  "semantic-graph": {
+    "path": "platform/components/semantic/graph/SemanticGraph.ts",
+    "deferAttributes": {
+      "no-result-template": true
+    }
+  },
   "semantic-graph-extension-expand-collapse": "platform/components/semantic/graph/extensions/CytoscapeExpandCollapse.ts",
   "semantic-graph-extension-navigator": "platform/components/semantic/graph/extensions/CytoscapeNavigator.ts",
   "semantic-graph-extension-panzoom": "platform/components/semantic/graph/extensions/CytoscapePanZoomExtension.ts",
@@ -24,11 +84,14 @@
   "semantic-graph-layout-grid": "platform/components/semantic/graph/layouts/GridLayout.ts",
   "semantic-graph-layout-preset": "platform/components/semantic/graph/layouts/PresetLayout.ts",
 
-  "mp-radar-plot": "platform/components/semantic/radar-plot/RadarPlot.tsx",
-
   "semantic-search": "platform/components/semantic/search/web-components/SemanticSearch.ts",
   "semantic-search-query-keyword": "platform/components/semantic/search/web-components/KeywordSearch.tsx",
-  "semantic-search-query-entities": "platform/components/semantic/search/web-components/EntitySearch.tsx",
+  "semantic-search-query-entities": {
+    "path": "platform/components/semantic/search/web-components/EntitySearch.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
   "semantic-search-query-chemical-drawing": "platform/components/semantic/search/web-components/ChemcialDrawingSearch.tsx",
   "semantic-search-query-constant": "platform/components/semantic/search/web-components/QueryConstant.tsx",
   "semantic-search-result": "platform/components/semantic/search/web-components/SemanticSearchResult.tsx",
@@ -36,38 +99,79 @@
   "semantic-search-form-query": "platform/components/semantic/search/web-components/SemanticSearchFormQuery.tsx",
   "semantic-search-domain-switch": "platform/components/semantic/search/web-components/SemanticSearchDomainSwitch.tsx",
   "semantic-search-table-result": "platform/components/semantic/search/web-components/SemanticSearchTableResult.tsx",
+  "semantic-search-configuration-selector": "researchspace/components/search/configuration/ConfigurationSelector",
 
-  "semantic-simple-search": "platform/components/semantic/simple-search/SimpleSearch.ts",
+  "semantic-simple-search": {
+    "path": "platform/components/semantic/simple-search/SimpleSearch.ts",
+    "deferAttributes": {
+      "template": true
+    }
+  },
 
-  "semantic-if": "platform/components/semantic/conditional/SemanticIf.tsx",
-  "semantic-switch": "platform/components/semantic/conditional/SemanticSwitch.tsx",
+  "semantic-if": {
+    "path": "platform/components/semantic/conditional/SemanticIf.tsx",
+    "deferAttributes": {
+      "then": true,
+      "else": true
+    }
+  },
+  "semantic-switch": {
+    "path": "platform/components/semantic/conditional/SemanticSwitch.tsx",
+    "deferAttributes": {
+      "cases": true
+    }
+  },
+  "semantic-update": "platform/components/semantic/update/SemanticUpdate.tsx",
 
   "semantic-context": "platform/api/components/SemanticContext.ts",
 
-  "mp-link": "platform/api/navigation/components/Link.ts",
-  "mp-resource-link": "platform/api/navigation/components/ResourceLinkComponent.ts",
-  "mp-resource-link-container": "platform/api/navigation/components/ResourceLinkContainer.ts",
+  "mp-link": "platform/components/navigation/Link.ts",
+  "mp-resource-link": "platform/components/navigation/ResourceLinkComponent.ts",
+  "mp-resource-link-container": "platform/components/navigation/ResourceLinkContainer.ts",
   "mp-resource-thumbnail": "platform/components/ui/thumbnail/ResourceThumbnail.ts",
   "mp-resource-thumbnail-fallback": "platform/components/ui/thumbnail/NoResourceThumbnail.ts",
-  "mp-navigate-to-resource": "platform/api/navigation/components/NavigateToIri.tsx",
+  "mp-navigate-to-resource": "platform/components/navigation/NavigateToIri.tsx",
 
   "mp-event-trigger": "platform/components/events/EventTrigger.ts",
   "mp-event-proxy": "platform/components/events/EventProxy.ts",
   "mp-event-target-refresh": "platform/components/events/EventTargetRefresh.ts",
-  "mp-event-target-template-render": "platform/components/events/EventTargetTemplateRender.tsx",
+  "mp-event-target-template-render": {
+    "path": "platform/components/events/EventTargetTemplateRender.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
   "mp-event-target-redirect": "platform/components/ui/redirect-action/RedirectAction.ts",
 
   "field-editor": "platform/components/forms/field-editor/FieldEditorComponent.ts",
   "mp-field-editor": "platform/components/forms/field-editor/FieldEditorComponent.ts",
-  "semantic-form": "platform/components/forms/ResourceEditorForm.ts",
+  "semantic-form": {
+    "path": "platform/components/forms/ResourceEditorForm.ts",
+    "deferAttributes": {
+      "new-subject-template": true
+    },
+    "deferJsonProperties": {
+      "endpointTemplate": true
+    }
+  },
   "semantic-form-switch": "platform/components/forms/inputs/FormSwitch.tsx",
   "semantic-form-switch-case": "platform/components/forms/inputs/FormSwitchCase.tsx",
   "semantic-form-text-input": "platform/components/forms/inputs/PlainTextInput.ts",
   "semantic-form-hidden-input": "platform/components/forms/inputs/HiddenInput.ts",
-  "semantic-form-select-input": "platform/components/forms/inputs/SelectInput.ts",
+  "semantic-form-select-input": {
+    "path": "platform/components/forms/inputs/SelectInput.ts",
+    "deferAttributes": {
+      "template": true
+    }
+  },
   "semantic-form-checklist-input": "platform/components/forms/inputs/ChecklistInput.tsx",
   "semantic-form-checkbox-input": "platform/components/forms/inputs/CheckboxInput.tsx",
-  "semantic-form-autocomplete-input": "platform/components/forms/inputs/AutocompleteInput.tsx",
+  "semantic-form-autocomplete-input": {
+    "path": "platform/components/forms/inputs/AutocompleteInput.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
   "semantic-form-datetime-input": "platform/components/forms/inputs/DatePickerInput.ts",
   "semantic-form-recover-notification": "platform/components/forms/static/RecoverNotification.ts",
   "semantic-form-errors": "platform/components/forms/static/FormErrors.ts",
@@ -77,20 +181,43 @@
   "semantic-form-tree-picker-input": "platform/components/forms/inputs/TreePickerInput.tsx",
 
   "semantic-tree-input": "platform/components/semantic/lazy-tree/SemanticTreeInput.ts",
-  "mp-field-visualization": "platform/components/forms/FieldBasedVisualization.ts",
+  "semantic-lazy-tree": {
+    "path": "platform/components/semantic/lazy-tree/SemanticLazyTree.tsx",
+    "deferAttributes": {
+      "node-template": true,
+      "no-result-template": true
+    }
+  },
+  "mp-field-visualization": {
+    "path": "platform/components/forms/FieldBasedVisualization.ts",
+    "deferAttributes": {
+      "template": true
+    }
+  },
 
   "mp-code-highlight": "platform/components/documentation/CodeHighlight.ts",
   "mp-code-example": "platform/components/documentation/CodeExample.tsx",
   "mp-code-block": "platform/components/documentation/CodeBlock.tsx",
-  "mp-anonymous-hidden": "platform/components/security/AnonymousHidden.ts",
+  "mp-anonymous-hidden": {
+    "path": "platform/components/security/AnonymousHidden.ts",
+    "deferAttributes": {
+      "alt": true
+    }
+  },
   "mp-has-permission": "platform/components/security/HasPermission.tsx",
   "mp-error": "platform/components/ui/notification/ErrorNotification.ts",
   "mp-user-language-switch": "platform/components/language-switch/UserLanguageSwitch.tsx",
 
   "mp-graph-store-action": "platform/components/admin/rdf-upload/GraphActionLink.ts",
-  "mp-rdf-upload": "platform/components/admin/rdf-upload/RdfUpload.tsx",
+  "mp-rdf-upload": {
+    "path": "platform/components/admin/rdf-upload/RdfUpload.tsx",
+    "deferAttributes": {
+      "placeholderTemplate": true
+    }
+  },
   "mp-file-upload": "platform/components/admin/file-upload/FileUpload.tsx",
   "mp-app-upload": "platform/components/admin/app-upload/AppUpload.tsx",
+  "mp-app-remove": "platform/components/admin/app-upload/AppRemoveAction.tsx",
   "mp-page-loader": "platform/components/ui/page-loader.ts",
 
   "semantic-form-file-input": "platform/components/forms/file-manager/FileInput.tsx",
@@ -101,16 +228,27 @@
 
   "mp-admin-page-manager": "platform/components/admin/page-manager/PageManager.ts",
   "mp-admin-namespace-manager": "platform/components/admin/namespace-manager/NamespaceManager.tsx",
+  "mp-admin-add-prefixes": "platform/components/admin/namespace-manager/AddPrefixes.tsx",
+  "mp-admin-create-new-page": "platform/components/admin/create-new-page/CreateNewPage.tsx",
   "mp-admin-config-manager": "platform/components/admin/config-manager/ConfigManager.tsx",
   "mp-admin-cache-invalidation-button": "platform/components/admin/CacheInvalidationButton.ts",
   "mp-admin-repository-mgmt": "platform/components/admin/repositories/RepositoryManager.tsx",
   "mp-admin-log-browser": "platform/components/admin/log-browser/LogBrowser.tsx",
+  "mp-admin-repository-switch": "platform/components/admin/repository-switch/RepositorySwitch.tsx",
+  "mp-admin-page-view-config-editor": "platform/components/admin/page-view-config/PageViewConfigEditor.tsx",
   "mp-logging-profile-selector": "platform/components/admin/log-browser/LoggingProfileSelector.tsx",
+  "mp-logging-level-selector": "platform/components/admin/log-browser/LoggingLevelSelector.tsx",
   "mp-restart-wrapper": "platform/components/admin/RestartWrapper.tsx",
   "mp-account-manager": "platform/components/admin/realm-manager/AccountManagerComponent.ts",
+  "mp-account-permission-check":"platform/components/admin/realm-manager/PermissionCheck.tsx",
 
   "mp-sparql-download": "platform/components/semantic/results/SparqlDownloadComponent.ts",
-  "mp-sparql-result-counts": "platform/components/semantic/results/ResultsNumber.ts",
+  "mp-sparql-result-counts": {
+    "path": "platform/components/semantic/results/ResultsNumber.ts",
+    "deferAttributes": {
+      "template": true
+    }
+  },
 
   "mp-ldp-remove-from-container-action": "platform/components/ldp/RemoveFromContainerAction.ts",
   "mp-ldp-create-new-resource-action": "platform/components/ldp/CreateNewResource.ts",
@@ -126,7 +264,7 @@
 
   "mp-platform-url" : "platform/components/ui/platform-url.ts",
 
-  "mp-nav-account": "platform/app/navbar/NavAccountComponent",
+  "mp-nav-account": "platform/app/navbar/NavAccountComponent.tsx",
 
   "mp-internal-page-editor": "platform/app/page/PageEditor.ts",
   "mp-internal-sparql-endpoint": "platform/app/sparql/SparqlEndpoint.ts",
@@ -143,6 +281,12 @@
   "mp-splitpane-toggle-off": "platform/components/ui/splitpane/SplitPaneToggleOffComponent.ts",
 
   "mp-label": "platform/components/ui/resource-label.ts",
+  "mp-description": {
+    "path": "platform/components/ui/resource-description.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
   "mp-highlight": "platform/components/ui/highlight/HighlightComponent.ts",
 
   "mp-popover": "platform/components/ui/popover/PopoverComponent.ts",
@@ -160,13 +304,29 @@
 
   "mp-text-truncate": "platform/components/ui/truncate/TextTruncateComponent.ts",
 
-  "mp-set-management": "platform/components/sets/SetManagement.tsx",
+  "mp-set-management": {
+    "path": "platform/components/sets/SetManagement.tsx",
+    "deferJsonProperties": {
+      "item-config": {
+        "gridTemplate": true,
+        "listTemplate": true
+      }
+    }
+  },
   "mp-set-management-action-remove-set-item": "platform/components/sets/actions/RemoveSetItemAction.ts",
   "mp-set-management-action-fetch-set-items": "platform/components/sets/actions/FetchSetItemsAction.ts",
   "mp-set-management-action-remove-set": "platform/components/sets/actions/RemoveSetAction.tsx",
   "mp-set-management-action-manage-set": "platform/components/sets/actions/ManageSetAction.ts",
   "mp-set-management-action-rename-set": "platform/components/sets/actions/RenameSetAction.ts",
-  "mp-set-management-single-set": "platform/components/sets/SingleSet.tsx",
+  "mp-set-management-single-set": {
+    "path": "platform/components/sets/SingleSet.tsx",
+    "deferJsonProperties": {
+      "item-config": {
+        "gridTemplate": true,
+        "listTemplate": true
+      }
+    }
+  },
   "mp-create-set-action": "platform/components/sets/CreateSetActionComponent.tsx",
 
   "mp-component-toolbar": "platform/components/persistence/ComponentToolbar.ts",
@@ -196,24 +356,82 @@
 
   "mp-protein-viewer": "platform/components/3-rd-party/ProteinViewer.ts",
   "mp-smiles-code-drawer": "platform/components/3-rd-party/SmilesCodeDrawer.tsx",
-  "ontodia": "platform/components/3-rd-party/ontodia/Ontodia.ts",
+  "ontodia": "platform/components/3-rd-party/ontodia/Ontodia.tsx",
   "diagram-search-result": "platform/components/3-rd-party/ontodia/DiagramSearchResult.tsx",
-  "ontodia-nested-nodes": "platform/components/3-rd-party/ontodia/OntodiaNestedNodes.tsx",
+  "ontodia-nested-nodes": "platform/components/3-rd-party/ontodia/OntodiaNestedNodes.ts",
   "ontodia-entity-metadata": "platform/components/3-rd-party/ontodia/authoring/OntodiaEntityMetadata.ts",
-  "ontodia-contents": "platform/components/3-rd-party/ontodia/OntodiaContents.tsx",
+  "ontodia-contents": {
+    "path": "platform/components/3-rd-party/ontodia/OntodiaContents.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
+  "ontodia-canvas": {
+    "path": "platform/components/3-rd-party/ontodia/CanvasComponent.ts",
+    "deferAttributes": {
+      "node-templates": true,
+      "default-node-template": true
+    }
+  },
+  "ontodia-class-tree": "platform/components/3-rd-party/ontodia/ClassTree.tsx",
+  "ontodia-instances-search": "platform/components/3-rd-party/ontodia/InstancesSearch.tsx",
+  "ontodia-connections": "platform/components/3-rd-party/ontodia/LinkTypesToolbox.ts",
+  "ontodia-element-search": "platform/components/3-rd-party/ontodia/ElementSearchComponent.ts",
+  "ontodia-canvas-widget": "platform/components/3-rd-party/ontodia/CanvasWidget.ts",
+  "ontodia-navigator": "platform/components/3-rd-party/ontodia/Navigator.ts",
+  "ontodia-halo": {
+    "path": "platform/components/3-rd-party/ontodia/Halo.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
+  "ontodia-halo-link": "platform/components/3-rd-party/ontodia/HaloLink.ts",
+  "ontodia-toolbar": "platform/components/3-rd-party/ontodia/ToolbarComponent.ts",
+  "ontodia-save-button": "platform/components/3-rd-party/ontodia/SaveButton.tsx",
   "ontodia-field-configuration": "platform/components/3-rd-party/ontodia/authoring/OntodiaFieldConfiguration.ts",
   "ontodia-field-input-override": "platform/components/3-rd-party/ontodia/authoring/FieldInputOverride.tsx",
+  "ontodia-data-providers": "platform/components/3-rd-party/ontodia/data/OntodiaDataProviders.ts",
+  "ontodia-rdf-provider": "platform/components/3-rd-party/ontodia/data/OntodiaRdfDataProvider.ts",
+  "ontodia-sparql-provider": "platform/components/3-rd-party/ontodia/data/OntodiaSparqlDataProvider.ts",
+
+  "mp-workspace-layout": "platform/components/3-rd-party/ontodia/workspace/WorkspaceLayout.ts",
+  "mp-workspace-row": "platform/components/3-rd-party/ontodia/workspace/WorkspaceRow.ts",
+  "mp-workspace-column": "platform/components/3-rd-party/ontodia/workspace/WorkspaceColumn.ts",
+  "mp-workspace-item": "platform/components/3-rd-party/ontodia/workspace/WorkspaceItem.ts",
 
   "mp-copy-to-clipboard": "platform/components/copy-to-clipboard/CopyToClipboardComponent.tsx",
 
-  "mp-lang-literal": "platform/components/ui/lang-literal/LangLiteral.tsx",
+  "mp-lang-literal": {
+    "path": "platform/components/ui/lang-literal/LangLiteral.tsx",
+    "deferAttributes": {
+      "template": true,
+      "no-result-template": true
+    }
+  },
 
-  "mp-json-renderer": "platform/components/ui/json/json-renderer.tsx",
+  "mp-swagger": "platform/components/admin/swagger/Swagger.tsx",
+  "mp-swagger-tabs": "platform/components/admin/swagger/SwaggerTabs.tsx",
+
+  "mp-json-renderer": {
+    "path": "platform/components/ui/json/json-renderer.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
   "mp-file-download" : "platform/components/ui/file-download.tsx",
 
   "mp-workflow-create" : "platform/components/workflow/WorkflowCreateComponent.tsx",
   "mp-workflow-manager" : "platform/components/workflow/WorkflowManagerComponent.tsx",
   "mp-workflow-selection-action" : "platform/components/workflow/WorkflowSelectionAction.tsx",
+
+  "mp-knowledge-panel" : "platform/components/knowledge-panel/KnowledgePanel.tsx",
+  "mp-knowledge-panel-frame" : {
+    "path": "platform/components/knowledge-panel/KnowledgePanelFrame.tsx",
+    "deferAttributes": {
+      "template": true
+    }
+  },
+  "mp-knowledge-panel-trigger" : "platform/components/knowledge-panel/KnowledgePanelTrigger.tsx",
 
   "bs-row": "react-bootstrap/es/Row.js",
   "bs-col": "react-bootstrap/es/Col.js",

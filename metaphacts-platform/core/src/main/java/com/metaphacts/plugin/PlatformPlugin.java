@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.plugin;
 
 import java.sql.Driver;
@@ -32,9 +53,8 @@ import org.eclipse.rdf4j.repository.config.RepositoryFactory;
 import org.eclipse.rdf4j.repository.config.RepositoryRegistry;
 import org.eclipse.rdf4j.sail.config.SailFactory;
 import org.eclipse.rdf4j.sail.config.SailRegistry;
-
-import ro.fortsoft.pf4j.PluginException;
-import ro.fortsoft.pf4j.PluginWrapper;
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
 
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.groups.ConfigurationGroup;
@@ -45,11 +65,11 @@ import com.metaphacts.sail.rest.sql.MpJDBCDriverManager;
 /**
  * <p>
  * This class will be instantiated by all plugins and
- * serve as the common class between a plugin (aka app) and the platform.
+ * serve as the adapter between a plugin (aka app) and the platform.
  * </p>
  * <strong> Please note: </strong>
  * <p>
- * In most cases it should not be required to extend this class i.e.
+ * In most cases it should not be required to have a custom implementation of the {@link Plugin} class,
  * it should be sufficient to implement or extend the extension points. In
  * particular, {@link RestExtension} and {@link ConfigurationExtension}.
  * </p>
@@ -57,9 +77,12 @@ import com.metaphacts.sail.rest.sql.MpJDBCDriverManager;
  * @author Johannes Trame <jt@metaphacts.com>
  *
  */
-public class PlatformPlugin extends ro.fortsoft.pf4j.Plugin {
+public class PlatformPlugin {
 
     private static final Logger logger = LogManager.getLogger(PlatformPlugin.class);
+    
+    private final PluginWrapper wrapper;
+    private final Plugin plugin;
 
     // set via init() via external call
     private Configuration config;
@@ -68,7 +91,16 @@ public class PlatformPlugin extends ro.fortsoft.pf4j.Plugin {
     private MpJDBCDriverManager jdbcDriverManager;
 
     public PlatformPlugin(final PluginWrapper wrapper) {
-        super(wrapper);
+        this.wrapper = wrapper;
+        this.plugin = wrapper.getPlugin();
+    }
+    
+    public PluginWrapper getWrapper() {
+        return wrapper;
+    }
+    
+    public Plugin getPlugin() {
+        return plugin;
     }
 
 
@@ -114,25 +146,20 @@ public class PlatformPlugin extends ro.fortsoft.pf4j.Plugin {
 
     /**
      * Start method is called by the application when the plugin is loaded.
-     * @see ro.fortsoft.pf4j.Plugin#start()
+     * @see org.pf4j.Plugin#start()
      */
-    @Override
-    public final void start() throws PluginException {
-
+    public void installExtensions() {
         // install/bootstrap the artifacts from the plugin
         handleRepositoryInstallation();
         handleJDBCDrivers();
-
-        // and delegate to super start() method
-        super.start();
     }
 
-    private void handleRepositoryInstallation() throws PluginException {
+    protected void handleRepositoryInstallation() {
         handleServiceInstallation(SailRegistry.getInstance(), SailFactory.class, SailFactory::getSailType);
         handleServiceInstallation(RepositoryRegistry.getInstance(), RepositoryFactory.class, RepositoryFactory::getRepositoryType);
     }
 
-    private <S> void handleServiceInstallation(ServiceRegistry<String, S> parentRegistry, Class<S> serviceClass, Function<S, String> serviceIdFunction) throws PluginException {
+    protected <S> void handleServiceInstallation(ServiceRegistry<String, S> parentRegistry, Class<S> serviceClass, Function<S, String> serviceIdFunction) {
         // Collects all services available on the classpath: both those added in the plugin
         // and those available in the main codebase and dependencies.
         ServiceLoader<S> loader = java.util.ServiceLoader.load(serviceClass, this.getWrapper().getPluginClassLoader());
@@ -147,13 +174,16 @@ public class PlatformPlugin extends ro.fortsoft.pf4j.Plugin {
                     parentRegistry.add(service);
                     logger.debug("Registered service class {}", service.getClass().getName());
                 }
+                else {
+                    logger.debug("Skipping duplicated service class {}", service.getClass().getName());
+                }
             } catch (Error e) {
                 logger.error("Failed to instantiate service", e);
             }
         }
     }
 
-    private void handleJDBCDrivers() throws PluginException {
+    protected void handleJDBCDrivers() {
         ServiceLoader<Driver> loader = java.util.ServiceLoader.load(Driver.class,
                 this.getWrapper().getPluginClassLoader());
 
@@ -168,13 +198,5 @@ public class PlatformPlugin extends ro.fortsoft.pf4j.Plugin {
                         + driver.getClass().getCanonicalName(), e);
             }
         }
-    }
-
-    /**
-     * Util to cast the descriptor to {@link PlatformPluginDescriptor}
-     * @return
-     */
-    public PlatformPluginDescriptor getPluginDescriptor(){
-        return (PlatformPluginDescriptor) getWrapper().getDescriptor();
     }
 }

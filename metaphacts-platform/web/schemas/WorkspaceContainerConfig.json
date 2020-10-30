@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "animationDuration": {
+            "default": 300,
+            "description": "Animation duration.",
+            "type": "number"
+        },
+        "collapsedSize": {
+            "description": "Size in the collapsed state.",
+            "type": "number"
+        },
+        "defaultCollapsed": {
+            "description": "Collapsed by default.",
+            "type": "boolean"
+        },
+        "defaultSize": {
+            "description": "Default size in the expanded state.",
+            "type": "number"
+        },
+        "minSize": {
+            "description": "Min size in the expanded state.",
+            "type": "number"
+        },
+        "undocked": {
+            "description": "Hide sidebar toggle button.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "defaultSize",
+        "defaultCollapsed",
+        "collapsedSize",
+        "minSize",
+        "undocked",
+        "animationDuration"
+    ],
+    "type": "object"
+}
+

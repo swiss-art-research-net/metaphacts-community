@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.templates;
 
 import java.io.IOException;
@@ -24,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -39,7 +61,6 @@ import com.github.jknack.handlebars.TagType;
 import com.github.jknack.handlebars.Template;
 import com.github.jknack.handlebars.io.TemplateLoader;
 import com.github.jknack.handlebars.io.TemplateSource;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import com.metaphacts.cache.TemplateIncludeCache;
 import com.metaphacts.config.NamespaceRegistry;
@@ -55,6 +76,10 @@ public class TemplateUtil {
 
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("\\[\\[\\#?\\>\\s?\\\"?([^\"\\]\\s]*)\\\"?\\s?.*?\\]\\]");
     public static final String TEMPLATE_PREFIX = "Template:";
+    /**
+     * Prefix to be used for knowledge panel templates
+     */
+    public static final String PANEL_TEMPLATE_PREFIX = "PanelTemplate:";
     private static final Logger logger = LogManager.getLogger(TemplateUtil.class);
     
     /**
@@ -65,7 +90,7 @@ public class TemplateUtil {
      * @param set Set of resources to convert into to template identifiers
      * @return Set of syntactic handlebars.java include string
      */
-    public static LinkedHashSet<String> convertResourcesToTemplateIdentifiers(Set<Resource> set) {
+    /* package */ static LinkedHashSet<String> convertResourcesToTemplateIdentifiers(Set<Resource> set) {
         LinkedHashSet<String> includes = Sets.newLinkedHashSet();
         for (Resource r : set) {
             includes.add(convertResourceToTemplateIdentifier(r));
@@ -74,6 +99,21 @@ public class TemplateUtil {
     }
     
     /**
+     * Converts a set of {@link Resource}s to knowledge panel template identifiers
+     * by prepending the "PanelTemplate:" prefix
+     * <code>["foaf:Person","foaf:Agent"]</code> Will be converted into:
+     * <code>["PanelTemplate:foaf:Person","PanelTemplate:foaf:Agent"]</code>
+     * 
+     * @param set Set of resources to convert into to knowledge panel template
+     *            identifiers
+     * @return Set of syntactic handlebars.java include string
+     */
+    /* package */ static LinkedHashSet<String> convertResourcesToKnowledgePanelTemplateIdentifiers(Set<Resource> set) {
+        return set.stream().map(r -> convertResourceToKnowledgePanelTemplateIdentifier(r))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
      * Converts the specified resource into a template identifier e.g. foaf:Agent will be converted
      * into Template:foaf:Agent
      * 
@@ -81,8 +121,23 @@ public class TemplateUtil {
      * @return
      */
     public static String convertResourceToTemplateIdentifier(Resource r){
+        return convertResourceToIncludeIdentifier(r, TEMPLATE_PREFIX);
+    }
+
+    /**
+     * Converts the specified resource into a template identifier e.g. foaf:Agent
+     * will be converted into PanelTemplate:foaf:Agent
+     * 
+     * @param r
+     * @return
+     */
+    public static String convertResourceToKnowledgePanelTemplateIdentifier(Resource r) {
+        return convertResourceToIncludeIdentifier(r, PANEL_TEMPLATE_PREFIX);
+    }
+
+    private static String convertResourceToIncludeIdentifier(Resource r, String prefix) {
         StringBuilder sb = new StringBuilder();
-        sb.append(TEMPLATE_PREFIX);
+        sb.append(prefix);
         sb.append(r.stringValue());
         return sb.toString();
     }
@@ -97,7 +152,7 @@ public class TemplateUtil {
      * @return Set of {@link IRI}s 
      */
     public static Set<IRI> extractIncludeIRIs(String rawTemplateText, NamespaceRegistry ns) {
-        Set<IRI> includeResources = Sets.newHashSet();
+        Set<IRI> includeResources = Sets.newLinkedHashSet();
         if (StringUtils.isEmpty(rawTemplateText)) {
             return includeResources;
         }
@@ -172,27 +227,48 @@ public class TemplateUtil {
     }
     
     /**
-     * Returns for a specified {@link TemplateContext} all template identifiers 
+     * Returns for a specified {@link TemplateContext} all template identifiers
+     * 
      * @param tc
      * @param includeCache
-     * @return
+     * @return the ordered include identifiers for templates
      */
     public static LinkedHashSet<String> getRdfTemplateIncludeIdentifiers(Value pageId, TemplateContext tc, TemplateIncludeCache includeCache){
         Value value = pageId;
         if(!(value instanceof IRI)){
             logger.warn(value + " is not a IRI. Currently only templates for IRIs are supported.");
-            return Sets.<String>newLinkedHashSet();
+            return Sets.newLinkedHashSet();
         }
         Set<Resource> set = includeCache.getTypesForIncludeScheme(tc.getRepository(), (IRI) value, tc.getNamespaceRegistry());
         if(set.isEmpty()){
-            return  Sets.<String>newLinkedHashSet();
+            return Sets.newLinkedHashSet();
         }
         return TemplateUtil.convertResourcesToTemplateIdentifiers(set);
     }
     
     /**
-     * Iterates of the the supplied, ordered set of applicable templates for the specified {@link TemplateContext}.
-     * Returns the first (existing) template as compiled string.
+     * Returns for a specified {@link TemplateContext} all template identifiers
+     * 
+     * @param tc
+     * @param includeCache
+     * @return the ordered include identifiers for knowledge panel templates
+     */
+    public static LinkedHashSet<String> getRdfKnowledgePanelTemplateIncludeIdentifiers(Value pageId, TemplateContext tc,
+            TemplateIncludeCache includeCache) {
+        Value value = pageId;
+        if (!(value instanceof IRI)) {
+            logger.warn(value + " is not a IRI. Currently only templates for IRIs are supported.");
+            return Sets.newLinkedHashSet();
+        }
+        Set<Resource> set = includeCache.getTypesForIncludeScheme(tc.getRepository(), (IRI) value,
+                tc.getNamespaceRegistry());
+        return TemplateUtil.convertResourcesToKnowledgePanelTemplateIdentifiers(set);
+    }
+
+    /**
+     * Iterates of the the supplied, ordered set of applicable templates for the
+     * specified {@link TemplateContext}. Returns the first (existing) template as
+     * compiled string.
      * 
      * @param tc
      * @param appplicableTemplates

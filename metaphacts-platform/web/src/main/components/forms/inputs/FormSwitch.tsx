@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,24 +37,28 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Immutable from 'immutable';
+
 import { Cancellation } from 'platform/api/async';
+import { Rdf } from 'platform/api/rdf';
+
+import { Spinner } from 'platform/components/ui/spinner';
+import { componentHasType } from 'platform/components/utils';
+
 import { FieldDefinition, normalizeFieldDefinition } from '../FieldDefinition';
-import {
-  SingleValueInput, SingleValueInputProps, SingleValueHandler, SingleValueHandlerProps,
-  CompositeInput, CompositeInputProps
-} from '../inputs';
-import { componentHasType, componentDisplayName } from 'platform/components/utils';
-import FormSwitchCase, {FormSwitchCaseProps} from './FormSwitchCase';
 import {
   FieldValue, DataState, CompositeValue, EmptyValue, ErrorKind
 } from '../FieldValues';
-import HiddenInput, { HiddenInputProps } from '../inputs/HiddenInput';
 import { queryValues } from '../QueryValues';
-import { Rdf } from 'platform/api/rdf';
-import { Spinner } from 'platform/components/ui/spinner';
+
+import { CompositeInput, CompositeInputProps } from '../inputs/CompositeInput';
+import { HiddenInput, HiddenInputProps } from '../inputs/HiddenInput';
+import {
+  SingleValueInput, SingleValueInputProps, SingleValueHandler, SingleValueHandlerProps,
+} from '../inputs/SingleValueInput';
+
+import { FormSwitchCase, FormSwitchCaseProps } from './FormSwitchCase';
 
 export interface FormSwitchProps extends SingleValueInputProps {
   switchOnField: string;
@@ -84,9 +110,7 @@ const CLASS_NAME = 'form-switch';
  *  </semantic-form-switch>
  */
 export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
-  private readonly cancellation = new Cancellation();
-
-  private switchOperations = this.cancellation.derive();
+  private switchOperations = Cancellation.cancelled;
   private fieldValuesMap = new Map<string, FieldValue>();
   private refToInput: CompositeInput | null;
   private chosenType: SwitchCaseType;
@@ -131,7 +155,7 @@ export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
   }
 
   componentWillUnmount() {
-    this.cancellation.cancelAll();
+    this.switchOperations.cancelAll();
   }
 
   private tryLoadSwitch(props: FormSwitchProps) {
@@ -145,11 +169,12 @@ export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
   }
 
   private loadSwitch(props: FormSwitchProps) {
-    this.switchOperations = this.cancellation.deriveAndCancel(this.switchOperations);
+    this.switchOperations.cancelAll();
+    this.switchOperations = new Cancellation();
     if (FieldValue.isAtomic(props.value)) {
       const node = FieldValue.asRdfNode(props.value);
       const handler = this.getHandler();
-      if (!node.isIri()) {
+      if (!Rdf.isIri(node)) {
         this.props.updateValue(v => FieldValue.replaceError(v, {
           kind: ErrorKind.Loading,
           message: `Cannot choose a switch case for non-IRI value ${node}`,
@@ -240,7 +265,7 @@ export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
       return;
     }
     const {dataState, definition, updateValue, value} = this.props;
-    const transferredProps: Partial<CompositeInputProps> & React.Props<CompositeInput> = {
+    const transferredProps: Partial<CompositeInputProps> & React.ClassAttributes<CompositeInput> = {
       value: value,
       handler: caseType.handler,
       dataState: dataState,
@@ -254,6 +279,10 @@ export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
 
   private onCaseInputMount = (input: CompositeInput | null) => {
     this.refToInput = input;
+  }
+
+  static get inputGroupType(): 'switch' {
+    return 'switch';
   }
 
   static makeHandler(props: SingleValueHandlerProps<FormSwitchProps>): SingleValueHandler {
@@ -349,7 +378,7 @@ function computeCases(
       const switchedOnInput = findSwitchedOnHiddenInput(
         baseInputProps.switchOnField, caseInput.props.children
       );
-      const caseKey = switchedOnInput.props.defaultValue;
+      const caseKey = String(switchedOnInput.props.defaultValue);
       cases.set(caseKey, {
         type: Rdf.iri(caseKey),
         label: child.props.label,
@@ -405,5 +434,6 @@ function findSwitchedOnHiddenInput(
 }
 
 SingleValueInput.assertStatic(FormSwitch);
+SingleValueInput.assertInputGroup(FormSwitch);
 
 export default FormSwitch;

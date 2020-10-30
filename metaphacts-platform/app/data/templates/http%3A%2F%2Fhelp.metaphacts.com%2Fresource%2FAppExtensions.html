@@ -1,0 +1,167 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>App Extensions</h1>
+    
+    <p>As described in <semantic-link iri="[[resolvePrefix "Help:Apps"]]">the Apps overview</semantic-link> section, the platform offers various extension points. Use cases for such extensions include, but are not limited to:
+    </p>
+    
+    <ul>
+      <li>Implement a custom web component</li>
+      <li>Implement a REST endpoint for a custom web component</li>
+      <li>Implement a backend helper, e.g. to return generated data or configuration in a format appropriate for certain components</li>
+      <li>Implement a custom QaaS result format</li>
+      <li>Implement a custom Repository implementation to access an as-of-yet unsupported RDF database</li>
+    </ul>
+    
+    <h2>App Examples</h2>
+    <p>
+      Some App Code examples can be found in the <a href="https://github.com/metaphacts/sample-apps">Sample Repository</a>. 
+      The apps come with build scripts as well as a README describing the demonstrated features.   
+    </p>
+    <p>
+      The documentation will be updated over time and cover new extension capabilities.
+    </p>
+    
+    <h2>Backend Extensions</h2>
+    <p>
+      In some use-cases it may be required to extend the available backend functionality of the platform. The following listing provides an overview of possible extensions:
+    </p>
+    <ul>
+      <li><a href="http://www.rdf4j.org/javadoc/latest/org/eclipse/rdf4j/repository/config/RepositoryFactory.html">RepositoryFactory</a> and <a href="https://rdf4j.org/javadoc/latest/org/eclipse/rdf4j/sail/config/SailFactory.html">SailFactory</a> implementations to connect to additional RDF databases</li>
+      <li>JDBC drivers for accessing relational databases using the <semantic-link iri="[[resolvePrefix "Help:EphedraSQLService"]]">Ephedra SQL Service</semantic-link></li>
+      <li>Custom <a href="https://en.wikipedia.org/wiki/Java_API_for_RESTful_Web_Services">JAX-RS</a> REST endpoints</li>
+      <li>Custom <a href="https://www.javadoc.io/doc/org.pf4j/pf4j/latest/org.pf4j/org/pf4j/Plugin.html">Plugin</a> implementation to hook into the application lifecycle</li>
+      <li>Custom SecretResolvers for providing sources of credentials</li>
+      <li>Custom (<semantic-link iri="[[resolvePrefix "Help:BackendTemplating"]]">backend</semantic-link>) <a href="http://jknack.github.io/handlebars.java/helpers.html">Handlebars Helpers</a></li>
+      <li>Configuration extensions</li>
+    </ul>
+    
+    <p>Concrete demo scenarios can be found in the <a href="https://github.com/metaphacts/sample-apps">Sample Repository</a>.</p>
+    
+    <h3>Hooking into backend components</h3>
+    <p>
+      The platform uses the <a href="https://github.com/google/guice">Guice dependency injection (DI) framework</a> to provide access to various components and services within the application.
+    </p>
+    
+    <p>Example for injecting the platform's <code>RepositoryResolver</code>:</p>
+    
+      <mp-code-block>
+<![CDATA[
+@Inject
+protected RepositoryResolver repositoryResolver;
+]]>
+  </mp-code-block>
+    
+    <p>The following listing provides an overview of accessible components</p>
+    <ul>
+      <li><semantic-link iri="[[resolvePrefix "Help:BasicSystemConfiguration"]]">Configuration</semantic-link></li>
+      <li><semantic-link iri="[[resolvePrefix "Help:Storage"]]">PlatformStorage</semantic-link></li>
+      <li><a href="http://www.rdf4j.org/javadoc/latest/org/eclipse/rdf4j/repository/RepositoryResolver.html" target="_blank">RepositoryResolver</a></li>
+      <li><semantic-link iri="[[resolvePrefix "Help:BackendTemplating"]]">CacheManager</semantic-link></li>
+      <li><semantic-link iri="[[resolvePrefix "Help:BackendTemplating"]]">NamespaceRegistry</semantic-link></li>
+      <li><semantic-link iri="[[resolvePrefix "Help:SemanticForm"]]">FieldDefinitionManager</semantic-link></li>
+      <li><a href="http://www.rdf4j.org/javadoc/latest/org/eclipse/rdf4j/rio/RDFWriterRegistry.html" target="_blank">RDFWriterRegistry</a></li>
+      <li><a href="http://www.rdf4j.org/javadoc/latest/org/eclipse/rdf4j/rio/RDFParserRegistry.html" target="_blank">RDFParserRegistry</a></li>
+      <li><a href="https://www.javadoc.io/doc/com.github.jknack/handlebars/latest/com/github/jknack/handlebars/HelperRegistry.html" target="_blank">HelperRegistry</a></li>
+      <li><semantic-link iri="[[resolvePrefix "Help:ExternalizedSecrets"]]">SecretResolver</semantic-link></li>
+      <li>PasswordService</li>
+      <li>CredentialsMatcher</li>
+      <li>LabelCache</li>
+      <li>ThumbnailServiceRegistry</li>
+      <li>ThumbnailService</li>
+      <li>QueryTemplateCache</li>
+    </ul>
+
+    
+    <p>
+      Note that custom <a href="https://www.javadoc.io/doc/org.pf4j/pf4j/latest/org.pf4j/org/pf4j/Plugin.html" target="_blank">Plugin</a> implementations as well as all extensions provided by the app and loaded via <code>ServiceLoader</code> or the plugin mechanism are subject to dependency injection, i.e. may use the services and components listed above using <code>@Inject</code> for  <a href="https://github.com/google/guice/wiki/Injections" target="_blank">fields or methods</a>.
+    </p>
+    
+    <h3>REST Extensions</h3>
+    
+    <p>Custom endpoints need to implement the <code>com.metaphacts.plugin.extension.RestExtension</code> interface. Endpoints are documented automatically on <semantic-link iri="[[resolvePrefix "Admin:Api"]]">Admin:Api</semantic-link>, unless explicitly hidden. For details on how to document endpoints see the <a href="https://github.com/swagger-api/swagger-core/wiki/Swagger-2.X---Annotations" target="_blank">Swagger reference</a>.</p>
+    
+    <p>Note: as of 3.4 REST extensions are registered using the Java <code>ServiceLoader</code>. The previous mechanism using the <code>@Extension</code> annotation and registration of the extension in the file <code>META-INF/extensions.idx</code> is deprecated.</p>
+    
+    <h2>Frontend extensions</h2>
+    <p>
+      An app may provide additional frontend extensions such as:
+    </p>
+    <ul>
+      <li>Custom web components, implemented in plain JavaScript or using frameworks such as React or Angular Elements</li>
+      <li>Web assets such as JavaScript files, CSS stylesheets, images, web fonts</li>
+      <li>Layout templates to customize the appearance, e.g. the page footer or header or to provide additional script and style extensions (e.g. to make the aforementioned custom web components available)</li>
+    </ul>
+    
+    <h3>Creating custom web components</h3>
+    <p>
+      Similar to the many <semantic-link  iri="[[resolvePrefix "Help:MPComponents"]]">Web Components</semantic-link> provided by the platform, it is possible to provide custom <a href="https://www.webcomponents.org/" target="_blank">web components</a>. A simple example could look like this:</p>
+    
+      <mp-code-block>
+<![CDATA[
+class HelloWorld extends HTMLElement {
+    constructor() {
+      super();
+      this._shadowRoot = this.attachShadow({mode: 'open'});
+    }
+    static get observedAttributes(){
+      return ["name"];
+    }
+    attributeChangedCallback(name, oldValue, newValue) {
+      this._shadowRoot.innerHTML = `<p>hello ${newValue}</p>`;
+    }
+    connectedCallback(){
+      let name = this.getAttribute("name");
+      this._shadowRoot.innerHTML = `<p>Hello ${name}</p>`;
+    }
+  }
+
+customElements.define('hello-world-demo', HelloWorld);
+      ]]>
+  </mp-code-block>
+      
+      <p>See the <a href="https://www.webcomponents.org/introduction" target="_blank">web components introduction</a> and the <a href="https://html.spec.whatwg.org/multipage/custom-elements.html" target="_blank">documentation</a> for details on how it works and how to build your own components.
+    </p>
+    
+    <p>
+      Scripts and other web assets such as stylesheet files need to be loaded using their respective HTML tags from the files <code>config/page-layout/html-header-resources.hbs</code> and/or <code>config/page-layout/html-footer-resources.hbs</code>, which are inserted into the HTML head and before the end of the HTML body, respectively:</p>
+    
+          <mp-code-block>
+<![CDATA[
+<script src="/assets/my.js"> </script> 
+<link rel="stylesheet" type="text/css" href="assets/my-style.css"></link>
+      ]]>
+  </mp-code-block>
+
+      <p>Note: make sure to have unique file names in the <code>assets/</code> folder or store them in a sub-folder named according to the app (e.g. <code>assets/my-app/*</code>) to avoid name clashes with other apps. Many frameworks create files called <code>vendor.js</code> or similar which might conflict with (or rather be shadowed) by files of the same name provided by another app. 
+    </p>
+    
+    <h3>Using frameworks to implement custom web components</h3>
+    <p>
+      Custom web components can be implemented using framework such as <a href="https://reactjs.org/docs/web-components.html" target="_blank">React</a> or <a href="https://angular.io/guide/elements" target="_blank">Angular Elements</a>. In order to integrate these into the platform some points need to be observed:
+    </p>
+    <ul>
+      <li>Custom <code>JSONP</code> function (e.g. using specific webpack configuration)<br>
+        Many framework use the <a href="https://en.wikipedia.org/wiki/JSONP" target="_blank">JSONP</a> technique as a mechanism to provide data or code to a callback which in turn updates the component state. When using multiple frameworks such as Angular or React or multiple instances of a framework (e.g. React from the main platform and one or more apps) there might be conflicts, as the default name used for calling the callback function is the same. In order to avoid conflicts it is advisable to change the name of the callback function for the framework used by the app. This is typically done by adding some configuration to the build system or packer of the app's frontend code, e.g. <code>webpack</code>.  An example snippet for the relevant <code>webpack</code> configuration could look like this:
+      <mp-code-block>
+<![CDATA[
+module.exports = {
+   output: {
+     jsonpFunction: 'webpackJsonpMyApp' 
+   }
+}
+      ]]>
+  </mp-code-block>
+        
+        <code>webpackJsonpMyApp</code> is the name of the callback function, <code>webpack</code> would automatically provide this function.<br>
+        Note: how to use this configuration depends on the framework used. For Angular one typically needs to use a custom builder and inject a reference to this <code>webpack</code> configuration snippet.
+      </li>
+      <li>The scripts and files (<code>*.js</code>, <code>*.css</code>, <code>*.html</code>, Webfonts, ...) of which the custom components consist (the so called assets, which are created by the UI framework's build process) need to be bundled in the <code>assets/</code> folder of the app and linked from <code>config/page-layout/html-header-resources.hbs</code> and/or <code>config/page-layout/html-footer-resources.hbs</code>, see above for details.
+      </li>
+    </ul>
+    
+
+  </div>
+</div>

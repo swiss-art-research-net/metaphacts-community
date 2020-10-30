@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.repository.sparql;
 
 import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
@@ -25,15 +46,15 @@ import org.eclipse.rdf4j.repository.sparql.config.SPARQLRepositoryConfig;
 import org.eclipse.rdf4j.repository.sparql.config.SPARQLRepositoryFactory;
 
 /**
- * 
+ *
  * Custom factory implementation for {@link SPARQLRepository} or its subclasses.
- *  
- * 
+ *
+ *
  * @author Andriy Nikolov <an@metaphacts.com>
  *
  */
 public class DefaultMpSPARQLRepositoryFactory extends AbstractMpSPARQLRepositoryFactory {
-    
+
     public static final String REPOSITORY_TYPE = "metaphactory:SPARQLRepository";
 
     public DefaultMpSPARQLRepositoryFactory() {
@@ -49,7 +70,7 @@ public class DefaultMpSPARQLRepositoryFactory extends AbstractMpSPARQLRepository
     public RepositoryImplConfig getConfig() {
         return new MpSPARQLRepositoryConfig();
     }
-    
+
     /**
      * Copied from {@link SPARQLRepositoryFactory}.
      */
@@ -61,10 +82,11 @@ public class DefaultMpSPARQLRepositoryFactory extends AbstractMpSPARQLRepository
         if (config instanceof SPARQLRepositoryConfig) {
             SPARQLRepositoryConfig httpConfig = (SPARQLRepositoryConfig)config;
             if (httpConfig.getUpdateEndpointUrl() != null) {
-                result = new SPARQLRepository(httpConfig.getQueryEndpointUrl(),
+                result = new MpSPARQLRepository(httpConfig
+                        .getQueryEndpointUrl(),
                         httpConfig.getUpdateEndpointUrl());
             } else {
-                result = new SPARQLRepository(httpConfig.getQueryEndpointUrl());
+                result = new MpSPARQLRepository(httpConfig.getQueryEndpointUrl());
             }
         } else {
             throw new RepositoryConfigException(

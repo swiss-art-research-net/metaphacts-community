@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import {
   Button, Alert, DropdownButton, MenuItem,
@@ -61,7 +82,7 @@ const SUCCESS_MESSAGE = 'The repository configuration was updated.';
 
 export class RepositoryConfigEditor extends Component<Props, State> {
   private readonly cancellation = new Cancellation();
-  static defaultProps = {
+  static defaultProps: Partial<Props> = {
     id: undefined,
     repositoryTemplates: [],
     showRestartPrompt: false,
@@ -153,7 +174,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
                           placeholder='Please specify a new and unique repository id.'/>
                 {this.getNewRepositoryIDValidation() &&
                   <HelpBlock>
-                    Repository ID must be a unique, alphanumeric string of length >= 5 characters.
+                  Repository ID must be a unique, alphanumeric string of length &gt;= 5 characters.
                   </HelpBlock>
                 }
               </FormGroup>
@@ -200,7 +221,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
             {responseError &&
                 <Alert bsStyle='danger'> {responseError} </Alert>
             }
-            { reloadPageOnSuccess && submittedSuccessfully && 
+            { reloadPageOnSuccess && submittedSuccessfully &&
                 window.location.reload()
             }
             { showRestartPrompt && submittedSuccessfully &&
@@ -274,7 +295,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
     );
   }
 
-  selectTemplate = (templateId) => {
+  selectTemplate = (templateId: string) => {
     this.cancellation.map(getRepositoryConfigTemplate(templateId)).observe({
       value: value => {
         this.setState({source: value, submittedSuccessfully: false});
@@ -288,8 +309,8 @@ export class RepositoryConfigEditor extends Component<Props, State> {
     e.stopPropagation();
     this.selectTemplate(eventKey);
   }
-  
-  executeDeleteRepository = (id) => {
+
+  executeDeleteRepository = (id: string) => {
       deleteRepositoryConfig(id).observe({
           value: () => {
             this.setState({
@@ -306,7 +327,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
           },
         });
   }
-  
+
   onDeleteRepository = (id: string) => {
     const dialogRef = 'delete-repository-confirmation';
     const hideDialog = () => getOverlaySystem().hide(dialogRef);
@@ -315,11 +336,11 @@ export class RepositoryConfigEditor extends Component<Props, State> {
       onHide: () => {
         hideDialog();
       },
-      onConfirm: confirm => {
+      onConfirm: (confirm: boolean) => {
         hideDialog();
         if (confirm) {
           this.executeDeleteRepository(id);
-        } 
+        }
       },
     };
     getOverlaySystem().show(
@@ -327,7 +348,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
       createElement(ConfirmationDialog, props)
     );
   }
-  
+
 }
 
 export default RepositoryConfigEditor;

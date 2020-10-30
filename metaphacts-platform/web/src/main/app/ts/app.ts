@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import '../scss/main.scss';
 import '../scss/help.scss';
 
@@ -67,6 +88,8 @@ import { TemplateItemComponent } from 'platform/components/ui/template';
 customElements.define('mp-template-item', TemplateItemComponent);
 
 import * as Cookies from 'js-cookie';
+import { TableAggregationExtension, TableFilterExtension } from 'platform/components/semantic/data-table/extensions';
+import { getExtensionScripts } from 'platform/api/services/extension';
 const WINDOW_SESSION_TIMEOUT = 'sessionTimeout';
 const WINDOW_LAST_REQUEST_TIME = 'lastRequestTime';
 const WINDOW_ANONYMOUS_WARNING = 'anonymousWarning';
@@ -78,7 +101,7 @@ const BROWSER_WARNING = 'browserWarning';
 const BASE_TITLE = document.title;
 
 const AsyncSparqlEndpointComponent =
-  (props) => ComponentsLoader.factory({
+  (props: any) => ComponentsLoader.factory({
     componentTagName: 'mp-internal-sparql-endpoint', componentProps: props,
   });
 
@@ -138,25 +161,24 @@ export class MainAppComponent extends Component<{}, {
     this.getSessionTimeout();
 
     // get header template
-    TemplateService.getHeader(
-      html =>
-        ModuleRegistry.parseHtmlToReact(html).then(
-          components =>
-            this.setState({
-              headerHTML: maybe.Just(components),
-            })
-        )
-    );
+    TemplateService.getPageLayoutTemplate('header')
+      .flatMap(html => ModuleRegistry.parseHtmlToReact(html))
+      .observe({
+        value: components => this.setState({
+          headerHTML: maybe.Just(components),
+        }),
+        error: error => console.error('Failed to load header', error),
+      });
+
     // get footer template
-    TemplateService.getFooter(
-      html =>
-        ModuleRegistry.parseHtmlToReact(html).then(
-          components =>
-            this.setState({
-              footerHTML: maybe.Just(components),
-            })
-        )
-    );
+    TemplateService.getPageLayoutTemplate('footer')
+      .flatMap(html => ModuleRegistry.parseHtmlToReact(html))
+      .observe({
+        value: components => this.setState({
+          footerHTML: maybe.Just(components),
+        }),
+        error: error => console.error('Failed to load footer', error),
+      });
 
     this.addLastRequestTimeInterceptorToHttpRequests();
     registerNotificationSystem(this);
@@ -270,8 +292,9 @@ export class MainAppComponent extends Component<{}, {
     }
 
     const timeLeftFormated = moment(Date.now() - lastRequestTime).to(sessionTimeout);
+    const clearScreenOnLogout = ConfigHolder.getUIConfig().clearScreenOnLogout;
 
-    if ( timeLeftMinutes < 0) {
+    if ( timeLeftMinutes < 0 && !clearScreenOnLogout) {
       addNotification({
           title: 'Session Info',
           autoDismiss: 0,
@@ -279,10 +302,17 @@ export class MainAppComponent extends Component<{}, {
           level: 'error',
           action: {
             label: 'Login',
-            callback: () => window.location.href = '/login',
+            // navigate to / (which will induce a login in almost all cases, i.e. SSO or form-based
+            // authentication). Note that for form-based authentication it will redirect to /login
+            // automatically, while in SSO the login happens implicitly
+            callback: () => window.location.href = '/',
           },
       });
       window.clearInterval(this.sessionIntervalID);
+    } else if (timeLeftMinutes < 0 && clearScreenOnLogout) {
+      window.clearInterval(this.sessionIntervalID);
+      // navigate to the logged out page
+      window.location.href = '/logged-out/index.html';
     }
 
     addNotification({
@@ -292,7 +322,7 @@ export class MainAppComponent extends Component<{}, {
         level: 'warning',
         action: {
           label: 'Extend Session',
-          callback: () => SecurityService.Util.touchSession(() => {}), // some succes notificaiton to be shown here ?
+          callback: () => SecurityService.Util.touchSession(() => {}), // some success notification to be shown here ?
         },
     });
 
@@ -338,13 +368,35 @@ listen({
   },
 });
 
+
+// publish extension points;
+declare global {
+  interface Window {
+    metaphacts: {
+      tableAggregationsLoader: typeof TableAggregationExtension.chainLoaderPromise,
+      tableFiltersLoader: typeof TableFilterExtension.chainLoaderPromise,
+    }
+  }
+}
+
+window.metaphacts = {
+  ...(window.metaphacts),
+  tableAggregationsLoader: TableAggregationExtension.chainLoaderPromise
+    .bind(TableAggregationExtension),
+  tableFiltersLoader: TableFilterExtension.chainLoaderPromise
+    .bind(TableFilterExtension),
+};
+
 window.addEventListener('DOMContentLoaded', function () {
   Kefir.combine({
       url: initNavigation(),
       prefixes: getRegisteredPrefixes(),
       rawConfig: ConfigHolder.fetchConfig(),
       repositories: DefaultRepositoryInfo.init(),
-  }).flatMap(({url, prefixes, rawConfig}) => {
+  }).flatMap(loaded => {
+      // load extensions after configuration init
+      return loadExtensions().map(() => loaded);
+  }).flatMap(({ url, prefixes, rawConfig }) => {
     try {
       SparqlUtil.init(prefixes);
       ConfigHolder.initializeConfig(rawConfig);
@@ -363,9 +415,11 @@ window.addEventListener('DOMContentLoaded', function () {
     }
   ).onError(e => {
     if (e instanceof SecurityService.NotEnoughPermissionsError) {
-      TemplateService.getNoPermissionsPage(
-        page => document.getElementById('application').innerHTML = page
-      );
+      TemplateService.getPageLayoutTemplate('noPermissionsPage').observe({
+        value: page => {
+          document.getElementById('application').innerHTML = page;
+        }
+      });
     } else {
       const message =
         `Platform initialization failed: \n
@@ -382,3 +436,29 @@ window.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+function loadExtensions(): Kefir.Property<void> {
+  return getExtensionScripts().flatMap(extensions => {
+    if (extensions.extensions.length === 0) {
+      return Kefir.constant(undefined);
+    }
+    const tasks = extensions.extensions.map(ext =>
+      Kefir.fromPromise(loadScript(ext)).flatMapErrors(err => {
+        // an extension failing to load shouldn't break the platform init, so resolve
+        console.warn(`Failed to load extension ${ext}: `, err);
+        return Kefir.constant(undefined);
+      })
+    );
+    return Kefir.zip(tasks).map(() => undefined);
+  }).toProperty();
+}
+
+function loadScript(scriptUrl: string): Promise<unknown> {
+  return new Promise<unknown>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = scriptUrl;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}

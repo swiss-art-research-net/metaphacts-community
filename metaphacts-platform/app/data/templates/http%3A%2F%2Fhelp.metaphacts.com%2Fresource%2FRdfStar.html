@@ -1,0 +1,117 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>RDF* and SPARQL*</h1>
+    
+    <p>
+    RDF* and its companion SPARQL* are community-driven extensions of the RDF
+    model to allow expressing properties over full statements, similar to "edge
+    properties" in property graph-based models (see the <a
+    href="https://blog.liu.se/olafhartig/2019/01/10/position-statement-rdf-star-and-sparql-star/">RDF*
+and SPARQL* position statement</a> by Olaf Hartig). The motivation for RDF* is
+to allow an easy way to make statements <i>about</i> statements.  For example,
+it allows you to express that a particular RDF statement came from source X
+(provenance), or is valid in a certain period (time-based annotation), or is
+asserted with a certain number of confidence.
+    </p>
+
+    <p>
+    Although RDF* and SPARQL* are at present not fully standardized,
+    metaphactory has basic support for the use of RDF* to annotate data, and
+    the use of SPARQL* queries to retrieve and insert or modify RDF* data.  
+    </p>
+    <bs-alert bs-style="info">
+    <p>
+    <strong>Note</strong> metaphactory depends on the underlying database for handling RDF* and
+    SPARQL*, through the RDF4J framework. Since RDF* and SPARQL* are not yet
+    fully standardized, it is currently not guaranteed that the described
+    functionality will work on any triplestore. The current state of support
+    is that we have tested with Ontotext GraphDB and Stardog.
+    </p>
+    </bs-alert>
+
+    <h2>Adding RDF* data: Turtle*</h2>
+
+    <p>
+    metaphactory supports the Turtle* syntax format for encoding RDF* data.
+    Turtle* is a community-proposed, non-standardized extension of the
+    Turtle syntax format intended for representing RDF* data.
+    </p>
+    <p>
+    For example, a Turtle* file that contains an annotation with a certainty
+    score, on a statement saying “Bob’s age is 23”, would look like this:
+    </p>
+<mp-code-block mode='application/x-turtlestar'>
+<![CDATA[
+@prefix ex: <http://example.org/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+     
+<<ex:bob foaf:age 23>> ex:certainty 0.9 .
+]]>
+</mp-code-block>
+    
+<p>The expected extension for Turtle* files is <code>.ttls</code>.</p>
+
+
+<h2>Querying RDF* data using SPARQL*</h2>
+
+<p>
+SPARQL* is a community-proposed extension of the SPARQL query query language
+that allows directly addressing RDF* data. Executing a SPARQL* query relies on
+the underlying datastore supporting RDF* data storage.
+</p>
+
+<p>
+SPARQL* allows accessing the RDF* triple patterns directly in the query. For
+example, after you have uploaded the above simple RDF* model to your database,
+you can execute a query like this:
+
+<mp-code-block mode='application/sparql'>
+<![CDATA[
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX ex: <http://example.org/>
+SELECT ?person ?age ?certainty WHERE {
+   <<?person foaf:age ?age>> ex:certainty ?certainty .
+}
+]]>
+</mp-code-block>
+
+<p>The result of this query will be:</p>
+
+    <table class="table table-striped">
+        <thead>
+            <th>?person</th>
+            <th>?age</th>
+            <th>?certainty</th>
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">ex:bob</th>
+                <th scope="row">23</th>
+                <th scope="row">0.9</th>
+            </tr>
+        </tbody>
+    </table>
+
+<h3>SA mode vs PG mode</h3>
+
+<p>The RDF* community currently distinguishes two "modes" in which RDF* can operate: Property Graph (PG) mode, and Separate Assertions (SA) mode. In PG mode, when an RDF* triple is annotated and added, the associated 'ground' statement is automatically assumed to also exist. In other words, asserting <code>&lt;&lt;ex:bob foaf:age 23&gt;&gt; ex:certainty 0.9</code> implicitly also asserts the statement <code>ex:bob foaf:age 23</code>. In contrast, in SA mode, this automatic implication is <i>not</i> used, and the ground fact and the annotation are seen as separate entities.
+</p>
+<p>The upshot is that when you upload the example Turtle* file from the previous section, and then execute this SPARQL query:</p>
+
+<mp-code-block mode='application/sparql'>
+<![CDATA[
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX ex: <http://example.org/>
+SELECT ?person ?age WHERE {
+   ?person foaf:age ?age .
+}
+]]>
+</mp-code-block>
+
+<p>The result of this query in SA mode will be empty, while in PG mode it will return a result for <code>ex:bob</code>.</p>
+
+<p>The choice between PG and SA mode is currently determined by the underlying database. Ontotext GraphDB operates in SA mode. Stardog operates in PG mode.</p>
+  </div>
+</div>

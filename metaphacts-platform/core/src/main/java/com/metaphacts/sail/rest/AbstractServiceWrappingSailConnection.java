@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.sail.rest;
 
 import java.io.InputStream;
@@ -35,14 +56,15 @@ import org.eclipse.rdf4j.query.QueryEvaluationException;
 import org.eclipse.rdf4j.query.algebra.StatementPattern;
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
 import org.eclipse.rdf4j.query.algebra.evaluation.impl.BindingAssigner;
-import org.eclipse.rdf4j.query.algebra.evaluation.iterator.CollectionIteration;
 import org.eclipse.rdf4j.query.algebra.helpers.StatementPatternCollector;
+import org.eclipse.rdf4j.repository.sparql.federation.CollectionIteration;
 import org.eclipse.rdf4j.sail.SailConnection;
 import org.eclipse.rdf4j.sail.SailException;
 import org.eclipse.rdf4j.sail.helpers.AbstractSailConnection;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.metaphacts.federation.service.ServiceDescriptor.Parameter;
 
 /**
  * Abstract {@link SailConnection} implementation for arbitrary services that assume a
@@ -68,6 +90,7 @@ public abstract class AbstractServiceWrappingSailConnection extends AbstractSail
         private String subjVarName = null;
         private Map<String, String> inputParameters = Maps.newHashMap();
         private Map<IRI, String> outputVariables = Maps.newHashMap();
+        private Map<IRI, Value> boundOutputs = Maps.newHashMap();
 
         public RESTParametersHolder() {
 
@@ -87,6 +110,19 @@ public abstract class AbstractServiceWrappingSailConnection extends AbstractSail
 
         public Map<IRI, String> getOutputVariables() {
             return outputVariables;
+        }
+
+        public Map<IRI, Value> getBoundOutputs() {
+            return boundOutputs;
+        }
+
+        /**
+         * 
+         * @param paramIri the IRI identifying the {@link Parameter}
+         * @param value    the bound {@link Value}
+         */
+        public void addBoundOutput(IRI paramIri, Value value) {
+            this.boundOutputs.put(paramIri, value);
         }
     }
 

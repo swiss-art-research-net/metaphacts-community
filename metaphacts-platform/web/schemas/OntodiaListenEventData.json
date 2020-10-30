@@ -1,0 +1,79 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "`ontodia` listens to events.",
+    "properties": {
+        "Ontodia.ClearAll": {
+            "description": "Event which should be triggered to delete all elements from the diagram.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Ontodia.FocusOnElement": {
+            "description": "Event which should be triggered to focus on an element.",
+            "properties": {
+                "iri": {
+                    "description": "IRI of an entity to be focused on.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "iri"
+            ],
+            "required": [
+                "iri"
+            ],
+            "type": "object"
+        },
+        "Ontodia.OpenConnectionsMenu": {
+            "description": "Event which should be triggered to open connection menu for target element.",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "id"
+            ],
+            "required": [
+                "id"
+            ],
+            "type": "object"
+        },
+        "Ontodia.Redo": {
+            "description": "Event which should be triggered to redo changes on the diagram.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Ontodia.Save": {
+            "description": "Event which should be triggered to save the diagram.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Ontodia.Undo": {
+            "description": "Event which should be triggered to undo changes on the diagram.",
+            "properties": {
+            },
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "Ontodia.Undo",
+        "Ontodia.Redo",
+        "Ontodia.OpenConnectionsMenu",
+        "Ontodia.FocusOnElement",
+        "Ontodia.Save",
+        "Ontodia.ClearAll"
+    ],
+    "required": [
+        "Ontodia.ClearAll",
+        "Ontodia.FocusOnElement",
+        "Ontodia.OpenConnectionsMenu",
+        "Ontodia.Redo",
+        "Ontodia.Save",
+        "Ontodia.Undo"
+    ],
+    "type": "object"
+}
+

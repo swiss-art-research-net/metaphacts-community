@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,24 +37,26 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.config;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import java.net.URLEncoder;
+import javax.inject.Inject;
 
-import com.google.common.collect.*;
-import com.metaphacts.api.sparql.SparqlUtil;
-import com.metaphacts.services.storage.StorageUtils;
-import com.metaphacts.services.storage.api.*;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.io.FileHandler;
@@ -46,12 +70,21 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleNamespace;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.metaphacts.api.sparql.SparqlUtil;
 import com.metaphacts.security.AnonymousUserFilter;
 import com.metaphacts.security.SecurityService;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.ObjectRecord;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.TemplateUtil;
 import com.metaphacts.vocabulary.PLATFORM;
-
-import javax.inject.Inject;
 
 /**
  * @author Michael Schmidt <ms@metaphacts.com>
@@ -61,8 +94,10 @@ public class NamespaceRegistry {
     private static final Logger logger = LogManager.getLogger(NamespaceRegistry.class);
 
     static final String DFLT_PLATFORM_NAMESPACE = "http://www.metaphacts.com/ontologies/platform#";
-    static final String DFLT_HELP_NAMESPACE = "http://help.metaphacts.com/resource/";
+    public static final String DFLT_REPOSITORY_NAMESPACE = "http://www.metaphacts.com/ontologies/repository#";
+    public static final String DFLT_HELP_NAMESPACE = "http://help.metaphacts.com/resource/";
     static final String DFLT_ADMIN_NAMESPACE = "http://www.metaphacts.com/resource/admin/";
+    static final String DFLT_ASSETS_NAMESPACE = "http://www.metaphacts.com/resource/assets/";
     static final String DFLT_USER_NAMESPACE = "http://www.metaphacts.com/resource/user/";
     static final String DFLT_DEFAULT_NAMESPACE = "http://www.metaphacts.com/resource/";
 
@@ -74,11 +109,13 @@ public class NamespaceRegistry {
         public static final String DEFAULT = "Default";
         public static final String USER = "User";
         public static final String PLATFORM = "Platform";
+        public static final String REPOSITORY = "Repository";
         public static final String HELP = "Help";
         public static final String ADMIN = "Admin";
+        public static final String ASSETS = "Assets";
         public static final String LDP = "LdpBase";
 
-        public static final Set<String> ALL = ImmutableSet.of(EMPTY, DEFAULT, PLATFORM, USER, HELP, ADMIN);
+        public static final Set<String> ALL = ImmutableSet.of(EMPTY, DEFAULT, PLATFORM, REPOSITORY, USER, HELP, ADMIN, ASSETS);
     }
 
     private static final List<NamespaceRecord> DEFAULT_NAMESPACES = ImmutableList.of(
@@ -86,8 +123,10 @@ public class NamespaceRegistry {
         new NamespaceRecord(RuntimeNamespace.DEFAULT, DFLT_DEFAULT_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.USER, DFLT_USER_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.PLATFORM, DFLT_PLATFORM_NAMESPACE),
+        new NamespaceRecord(RuntimeNamespace.REPOSITORY, DFLT_REPOSITORY_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.HELP, DFLT_HELP_NAMESPACE),
-        new NamespaceRecord(RuntimeNamespace.ADMIN, DFLT_ADMIN_NAMESPACE)
+        new NamespaceRecord(RuntimeNamespace.ADMIN, DFLT_ADMIN_NAMESPACE),
+        new NamespaceRecord(RuntimeNamespace.ASSETS, DFLT_ASSETS_NAMESPACE)
     );
 
     private PlatformStorage platformStorage;
@@ -307,16 +346,24 @@ public class NamespaceRegistry {
         }
     }
 
-    public Optional<IRI> resolveTemplateOrPrefixedIRI(String prefixedIRI) {
-        final boolean isTemplate =  prefixedIRI.startsWith(TemplateUtil.TEMPLATE_PREFIX);
+    protected Optional<IRI> resolveTemplateOrPrefixedIRI(String prefixedIRI) {
+        boolean isTemplate = false;
+        String tplPrefix = null;
+        if (prefixedIRI.startsWith(TemplateUtil.TEMPLATE_PREFIX)) {
+            isTemplate = true;
+            tplPrefix = TemplateUtil.TEMPLATE_PREFIX;
+        } else if (prefixedIRI.startsWith(TemplateUtil.PANEL_TEMPLATE_PREFIX)) {
+            isTemplate = true;
+            tplPrefix = TemplateUtil.PANEL_TEMPLATE_PREFIX;
+        }
 
         final String plainLocation = isTemplate
-                ? prefixedIRI.substring(TemplateUtil.TEMPLATE_PREFIX.length())
+                ? prefixedIRI.substring(tplPrefix.length())
                 : prefixedIRI;
         /*
          * This is the cases where a client (front-end) may ask for something like
          * Template:http://www.w3.org/2000/01/rdf-schema#Resource .
-         * In most cases we aim for not overloading prefixedIRIs in the UI, however, however
+         * In most cases we aim for not overloading prefixedIRIs in the UI, however
          * for the IRI navigation we need to do some guessing.
          */
         if(isTemplate){
@@ -331,7 +378,7 @@ public class NamespaceRegistry {
          */
         if(!looksLikePrefixedIri(plainLocation)){
             return isTemplate
-                    ? Optional.of(vf.createIRI(TemplateUtil.TEMPLATE_PREFIX + getDefaultNamespace(), plainLocation))
+                    ? Optional.of(vf.createIRI(tplPrefix + getDefaultNamespace(), plainLocation))
                     : Optional.of(vf.createIRI(getDefaultNamespace(), plainLocation));
         }
 
@@ -346,8 +393,8 @@ public class NamespaceRegistry {
         if (ns == null) {
             return Optional.empty();
         }
-        if(isTemplate){ // if requested prefixed IRI was special Template: prefixed, we need to prepend it again
-            return Optional.of(vf.createIRI(TemplateUtil.TEMPLATE_PREFIX + ns.getIri(), localName));
+        if(isTemplate){ // if requested prefixed IRI was special Template: or PanelTemplate: prefixed, we need to prepend it again
+            return Optional.of(vf.createIRI(tplPrefix + ns.getIri(), localName));
         }
         return Optional.of(vf.createIRI(ns.getIri(), localName));
     }
@@ -377,6 +424,9 @@ public class NamespaceRegistry {
     }
     public String getAdminNamespace(){
         return getNamespace(RuntimeNamespace.ADMIN).get();
+    }
+    public String getAssetsNamespace(){
+        return getNamespace(RuntimeNamespace.ASSETS).get();
     }
     public String getUserNamespace(){
         return getNamespace(RuntimeNamespace.USER).get();

@@ -1,0 +1,54 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "JSX.Element": {
+            "type": "object"
+        },
+        "WidgetDock": {
+            "enum": [
+                "e",
+                "n",
+                "ne",
+                "nw",
+                "s",
+                "se",
+                "sw",
+                "w"
+            ],
+            "type": "string"
+        }
+    },
+    "description": "Allows creating custom canvas widgets.\n**Can be used only inside `ontodia-canvas`.**",
+    "properties": {
+        "children": {
+            "$ref": "#/definitions/JSX.Element",
+            "description": "HTML-element."
+        },
+        "dock": {
+            "$ref": "#/definitions/WidgetDock",
+            "description": "Position on the canvas."
+        },
+        "id": {
+            "description": "Unique ID.",
+            "type": "string"
+        },
+        "margin": {
+            "description": "Margin.",
+            "type": "number"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "dock",
+        "margin",
+        "children"
+    ],
+    "required": [
+        "children",
+        "dock",
+        "id",
+        "margin"
+    ],
+    "type": "object"
+}
+

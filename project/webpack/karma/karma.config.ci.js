@@ -16,7 +16,6 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-const assign = require('object-assign');
 const defaultsFn = require('../defaults.js');
 
 /**
@@ -26,17 +25,19 @@ module.exports = function (config) {
   const defaults = defaultsFn();
   const karmaConfig = require('./karma.config.js')(defaults);
 
-  config.set(assign({}, karmaConfig, {
+  config.set({
+    ...karmaConfig,
     logLevel: config.LOG_INFO,
+    singleRun: true,
+    reporters: ['junit'],
+    // @ts-ignore
     junitReporter: {
       outputDir: 'project/webpack/tests_out/junit',
       outputFile: 'test-results.xml'
     },
-    singleRun: true,
-    reporters: ['junit'],
     files: [
       'project/webpack/assets/no_auth/dll.*',
       ... defaults.TEST_DIRS.map(testDir => testDir + '/**/*.test.ts')
     ],
-  }));
+  });
 };

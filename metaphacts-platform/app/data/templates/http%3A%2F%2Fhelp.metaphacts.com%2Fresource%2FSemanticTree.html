@@ -1,22 +1,13 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  <li>
-    <semantic-link title="Components" uri="http://help.metaphacts.com/resource/HTML5Components">Components</semantic-link>
-  </li>
-  <li class="active">Tree Component</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
 
 <div class="page">
   <div class='page__body'>
     <h1>Tree Component </h1>
     <div class="documentation__intro">
       <div class="documentation__intro__description">
-         Tree-based visualization, navigation and browsing through sub-tree structures with customizable node templates.
+        <p>Tree-based visualization, navigation and browsing through sub-tree structures with customizable node templates.</p>
+        <p><i>This component will be deprecated in the mid term. Please use the <semantic-link uri="[[resolvePrefix "Help:SemanticLazyTree"]]">Lazy Tree</semantic-link> as successor.</i></p>
       </div>
       <div class="documentation__intro__demo" id='demo1'>
          <semantic-tree query='[[>Help:SemanticTreeSampleQuery]]'></semantic-tree>
@@ -69,7 +60,7 @@
   tuple-template='{{> node}}'
 >
   <template id='node'>
-    <span><semantic-link uri="{{node.value}}"></semantic-link> &nbsp; <i class="fa fa-question-circle" style="margin-right: 5px"></i></span>
+    <semantic-link uri="{{node.value}}"></semantic-link> &nbsp; <i class="fa fa-question-circle" style="margin-right: 5px"></i>
   </template>
 </semantic-tree>
 ]]>

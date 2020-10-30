@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +37,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
+import * as React from 'react';
 import { createFactory, createElement, FormEvent, ReactElement } from 'react';
 import * as D from 'react-dom-factories';
 import { Component } from 'platform/api/components';
 import * as ReactBootstrap from 'react-bootstrap';
 import { Just, Nothing, fromNullable } from 'data.maybe';
-import { Right } from 'data.either';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 
@@ -30,23 +51,22 @@ import { Rdf, vocabularies } from 'platform/api/rdf';
 const { spin } = vocabularies;
 
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
-import { ResourceLink } from 'platform/api/navigation/components';
+import { ResourceLink } from 'platform/components/navigation/ResourceLink';
 import { refresh } from 'platform/api/navigation';
 import { getLabels } from 'platform/api/services/resource-label';
 import { slugFromName } from 'platform/api/services/ldp';
-import { Query, OperationType, QueryService, QueryServiceClass } from 'platform/api/services/ldp-query';
+import {
+  Query, OperationType, QueryService, QueryServiceClass,
+} from 'platform/api/services/ldp-query';
 import {
   QueryTemplateService, QueryTemplateServiceClass,
 } from 'platform/api/services/ldp-query-template';
 import { addNotification, ErrorPresenter } from 'platform/components/ui/notification';
 import { AutoCompletionInput } from 'platform/components/ui/inputs';
 
-import { Template, Argument, Value } from './QueryTemplateTypes';
+import { Template, Argument, Value, CheckedArgument } from './QueryTemplateTypes';
 import { QueryValidatorComponent } from './QueryValidatorComponent';
-import * as QueryTemplateArgumentsComponent from './QueryTemplateArgumentsComponent';
-import React = require('react');
-
-
+import { QueryTemplateArgumentsComponent } from './QueryTemplateArgumentsComponent';
 
 const Well = createFactory(ReactBootstrap.Well);
 const FormGroup = createFactory(ReactBootstrap.FormGroup);
@@ -96,7 +116,7 @@ interface State {
   selectQuery?: EditMode;
   query?: Query;
   variables?: string[];
-  args?: Data.Either<Argument, Argument>[];
+  args?: ReadonlyArray<CheckedArgument>;
   queryIri?: string;
   existingQueryIri?: string;
   templateCount?: number;
@@ -126,7 +146,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
   private identifier = Kefir.pool<string>();
   private label = Kefir.pool<string>();
   private description = Kefir.pool<string>();
-  private args = Kefir.pool<Data.Either<Argument, Argument>[]>();
+  private args = Kefir.pool<ReadonlyArray<CheckedArgument>>();
   private query = Kefir.pool<Query>();
 
   private queryTemplateService: QueryTemplateServiceClass;
@@ -189,7 +209,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
             this.label.plug(Kefir.constant(label));
             this.description.plug(Kefir.constant(description));
             args.forEach((arg, index) => {
-              this.setArgument(Right<Argument, Argument>(arg), index);
+              this.setArgument({argument: arg, valid: true}, index);
             });
           })
         );
@@ -256,7 +276,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
       v => this.setState({description: Just(v), template: Nothing<Template>()})
     );
 
-    const argsMapped = this.args.flatMap<Data.Either<Argument, Argument>[]>(this.validateArguments);
+    const argsMapped = this.args.flatMap<ReadonlyArray<CheckedArgument>>(this.validateArguments);
     argsMapped.onError(
       v => this.setState({template: Nothing<Template>()})
     );
@@ -303,7 +323,9 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
         }
 
         const categories = this.state.categories.map(({iri}) => {
-          if (!iri.isIri()) { throw new Error('Query template category is expected to be an IRI'); }
+          if (!Rdf.isIri(iri)) {
+            throw new Error('Query template category is expected to be an IRI');
+          }
           return iri;
         });
 
@@ -316,7 +338,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
           description,
           categories,
           args: args.map(arg => {
-            return arg.get();
+            return arg.argument;
           }),
         };
 
@@ -338,19 +360,19 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
   }
 
   private validateArguments = (
-    v: Data.Either<Argument, Argument>[]
-  ): Kefir.Property<Data.Either<Argument, Argument>[]> => {
+    v: ReadonlyArray<CheckedArgument>
+  ): Kefir.Property<ReadonlyArray<CheckedArgument>> => {
     const errorArgs = v.filter(arg => {
-      return arg.isLeft;
+      return !arg.valid;
     });
 
     if (errorArgs.length) {
-      return Kefir.constantError<Data.Either<Argument, Argument>[]>(v);
+      return Kefir.constantError<ReadonlyArray<CheckedArgument>>(v);
     }
-    return Kefir.constant<Data.Either<Argument, Argument>[]>(v);
+    return Kefir.constant<ReadonlyArray<CheckedArgument>>(v);
   }
 
-  private addArgument = arg => {
+  private addArgument = (arg: CheckedArgument) => {
     this.setState(prevState => {
       const args = prevState.args.slice();
       args.push(arg);
@@ -358,7 +380,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     }, () => this.args.plug(Kefir.constant(this.state.args)));
   }
 
-  private deleteArgument = index => {
+  private deleteArgument = (index: number) => {
     this.setState(prevState => {
       const args = prevState.args.slice();
       args.splice(index, 1);
@@ -366,7 +388,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     }, () => this.args.plug(Kefir.constant(this.state.args)));
   }
 
-  private setArgument = (arg: Data.Either<Argument, Argument>, index: number) => {
+  private setArgument = (arg: CheckedArgument, index: number) => {
     this.setState(prevState => {
       const args = prevState.args.slice();
       args.splice(index, 1, arg);
@@ -430,14 +452,14 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     if (selectQuery === 'create') {
       this.createQuery()
         .flatMap(iri => this.queryTemplateService.addItem(template.get(), iri, namespace))
-        .onValue((iri: Rdf.Iri) => {
+        .onValue(() => {
           refresh();
         })
         .onError(this.onSaveError);
     } else if (selectQuery === 'reference') {
       this.queryTemplateService
         .addItem(template.get(), existingQueryIri, namespace)
-        .onValue((iri: Rdf.Iri) => {
+        .onValue(() => {
           refresh();
         })
         .onError(this.onSaveError);
@@ -521,7 +543,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
             query:
               `PREFIX bds: <http://www.bigdata.com/rdf/search#>
                PREFIX prov: <http://www.w3.org/ns/prov#>
-                SELECT ?iri ?label ?text ?modified  WHERE {
+                SELECT ?iri ?label ?text ?modified WHERE {
                   ?iri a sp:Query ;
                     sp:text ?text;
                     prov:generatedAtTime ?modified;
@@ -530,11 +552,8 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
                   FILTER(
                     ?user in (<http://www.metaphacts.com/resource/user/querycatalog>,?__useruri__)
                   )
-                  SERVICE bds:search {
-                                  ?label bds:search \"*?token*\" ;
-                                    bds:relevance ?score .
-                                }
-                } ORDER BY DESC(?score)  LIMIT 20
+                  FILTER(REGEX(STR(?label), ?__token__, \"i\"))
+                } LIMIT 20
                 `,
             defaultQuery:
               `PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -560,7 +579,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
               </mp-popover>`,
             },
             actions: {
-              onSelected: res => {
+              onSelected: (res: SparqlClient.Binding) => {
                 if (res) {
                   this.setState({existingQueryIri: res['iri'].value});
                 } else {
@@ -688,12 +707,12 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
 
     const querySection = this.getQuerySection();
 
-    const disableSave = 
-      template.isNothing 
-      || inProgress 
+    const disableSave =
+      template.isNothing
+      || inProgress
       || (( existingQueryIri === undefined )
         && ((query === undefined) || (query.value === undefined)));
-    
+
     return D.div({},
       labelField,
       identifierField,
@@ -701,7 +720,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
       this.renderCategoriesField(),
       ControlLabel({}, 'Query*'),
       Well({}, selectQueryField, querySection),
-      QueryTemplateArgumentsComponent.factory({
+      React.createElement(QueryTemplateArgumentsComponent, {
         args,
         variables,
         onAdd: this.addArgument,
@@ -731,8 +750,8 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
         multi: true,
         value: this.state.categories,
         actions: {
-          onSelected: bindings => {
-            const categories = bindings as ReadonlyArray<SparqlClient.Binding>;
+          onSelected: (bindings: SparqlClient.Binding[]) => {
+            const categories: ReadonlyArray<SparqlClient.Binding> = bindings;
             this.setState({categories}, () => {
               // FIXME: get rid of all pools
               // This is a hack to trigger template generation

@@ -1,0 +1,281 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "FullTextSearchSettings": {
+            "description": "Full text search settings,\ndeveloper could use anything from search extensions of triplestore to regular expressions match\nSee wikidata and dbpedia examples for reusing full text search capabilities of Blazegraph and Virtuozo",
+            "properties": {
+                "extractLabel": {
+                    "description": "When enabled, adds SPARQL patterns to try to extract label from IRI and\nmakes it available as `?extractedLabel` binding in `queryPattern`.",
+                    "type": "boolean"
+                },
+                "prefix": {
+                    "description": "Prefixes to use in full text search queries.",
+                    "type": "string"
+                },
+                "queryPattern": {
+                    "description": "SPARQL query pattern to search/restrict results by text token.\n\nParametrized variables:\n   - `${text}` text token\n   - `${dataLabelProperty}` `dataLabelProperty` property from the settings\n\nExpected bindings:\n   - `?inst` link type\n   - `?score` numerical score for ordering search results by relevance\n   - `?extractedLabel` (optional; if `extractLabel` is enabled)",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "prefix",
+                "queryPattern",
+                "extractLabel"
+            ],
+            "required": [
+                "prefix",
+                "queryPattern"
+            ],
+            "type": "object"
+        },
+        "LinkConfiguration": {
+            "description": "Link abstraction configuration.",
+            "properties": {
+                "domain": {
+                    "description": "Optional domain constraint for source element of the link.\nIf specified checks RDF type of source element to match one from this set.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "description": "IRI of the \"virtual\" link",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "SPARQL predicate or pattern connecting source element to target element.\n\nExpected bindings (if it is a pattern):\n   - `?source` source element\n   - `?target` target element",
+                    "type": "string"
+                },
+                "properties": {
+                    "description": "Additional SPARQL patterns can be used for getting properties of the link.\n\nExpected bindings\n   - `?source` source element\n   - `?target` target element\n   - `?propType` link property type\n   - `?propValue` link property value",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "id",
+                "domain",
+                "path",
+                "properties"
+            ],
+            "required": [
+                "id",
+                "path"
+            ],
+            "type": "object"
+        },
+        "PropertyConfiguration": {
+            "description": "Specifies property abstraction configuration",
+            "properties": {
+                "domain": {
+                    "description": "Optional domain constraint for source element of the property.\nIf specified checks RDF type of source element to match one from this set.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "description": "IRI of the \"virtual\" link",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "SPARQL predicate or pattern connecting source element to property value.\n\nExpected bindings (if it is a pattern):\n   - `?inst` source element\n   - `?value` property value",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "id",
+                "domain",
+                "path"
+            ],
+            "required": [
+                "id",
+                "path"
+            ],
+            "type": "object"
+        },
+        "SparqlDataProviderSettings": {
+            "description": "Dataset-schema specific settings for SPARQL data provider.",
+            "properties": {
+                "classInfoQuery": {
+                    "description": "SELECT query to retrieve data for each class in a set.\n\nParametrized variables:\n   - `${ids}` VALUES clause content with class IRIs\n   - `${schemaLabelProperty}` `schemaLabelProperty` property from the settings\n\nExpected output bindings:\n   - `?class`\n   - `?label` (optional)\n   - `?instcount` (optional)",
+                    "type": "string"
+                },
+                "classTreeQuery": {
+                    "description": "SELECT query to retreive class tree.\n\nParametrized variables:\n   - `${schemaLabelProperty}` `schemaLabelProperty` property from the settings\n\nExpected output bindings:\n   - `?class`\n   - `?label` (optional)\n   - `?parent` (optional)\n   - `?instcount` (optional)",
+                    "type": "string"
+                },
+                "dataLabelProperty": {
+                    "description": "Property path for querying instance data labels (elements, links).",
+                    "type": "string"
+                },
+                "defaultPrefix": {
+                    "description": "Default prefix to be used in every query.",
+                    "type": "string"
+                },
+                "elementInfoQuery": {
+                    "description": "CONSTRUCT query to retrieve data for each element (types, labels, properties).\n\nParametrized variables:\n   - `${ids}` VALUES clause content with element IRIs\n   - `${dataLabelProperty}` `dataLabelProperty` property from the settings\n   - `${propertyConfigurations}`\n\nExpected output format for triples:\n   - `?inst rdf:type ?class` element has type\n   - `?inst rdfs:label ?label` element has label\n   - `?inst ?property ?value` element has value for a datatype property",
+                    "type": "string"
+                },
+                "filterAdditionalRestriction": {
+                    "description": "imposes additional filtering on elements within filter",
+                    "type": "string"
+                },
+                "filterElementInfoPattern": {
+                    "description": "how to fetch elements info when fetching data.",
+                    "type": "string"
+                },
+                "filterRefElementLinkPattern": {
+                    "description": "when fetching all links from element, we could specify additional filter",
+                    "type": "string"
+                },
+                "filterTypePattern": {
+                    "description": "SPARQL query pattern to retrieve transitive type sets for elements.\n\nExpected output bindings:\n   - `?inst` element IRI\n   - `?class` element type (there may be multiple or transitive types for an element)",
+                    "type": "string"
+                },
+                "fullTextSearch": {
+                    "$ref": "#/definitions/FullTextSearchSettings",
+                    "description": "Full-text search settings."
+                },
+                "imageQueryPattern": {
+                    "description": "Query pattern to retrieve image URL for an element.\n\nExpected bindings:\n   - `?inst` element IRI\n   - `?linkType` image property IRI\n   - `?image` result image URL",
+                    "type": "string"
+                },
+                "linkConfigurations": {
+                    "description": "Abstract links configuration - one could abstract a property path as a link on the diagram.",
+                    "items": {
+                        "$ref": "#/definitions/LinkConfiguration"
+                    },
+                    "type": "array"
+                },
+                "linkTypesInfoQuery": {
+                    "description": "SELECT query to retrieve data for each link type in a set.\n\nParametrized variables:\n   - `${ids}` VALUES clause content with link type IRIs\n   - `${schemaLabelProperty}` `schemaLabelProperty` property from the settings\n\nExpected output bindings:\n   - `?link`\n   - `?label` (optional)\n   - `?instcount` (optional)",
+                    "type": "string"
+                },
+                "linkTypesOfQuery": {
+                    "description": "SELECT query to retrieve incoming/outgoing link types from specified element with statistics.\n\nParametrized variables:\n   - `${elementIri}`\n   - `${linkConfigurations}`\n\nExpected bindings:\n   - `?link`\n   - `?label` (optional)\n   - `?instcount` (optional)",
+                    "type": "string"
+                },
+                "linkTypesPattern": {
+                    "description": "Overridable part of `linkTypesQuery` with same output bindings.\n\nParametrized variables: none",
+                    "type": "string"
+                },
+                "linkTypesQuery": {
+                    "description": "SELECT query to retrieve initial link types.\n\nParametrized variables:\n   - `${linkTypesPattern}` `linkTypesPattern` property from the settings\n   - `${schemaLabelProperty}` `schemaLabelProperty` property from the settings\n\nExpected output bindings:\n   - `?link`\n   - `?label` (optional)\n   - `?instcount` (optional)",
+                    "type": "string"
+                },
+                "linkTypesStatisticsQuery": {
+                    "description": "SELECT query to retrieve statistics of incoming/outgoing link types for specified element.\n\nParametrized variables:\n   - `${linkId}`\n   - `${elementIri}`\n   - `${linkConfigurationOut}`\n   - `${linkConfigurationIn}`\n   - `${navigateElementFilterOut}` (optional; for blank node support only)\n   - `${navigateElementFilterIn}` (optional; for blank node support only)\n\nExpected bindings:\n   - `?link` link type\n   - `?inCount` incoming links count\n   - `?outCount` outgoing links count",
+                    "type": "string"
+                },
+                "linksInfoQuery": {
+                    "description": "SELECT query to retrieve all links between specified elements.\n\nParametrized variables:\n   - `${ids}` VALUES clause content with element IRIs\n   - `${linkConfigurations}`\n\nExpected output bindings:\n   - `?type` link type\n   - `?source` link source\n   - `?target` link target\n   - `?propType` (optional) link property type\n   - `?propValue` (optional) link property value",
+                    "type": "string"
+                },
+                "openWorldLinks": {
+                    "default": false,
+                    "description": "(Experimental) Allows data provider to find links other than specified in `linkConfigurations`\nwhen `linkConfigurations` has at least one value set.",
+                    "type": "boolean"
+                },
+                "openWorldProperties": {
+                    "default": false,
+                    "description": "(Experimental) Allows data provider to find element properties other than specified in\n`propertyConfigurations` when `propertyConfigurations` has at least one value set.",
+                    "type": "boolean"
+                },
+                "propertyConfigurations": {
+                    "description": "Abstract property configuration similar to abstract link configuration. Not type-specific yet.",
+                    "items": {
+                        "$ref": "#/definitions/PropertyConfiguration"
+                    },
+                    "type": "array"
+                },
+                "propertyInfoQuery": {
+                    "description": "SELECT query to retrieve data for each datatype property in a set.\n\nParametrized variables:\n   - `${ids}` VALUES clause content with datatype property IRIs\n   - `${schemaLabelProperty}` `schemaLabelProperty` property from the settings\n\nExpected output bindings:\n   - `?property`\n   - `?label` (optional)",
+                    "type": "string"
+                },
+                "schemaLabelProperty": {
+                    "description": "Property path for querying schema labels in schema (classes, link types, properties).",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "defaultPrefix",
+                "schemaLabelProperty",
+                "dataLabelProperty",
+                "fullTextSearch",
+                "classTreeQuery",
+                "classInfoQuery",
+                "linkTypesQuery",
+                "linkTypesPattern",
+                "linkTypesInfoQuery",
+                "propertyInfoQuery",
+                "elementInfoQuery",
+                "linksInfoQuery",
+                "imageQueryPattern",
+                "linkTypesOfQuery",
+                "linkTypesStatisticsQuery",
+                "filterRefElementLinkPattern",
+                "filterTypePattern",
+                "filterElementInfoPattern",
+                "filterAdditionalRestriction",
+                "linkConfigurations",
+                "openWorldLinks",
+                "propertyConfigurations",
+                "openWorldProperties"
+            ],
+            "required": [
+                "dataLabelProperty",
+                "defaultPrefix",
+                "elementInfoQuery",
+                "filterAdditionalRestriction",
+                "filterElementInfoPattern",
+                "filterRefElementLinkPattern",
+                "filterTypePattern",
+                "fullTextSearch",
+                "imageQueryPattern",
+                "linkConfigurations",
+                "linkTypesOfQuery",
+                "linkTypesStatisticsQuery",
+                "linksInfoQuery",
+                "propertyConfigurations",
+                "schemaLabelProperty"
+            ],
+            "type": "object"
+        }
+    },
+    "description": "Allows configuring how `ontodia` fetches data.",
+    "properties": {
+        "acceptBlankNodes": {
+            "default": false,
+            "description": "Allow blank nodes in navigation queries. Significantly increases complexity of the queries\nand may lead to unexpected query execution plans and timeouts in triple stores.",
+            "type": "boolean"
+        },
+        "imageIris": {
+            "description": "Array of link types to get images of elements.\nIf property imageQuery is defined, this property will be ignored.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "imageQuery": {
+            "description": "Sparql SELECT query to get images of elements.\n\nParametrized with `VALUES(?element) {...}` and should contains the following bindings:\n  - `?element`: IRI of element on graph;\n  - `?image`: image of the element.",
+            "type": "string"
+        },
+        "providerSettings": {
+            "$ref": "#/definitions/SparqlDataProviderSettings",
+            "description": "Sparql data provider settings to override default settings.\nSee definition of `SparqlDataProviderSettings`."
+        },
+        "repository": {
+            "description": "Repository ID.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "repository",
+        "imageQuery",
+        "imageIris",
+        "providerSettings",
+        "acceptBlankNodes"
+    ],
+    "type": "object"
+}
+

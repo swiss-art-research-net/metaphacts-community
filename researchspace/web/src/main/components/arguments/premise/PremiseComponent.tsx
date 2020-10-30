@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import {
   Button, Col, ControlLabel, Form, FormControl, FormGroup, Radio, Row,
@@ -27,7 +26,7 @@ import * as Maybe from 'data.maybe';
 
 import { Component, SemanticContextProvider } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
-import { ResourceLinkComponent } from 'platform/api/navigation/components';
+import { ResourceLinkComponent } from 'platform/components/navigation';
 import { BuiltInEvents, listen, trigger } from 'platform/api/events';
 import { Cancellation } from 'platform/api/async/Cancellation';
 import { addNotification } from 'platform/components/ui/notification';
@@ -358,7 +357,7 @@ export class PremiseComponent extends Component<Props, State> {
     const {
       acceptEvidenceQuery, logicTypeQuery, assertionBasedBeliefTemplate, fieldBasedBeliefTemplate,
     } = this.props;
-    const addArgument = argument => {
+    const addArgument = (argument: Argument) => {
       this.addArgument(argument);
       this.cancelNewArgument();
     };

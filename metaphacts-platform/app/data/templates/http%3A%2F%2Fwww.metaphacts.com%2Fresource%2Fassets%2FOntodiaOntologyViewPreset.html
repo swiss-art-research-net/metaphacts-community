@@ -1,0 +1,102 @@
+[[!--
+To use this set of presets copy following line to your file:
+[[> "http://www.metaphacts.com/resource/assets/OntodiaOntologyViewPreset"]]
+--]]
+
+[[#*inline "OntologyGraphBreadcrumbs"]]
+[[!-- Parameters: diagramIri and ontologyIri (from settings) --]]
+  <semantic-context repository='default'>
+    <ol class="page-breadcrumb">
+      <li>
+        <mp-link title="Home" url="/">Home</mp-link>
+      </li>
+      <li>
+        <semantic-link title="Assets" iri='[[resolvePrefix "Assets:"]]'>Assets</semantic-link>
+      </li>
+      <li>
+        <semantic-link title="Ontologies" iri='[[resolvePrefix "Assets:Ontologies"]]'>Ontologies</semantic-link>
+      </li>
+      [[#if diagramIri]]
+      <li>
+        <semantic-link iri='{{ontologyIri.value}}' urlqueryparam-view="page"></semantic-link>
+      </li>
+      <semantic-context repository='assets'>
+        <li class="active"><mp-label iri="[[diagramIri]]"></mp-label></li>
+      </semantic-context>
+      [[else]]
+      <li class="active">
+        <mp-label iri='{{ontologyIri.value}}'></mp-label>
+      </li>
+      [[/if]]
+    </ol>
+  </semantic-context>
+[[/inline]]
+
+[[#*inline "OntologyGraphSettings"]]
+[[!-- Parameters: (diagramIri or ontologyIri) --]]
+[[!-- Output: graphIri, ontologyIri --]]
+  <semantic-context repository='assets'>
+    <semantic-query query='SELECT ?ontologyIri WHERE {
+        [[#if diagramIri]]
+          <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramForOntology> ?ontologyIri .
+        [[else]]
+          BIND (<[[ontologyIri]]> as ?ontologyIri) .
+        [[/if]]
+      } LIMIT 1'
+      template='{{> ontologyIriTemplate
+        ontologyIri=bindings.0.ontologyIri}}'>
+        <template id='ontologyIriTemplate'>
+          <semantic-context repository='default'>
+            <semantic-query query='SELECT ?graphIri WHERE {
+                GRAPH ?graphIri {
+                  {{ontologyIri}} ?prop ?obj.
+                }
+              } LIMIT 1'
+              template='{{> ontologyGraphTemplate
+                graphIri=bindings.0.graphIri
+                ontologyIri=ontologyIri}}'>
+                <template id='ontologyGraphTemplate'>
+                  [[> @partial-block]]
+                </template>
+            </semantic-query>
+          </semantic-context>
+        </template>
+    </semantic-query>
+  </semantic-context>
+[[/inline]]
+
+[[#*inline "OntologyGraphBody"]]
+[[!-- Parameters: (diagramIri or ontologyIri), optionally id --]]
+  <ontodia
+    id='[[#if id]][[id]][[/if]]'
+    metadata='<> <http://www.metaphacts.com/ontologies/platform#diagramForOntology> {{ontologyIri}} .
+      <> <http://www.metaphacts.com/ontologies/platform#diagramKind> <http://www.metaphacts.com/ontologies/platform#OntologyDiagram> .'
+    [[#if diagramIri]]diagram="[[diagramIri]]"[[else]]
+    [[> NewOntologyGraphParameters]]
+    [[/if]]
+
+    request-links-on-init='false'
+    [[> "http://www.metaphacts.com/resource/assets/OntodiaGlobalSettings" ]]
+    [[> OntodiaClassAndLinksCustomization ]]
+    >
+    <ontodia-data-providers>
+      <ontodia-sparql-provider
+        [[> graphOnlyClasses graphIri="{{{graphIri}}}" otherGraphMarkerIri="Platform:foreign-node"]]>
+      </ontodia-sparql-provider>
+    </ontodia-data-providers>
+    [[#> show-if-editable]]
+      [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace"
+        databaseTabTitle='Ontology'
+        owlLayoutAsMain=true
+        focusView=true
+      ]]
+    [[/show-if-editable]]
+    [[#> show-if-read-only]]
+      [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace"
+        databaseTabTitle='Ontology'
+        readonly=true
+        owlLayoutAsMain=true]]
+    [[/show-if-read-only]]
+  </ontodia>
+[[/inline]]
+

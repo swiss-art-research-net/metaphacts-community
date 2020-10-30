@@ -1,0 +1,2 @@
+# location of build json
+#systemProp.buildjson=path/to/build-configs/root-build.json

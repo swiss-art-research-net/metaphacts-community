@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as _ from 'lodash';
 import * as Immutable from 'immutable';
@@ -51,7 +50,7 @@ interface DialogProps {
 }
 
 class CreateAlignmentDialog extends React.Component<DialogProps, AlignmentMetadata> {
-  constructor(props: DialogProps, context) {
+  constructor(props: DialogProps, context: any) {
     super(props, context);
     this.state = this.props.state;
   }

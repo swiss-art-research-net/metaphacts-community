@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import * as SparqlJs from 'sparqljs';
@@ -25,18 +46,19 @@ import {
   isValidChild, componentDisplayName, hasBaseDerivedRelationship, universalChildren,
 } from 'platform/components/utils';
 
-import { FieldDefinition, FieldDefinitionProp } from './FieldDefinition';
+import {
+  FieldDefinition, FieldDefinitionProp, FieldDependency, MultipleFieldConstraint,
+} from './FieldDefinition';
+import { DependencyContext } from './FieldDependencies';
 import { CompositeValue, FieldError, ErrorKind, DataState, FieldState } from './FieldValues';
 import { StaticComponent, StaticFieldProps } from './static';
 
-// explicitely import base input classes from their respective modules instead of
+// explicitly import base input classes from their respective modules instead of
 // importing from './input' to prevent cyclic dependencies when importing from CompositeInput
-import { SingleValueInput } from './inputs/SingleValueInput';
+import { SingleValueInput, SingleValueInputGroup } from './inputs/SingleValueInput';
 import {
   MultipleValuesInput, MultipleValuesProps, MultipleValuesHandler, ValuesWithErrors,
 } from './inputs/MultipleValuesInput';
-import { CardinalitySupport } from './inputs/CardinalitySupport';
-import { CompositeInput } from './inputs/CompositeInput';
 import { InputDecorator } from './inputs/Decorations';
 
 export type FieldMapping = InputMapping | StaticMapping | OtherElementMapping;
@@ -45,9 +67,15 @@ export namespace FieldMapping {
     return 'inputType' in mapping;
   }
 
-  export function isComposite(mapping: FieldMapping): mapping is InputMapping {
-    return isInput(mapping) && mapping.singleValueInputType
-      && hasBaseDerivedRelationship(CompositeInput, mapping.singleValueInputType);
+  export function isInputGroup(
+    mapping: FieldMapping,
+    groupType: SingleValueInputGroup['inputGroupType']
+  ): mapping is InputMapping {
+    if (isInput(mapping) && mapping.singleValueInputType) {
+      const inputGroup = mapping.singleValueInputType as Partial<SingleValueInputGroup>;
+      return inputGroup.inputGroupType === groupType;
+    }
+    return false;
   }
 
   export function isStatic(mapping: FieldMapping): mapping is StaticMapping {
@@ -82,12 +110,20 @@ export interface OtherElementMapping {
   children: any;
 }
 
+export interface FieldMappingContext {
+  cardinalitySupport: React.ComponentClass<MultipleValuesProps, any>;
+}
+
 /**
  * Creates mapping description for single field in a form of `FieldMapping`.
  *
- * Inputs derived from `SingleValueInput` are automatically wrapped by `CardinalitySupport`.
+ * Inputs derived from `SingleValueInput` are automatically wrapped by
+ * `cardinalityWrapper` input component (usually `CardinalitySupport`).
  */
-export function mapChildToComponent(child: React.ReactNode): FieldMapping | undefined {
+export function mapChildToComponent(
+  child: React.ReactNode,
+  context: FieldMappingContext
+): FieldMapping | undefined {
   if (!isValidChild(child)) { return undefined; }
 
   const element = child as React.ReactElement<any>;
@@ -96,9 +132,9 @@ export function mapChildToComponent(child: React.ReactNode): FieldMapping | unde
     const singleValueInputType = element.type as React.ComponentClass<any>;
     return {
       for: element.props.for,
-      inputType: CardinalitySupport,
+      inputType: context.cardinalitySupport,
       singleValueInputType,
-      element: React.createElement(CardinalitySupport, {
+      element: React.createElement(context.cardinalitySupport, {
         ...element.props,
         children: element,
       }),
@@ -118,7 +154,7 @@ export function mapChildToComponent(child: React.ReactNode): FieldMapping | unde
 
 export interface FieldConfiguration {
   inputs: Immutable.Map<string, ReadonlyArray<InputMapping>>;
-  errors: Immutable.List<FieldError>;
+  errors: ReadonlyArray<FieldError>;
 }
 
 /**
@@ -129,12 +165,15 @@ export interface FieldConfiguration {
  */
 export function validateFieldConfiguration(
   definitions: Immutable.Map<string, FieldDefinition>,
-  children: React.ReactNode
+  constraints: ReadonlyArray<MultipleFieldConstraint>,
+  dependencies: ReadonlyArray<FieldDependency>,
+  children: React.ReactNode,
+  context: FieldMappingContext
 ): FieldConfiguration {
   const inputs = Immutable.Map<string, ReadonlyArray<InputMapping>>().asMutable();
   const errors: FieldError[] = [];
 
-  collectFieldConfiguration(definitions, children, inputs, errors);
+  collectFieldConfiguration(definitions, children, context, inputs, errors);
   inputs.forEach((mapping, key) => {
     const definition = definitions.get(key);
     if (definition) {
@@ -142,17 +181,21 @@ export function validateFieldConfiguration(
     }
   });
 
-  return {inputs: inputs.asImmutable(), errors: Immutable.List(errors)};
+  collectConstraintErrors(definitions, constraints, errors);
+  collectDependencyErrors(definitions, dependencies, errors);
+
+  return {inputs: inputs.asImmutable(), errors};
 }
 
 function collectFieldConfiguration(
   definitions: Immutable.Map<string, FieldDefinition>,
   children: React.ReactNode,
+  context: FieldMappingContext,
   collectedInputs: Immutable.Map<string, ReadonlyArray<InputMapping>>,
   collectedErrors: FieldError[]
 ): void {
   return React.Children.forEach(children, child => {
-    const mapping = mapChildToComponent(child);
+    const mapping = mapChildToComponent(child, context);
     if (!mapping) { return; }
 
     if (FieldMapping.isInput(mapping)) {
@@ -183,7 +226,9 @@ function collectFieldConfiguration(
         }
       }
     } else if (FieldMapping.isOtherElement(mapping)) {
-      collectFieldConfiguration(definitions, mapping.children, collectedInputs, collectedErrors);
+      collectFieldConfiguration(
+        definitions, mapping.children, context, collectedInputs, collectedErrors
+      );
     } else {
       FieldMapping.assertNever(mapping);
     }
@@ -199,12 +244,14 @@ export function renderFields(
     field: FieldDefinition,
     reducer: (previous: ValuesWithErrors) => ValuesWithErrors
   ) => void,
-  onInputMounted: (inputId: string, index: number, input: MultipleValuesInput<any, any>) => void
+  onInputMounted: (inputId: string, index: number, input: MultipleValuesInput<any, any>) => void,
+  dependencyContexts: ReadonlyMap<string, DependencyContext | undefined>,
+  mappingContext: FieldMappingContext
 ) {
   const inputIndices = new Map<string, number>();
 
-  function mapChild(child: React.ReactNode) {
-    const mapping = mapChildToComponent(child);
+  function mapChild(child: React.ReactNode): React.ReactNode {
+    const mapping = mapChildToComponent(child, mappingContext);
     if (!mapping) {
       return child;
     } else if (FieldMapping.isInput(mapping)) {
@@ -236,8 +283,9 @@ export function renderFields(
         values: state.values,
         errors: state.errors,
         updateValues: reducer => onValuesChanged(definition, reducer),
+        dependencyContext: dependencyContexts.get(mapping.for),
       };
-      const inputOverride: Partial<MultipleValuesProps> & React.Props<any> = {
+      const inputOverride: Partial<MultipleValuesProps> & React.ClassAttributes<any> = {
         ...baseProvidedProps,
         ref: onMounted,
       };
@@ -305,6 +353,76 @@ export function collectDefinitionErrors(definition: FieldDefinition, errors: Fie
   }
 }
 
+function collectConstraintErrors(
+  definitions: Immutable.Map<string, FieldDefinition>,
+  constraints: ReadonlyArray<MultipleFieldConstraint>,
+  errors: FieldError[]
+) {
+  let index = 0;
+  for (const constraint of constraints) {
+    const patternError = validateQueryPattern(constraint.validatePattern, 'ASK');
+    if (patternError instanceof ValidationError) {
+      errors.push({
+        kind: ErrorKind.Configuration,
+        message: `Invalid "validatePattern" for ` +
+          `field constraint #${index}: ${patternError.message}`,
+      });
+    }
+
+    if (typeof constraint.message !== 'string') {
+      errors.push({
+        kind: ErrorKind.Configuration,
+        message: `Missing or non-string "message" for field constraint #${index}`,
+      });
+    }
+
+    const fieldsError = validateFieldBindingNames(definitions, constraint.fields);
+    if (fieldsError) {
+      errors.push({
+        kind: ErrorKind.Configuration,
+        message: `Invalid field constraint #${index}: ${fieldsError.message}`,
+      });
+    }
+
+    index++;
+  }
+}
+
+function collectDependencyErrors(
+  definitions: Immutable.Map<string, FieldDefinition>,
+  dependencies: ReadonlyArray<FieldDependency>,
+  errors: FieldError[]
+) {
+  let index = 0;
+  const dependentFieldIds = new Set<string>();
+  for (const dependency of dependencies) {
+    if (typeof dependency.field === 'string') {
+      if (dependentFieldIds.has(dependency.field)) {
+        errors.push({
+          kind: ErrorKind.Configuration,
+          message: `Duplicate dependency #${index} for field "${dependency.field}"`,
+        });
+      }
+
+      const fieldsError = validateFieldBindingNames(definitions, dependency.dependencies);
+      if (fieldsError) {
+        errors.push({
+          kind: ErrorKind.Configuration,
+          message: `Invalid field dependency for field ` +
+            `"${dependency.field}": ${fieldsError.message}`,
+        });
+      }
+    } else {
+      errors.push({
+        kind: ErrorKind.Configuration,
+        message: `Missing or non-string "field" property for field dependency #${index}`,
+      });
+    }
+
+    index++;
+  }
+}
+
 function validateInsertPattern(pattern: string): ValidationError | undefined {
   const query = parseQuery(pattern);
   if (query instanceof ValidationError) { return query; }
@@ -354,6 +472,25 @@ function validateQueryPattern(
     return new ValidationError(`should be ${queryType} query but was: '${query.queryType}'`);
   }
   return undefined;
+}
+
+function validateFieldBindingNames(
+  definitions: Immutable.Map<string, FieldDefinition>,
+  fields: { readonly [fieldId: string]: string }
+): ValidationError | undefined {
+  if (typeof fields !== 'object') {
+    return new ValidationError(`invalid (non-object) "fields" property`);
+  }
+  for (const fieldId in fields) {
+    if (!Object.prototype.hasOwnProperty.call(fields, fieldId)) { continue; }
+    if (!definitions.has(fieldId)) {
+      return new ValidationError(`missing referenced field "${fieldId}"`);
+    }
+    const bindingName = fields[fieldId];
+    if (typeof bindingName !== 'string') {
+      return new ValidationError(`invalid (non-string) binding name for field "${fieldId}"`);
+    }
+  }
 }
 
 function parseQuery(query: string): SparqlJs.SparqlQuery | ValidationError {

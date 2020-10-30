@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { createElement, ReactNode, Component, createFactory } from 'react';
 import * as D from 'react-dom-factories';
-import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 
 import { Cancellation } from 'platform/api/async';
@@ -26,29 +46,31 @@ import { Cancellation } from 'platform/api/async';
 import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
 
-import { FieldDefinitionProp } from './FieldDefinition';
+import { FieldDefinitionProp, FieldDependency, MultipleFieldConstraint } from './FieldDefinition';
 import {
   FieldValue, EmptyValue, AtomicValue, CompositeValue, ErrorKind, DataState,
 } from './FieldValues';
 
-import { CompositeInput, CompositeInputProps, SingleValueHandler } from './inputs';
+import { CompositeInput } from './inputs/CompositeInput';
+import { SingleValueHandler } from './inputs/SingleValueInput';
 import { FormErrors } from './static/FormErrors';
 
 import './forms.scss';
 
 export interface SemanticFormProps {
   fields?: ReadonlyArray<FieldDefinitionProp>;
+  fieldConstraints?: ReadonlyArray<MultipleFieldConstraint>;
+  fieldDependencies?: ReadonlyArray<FieldDependency>;
   model: EmptyValue | AtomicValue | CompositeValue;
   onChanged: (model: CompositeValue) => void;
-  onLoaded: (model: CompositeValue) => void;
-  onUpdated?: (dataState: DataState) => void;
+  onUpdateState?: (dataState: DataState, loadedModel: CompositeValue | undefined) => void;
   newSubjectTemplate?: string;
   children?: ReactNode;
   debug?: boolean;
 }
 
 enum LoadingState {
-  None, Loading, Completed,
+  Loading, Completed,
 }
 
 /**
@@ -64,12 +86,12 @@ enum LoadingState {
  *      Child inputs provided with field definition and current field state from model
  *      based on 'for' property of input component.
  *
- *   2. Props.onLoaded is called on mount with intialized model derived from
- *      intially provided model by filtering unused field definitions and adding information
- *      about configuration errors (e.g. missing field defintion for input).
+ *   2. Props.onUpdated() is called on mount with initialized model derived from
+ *      initially provided model by filtering unused field definitions and adding information
+ *      about configuration errors (e.g. missing field definition for input).
  *
  *   3. Props.onChanged is called on model change:
- *      a. when intial value and value set of field is loaded
+ *      a. when initial value and value set of field is loaded
  *      b. when user changed field value using form's input
  *      c. when new value of edited field finished validation by Sparql query
  */
@@ -80,23 +102,22 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
 
   private input: CompositeInput;
   private lastDataState: DataState | undefined;
-  private loadingState = LoadingState.None;
+  private loadingState = LoadingState.Loading;
   private pendingModel: FieldValue;
 
   constructor(props: SemanticFormProps, context: any) {
     super(props, context);
+    this.pendingModel = this.props.model;
     this.handler = CompositeInput.makeHandler({
       definition: undefined,
       baseInputProps: {
         fields: this.props.fields || [],
+        fieldConstraints: this.props.fieldConstraints,
+        fieldDependencies: this.props.fieldDependencies,
         newSubjectTemplate: this.props.newSubjectTemplate,
         children: this.props.children,
       },
     });
-  }
-
-  componentDidMount() {
-    this.pendingModel = this.props.model;
   }
 
   componentWillReceiveProps(nextProps: SemanticFormProps) {
@@ -117,6 +138,22 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
     this.props.onChanged(this.pendingModel);
   }
 
+  componentDidMount() {
+    const dataState = this.input ? this.input.dataState() : DataState.Loading;
+    if (dataState === DataState.Ready && FieldValue.isComposite(this.props.model)) {
+      this.loadingState = LoadingState.Completed;
+      if (this.props.onUpdateState) {
+        this.props.onUpdateState(dataState, this.props.model);
+      }
+    }
+    if (this.props.debug) {
+      console.log(
+        `[mount: ${LoadingState[this.loadingState]}] ${DataState[dataState]}`,
+        asDebugJSObject(this.props.model)
+      );
+    }
+  }
+
   componentDidUpdate(prevProps: SemanticFormProps) {
     const dataState = this.input ? this.input.dataState() : DataState.Loading;
     const modelOrDataStateChanged = !(
@@ -126,34 +163,30 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
     this.lastDataState = dataState;
 
     if (modelOrDataStateChanged) {
-      if (this.props.onUpdated) {
-        this.props.onUpdated(dataState);
-      }
-
       if (this.props.debug) {
         console.log(
-          `[${LoadingState[this.loadingState]}] ${DataState[dataState]}`,
+          `[update: ${LoadingState[this.loadingState]}] ${DataState[dataState]}`,
           asDebugJSObject(this.props.model)
         );
       }
 
-      // transition from None to Loading
-      if (this.loadingState === LoadingState.None && dataState === DataState.Loading) {
-        this.loadingState = LoadingState.Loading;
-        if (this.props.debug) {
-          console.log(`[-> ${LoadingState[this.loadingState]}]`);
+      let loadedModel: CompositeValue | undefined = undefined;
+      switch (this.loadingState) {
+        case LoadingState.Loading: {
+          // transition from Loading to Ready
+          if (dataState === DataState.Ready && FieldValue.isComposite(this.props.model)) {
+            this.loadingState = LoadingState.Completed;
+            if (this.props.debug) {
+              console.log(`[update -> ${LoadingState[this.loadingState]}]`);
+            }
+            loadedModel = this.props.model;
+          }
+          break;
         }
-      } else if (
-        // transition from Loading to Ready
-        this.loadingState === LoadingState.Loading &&
-        dataState === DataState.Ready &&
-        FieldValue.isComposite(this.props.model)
-      ) {
-        this.loadingState = LoadingState.Completed;
-        if (this.props.debug) {
-          console.log(`[-> ${LoadingState[this.loadingState]}]`);
-        }
-        this.props.onLoaded(this.props.model);
+      }
+
+      if (this.props.onUpdateState) {
+        this.props.onUpdateState(dataState, loadedModel);
       }
     }
   }
@@ -225,15 +258,17 @@ function asDebugJSObject(value: FieldValue): object {
       type: AtomicValue.type,
       value: value.value.toString(),
       label: value.label,
-      errors: value.errors.toArray(),
+      errors: value.errors,
     };
     case CompositeValue.type: return {
       type: CompositeValue.type,
       subject: value.subject.toString(),
+      discriminator: value.discriminator ? value.discriminator.toString() : undefined,
       fields: value.fields.map(state => ({
-        values: state.values.map(asDebugJSObject).toArray(),
-        errors: state.errors.toArray(),
+        values: state.values.map(asDebugJSObject),
+        errors: state.errors,
       })).toObject(),
+      errors: value.errors,
     };
   }
 }

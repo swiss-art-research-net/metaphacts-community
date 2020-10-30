@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,136 +37,119 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+import * as Kefir from 'kefir';
 
-import * as Handlebars from 'handlebars';
-
-import { WrappingError } from 'platform/api/async';
+import { Cancellation, WrappingError } from 'platform/api/async';
 import { Rdf } from 'platform/api/rdf';
-import { SparqlUtil } from 'platform/api/sparql';
 
-import { escapeRemoteTemplateHtml } from './TemplateParser';
+import { PageService } from 'platform/api/services/page';
 
-import { PageService } from '../page';
+import { ExtractedTemplate, parseHtml, extractTemplateBody } from './TemplateParser';
 
-const remoteTemplateCache = new Map<string, Promise<ParsedTemplate>>();
+let loadingCancellation = new Cancellation();
+const loadingRemoteTemplates = new Map<string, Kefir.Property<ExtractedTemplate>>();
+const cachedRemoteTemplates = new Map<string, ExtractedTemplate>();
 
 export function purgeRemoteTemplateCache() {
-  remoteTemplateCache.clear();
+  loadingCancellation.cancelAll();
+  loadingCancellation = new Cancellation();
+  loadingRemoteTemplates.clear();
+  cachedRemoteTemplates.clear();
 }
 
-export interface ParsedTemplate {
-  readonly source: string;
-  readonly ast: hbs.AST.Program;
-  readonly references: ReadonlyArray<string>;
-}
-
-export function fetchRemoteTemplate(iri: Rdf.Iri): Promise<ParsedTemplate> {
-  if (remoteTemplateCache.has(iri.value)) {
-    return remoteTemplateCache.get(iri.value);
+export function fetchRemoteTemplate(iri: Rdf.Iri): Kefir.Property<ExtractedTemplate> {
+  if (cachedRemoteTemplates.has(iri.value)) {
+    return Kefir.constant(cachedRemoteTemplates.get(iri.value));
+  } else if (loadingRemoteTemplates.has(iri.value)) {
+    return loadingRemoteTemplates.get(iri.value);
   }
 
   // fetching and parsing template source
-  const promise = PageService.loadPageTemplateHtml(iri).toPromise()
-    .then(template => escapeRemoteTemplateHtml(template.templateHtml))
-    .then(parseTemplate)
-    .catch(error => Promise.reject(new WrappingError(
-      `Failed to load the source of template ${iri}`, error))
+  const task = loadingCancellation.map(
+    PageService.loadPageTemplateHtml(iri)
+      .map(source => {
+        const nodes = source ? parseHtml(source.templateHtml) : [];
+        const template = extractTemplateBody(nodes, iri.value);
+        loadingRemoteTemplates.delete(iri.value);
+        cachedRemoteTemplates.set(iri.value, template);
+        return template;
+      })
+      .mapErrors(error => new WrappingError(
+        `Failed to load the source of template ${iri}`, error
+      ))
+  );
+
+  // ensure the task is always run fully to completion
+  // even if fetching request was cancelled
+  task.observe({});
+
+  loadingRemoteTemplates.set(iri.value, task);
+  return task;
+}
+
+export function hasRemoteTemplate(iri: Rdf.Iri): boolean {
+  return cachedRemoteTemplates.has(iri.value);
+}
+
+export function getRemoteTemplate(iri: Rdf.Iri): ExtractedTemplate {
+  if (cachedRemoteTemplates.has(iri.value)) {
+    return cachedRemoteTemplates.get(iri.value);
+  } else {
+    throw new Error(`Cannot synchronously get remote template ${iri} as it is not preloaded`);
+  }
+}
+
+export function preloadReferencedRemoteTemplates(
+  roots: ReadonlySet<ExtractedTemplate>
+): Kefir.Property<Rdf.Iri[]> {
+  if (roots.size === 0) {
+    return Kefir.constant<Rdf.Iri[]>([]);
+  }
+
+  const dependencies = new Map<string, ExtractedTemplate | null>();
+
+  function addAndResolve(template: ExtractedTemplate): Kefir.Property<unknown> {
+    dependencies.set(template.localName, template);
+    return resolve(template);
+  }
+
+  function resolve(template: ExtractedTemplate): Kefir.Property<unknown> {
+    if (template.remoteReferences.length === 0) {
+      return Kefir.constant(undefined);
+    }
+    const referencesToLoad: Rdf.Iri[] = [];
+    for (const reference of template.remoteReferences) {
+      if (!dependencies.has(reference.value)) {
+        referencesToLoad.push(reference);
+      }
+    }
+
+    if (referencesToLoad.length === 0) {
+      return Kefir.constant(undefined);
+    }
+
+    for (const iri of referencesToLoad) {
+      // mark dependency to prevent multiple loading
+      dependencies.set(iri.value, null);
+    }
+
+    const dependenciesTasks = referencesToLoad.map(
+      iri => fetchRemoteTemplate(iri)
+        .mapErrors(error => new WrappingError(`Failed to load template ${iri}`, error))
+        .flatMap(addAndResolve)
     );
-
-  remoteTemplateCache.set(iri.value, promise);
-  return promise;
-}
-
-interface HandlebarsAPI {
-  JavaScriptCompiler?: HandlebarsJavaScriptCompilerConstructor;
-}
-
-interface HandlebarsJavaScriptCompilerConstructor {
-  new(...args: any[]): HandlebarsJavaScriptCompiler;
-}
-
-interface HandlebarsJavaScriptCompiler {
-  nameLookup(parent: any, name: any, type: string): any;
-  /**
-   * Undocumented reference to constructor function of itself.
-   * Nested partials compilation will use default JavaScriptCompiler if this field isn't set to
-   * derived compiler's constructor function.
-   */
-   // See `compiler: JavaScriptCompiler` field here:
-   // tslint:disable-next-line:max-line-length
-   // https://github.com/wycats/handlebars.js/blob/714a4c448281aef44bcafc4d9e4ecf32ed063b8b/lib/handlebars/compiler/javascript-compiler.js#L695
-  compiler?: HandlebarsJavaScriptCompilerConstructor;
-}
-
-/**
- * Handlebars runtime compiler with added ability to resolve partial name
- * specified as short prefixed IRI using platform-wide registered prefixes.
- */
-class IRIResolvingCompiler extends (Handlebars as HandlebarsAPI).JavaScriptCompiler {
-  nameLookup(parent: any, name: any, type: string) {
-    if (type === 'partial' && typeof name === 'string' && isRemoteReference(name)) {
-      const [iri] = SparqlUtil.resolveIris([name]);
-      return super.nameLookup(parent, iri.value, type);
-    }
-    return super.nameLookup(parent, name, type);
-  }
-}
-IRIResolvingCompiler.prototype.compiler = IRIResolvingCompiler;
-
-export function isRemoteReference(partialName: string) {
-  return partialName.indexOf(':') >= 0;
-}
-
-class RemoteTemplateScanner extends Handlebars.Visitor {
-  readonly localReferences = new Set<string>();
-  readonly remoteReferences: string[] = [];
-
-  PartialStatement(partial: hbs.AST.PartialStatement): void {
-    this.addReference(partial);
+    return Kefir.zip(dependenciesTasks)
+      .toProperty()
+      .mapErrors(error => new WrappingError(
+        `Error while resolving dependencies of template '${template.localName}'`, error
+      ));
   }
 
-  PartialBlockStatement(partial: hbs.AST.PartialBlockStatement): void {
-    this.addReference(partial);
-  }
-
-  private addReference(partial: hbs.AST.PartialStatement | hbs.AST.PartialBlockStatement) {
-    const name = this.getPartialName(partial.name);
-    // exclude special partial names, e.g. @partial-block
-    if (name && name.indexOf('@') !== 0) {
-      if (isRemoteReference(name)) {
-        this.remoteReferences.push(name);
-      } else {
-        this.localReferences.add(name);
-      }
-    }
-  }
-
-  private getPartialName(name: hbs.AST.PathExpression | hbs.AST.SubExpression) {
-    if (name.type === 'PathExpression') {
-      const path = name as hbs.AST.PathExpression;
-      if (path.parts.length === 1) {
-        return path.original;
-      }
-    }
-    return undefined;
-  }
-}
-
-export function createHandlebarsWithIRILookup() {
-  const handlebars = Handlebars.create();
-  (handlebars as HandlebarsAPI).JavaScriptCompiler = IRIResolvingCompiler;
-  return handlebars;
-}
-
-export function parseTemplate(body: string): ParsedTemplate {
-  const ast = typeof body === 'string' ? Handlebars.parse(body) : body;
-  const scanner = new RemoteTemplateScanner();
-  scanner.accept(ast);
-
-  const references = scanner.localReferences;
-  SparqlUtil.resolveIris(scanner.remoteReferences)
-    .map(iri => iri.value)
-    .forEach(remoteReference => references.add(remoteReference));
-
-  return {source: body, ast, references: Array.from(references.values())};
+  return Kefir.zip(Array.from(roots, resolve))
+    .map(() => {
+      const loadedTemplates: Rdf.Iri[] = [];
+      dependencies.forEach((template, iri) => loadedTemplates.push(Rdf.iri(iri)));
+      return loadedTemplates;
+    })
+    .toProperty();
 }

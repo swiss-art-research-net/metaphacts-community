@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "autosuggestionPattern": {
+            "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependend field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
+            "type": "string"
+        },
+        "dependencies": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "description": "Maps a field ID (to depend on) to the variable name that can be used in the\n`autosuggestionPattern` and `valueSetPattern` queries. The value\nof the dependent field is injected as additional binding into the\nqueries.",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "field": {
+            "description": "Dependent field ID.",
+            "type": "string"
+        },
+        "valueSetPattern": {
+            "description": "SPARQL SELECT query to generate a fixed list (choices) of values\nthat the user may choose from. The value of the dependent field\nis injected as additional binding as defined in the `dependencies`\nmapping.\n\nQuery bindings:\n   * `?(dependentOnFieldVariable)` - value for each dependent on field;\n\nExposed projection variables:\n   * `?value` - set of values for user to choose from;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "field",
+        "dependencies",
+        "valueSetPattern",
+        "autosuggestionPattern"
+    ],
+    "required": [
+        "dependencies",
+        "field"
+    ],
+    "type": "object"
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +15,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
 
 import * as React from 'react';
-import ReactSelect, { ReactSelectProps } from 'react-select';
+import ReactSelect, { ReactSelectProps, OnChangeHandler } from 'react-select';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
 import { FormGroup, ControlLabel } from 'react-bootstrap';
@@ -173,7 +172,7 @@ class SemanticSearchContextualizedResultInner extends React.Component<InnerProps
       value={this.state.relation.getOrElse(undefined)}
       optionRenderer={this.customSuggestionRenderer(this.props.tupleTemplate)}
       valueRenderer={this.customValueRenderer(this.props.tupleTemplate)}
-      onChange={this.selectRelation}
+      onChange={this.selectRelation as OnChangeHandler<Model.Relation>}
       placeholder='Select Context'
     />;
   }

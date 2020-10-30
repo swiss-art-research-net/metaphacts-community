@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +15,9 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import * as SparqlJs from 'sparqljs';
-import {
-  ElementModel, ElementIri, ElementTypeIri, LinkTypeIri, LiteralProperty, LocalizedString,
-} from 'ontodia';
+import { ElementModel, ElementIri, ElementTypeIri, LinkTypeIri, Property } from 'ontodia';
 
 import { trigger } from 'platform/api/events';
 import { Rdf } from 'platform/api/rdf';
@@ -92,13 +89,13 @@ export class OntodiaAnnotationEndpoint implements AnnotationEndpoint {
         );
         query = prepareRegionsQuery(query, region.label, 'label');
         query = prepareRegionsQuery(
-          query, region.properties[this.fields.value] as LiteralProperty, 'svgValue'
+          query, region.properties[this.fields.value], 'svgValue'
         );
         query = prepareRegionsQuery(
-          query, region.properties[this.fields.viewport] as LiteralProperty, 'viewport'
+          query, region.properties[this.fields.viewport], 'viewport'
         );
         query = prepareRegionsQuery(
-          query, region.properties[this.fields.boundingBox] as LiteralProperty, 'boundingBox'
+          query, region.properties[this.fields.boundingBox], 'boundingBox'
         );
       }
       return LdpRegionService.getRegionFromSparql(regionIri, query);
@@ -116,7 +113,7 @@ export class OntodiaAnnotationEndpoint implements AnnotationEndpoint {
         elementData,
         targets: annotation.on.map(on => ({
           targetIri: on.full as ElementIri,
-          linkTypeId: this.fields.isPrimaryAreaOf as LinkTypeIri,
+          linkTypeIri: this.fields.isPrimaryAreaOf as LinkTypeIri,
         })
         ),
       },
@@ -192,26 +189,22 @@ function convertAnnotationToElementModel(
       rso.EX_Digital_Image_Region.value as ElementTypeIri,
       crmdig.D35_Area.value as ElementTypeIri,
     ],
-    label: {values: [{value: textResource.chars, language: ''}]},
+    label: {
+      values: [Rdf.literal(textResource.chars)]
+    },
     properties: {
       [fields.boundingBox]: {
-        type: 'string',
         values: annotation.on.map(on =>
-          ({value: on.selector.default.value, language: ''})
+          Rdf.literal(on.selector.default.value)
         ),
       },
       [fields.value]: {
-        type: 'string',
         values: annotation.on.map(on =>
-          ({value: on.selector.item.value, language: ''})
+          Rdf.literal(on.selector.item.value)
         ),
       },
       [fields.viewport]: {
-        type: 'string',
-        values: [{
-          value: annotation['http://www.researchspace.org/ontology/viewport'],
-          language: '',
-        }],
+        values: [Rdf.literal(annotation['http://www.researchspace.org/ontology/viewport'])],
       }
     },
   };
@@ -219,9 +212,7 @@ function convertAnnotationToElementModel(
 
 function prepareRegionsQuery(
   query: SparqlJs.ConstructQuery,
-  property: {
-    values: ReadonlyArray<LocalizedString>;
-  },
+  property: Property,
   parameter: string
 ): SparqlJs.ConstructQuery {
   return SparqlClient.prepareParsedQuery(

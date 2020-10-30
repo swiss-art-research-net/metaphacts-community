@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import { Component } from 'react';
 import * as moment from 'moment';
+import * as Immutable from 'immutable';
 
 import { Cancellation } from 'platform/api/async';
 import { BrowserPersistence } from 'platform/components/utils';
@@ -29,6 +51,11 @@ export interface RecentQueriesProps { }
 
 const LS_RECENT_QUERIES = 'recentQueries';
 const MAX_LS_RECENT_QUERIES = 30;
+const LOCALE_FORMAT = getLocaleFormat();
+const STORAGE_FORMAT = 'MM/DD/YY, HH:mm';
+
+type StoredQuery = Immutable.Map<'repository' | 'date' | 'query', string>;
+type StoredQueries = Immutable.List<StoredQuery>;
 
 export class RecentQueries extends Component<RecentQueriesProps, void> {
   static readonly contextTypes = ContextTypes;
@@ -39,7 +66,7 @@ export class RecentQueries extends Component<RecentQueriesProps, void> {
   private lastQuery: { query: string; repository?: string };
 
   render() {
-    const recentQueries = BrowserPersistence.getItem(LS_RECENT_QUERIES);
+    const recentQueries: StoredQueries = BrowserPersistence.getItem(LS_RECENT_QUERIES);
     if (!recentQueries) {
       return <span>no queries</span>;
     }
@@ -66,7 +93,7 @@ export class RecentQueries extends Component<RecentQueriesProps, void> {
             queryEditorContext.setQuery(query, {repository});
           }}>
           <span style={labelStyle}>
-            {item.get('date')}
+            {renderDate(item.get('date'))}
           </span>
           {
             item.get('repository') ? (
@@ -77,7 +104,7 @@ export class RecentQueries extends Component<RecentQueriesProps, void> {
             {item.get('query')}
           </div>
         </a>,
-      )}
+      ).toArray()}
     </div>;
   }
 
@@ -92,18 +119,18 @@ export class RecentQueries extends Component<RecentQueriesProps, void> {
   }
 
   private addRecentQueries = (query: string, repository?: string) => {
-    const recentQueries = BrowserPersistence.getItem(LS_RECENT_QUERIES);
+    const recentQueries: StoredQueries = BrowserPersistence.getItem(LS_RECENT_QUERIES);
 
     const recentQuery = {
       query: query,
-      date: moment().format('MM/DD/YY, HH:mm'),
+      date: moment().format(STORAGE_FORMAT),
       repository,
     };
 
     if (recentQueries) {
-      const queries = recentQueries.toArray();
+      const queries: Array<StoredQuery | typeof recentQuery> = recentQueries.toArray();
 
-      const lastQuery = queries[0];
+      const lastQuery = queries[0] as StoredQuery;
       if (lastQuery.get('query') !== query || lastQuery.get('repository') !== repository) {
         queries.unshift(recentQuery);
       } else {
@@ -122,3 +149,20 @@ export class RecentQueries extends Component<RecentQueriesProps, void> {
 }
 
 export default RecentQueries;
+
+function renderDate(date: string) {
+  const dateString = moment(date, STORAGE_FORMAT).format(LOCALE_FORMAT);
+  return dateString;
+}
+
+function getLocaleFormat() {
+  const locale: string = (window.navigator as any).userLanguage || window.navigator.language;
+  const localMoment = moment();
+  localMoment.locale(locale);
+  const localeData = localMoment.localeData();
+  const dateFormat = localeData.longDateFormat('L');
+  const timeFormat = localeData.longDateFormat('LT');
+  const format = `${dateFormat}, ${timeFormat}`;
+
+  return format;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as D from 'react-dom-factories';
 import * as Kefir from 'kefir';
@@ -32,14 +31,34 @@ import {
   queryIIIFImageOrRegion, ImageOrRegionInfo,
 } from '../../data/iiif/ImageAnnotationService';
 
-export interface Props {
+export interface ImageThumbnailConfig {
+  /**
+   * Image or region IRI.
+   */
   imageOrRegion: string;
+  /**
+   * Pattern to generate image ID from image IRI.
+   */
   imageIdPattern: string;
+  /**
+   * IIIF server URL.
+   */
   iiifServerUrl: string;
+  /**
+   * Fits image in the respective width.
+   */
   width?: number | string;
+  /**
+   * Fits image in the respective height.
+   */
   height?: number | string;
+  /**
+   * Preserves aspect ratio of the image.
+   */
   preserveImageSize?: boolean;
 }
+
+export type Props = ImageThumbnailConfig;
 
 export interface State {
   loading: boolean;
@@ -97,14 +116,14 @@ const REGION_OVERLAY_STROKE_WIDTH = '2%';
 class ImageThumbnailComponent extends Component<Props, State> {
   private requests: Kefir.Pool<ThumbnailRequest>;
 
-  constructor(props: Props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {loading: true};
     this.requests = Kefir.pool<ThumbnailRequest>();
 
     this.requests.flatMapLatest(
       request =>
-        request.iri ? this.loadImageOrRegion(request) : Kefir.never()
+        request.iri ? this.loadImageOrRegion(request) : Kefir.never<LoadedThumbnail>()
     ).onValue((thumbnail: LoadedThumbnail) => this.setState({loading: true, thumbnail}))
       .onError(error => this.setState({loading: false, error}));
   }

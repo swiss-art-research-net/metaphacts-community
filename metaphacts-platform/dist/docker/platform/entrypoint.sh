@@ -44,4 +44,4 @@ export JAVA_TOOL_OPTS="$JAVA_TOOL_OPTS \
  -XX:+PrintGCCause"
 
 # execute java command
-exec java $JAVA_TOOL_OPTS $JAVA_OPTS -jar -Djava.io.tmpdir=$TMPDIR $JETTY_HOME/start.jar /usr/local/jetty/etc/jetty.xml /usr/local/jetty/etc/jetty-http-forwarded.xml $RUNTIME_OPTS $PLATFORM_OPTS
+exec java $JAVA_TOOL_OPTS $JAVA_OPTS -jar -Djava.io.tmpdir=$TMPDIR $JETTY_HOME/start.jar /usr/local/jetty/etc/jetty.xml /usr/local/jetty/etc/jetty-http-forwarded.xml $PLATFORM_JETTY_OPTS $RUNTIME_OPTS $PLATFORM_OPTS

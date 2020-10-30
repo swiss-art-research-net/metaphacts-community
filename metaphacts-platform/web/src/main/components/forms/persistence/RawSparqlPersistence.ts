@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +37,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
-import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
+import { SparqlClient, SparqlUtil, SparqlTypeGuards, cloneQuery } from 'platform/api/sparql';
 
 import { CompositeValue, EmptyValue } from '../FieldValues';
 import { parseQueryStringAsUpdateOperation } from './PersistenceUtils';
@@ -30,6 +51,8 @@ import { TriplestorePersistence, computeModelDiff } from './TriplestorePersisten
 export interface RawSparqlPersistenceConfig {
   type?: 'client-side-sparql';
   repository?: string;
+  insertGraph?: string;
+  deleteGraph?: string;
 }
 
 export class RawSparqlPersistence implements TriplestorePersistence {
@@ -37,8 +60,9 @@ export class RawSparqlPersistence implements TriplestorePersistence {
 
   persist(
     initialModel: CompositeValue | EmptyValue,
-    currentModel: CompositeValue | EmptyValue,
+    currentModel: CompositeValue | EmptyValue
   ): Kefir.Property<void> {
+    const {insertGraph, deleteGraph} = this.config;
     const updateQueries = RawSparqlPersistence.createFormUpdateQueries(initialModel, currentModel);
     if (updateQueries.size === 0) {
       return Kefir.constant<void>(undefined);
@@ -48,14 +72,16 @@ export class RawSparqlPersistence implements TriplestorePersistence {
     });
     const {repository = 'default'} = this.config;
     const context: SparqlClient.QueryContext = {repository};
-    const updateOperations = Kefir.zip<void>(updateQueries.map(
-      query => SparqlClient.executeSparqlUpdate(query, {context})).toArray());
+    const updateOperations = Kefir.zip<void>(updateQueries.map(update => {
+      const query = setDefaultGraphForUpdate(update, insertGraph, deleteGraph);
+      return SparqlClient.executeSparqlUpdate(query, {context});
+    }).toArray());
     return updateOperations.map(() => {/* void */}).toProperty();
   }
 
   static createFormUpdateQueries(
     initialModel: CompositeValue | EmptyValue,
-    currentModel: CompositeValue | EmptyValue,
+    currentModel: CompositeValue | EmptyValue
   ): Immutable.List<SparqlJs.Update> {
     const entries = computeModelDiff(initialModel, currentModel);
     return Immutable.List(entries)
@@ -72,8 +98,8 @@ function createFieldUpdateQueries(
   subject: Rdf.Iri,
   deleteQuery: SparqlJs.Update | undefined,
   insertQuery: SparqlJs.Update | undefined,
-  inserted: ReadonlyArray<Rdf.Node>,
-  deleted: ReadonlyArray<Rdf.Node>,
+  inserted: ReadonlyArray<{ value: Rdf.Node; index?: Rdf.Literal }>,
+  deleted: ReadonlyArray<Rdf.Node>
 ): Immutable.List<SparqlJs.Update> {
   let queries = Immutable.List<SparqlJs.Update>();
 
@@ -81,7 +107,14 @@ function createFieldUpdateQueries(
     return queries;
   }
 
-  const paramterize = (query: SparqlJs.Update, value: Rdf.Node) =>
+  const parametrizeInsert =
+    (query: SparqlJs.Update, value: { value: Rdf.Node; index?: Rdf.Literal }) =>
+      SparqlClient.setBindings(query, {
+        'subject': subject,
+        'value': value.value,
+        'index': value.index,
+      });
+  const parametrizeDelete = (query: SparqlJs.Update, value: Rdf.Node) =>
     SparqlClient.setBindings(query, {
       'subject': subject,
       'value': value,
@@ -89,11 +122,47 @@ function createFieldUpdateQueries(
 
   if (deleteQuery) {
     queries = queries.concat(
-      deleted.map(value => paramterize(deleteQuery, value)));
+      deleted.map(value => parametrizeDelete(deleteQuery, value)));
   }
   if (insertQuery) {
     queries = queries.concat(
-      inserted.map(value => paramterize(insertQuery, value)));
+      inserted.map(value => parametrizeInsert(insertQuery, value)));
   }
   return queries;
+}
+
+export function setDefaultGraphForUpdate(
+  update: SparqlJs.Update,
+  insertGraph: string | undefined,
+  deleteGraph: string | undefined
+) {
+  if (!(typeof insertGraph === 'string' || typeof deleteGraph === 'string')) {
+    return update;
+  }
+  const clone = cloneQuery(update);
+  for (const operation of clone.updates) {
+    if (!SparqlTypeGuards.isInsertDeleteOperation(operation)) {
+      continue;
+    }
+    if (operation.insert && typeof insertGraph === 'string') {
+      setDefaultGraphForQuads(operation.insert, Rdf.iri(insertGraph));
+    }
+    if (operation.delete && typeof deleteGraph === 'string') {
+      setDefaultGraphForQuads(operation.delete, Rdf.iri(deleteGraph));
+    }
+  }
+  return clone;
+}
+
+function setDefaultGraphForQuads(blocks: SparqlJs.Quads[], targetGraph: SparqlJs.IriTerm): void {
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+    if (block.type === 'bgp') {
+      blocks[i] = {
+        type: 'graph',
+        name: targetGraph,
+        triples: block.triples,
+      };
+    }
+  }
 }

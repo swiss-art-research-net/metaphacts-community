@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 import * as React from 'react';
@@ -377,13 +376,9 @@ export class TextAnnotationWorkspace extends Component<TextAnnotationWorkspacePr
       // annotation is not created yet
       return Kefir.constant(undefined);
     }
-    const currentModel: Forms.CompositeValue = {
-      type: 'composite',
+    const currentModel = Forms.CompositeValue.set(Forms.CompositeValue.empty, {
       subject: iri,
-      definitions: Immutable.Map(),
-      fields: Immutable.Map(),
-      errors: Forms.FieldError.noErrors,
-    };
+    });
 
     const task = this.getPersistence().persist(currentModel, Forms.FieldValue.empty)
       .map(() => {

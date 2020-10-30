@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Kefir from 'kefir';
 import { mapValues, isEmpty, forEach } from 'lodash';
 import { fromNullable } from 'data.maybe';
@@ -27,6 +48,8 @@ const { sp, field, rdf, rdfs, xsd, VocabPlatform } = vocabularies;
 
 import { TreeQueriesConfig } from 'platform/components/forms';
 import { ComplexTreePatterns } from 'platform/components/semantic/lazy-tree';
+
+export type OrderedWith = 'index-property';
 
 /**
  * Component state interface as used by the {@FieldEditorComponent}
@@ -52,6 +75,7 @@ export interface State {
   valueSetPattern?: Data.Maybe<Value>;
   autosuggestionPattern?: Data.Maybe<Value>;
   treePatterns?: Data.Maybe<ValidatedTreeConfig>;
+  orderedWith?: Data.Maybe<{ value: OrderedWith; error?: Error }>;
 
   isLoading?: boolean;
   isValid?: boolean;
@@ -174,11 +198,12 @@ export function createFieldDefinitionGraph(properties: {
   autosuggestionPattern: string | undefined;
   treePatterns: TreeQueriesConfig | undefined;
   testSubject: string | undefined;
+  orderedWith: string | undefined;
 }): Rdf.Graph {
   const {
     id, label, description, domain, xsdDatatype, range, min, max, order, defaultValues, testSubject,
     selectPattern, insertPattern, deletePattern, askPattern, valueSetPattern, autosuggestionPattern,
-    categories, treePatterns,
+    categories, treePatterns, orderedWith,
   } = properties;
 
   const triples = new Array<Rdf.Triple>();
@@ -264,6 +289,9 @@ export function createFieldDefinitionGraph(properties: {
     triples.push(Rdf.triple(baseIri, field.tree_patterns,
       Rdf.literal(treePatternsJson, VocabPlatform.SyntheticJsonDatatype)));
   }
+  if (orderedWith === 'index-property') {
+    triples.push(Rdf.triple(baseIri, field.ordered_with, field.index_property));
+  }
 
   return Rdf.graph(triples);
 }
@@ -274,7 +302,7 @@ export function createFieldDefinitionGraph(properties: {
  * @param  {Graph} graph    Graph i.e. collection of statements with all field definition attributes
  * @return {State}
  */
-export function getFieldDefitionState(fieldIri: Rdf.Iri): Kefir.Property<State> {
+export function getFieldDefinitionState(fieldIri: Rdf.Iri): Kefir.Property<State> {
   // shortcut function to convert a string to value object
   const createValue = (value: string): Value => {
     return {value: value};
@@ -313,6 +341,7 @@ export function getFieldDefitionState(fieldIri: Rdf.Iri): Kefir.Property<State> 
       } else if (Array.isArray(fieldDef.range)) {
         range = fieldDef.range.map(createValue) as ReadonlyArray<Value>;
       }
+
       return {
         isLoading: false,
         id: fromNullable(fieldIri.value).map(createValue),
@@ -320,13 +349,15 @@ export function getFieldDefitionState(fieldIri: Rdf.Iri): Kefir.Property<State> 
         description: fromNullable(fieldDef.description).map(createValue),
         categories: fieldDef.categories as ReadonlyArray<Rdf.Iri>,
         domain,
-        xsdDatatype: fromNullable(fieldDef.xsdDatatype).map(createValue),
+        // FIXME: xsdDatatype can be Rdf.Iri
+        xsdDatatype: fromNullable(fieldDef.xsdDatatype as string).map(createValue),
         range,
         min: fromNullable(fieldDef.minOccurs as string).map(createValue),
         max: fromNullable(fieldDef.maxOccurs as string).map(createValue),
         order: fromNullable(fieldDef.order as string).map(createValue),
         defaults: fieldDef.defaultValues.map(createValue) as ReadonlyArray<Value>,
-        testSubject: fromNullable(fieldDef.testSubject).map(createValue),
+        // FIXME: testSubject can be Rdf.Iri
+        testSubject: fromNullable(fieldDef.testSubject as string).map(createValue),
         insertPattern: fromNullable(fieldDef.insertPattern).map(createValue),
         selectPattern: fromNullable(fieldDef.selectPattern).map(createValue),
         askPattern: fromNullable(fieldDef.askPattern).map(createValue),
@@ -334,6 +365,7 @@ export function getFieldDefitionState(fieldIri: Rdf.Iri): Kefir.Property<State> 
         valueSetPattern: fromNullable(fieldDef.valueSetPattern).map(createValue),
         autosuggestionPattern: fromNullable(fieldDef.autosuggestionPattern).map(createValue),
         treePatterns: fromNullable(fieldDef.treePatterns).map(ValidatedTreeConfig.wrap),
+        orderedWith: fromNullable(fieldDef.orderedWith).map(value => ({value})),
       };
     }
   );
@@ -343,11 +375,11 @@ export function unwrapState(state: State) {
   const {
     id, label, description, categories, domain, xsdDatatype, range, min, max, order, defaults,
     testSubject, selectPattern, insertPattern, deletePattern, askPattern, valueSetPattern,
-    autosuggestionPattern, treePatterns,
+    autosuggestionPattern, treePatterns, orderedWith,
   } = state;
   const fields = {
     id, description, xsdDatatype, min, max, order, testSubject, selectPattern,
-    insertPattern, deletePattern, askPattern, valueSetPattern, autosuggestionPattern,
+    insertPattern, deletePattern, askPattern, valueSetPattern, autosuggestionPattern, orderedWith,
   };
   type Unwrapped = { [K in keyof typeof fields]: string | undefined } & {
     label: ReadonlyArray<Rdf.Literal>,
@@ -358,7 +390,7 @@ export function unwrapState(state: State) {
     treePatterns: TreeQueriesConfig,
   };
   const mapped = mapValues(
-    fields, value => value.map(v => v.value).getOrElse(undefined)
+    fields, (maybe: Data.Maybe<{value: any}>) => maybe.map((m) => m.value).getOrElse(undefined)
   ) as Unwrapped;
   mapped.label = label.map(({value, lang}) =>
     lang.length ? Rdf.langLiteral(value.value,  lang) : Rdf.literal(value.value)

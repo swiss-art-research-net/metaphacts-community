@@ -1,0 +1,23 @@
+@prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rep: <http://www.openrdf.org/config/repository#> .
+@prefix sail: <http://www.openrdf.org/config/sail#> .
+@prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+[] a rep:Repository;
+  lookup:configuration [
+      lookup:remoteServiceUrl "https://wikidata.metaphacts.com/";
+#      lookup:remoteServiceUser "my-user";
+#      lookup:remoteServicePassword "my-password";
+      lookup:type "metaphacts:remoteLookup";
+      lookup:remoteQueryMethod "postDataForm"
+    ];
+  rep:repositoryID "remote-lookup";
+  rep:repositoryImpl [
+      rep:repositoryType "openrdf:SailRepository";
+      sr:sailImpl [
+          sail:sailType "openrdf:MemoryStore"
+        ]
+    ];
+  rdfs:label "Remote Lookup (OpenRefine / W3C Reconciliation API)" .

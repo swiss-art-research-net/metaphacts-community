@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,14 +37,20 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.querycatalog;
+
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,11 +58,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.PlatformCache;
-import com.metaphacts.config.ConfigurationUtil;
-import com.metaphacts.security.Permissions;
-import com.metaphacts.services.storage.api.*;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.io.FileHandler;
@@ -47,12 +70,19 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.metaphacts.api.rest.client.QueryTemplateCatalogAPIClient;
+import com.metaphacts.cache.CacheManager;
+import com.metaphacts.cache.PlatformCache;
 import com.metaphacts.cache.QueryTemplateCache;
+import com.metaphacts.config.ConfigurationUtil;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.data.rdf.container.LDPApiInternal;
 import com.metaphacts.repository.RepositoryManager;
-
-import static java.util.stream.Collectors.toList;
+import com.metaphacts.security.Permissions;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.ObjectRecord;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 
 /**
  * A singleton implementation of a registry to store query templates exposed as
@@ -233,7 +263,7 @@ public class QueryCatalogRESTServiceRegistry {
                     configuration,
                     queryTemplateCache,
                     repositoryManager,
-                    namespaceRegistry.getPrefixMap()
+                    namespaceRegistry
                 );
                 String sourceAppId = propFile.getAppId();
                 String revision = record.getRevision();

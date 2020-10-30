@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,9 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
-const h = require('history');
-import * as React from 'react';
+import * as h from 'history';
 import * as _ from 'lodash';
 import * as Kefir from 'kefir';
 import * as uri from 'urijs';
@@ -27,8 +47,7 @@ import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil } from 'platform/api/sparql';
 import { getPrefixedUri, getFullIri } from 'platform/api/services/namespace';
 import { ConfigHolder } from 'platform/api/services/config-holder';
-import { getOverlaySystem } from 'platform/components/ui/overlay';
-import { NavigationConfirmationDialog } from './components/NavigationConfirmationDialog';
+
 import { init as initPersistentHistory, persistRecentPages } from './PersistentHistory';
 
 export type EventType = 'NAVIGATED' | 'BEFORE_NAVIGATE';
@@ -43,6 +62,8 @@ export interface BeforeNavigateListener {
   eventType: 'BEFORE_NAVIGATE';
   callback: (e: Event, performNavigation: (navigate: boolean) => void) => void;
 }
+
+export type PageView = 'graph' | 'statements' | 'page';
 
 /**
  * Location change event.
@@ -79,18 +100,6 @@ export function listen(cb: Listener) {
 }
 
 /**
- * Show confirmation dialog before navigating from the current page.
- */
-export function navigationConfirmation(message: string): () => void {
-  return listen({
-    eventType: 'BEFORE_NAVIGATE',
-    callback: (event: Event, navigate: (b: boolean) => void) => {
-      showNavigationConfirmationDialog(message, navigate);
-    },
-  });
-}
-
-/**
  * Returns current resource IRI.
  */
 export function getCurrentResource(): Rdf.Iri {
@@ -101,11 +110,16 @@ export function getCurrentRepository(): string {
   return currentLocation.search(true)['repository'] || 'default';
 }
 
+export function getCurrentView(): PageView | null {
+  return currentLocation.search(true)['view'];
+}
+
 /**
  * For testing purpose only
  */
 export function __unsafe__setCurrentResource(resource: Rdf.Iri) {
   currentResource = resource;
+  SparqlUtil.__unsafe__setLegacyCurrentResource(resource);
 }
 
 /**
@@ -172,6 +186,16 @@ export function navigateToUrl(url: uri.URI): Kefir.Property<void> {
   );
 }
 
+export function navigateToView(view: PageView) {
+  const currentUrl = getCurrentUrl();
+  const newUrl = currentUrl
+    .removeSearch('view')
+    .addSearch('view', view)
+    .toString();
+  history.push(newUrl);
+  persistRecentPages(newUrl);
+}
+
 /**
  * Refresh current Location with actual page reload.
  */
@@ -219,30 +243,16 @@ export function init(location = history.location): Kefir.Property<Data.Maybe<uri
   currentLocation = uri({
     path: location.pathname,
     query: location.search,
-    fragment: location.hash,
-  });
+  }).fragment(location.hash);
   return resolveResourceIri(currentLocation).map(
     maybeIri =>
       maybeIri.map(
-        iri => currentResource = iri
-      ).map(_ => currentLocation)
+        iri => __unsafe__setCurrentResource(iri)
+      ).map(() => currentLocation)
   );
 }
 
-function showNavigationConfirmationDialog(message: string, navigate: (b: boolean) => void) {
-  const dialogRef = 'navigation-confirmation';
-  const onHide = () => getOverlaySystem().hide(dialogRef);
-  getOverlaySystem().show(
-    dialogRef,
-    React.createElement(
-      NavigationConfirmationDialog, {
-        onHide: onHide,
-        message: message,
-        onConfirm: b => { onHide(); navigate(b); },
-      }
-    )
-  );
-}
+
 
 /**
  * Notify all subscribed listeners.
@@ -297,4 +307,4 @@ export function resolveResourceIri(url: uri.URI): Kefir.Property<Data.Maybe<Rdf.
   }
 }
 
-initPersistentHistory(init, notifyAll);
+initPersistentHistory(init);

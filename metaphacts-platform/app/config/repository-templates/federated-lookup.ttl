@@ -1,0 +1,21 @@
+@prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rep: <http://www.openrdf.org/config/repository#> .
+@prefix sail: <http://www.openrdf.org/config/sail#> .
+@prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+[] a rep:Repository;
+  lookup:configuration [
+      # if no members are specified all lookup services are used
+      #lookup:serviceMember "default", "remote-lookup";
+      lookup:type "metaphacts:federatedLookup"
+    ];
+  rep:repositoryID "federated-lookup";
+  rep:repositoryImpl [
+      rep:repositoryType "openrdf:SailRepository";
+      sr:sailImpl [
+          sail:sailType "openrdf:MemoryStore"
+        ]
+    ];
+  rdfs:label "Federated Lookup" .

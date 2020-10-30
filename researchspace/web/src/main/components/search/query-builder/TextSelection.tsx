@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  * @author Andrey Nikolov an@metaphacts.com
@@ -43,7 +42,7 @@ interface State {
 }
 
 export class TextSelection extends React.PureComponent<Props, State> {
-  constructor(props, context) {
+  constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
       textValue: '',
@@ -63,7 +62,7 @@ export class TextSelection extends React.PureComponent<Props, State> {
       <FormGroup className={styles.inputGroup}>
         <FormControl value={this.state.textValue}
           autoFocus={true}
-          onChange={this.onValueChange}
+          onChange={this.onValueChange as React.ChangeEventHandler<any>}
           onKeyUp={this.onKeyUp}
           placeholder='text'
         />
@@ -79,15 +78,15 @@ export class TextSelection extends React.PureComponent<Props, State> {
 
   private isButtonDisabled = () => _.isEmpty(this.state.textValue);
 
-  private onValueChange = (event) =>
+  private onValueChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     this.setState({textValue: event.target.value});
 
-  private submitText = (event) =>
+  private submitText = () =>
     this.props.onSelect(this.state.textValue);
 
-  private onKeyUp = (event) => {
+  private onKeyUp = (event: React.KeyboardEvent<unknown>) => {
     if (event.keyCode === ENTER_KEY_CODE) {
-      this.submitText(event);
+      this.submitText();
     }
   }
 }

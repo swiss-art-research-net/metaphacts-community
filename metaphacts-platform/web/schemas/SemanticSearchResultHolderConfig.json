@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "domainsExclude": {
+            "description": "An array of search domains categories (full IRIs without <>) to be shown.\nIf effective search domain is <b>in the array</b>, search result will be <b>hidden</b>,\notherwise - it will be shown in this <code>semantic-search-result-holder</code> visualization.\nCannot be used together with domains-include.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "domainsInclude": {
+            "description": "An array of search domains categories (full IRIs without <>) to be shown.\nIf effective search domain is <b>in the array</b>, search result will be <b>shown</b>,\notherwise - it will be hidden in this <code>semantic-search-result-holder</code> visualization.\nCannot be used together with domains-exclude.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        }
+    },
+    "propertyOrder": [
+        "domainsInclude",
+        "domainsExclude"
+    ],
+    "type": "object"
+}
+

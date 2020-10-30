@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<Configuration>
+  <Appenders>
+    <Console name="stdout" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d %p [%t] %c - %m%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger name="com.metaphacts" level="WARN" additivity="false">
+      <AppenderRef ref="stdout"/>
+    </Logger>
+    <!-- additional platform specific loggers that can be switched on individually (TRACE) -->
+    <Logger name="platform.logging" level="OFF" additivity="false">
+      <AppenderRef ref="stdout"/>
+    </Logger>
+    <Logger name="platform.logging.ephedra.QueryPlanLogger" level="OFF" additivity="true" />
+    <Root level="WARN">
+      <AppenderRef ref="stdout"/>
+    </Root>
+  </Loggers>
+</Configuration>

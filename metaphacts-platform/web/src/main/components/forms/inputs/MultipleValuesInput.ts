@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 
@@ -23,6 +44,7 @@ import { Component } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
 
 import { FieldDefinition } from '../FieldDefinition';
+import { DependencyContext } from '../FieldDependencies';
 import {
   FieldValue, EmptyValue, CompositeValue, DataState, FieldError, ErrorKind,
 } from '../FieldValues';
@@ -30,14 +52,15 @@ import {
 export interface MultipleValuesProps {
   /** Key to associate with FieldDefinition by name */
   for: string;
+  defaultValue?: string | number | boolean;
+  defaultValues?: ReadonlyArray<string>;
   handler?: MultipleValuesHandler;
   definition?: FieldDefinition;
   dataState?: DataState;
-  defaultValue?: string;
-  defaultValues?: string[];
-  values?: Immutable.List<FieldValue>;
-  errors?: Immutable.List<FieldError>;
+  values?: ReadonlyArray<FieldValue>;
+  errors?: ReadonlyArray<FieldError>;
   updateValues?: (reducer: (previous: ValuesWithErrors) => ValuesWithErrors) => void;
+  dependencyContext?: DependencyContext;
   /**
    * Optional argument to prevent label and description being
    * rendered above the value input(s) i.e. in most settings (default),
@@ -53,9 +76,9 @@ export interface MultipleValuesProps {
 export interface MultipleValuesHandler {
   validate(values: ValuesWithErrors): ValuesWithErrors;
   finalize(
-    values: Immutable.List<FieldValue>,
+    values: ReadonlyArray<FieldValue>,
     owner: EmptyValue | CompositeValue
-  ): Kefir.Property<Immutable.List<FieldValue>>;
+  ): Kefir.Property<ReadonlyArray<FieldValue>>;
 }
 
 export interface MultipleValuesHandlerProps<InputProps> {
@@ -68,8 +91,8 @@ interface MultipleValuesInputStatic {
 }
 
 export type ValuesWithErrors = {
-  values: Immutable.List<FieldValue>;
-  errors: Immutable.List<FieldError>;
+  values: ReadonlyArray<FieldValue>;
+  errors: ReadonlyArray<FieldError>;
 };
 
 export abstract class MultipleValuesInput<P extends MultipleValuesProps, S>
@@ -105,7 +128,7 @@ export class CardinalityCheckingHandler implements MultipleValuesHandler {
   }
 
   validate({values, errors}: ValuesWithErrors): ValuesWithErrors {
-    const otherErrors = errors.filter(e => e.kind !== ErrorKind.Input).toList();
+    const otherErrors = errors.filter(e => e.kind !== ErrorKind.Input);
     const cardinalityErrors = checkCardinalityAndDuplicates(values, this.definition);
     return {
       values: values,
@@ -114,17 +137,17 @@ export class CardinalityCheckingHandler implements MultipleValuesHandler {
   }
 
   finalize(
-    values: Immutable.List<FieldValue>,
+    values: ReadonlyArray<FieldValue>,
     owner: EmptyValue | CompositeValue
-  ): Kefir.Property<Immutable.List<FieldValue>> {
+  ): Kefir.Property<ReadonlyArray<FieldValue>> {
     return MultipleValuesInput.defaultHandler.finalize(values, owner);
   }
 }
 
 export function checkCardinalityAndDuplicates(
-  values: Immutable.List<FieldValue>, definition: FieldDefinition
-): Immutable.List<FieldError> {
-  let errors = FieldError.noErrors;
+  values: ReadonlyArray<FieldValue>, definition: FieldDefinition
+): ReadonlyArray<FieldError> {
+  const errors: FieldError[] = [];
 
   // filter empty values and duplicates, emit "duplicate value" errors
   const nonEmpty = values.reduce((set, v) => {
@@ -137,9 +160,11 @@ export function checkCardinalityAndDuplicates(
     if (!rdfNode) {
       return set;
     } else if (set.has(rdfNode)) {
-      errors = errors.push({
+      errors.push({
         kind: ErrorKind.Input,
-        message: `Value "${rdfNode.value}" is appears more than once`,
+        message: FieldValue.isComposite(v)
+          ? `The new subject identifier (IRI) is not unique: ${rdfNode.toString()}`
+          : `Value "${rdfNode.value}" is appears more than once`,
       });
       return set;
     } else {
@@ -148,14 +173,14 @@ export function checkCardinalityAndDuplicates(
   }, Immutable.Set<Rdf.Node>());
 
   if (nonEmpty.size < definition.minOccurs) {
-    errors = errors.push({
+    errors.push({
       kind: ErrorKind.Input,
       message: `Required a minimum of ${definition.minOccurs} values`
         + ` but ${nonEmpty.size} provided`,
     });
   }
   if (nonEmpty.size > definition.maxOccurs) {
-    errors = errors.push({
+    errors.push({
       kind: ErrorKind.Input,
       message: `Required a maximum of ${definition.maxOccurs} values`
         + ` but ${nonEmpty.size} provided`,

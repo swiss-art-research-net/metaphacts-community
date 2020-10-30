@@ -37,9 +37,12 @@
     <![CDATA[
 <div style='height: calc(100vh - 159.5px)'>
   <div style='height: 50%'>
-   <ontodia id='ontodia-component' authoring-mode=true post-saving=none>
-      <semantic-form new-subject-template='http://www.example.com/entity/digitalimageregion/{{UUID}}'
-        fields='[ {
+   <ontodia id='ontodia-component' post-saving=none>
+		<ontodia-field-configuration authoring-mode=true
+			default-subject-template='http://www.example.com/entity/digitalimageregion/{{UUID}}'
+      type-iri='http://www.example.com/fieldDefinition/region%20type'
+      default-label-iri='http://www.example.com/fieldDefinition/region%20label'
+      fields='[ {
           "iri" : "http://www.example.com/fieldDefinition/is%20primary%20area%20of",
           "selectPattern" : "SELECT ?value ?label WHERE {\n  $subject <http://www.ics.forth.gr/isl/CRMdig/L49_is_primary_area_of> ?value.\n}",
           "minOccurs" : "1",
@@ -115,21 +118,16 @@
           "insertPattern" : "INSERT { $subject <http://www.researchspace.org/ontology/boundingBox> $value} WHERE {}",
           "order" : 0
         } ]'>
-     		<ontodia-entity-metadata entity-type-iri='http://www.researchspace.org/ontology/EX_Digital_Image_Region'
-          type-iri='http://www.example.com/fieldDefinition/region%20type'
-          label-iri='http://www.example.com/fieldDefinition/region%20label'>
-     		</ontodia-entity-metadata>
-
-     		<semantic-form-text-input for="label"></semantic-form-text-input>
-     		<semantic-form-hidden-input for="value"></semantic-form-hidden-input>
-     		<semantic-form-hidden-input for="viewport"></semantic-form-hidden-input>
-     		<semantic-form-hidden-input for="boundingBox"></semantic-form-hidden-input>
-
-     		<button name="submit" class="btn btn-sm btn-success">Save</button>
-     		<button name="reset" class="btn btn-sm btn-default">Reset</button>
-
-     		<button name="cancel" class="btn btn-sm btn-danger pull-right">Cancel</button>
-     </semantic-form>
+          <ontodia-entity-metadata
+						entity-type-iri='http://www.researchspace.org/ontology/EX_Digital_Image_Region'
+						fields='[
+            	"http://www.example.com/fieldDefinition/is%20primary%20area%20of",
+            	"http://www.example.com/fieldDefinition/region%20value",
+            	"http://www.example.com/fieldDefinition/region%20viewport",
+            	"http://www.example.com/fieldDefinition/region%20bounding%20box"
+            ]'>
+          </ontodia-entity-metadata>
+			</ontodia-field-configuration>
     </ontodia>
   </div>
 

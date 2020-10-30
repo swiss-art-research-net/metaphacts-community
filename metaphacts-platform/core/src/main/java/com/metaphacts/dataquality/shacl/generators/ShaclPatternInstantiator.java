@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.dataquality.shacl.generators;
 
 import java.util.AbstractMap;
@@ -63,7 +84,7 @@ import com.metaphacts.data.rdf.container.QueryTemplateContainer;
 import com.metaphacts.dataquality.ModelBasedLdpApiClientImpl;
 import com.metaphacts.dataquality.ShaclUtils;
 import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.sparql.renderer.MpSparqlQueryRenderer;
+import com.metaphacts.util.QueryUtil;
 import com.metaphacts.vocabulary.MPQA;
 import com.metaphacts.vocabulary.SHACL;
 
@@ -150,7 +171,7 @@ class ShaclPatternInstantiator {
     }
 
     protected Resource replacePatternId(Model shapeModel, IRI patternIRI) {
-        IRI shapeType = Models.getPropertyIRI(shapeModel, patternIRI, MPQA.shapeType).get(); 
+        IRI shapeType = Models.getPropertyIRI(shapeModel, patternIRI, MPQA.shapeType).get();
         List<Statement> toRemove = Lists.newArrayList(shapeModel.filter(patternIRI, null, null));
         IRI newId = VF.createIRI("urn:uuid:" + UUID.randomUUID());
         List<Statement> toAdd = toRemove.stream()
@@ -211,7 +232,7 @@ class ShaclPatternInstantiator {
      * Inexact simple checker on whether a query string mentions a variable with one of the binding
      * names. Can return true even if the variable is not present (but there is a variable which
      * includes a binding name as a substring).
-     * 
+     *
      * @param queryString
      * @param bs
      * @return
@@ -339,8 +360,6 @@ class ShaclPatternInstantiator {
         ParsedQuery parsedQuery = parser.parseQuery(queryBody, null);
         new BindingAssigner().optimize(parsedQuery.getTupleExpr(), null, bs);
 
-        MpSparqlQueryRenderer renderer = new MpSparqlQueryRenderer();
-
-        return renderer.render(parsedQuery);
+        return QueryUtil.toSPARQL(parsedQuery);
     }
 }

@@ -27,7 +27,7 @@
       <AppenderRef ref="STDOUT"/>
     </Logger>
     
-    <!-- additional platform specific loggers that can be switched on individually (INFO) -->
+    <!-- additional platform specific loggers that can be switched on individually -->
     <Logger name="platform.logging" level="OFF" additivity="false">
       <AppenderRef ref="LOGFILE"/>
       <AppenderRef ref="STDOUT"/>

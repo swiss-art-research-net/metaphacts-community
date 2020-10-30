@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import {
   Component,
   Children,
@@ -143,26 +164,27 @@ export class Droppable extends Component<DroppableProps, State> {
     }
   }
 
-  private setHandlers = target => {
+  private setHandlers = (target: any) => {
+    type DragListener = (e: Event) => void;
     const child = Children.only(this.props.children) as ReactElement<any>;
     if (target) {
       this.target = findDOMNode(target) as HTMLElement;
 
       window.addEventListener('mp-dragstart', this.onDragStart);
-      window.addEventListener('mp-dragend', this.onDragEnd);
+      window.addEventListener('mp-dragend', this.onDragEnd as unknown as DragListener);
 
-      this.target.addEventListener('dragenter', this.onDragEnter);
-      this.target.addEventListener('dragover', this.onDragOver);
-      this.target.addEventListener('dragleave', this.onDragLeave);
-      this.target.addEventListener('drop', this.onDrop);
+      this.target.addEventListener('dragenter', this.onDragEnter as unknown as DragListener);
+      this.target.addEventListener('dragover', this.onDragOver as unknown as DragListener);
+      this.target.addEventListener('dragleave', this.onDragLeave as unknown as DragListener);
+      this.target.addEventListener('drop', this.onDrop as unknown as DragListener);
     } else if (this.target) {
       window.removeEventListener('mp-dragstart', this.onDragStart);
-      window.removeEventListener('mp-dragend', this.onDragEnd);
+      window.removeEventListener('mp-dragend', this.onDragEnd as unknown as DragListener);
 
-      this.target.removeEventListener('dragenter', this.onDragEnter);
-      this.target.removeEventListener('dragover', this.onDragOver);
-      this.target.removeEventListener('dragleave', this.onDragLeave);
-      this.target.removeEventListener('drop', this.onDrop);
+      this.target.removeEventListener('dragenter', this.onDragEnter as unknown as DragListener);
+      this.target.removeEventListener('dragover', this.onDragOver as unknown as DragListener);
+      this.target.removeEventListener('dragleave', this.onDragLeave as unknown as DragListener);
+      this.target.removeEventListener('drop', this.onDrop as unknown as DragListener);
       this.target = null;
     }
     // DroppableComponent insert own ref callback in order to set event handlers
@@ -173,7 +195,7 @@ export class Droppable extends Component<DroppableProps, State> {
     }
   }
 
-  private onDragStart = (e) => {
+  private onDragStart = (e: any) => {
     const dragged = Rdf.iri(e.detail.iri);
     if (this.props.shouldReactToDrag && !this.props.shouldReactToDrag(dragged)) {
       return;
@@ -191,7 +213,7 @@ export class Droppable extends Component<DroppableProps, State> {
     }
   }
 
-  private isEventInsideRect(event, target): boolean {
+  private isEventInsideRect(event: DragEvent, target: Element): boolean {
     const rect = target.getBoundingClientRect();
     const dists = [
       event.clientX - rect.left, rect.right - event.clientX,
@@ -200,19 +222,19 @@ export class Droppable extends Component<DroppableProps, State> {
     return dists[0] > 0 && dists[1] > 0 && dists[2] > 0 && dists[3] > 0;
   }
 
-  private onDragEnter = (e) => {
+  private onDragEnter = (e: DragEvent) => {
     if (this.state.isSourceDragged && this.isEventInsideRect(e, this.target)) {
       this.setState({isHover: true});
     }
   }
 
-  private onDragLeave = (e: MouseEvent) => {
+  private onDragLeave = (e: DragEvent) => {
     if (this.state.isSourceDragged && !this.isEventInsideRect(e, this.target)) {
       this.setState({isHover: false});
     }
   }
 
-  private onDragOver = (e) => {
+  private onDragOver = (e: DragEvent) => {
     if (!this.state.isSourceDragged) { return; }
 
     if (e.preventDefault) {
@@ -260,7 +282,7 @@ export class Droppable extends Component<DroppableProps, State> {
     return false;
   }
 
-  private onDragEnd = (e) => {
+  private onDragEnd = (e: DragEvent) => {
     this.setState({
       isSourceDragged: false,
       isDropEnabledKnown: false,
@@ -272,7 +294,7 @@ export class Droppable extends Component<DroppableProps, State> {
   private showDisabledHover = (state: State) =>
     state.isDropEnabledKnown && !state.isDropEnabled && state.isHover
 
-  public shouldComponentUpdate(nextProps, nextState) {
+  public shouldComponentUpdate(nextProps: DroppableProps, nextState: State) {
     if (this.props.dropComponents && this.props.dropComponents.disabledHover) {
       if (!this.showDisabledHover(this.state) && this.showDisabledHover(nextState)) {
         this.refs.trigger.show();

@@ -1,0 +1,21 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <semantic-context repository="platformMetadata">
+    <h1><semantic-query 
+             query='PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT DISTINCT ?label WHERE {                    
+          BIND (?? AS ?item) .
+          OPTIONAL { ?item rdfs:label ?_label }
+          OPTIONAL { ?item skos:preferredLabel ?_skosLabel }
+          BIND(COALESCE(?_skosLabel, ?_label) AS ?label)
+      }'>
+          </semantic-query></h1>
+    </semantic-context>
+    
+    [[> Help:TOCSectionInclude]]
+
+  </div>
+</div>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as Maybe from 'data.maybe';
 import * as uuid from 'uuid';
 import * as Kefir from 'kefir';
@@ -44,7 +43,7 @@ export function loadArgumentsForAssertion(assertionIri: Rdf.Iri): Kefir.Property
   return findArgumentsForAssertion(assertionIri).flatMap(
     argumentIris => {
       if (_.isEmpty(argumentIris)) {
-        return Kefir.constant([]);
+        return Kefir.constant([] as Rdf.PointedGraph[]);
       } else {
         return Kefir.combine(
           _.map(argumentIris, iri => assertionContainer.get(iri).map(graph => Rdf.pg(iri, graph)))
@@ -54,7 +53,7 @@ export function loadArgumentsForAssertion(assertionIri: Rdf.Iri): Kefir.Property
   ).flatMap(
     graphs => {
       if (_.isEmpty(graphs)) {
-        return Kefir.constant([]);
+        return Kefir.constant([] as Argument[]);
       } else {
         return Kefir.combine(_.map(graphs, deserializeArgument));
       }
@@ -128,7 +127,7 @@ function deserializeBeliefAdoption(pg: Rdf.PointedGraph): Kefir.Property<BeliefA
       );
     const belief = deserializeBelief(Rdf.pg(adoptedFieldBeliefsIri, pg.graph));
     return belief.map(
-      (belief: ArgumentsFieldBelief) => ({
+      (belief: ArgumentsBelief) => ({
         iri: Maybe.Just(pg.pointer),
         argumentType: BeliefAdoptionType,
         title: Rdf.getValueFromPropertyPath([rdfs.label], pg).map(v => v.value).getOrElse(''),

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.repository;
 
 import java.io.File;
@@ -33,14 +54,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.common.iteration.Iterations;
 import org.eclipse.rdf4j.http.client.HttpClientDependent;
+import org.eclipse.rdf4j.http.client.HttpClientSessionManager;
 import org.eclipse.rdf4j.http.client.SessionManagerDependent;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.query.algebra.evaluation.federation.FederatedServiceResolverClient;
 import org.eclipse.rdf4j.repository.DelegatingRepository;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.RepositoryResolver;
 import org.eclipse.rdf4j.repository.RepositoryResolverClient;
 import org.eclipse.rdf4j.repository.config.DelegatingRepositoryImplConfig;
 import org.eclipse.rdf4j.repository.config.RepositoryConfig;
@@ -48,6 +72,7 @@ import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
 import org.eclipse.rdf4j.repository.config.RepositoryFactory;
 import org.eclipse.rdf4j.repository.config.RepositoryImplConfig;
 import org.eclipse.rdf4j.repository.config.RepositoryRegistry;
+import org.eclipse.rdf4j.repository.sail.ProxyRepository;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.repository.sail.config.SailRepositoryConfig;
 import org.eclipse.rdf4j.repository.sparql.SPARQLRepository;
@@ -62,6 +87,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.Configuration;
+import com.metaphacts.config.groups.EnvironmentConfiguration;
 import com.metaphacts.data.rdf.container.LDPApiInternalRegistry;
 import com.metaphacts.repository.memory.MpMemoryRepository;
 import com.metaphacts.repository.memory.MpMemoryRepositoryImplConfig;
@@ -81,7 +107,6 @@ public class RepositoryManager implements RepositoryManagerInterface {
     private static final Logger logger = LogManager.getLogger(RepositoryManager.class);
 
     private Configuration config;
-    @SuppressWarnings("unused")
     private CacheManager cacheManager;
     private PlatformStorage platformStorage;
     private LDPApiInternalRegistry ldpCache;
@@ -90,12 +115,33 @@ public class RepositoryManager implements RepositoryManagerInterface {
 
     private final File repositoryDataFolder;
 
+    /**
+     * Repository identifier for retrieving the actual active default repository.
+     * Note that using {@link EnvironmentConfiguration#getLinkedDefaultRepository()}
+     * it is possible to reference a different existing repository.
+     * <p>
+     * Example: if linkedDefaultRepository is set to myRepo, then
+     * {@link #getRepository(String)} will return the {@link Repository} instance
+     * corresponding to the myRepo configuration.
+     * </p>
+     * <p>
+     * For explicitly accessing the actual default repository, the
+     * {@link #PROXY_TO_DEFAULT_REPOSITORY_ID} can always be used.
+     * </p>
+     */
     public static final String DEFAULT_REPOSITORY_ID = "default";
+
+    /**
+     * Repository identifier for a virtual repository proxying to the actual default
+     * repository corresponding to the default.ttl repository configuration,
+     */
+    public static final String PROXY_TO_DEFAULT_REPOSITORY_ID = "proxyToDefault";
     public static final String ASSET_REPOSITORY_ID = "assets";
     public static final String TEST_REPOSITORY_ID = "tests";
 
     private final MpSharedHttpClientSessionManager client;
     private final WeakReference<Thread> hookReference;
+    private final PlatformRepositoryFederatedServiceResolver platformRepositoryResolver;
 
     // Removed the common serviceResolver as some repositories might have their own specific resolvers:
     // e.g., to make some repositories accessible via a SERVICE clause and some other ones hidden.
@@ -139,11 +185,12 @@ public class RepositoryManager implements RepositoryManagerInterface {
         File baseDataFolder = new File(Configuration.getRuntimeDirectory(), "data");
         this.repositoryDataFolder = new File(baseDataFolder, "repositories");
         this.client = new MpSharedHttpClientSessionManager(config);
+        this.platformRepositoryResolver = new PlatformRepositoryFederatedServiceResolver(this);
 
-        init();
         this.hookReference = new WeakReference<>(addShutdownHook(this));
     }
 
+    @Inject
     private void init() throws IOException {
         Map<String, RepositoryConfig> configs =
             RepositoryConfigUtils.readInitialRepositoryConfigsFromStorage(this.platformStorage);
@@ -153,12 +200,13 @@ public class RepositoryManager implements RepositoryManagerInterface {
         // initialize default and asset repository first
         initializeDefaultRepositories(configs);
 
-        for(RepositoryConfig config : configs.values()){
+        for (RepositoryConfig config : configs.values()) {
             if (!isInitialized(config.getID())) {
                 initializeRepository(config, false);
             }
         }
 
+        logger.info("Linked default repository for all default DB operations is '{}'", getLinkedDefaultRepositoryID());
     }
 
     public ObjectStorage getDefaultConfigStorage() {
@@ -207,8 +255,44 @@ public class RepositoryManager implements RepositoryManagerInterface {
         }
     }
 
+    /**
+     * Method to retrieve the active default repository used for all DB operations
+     * targeted to {@link #DEFAULT_REPOSITORY_ID}.
+     * 
+     * <p>
+     * Note that using {@link EnvironmentConfiguration#getLinkedDefaultRepository()}
+     * it is possible to reference a different existing repository.
+     * <p>
+     * Example: if linkedDefaultRepository is set to myRepo, then
+     * {@link #getRepository(String)} will return the {@link Repository} instance
+     * corresponding to the myRepo configuration.
+     * </p>
+     * <p>
+     * For explicitly accessing the actual default repository, the
+     * {@link #PROXY_TO_DEFAULT_REPOSITORY_ID} can always be used.
+     * </p>
+     */
     public Repository getDefault(){
         return this.getRepository(DEFAULT_REPOSITORY_ID);
+    }
+
+    /**
+     * Method to retrieve the configured physical default repository instance.
+     * 
+     * <p>
+     * Note that compared to {@link #getDefault()} this method does not use
+     * {@link EnvironmentConfiguration#getLinkedDefaultRepository()}, i.e. this
+     * method will always return the physical repository instance.
+     * </p>
+     * 
+     * @return the physical default repository. If not initialized, this method
+     *         returns <code>null</code>
+     */
+    public Repository getDefaultTargetRepository() {
+        // Note: we explicitly do not return the ProxyRepository managed
+        // as PROXY_TO_DEFAULT_REPOSITORY_ID here as we do want to have
+        // the original instance
+        return initializedRepositories.get(DEFAULT_REPOSITORY_ID);
     }
 
     public Repository getAssetRepository(){
@@ -354,7 +438,36 @@ public class RepositoryManager implements RepositoryManagerInterface {
         initializedRepositories.put(repConfig.getID(), repository);
         logger.info("Repository with id \"{}\" successfully initialized",repConfig.getID());
 
+        if (repConfig.getID().equals(DEFAULT_REPOSITORY_ID)) {
+            initializeProxyForDefault();
+        }
+
         return repository;
+    }
+
+    /**
+     * Initializes a virtual {@link ProxyRepository} pointing to the initialized
+     * {@link #DEFAULT_REPOSITORY_ID}. The repository is explicitly not backed by a
+     * repository configuration file on disk.
+     * 
+     * The purpose of this repository is to act as the actual resolvable target for
+     * the Ephedra federation. Note that this is required as the default repository
+     * may be linked to an external target using
+     * {@link #getLinkedDefaultRepositoryID()}.
+     */
+    private void initializeProxyForDefault() {
+
+        ProxyRepository proxyRepo = new ProxyRepository(new RepositoryResolver() {
+
+            @Override
+            public Repository getRepository(String memberID) throws RepositoryException, RepositoryConfigException {
+                return initializedRepositories.get(DEFAULT_REPOSITORY_ID);
+            }
+        }, DEFAULT_REPOSITORY_ID);
+
+        proxyRepo.init();
+
+        initializedRepositories.put(PROXY_TO_DEFAULT_REPOSITORY_ID, proxyRepo);
     }
 
     /**
@@ -383,7 +496,16 @@ public class RepositoryManager implements RepositoryManagerInterface {
             }
 
         } finally {
-            repo.shutDown();
+            boolean shutdown = true;
+            if (repo instanceof ProxyRepository) {
+                // never shut down a proxy repository as this will also
+                // shutdown the delegate (which we want to keep managed
+                // by the platform)
+                shutdown = false;
+            }
+            if (shutdown) {
+                repo.shutDown();
+            }
         }
 
     }
@@ -423,6 +545,9 @@ public class RepositoryManager implements RepositoryManagerInterface {
         if (repository instanceof RepositoryResolverClient) {
             ((RepositoryResolverClient)repository).setRepositoryResolver(this);
         }
+        if (repository instanceof FederatedServiceResolverClient) {
+            ((FederatedServiceResolverClient) repository).setFederatedServiceResolver(platformRepositoryResolver);
+        }
         if (repository instanceof SessionManagerDependent) {
             ((SessionManagerDependent)repository).setHttpClientSessionManager(client);
         } else if (repository instanceof HttpClientDependent) {
@@ -450,10 +575,13 @@ public class RepositoryManager implements RepositoryManagerInterface {
            }
         }
         // handle protected repositories separately
-        getDefault().shutDown();
-        getAssetRepository().shutDown();
+        getRepository(Optional.of(DEFAULT_REPOSITORY_ID)).ifPresent(repo -> repo.shutDown());
+        getRepository(Optional.of(ASSET_REPOSITORY_ID)).ifPresent(repo -> repo.shutDown());
+        getRepository(Optional.of(TEST_REPOSITORY_ID)).ifPresent(repo -> repo.shutDown());
         initializedRepositories.clear();
         
+        platformRepositoryResolver.shutDown();
+
         if (unregisterShutdownHook) {
             // unregister shutdown hook as everything is done
             removeShutdownHook(hookReference.get());
@@ -500,6 +628,10 @@ public class RepositoryManager implements RepositoryManagerInterface {
         for (String repID : Sets.union(initializedRepositoryKeys, definedRepositoryKeys)) {
             map.put(repID, isInitialized(repID) && definedRepositoryKeys.contains(repID));
         }
+
+        // do not expose information on the internal proxy repo
+        map.remove(PROXY_TO_DEFAULT_REPOSITORY_ID);
+
         return map;
     }
 
@@ -513,22 +645,24 @@ public class RepositoryManager implements RepositoryManagerInterface {
             throws RepositoryConfigException, IllegalArgumentException, IOException {
         if (RepositoryConfigUtils.repositoryConfigFileExists(platformStorage, repID)) {
             return RepositoryConfigUtils.readRepositoryConfigurationFile(platformStorage, repID);
-        } else if (repID.equals(DEFAULT_REPOSITORY_ID)
-                && getDefault() instanceof SPARQLRepository) {
-            // The default repository was created using the sparqlRepositoryUrl
-            // property from environment.prop
-            SPARQLRepository defaultRepository = (SPARQLRepository)getDefault();
-            String sparqlRepositoryUrl = defaultRepository.toString(); // returns queryEndpointUrl
-            return RepositoryManager
-                    .createSPARQLRepositoryConfigForEndpoint(sparqlRepositoryUrl);
-        } else if (repID.equals(DEFAULT_REPOSITORY_ID)
-                && getDefault() instanceof MpMemoryRepository) {
-            return RepositoryManager
-                    .createMpMemoryRepositoryConfig();
-        } else {
-            throw new IllegalArgumentException("Repository config for the repository ID '"
-                    + repID + "' does not exist (possibly, was deleted).");
+        } else if (repID.equals(DEFAULT_REPOSITORY_ID)) {
+
+            // Note: we need to obtain the Repository instance from the initialized
+            // repositories, as getDefault my return the linkedDefaultRepository
+            Repository defaultRepoInstance = initializedRepositories.getOrDefault(DEFAULT_REPOSITORY_ID, getDefault());
+            if (defaultRepoInstance instanceof SPARQLRepository) {
+                // The default repository was created using the sparqlRepositoryUrl
+                // property from environment.prop
+                SPARQLRepository defaultRepository = (SPARQLRepository) defaultRepoInstance;
+                String sparqlRepositoryUrl = defaultRepository.toString(); // returns queryEndpointUrl
+                return RepositoryManager.createSPARQLRepositoryConfigForEndpoint(sparqlRepositoryUrl);
+            } else if (defaultRepoInstance instanceof MpMemoryRepository) {
+                return RepositoryManager.createMpMemoryRepositoryConfig();
+            }
         }
+        throw new IllegalArgumentException(
+                "Repository config for the repository ID '" + repID + "' does not exist (possibly, was deleted).");
+        
     }
 
     /**
@@ -602,8 +736,51 @@ public class RepositoryManager implements RepositoryManagerInterface {
         }
     }
 
+    /**
+     * Returns the {@link Repository} corresponding to the provided repository ID.
+     * <p>
+     * Note that the {@value #DEFAULT_REPOSITORY_ID} may be virtually linked to a
+     * different target externally (e.g. a federation) using the
+     * {@link EnvironmentConfiguration#getLinkedDefaultRepository()} setting.
+     * </p>
+     * 
+     * @param repID
+     * @return the {@link Repository} or an empty {@link Optional}
+     * @throws RepositoryException
+     * @throws RepositoryConfigException
+     * @see EnvironmentConfiguration#getLinkedDefaultRepository()
+     */
     public synchronized Optional<Repository> getRepository(Optional<String> repID) throws RepositoryException, RepositoryConfigException {
+
+        if (repID.isPresent() && repID.get().equals(DEFAULT_REPOSITORY_ID)) {
+            repID = Optional.of(getLinkedDefaultRepositoryID());
+        }
+
         return repID.filter(initializedRepositories::containsKey).map(initializedRepositories::get);
+    }
+
+    /**
+     * Return the linked target repository (if any) for the default repository. If
+     * there is none or if the linked target does not exist, this method falls back
+     * to {@link #DEFAULT_REPOSITORY_ID}.
+     * 
+     * @return
+     */
+    private String getLinkedDefaultRepositoryID() {
+
+        String linkedDefaultRepository = config.getEnvironmentConfig().getLinkedDefaultRepository();
+        if (linkedDefaultRepository == null) {
+            return DEFAULT_REPOSITORY_ID;
+        }
+
+        if (!initializedRepositories.containsKey(linkedDefaultRepository)) {
+            logger.warn("Linked default repository '" + linkedDefaultRepository
+                    + "' does not exist. Check 'linkedDefaultRepository' setting. Falling back to "
+                    + DEFAULT_REPOSITORY_ID);
+            return DEFAULT_REPOSITORY_ID;
+        }
+
+        return linkedDefaultRepository;
     }
 
     public String getRepositoryID(Repository repository){
@@ -700,6 +877,16 @@ public class RepositoryManager implements RepositoryManagerInterface {
      */
     public Set<String> getInitializedRepositoryIds() {
         return Sets.newHashSet(this.initializedRepositories.keySet());
+    }
+
+    @Override
+    public HttpClientSessionManager getHttpClientSessionManager() {
+        return getClientSessionManager();
+    }
+
+    @Override
+    public void setHttpClientSessionManager(HttpClientSessionManager client) {
+        throw new UnsupportedOperationException("Not supported.");
     }
     
 }

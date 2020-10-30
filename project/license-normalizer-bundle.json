@@ -1,0 +1,23 @@
+{
+  "bundles" : [
+    { "bundleName" : "apache1", "licenseName" : "Apache Software License, Version 1.1", "licenseUrl" : "http://www.apache.org/licenses/LICENSE-1.1" },
+    { "bundleName" : "apache2", "licenseName" : "Apache License, Version 2.0", "licenseUrl" : "https://www.apache.org/licenses/LICENSE-2.0" },
+    { "bundleName" : "cddl1", "licenseName" : "COMMON DEVELOPMENT AND DISTRIBUTION LICENSE Version 1.0 (CDDL-1.0)", "licenseUrl" : "http://opensource.org/licenses/CDDL-1.0" },
+    { "bundleName" : "publicdomain", "licenseName" : "Public Domain", "licenseUrl" : "http://creativecommons.org/licenses/publicdomain" },
+    { "bundleName" : "edl1", "licenseName" : "Eclipse Distribution License - v 1.0", "licenseUrl" : "https://www.eclipse.org/org/documents/edl-v10.html" },
+    { "bundleName" : "mit", "licenseName" : "MIT License", "licenseUrl" : "https://opensource.org/licenses/MIT" },
+    { "bundleName" : "bsd3", "licenseName" : "The 3-Clause BSD License", "licenseUrl" : "https://opensource.org/licenses/BSD-3-Clause" },
+    { "bundleName" : "highchartsOEM", "licenseName" : "Highcharts OEM License, version 5.0", "licenseUrl" : "https://shop.highsoft.com/media/highsoft/Standard-License-Agreement-7.0.pdf" },
+    { "bundleName" : "glassfish-cddl", "licenseName" : "CDDL", "licenseUrl" : "http://opensource.org/licenses/CDDL-1.0" }
+  ],
+  "transformationRules" : [
+    { "bundleName" : "edl1", "licenseNamePattern" : "Eclipse Distribution License (New BSD License)" },
+    { "bundleName" : "bsd3", "modulePattern" : "com.twelvemonkeys.common:.*" },
+    { "bundleName" : "bsd3", "modulePattern" : "com.twelvemonkeys.imageio:.*" },
+    { "bundleName" : "mit", "modulePattern" : "com.codepoetics:protonpack.*" },
+    { "bundleName" : "highchartsOEM", "modulePattern" : "highcharts:.*" },
+    { "bundleName" : "mit", "modulePattern" : "basil.js:0.4.*" },
+    { "bundleName" : "glassfish-cddl", "modulePattern" : "org.glassfish.jersey.*:.*:2.22.2" },
+    { "bundleName" : "glassfish-cddl", "modulePattern" : "org.glassfish.hk2.*:.*:(2.4.0-b34|1.0.1)" }
+  ]
+}

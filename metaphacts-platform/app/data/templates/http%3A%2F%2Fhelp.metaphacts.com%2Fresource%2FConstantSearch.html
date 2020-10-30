@@ -1,0 +1,83 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+
+<div class='page'>
+  <div class='page__body'>
+  	<h1>Constant Search</h1>
+    
+    <p>Constant search (<code>semantic-search-query-constant</code>) is a special search definition component that has no user interface. It provides the ability to specify a constant SPARQL query for the search, and then lets the user apply the facets functionality along with the search profile configuration to narrow down results.
+    
+       
+    <h2>Configuration</h2>
+    
+    <mp-documentation type="SemanticSearchQueryConstantConfig"></mp-documentation>
+    
+    <h2>Examples</h2>
+    
+    <h3>Basic Example</h3>
+    
+    <p>
+        The following example demonstrates a search definition making use of static data which gets injected through the SPARQL VALUES clause.
+      </p>
+      <mp-code-example>
+    <![CDATA[
+    <semantic-search>
+      <semantic-search-query-constant
+        query='
+          PREFIX person: <http://example.com/person/>
+          SELECT ?subject WHERE {
+            VALUES(?subject){
+              ( person:alice )
+              ( person:carola )
+              ( person:bob )
+              ( person:mike )
+            }
+          }
+        '
+      ></semantic-search-query-constant>
+
+      <semantic-search-result-holder>
+        <semantic-search-result>
+          <semantic-table
+            id='table'
+            query='
+              PREFIX person: <http://example.com/person/>
+              SELECT ?subject ?label ?image {
+                   VALUES(?subject ?label ?image){
+                      ( person:alice "Alice" "//upload.wikimedia.org/wikipedia/commons/thumb/6/6c/User_icon_3.svg/200px-User_icon_3.svg.png" )
+                      ( person:carola "Carola" "//upload.wikimedia.org/wikipedia/commons/thumb/6/6c/User_icon_3.svg/200px-User_icon_3.svg.png" )
+                      ( person:bob "Bob" "//upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/200px-User_icon_2.svg.png" )
+                      ( person:mike "Mike" "//upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/200px-User_icon_2.svg.png" )
+                    }
+              }
+            '
+            tuple-template='{{>resultTemplate}}'
+            options='{"showFilter": false}'
+          >
+            <template id='resultTemplate'>
+              <div style="float:left;width:200px;height:170px;" class="panel panel-default text-center" title="{{subject.value}}">
+                <div class="panel-body"><img src="{{image.value}}" style="width:150px;"/></div>
+                <div class="panel-footer" style="position: relative">{{label.value}}</div>
+              </div>
+            </template>
+          </semantic-table>
+        </semantic-search-result>
+      </semantic-search-result-holder>
+    </semantic-search>
+    ]]>
+      </mp-code-example>
+    <br/><br/>
+
+    <h3>Further Examples</h3>
+
+    <ul>
+      <li>
+        <semantic-link iri="[[resolvePrefix "Help:StructuredConstantSearchExample"]]">Constant search with facets</semantic-link>
+      </li>
+      <li>
+        <semantic-link iri="[[resolvePrefix "Help:StructuredConstantSearchExampleWikidata"]]">Constant search (Wikidata)</semantic-link>
+      </li>
+    </ul>
+    
+  </div>
+</div>

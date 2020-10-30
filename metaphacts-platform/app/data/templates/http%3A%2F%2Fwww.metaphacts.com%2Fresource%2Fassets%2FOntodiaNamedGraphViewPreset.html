@@ -1,0 +1,92 @@
+[[!--
+To use this set of presets copy following line to your file:
+[[> "http://www.metaphacts.com/resource/assets/OntodiaNamedGraphViewPreset"]]
+--]]
+
+[[#*inline "NamedGraphGraphBreadcrumbs"]]
+[[!-- Parameters: diagramIri and graphIri (from settings)--]]
+  <semantic-context repository='default'>
+    <ol class="page-breadcrumb">
+      <li>
+        <mp-link title="Home" url="/">Home</mp-link>
+      </li>
+      <li>
+        <semantic-link title="Assets" uri='[[resolvePrefix "Assets:"]]'>Assets</semantic-link>
+      </li>
+      <li>
+        <semantic-link title="Named Graphs" uri='[[resolvePrefix "Assets:NamedGraphs"]]'>Named Graphs</semantic-link>
+      </li>
+      [[#if diagramIri]]
+      <li>
+        <semantic-link iri='[[resolvePrefix "Assets:NamedGraph"]]'
+          urlqueryparam-view="page"
+          urlqueryparam-graph="{{graphIri.value}}">
+          Named Graph: {{graphIri.value}}
+        </semantic-link>
+      </li>
+      <semantic-context repository='assets'>
+        <li class="active"><mp-label iri="[[diagramIri]]"></mp-label></li>
+      </semantic-context>
+      [[else]]
+      <li class="active">
+        Named Graph: {{graphIri.value}}
+      </li>
+      [[/if]]
+    </ol>
+  </semantic-context>
+[[/inline]]
+
+[[#*inline "NamedGraphGraphSettings"]]
+[[!-- Parameters: diagramIri or graphIri--]]
+[[!-- Output: graphIri --]]
+  <semantic-context repository='assets'>
+    <semantic-query query='SELECT ?graphIri WHERE {
+        [[#if diagramIri]]
+          <[[diagramIri]]> <http://www.metaphacts.com/ontologies/platform#diagramForGraph> ?graphIri .
+        [[else]]
+          BIND (<[[graphIri]]> as ?graphIri) .
+        [[/if]]
+      } LIMIT 1'
+      template='{{> graphDiagram graphIri=bindings.0.graphIri}}'>
+      <template id='graphDiagram'>
+        [[> @partial-block]]
+      </template>
+    </semantic-query>
+  </semantic-context>
+[[/inline]]
+
+[[#*inline "NamedGraphGraphBody"]]
+[[!-- Parameters: (diagramIri or graphIri), optionally id --]]
+  <ontodia
+    id='[[#if id]][[id]][[/if]]'
+    metadata='<> <http://www.metaphacts.com/ontologies/platform#diagramForGraph> {{graphIri}} .
+      <> <http://www.metaphacts.com/ontologies/platform#diagramKind> <http://www.metaphacts.com/ontologies/platform#NamedGraphDiagram> .'
+    [[#if diagramIri]]diagram="[[diagramIri]]"[[else]]
+    [[> NewNamedGraphParameters]]
+    [[/if]]
+    request-links-on-init='false'
+    [[> "http://www.metaphacts.com/resource/assets/OntodiaGlobalSettings" ]]
+    [[> OntodiaClassAndLinksCustomization ]]
+    >
+    <ontodia-data-providers>
+      <ontodia-sparql-provider
+        [[> graphOnlyClasses
+          graphIri="{{{graphIri}}}"
+          otherGraphMarkerIri="Platform:foreign-node"
+        ]]>
+      </ontodia-sparql-provider>
+    </ontodia-data-providers>
+    [[#> show-if-editable]]
+      [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace"
+        databaseTabTitle='Named Graph'
+        focusView=true
+      ]]
+    [[/show-if-editable]]
+    [[#> show-if-read-only]]
+      [[> "http://www.metaphacts.com/resource/OntodiaAdvancedWorkspace"
+        databaseTabTitle='Named Graph'
+        readonly=true
+      ]]
+    [[/show-if-read-only]]
+  </ontodia>
+[[/inline]]

@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import { find } from 'lodash';
 import { createElement } from 'react';
 import * as D from 'react-dom-factories';
@@ -57,20 +78,12 @@ export class DatePickerInput extends AtomicValueInput<DatePickerInputProps, {}> 
     const rdfNode = FieldValue.asRdfNode(this.props.value);
     const dateLiteral = dateLiteralFromRdfNode(rdfNode);
     const utcMoment = utcMomentFromRdfLiteral(dateLiteral);
-    // Important! react-datetime becomes really buggy when Moment value
-    // with "UTC" internal representation is provided as value, so we need to:
-    // 1. intially convert it to "local" internal representation
-    //    as if current time zone was UTC+00;
-    // 2. after date picker returns changed Momeent value we should
-    //    convert it back using `localMomentAsIfItWasUtc()`
-    const localMoment = utcMomentAsIfItWasLocal(utcMoment);
-
     const mode = this.props.mode || getModeFromDatatype(this.datatype);
 
     const displayedDate = (
-      localMoment ? localMoment :
+      utcMoment ? utcMoment :
       dateLiteral ? dateLiteral.value :
-      (rdfNode && rdfNode.isLiteral()) ? rdfNode.value :
+      (rdfNode && Rdf.isLiteral(rdfNode)) ? rdfNode.value :
       undefined
     );
 
@@ -103,12 +116,11 @@ export class DatePickerInput extends AtomicValueInput<DatePickerInputProps, {}> 
       parsed = this.parse(value);
     } else {
       // otherwise we format to UTC
-      const utcMoment = localMomentAsIfItWasUtc(value);
       const mode = getModeFromDatatype(this.datatype);
       const formattedDate = (
-        mode === 'date' ? utcMoment.format(OUTPUT_UTC_DATE_FORMAT) :
-        mode === 'time' ? utcMoment.format(OUTPUT_UTC_TIME_FORMAT) :
-        utcMoment.format()
+        mode === 'date' ? value.format(OUTPUT_UTC_DATE_FORMAT) :
+        mode === 'time' ? value.format(OUTPUT_UTC_TIME_FORMAT) :
+        value.format()
       );
       parsed = this.parse(formattedDate);
     }
@@ -137,7 +149,7 @@ export function getModeFromDatatype(datatype: Rdf.Iri): DatePickerMode {
 }
 
 function dateLiteralFromRdfNode(node: Rdf.Node | undefined): Rdf.Literal | undefined {
-  if (!node || !node.isLiteral()) { return undefined; }
+  if (!node || !Rdf.isLiteral(node)) { return undefined; }
   const dateString = node.value;
   const types = [vocabularies.xsd.date, vocabularies.xsd.time, vocabularies.xsd.dateTime];
   return find(
@@ -154,17 +166,6 @@ export function utcMomentFromRdfLiteral(literal: Rdf.Literal | undefined): Momen
     moment.utc(literal.value)
   );
   return parsedMoment.isValid() ? parsedMoment : undefined;
-}
-
-function utcMomentAsIfItWasLocal(utcMoment: Moment | undefined): Moment | undefined {
-  if (!utcMoment) { return undefined; }
-  const localOffset = moment().utcOffset();
-  return utcMoment.clone().subtract(localOffset, 'm').local();
-}
-
-function localMomentAsIfItWasUtc(localMoment: Moment) {
-  const localOffset = moment().utcOffset();
-  return localMoment.clone().utc().add(localOffset, 'm');
 }
 
 function defaultPlaceholder(definition: FieldDefinition, mode: DatePickerMode) {

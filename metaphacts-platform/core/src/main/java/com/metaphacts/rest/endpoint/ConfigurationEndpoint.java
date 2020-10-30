@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2015-2019, metaphacts GmbH
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2020, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 package com.metaphacts.rest.endpoint;
 
 import java.io.IOException;
@@ -26,28 +47,45 @@ import java.util.Map.Entry;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.metaphacts.security.Permissions.APIUsageMode;
-import com.metaphacts.security.Permissions.CONFIGURATION;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.services.storage.api.PlatformStorage;
 import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.UnauthorizedException;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.config.Configuration;
 import com.metaphacts.config.ConfigParameterValueInfo;
+import com.metaphacts.config.Configuration;
+import com.metaphacts.config.ConfigurationParameter.VisibilityLevel;
 import com.metaphacts.config.UnknownConfigurationException;
+import com.metaphacts.config.groups.CacheConfiguration;
+import com.metaphacts.config.groups.DataQualityConfiguration;
+import com.metaphacts.config.groups.EnvironmentConfiguration;
+import com.metaphacts.config.groups.GlobalConfiguration;
+import com.metaphacts.config.groups.UIConfiguration;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
+import com.metaphacts.security.Permissions.APIUsageMode;
+import com.metaphacts.security.Permissions.CONFIGURATION;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.PlatformStorage;
+
+import io.swagger.v3.oas.annotations.Hidden;
 
 /**
  * Endpoint exposing the configuration via a REST-style protocol. Supports both
@@ -127,7 +165,75 @@ public class ConfigurationEndpoint {
 
         }
     }
-          
+
+    /**
+     * Lists the metadata of all available configuration settings in configGroups
+     * passed.
+     * 
+     * <p>
+     * Default set of configuration groups:
+     * </p>
+     * 
+     * <ul>
+     * <li>environment - {@link EnvironmentConfiguration}</li>
+     * <li>global - {@link GlobalConfiguration}</li>
+     * <li>ui - {@link UIConfiguration}</li>
+     * <li>cache - {@link CacheConfiguration}</li>
+     * <li>dataQuality - {@link DataQualityConfiguration}</li>
+     * </ul>
+     * 
+     * <p>
+     * This method returns all settings with {@link VisibilityLevel#advanced} or
+     * lower, i.e. it does not return {@link VisibilityLevel#experimental} settings.
+     * </p>
+     * 
+     * @param configGroups optional list of config groups identifiers (e.g.
+     *                     environment). If not specified the default set of
+     *                     configuration groups is shown
+     * @return the list of {@link ConfigurationParameterGroupDoc}
+     * 
+     */
+    @GET()
+    @Path("allConfigurationParametersDoc")
+    @RequiresAuthentication
+    @Produces(MediaType.APPLICATION_JSON)
+    @Hidden
+    public List<ConfigurationParameterGroupDoc> allConfigurationParametersDoc(
+            @QueryParam("configGroups") List<String> configGroups)
+            throws UnknownConfigurationException {
+
+        final VisibilityLevel maxVisibilityLevel = VisibilityLevel.advanced;
+
+        List<ConfigurationParameterGroupDoc> result = Lists.newArrayList();
+        List<String> defaultConfigGroups = Lists.newArrayList("environment", "global", "ui", "cache", "dataQuality");
+        for (String configGroup : !configGroups.isEmpty() ? configGroups : defaultConfigGroups) {
+
+            Map<String, ConfigParameterValueInfo> unfilteredMap = systemConfig.listParamsInGroups(configGroup);
+            ConfigurationParameterGroupDoc groupDoc = new ConfigurationParameterGroupDoc();
+
+            groupDoc.groupName = StringUtils.capitalize(configGroup) + " Configuration Group";
+            groupDoc.groupDescription = systemConfig.getDescriptionForGroup(configGroup);
+            groupDoc.configParamInfo = Lists.newArrayList();
+
+            unfilteredMap.forEach((group, configParamValues) -> {
+                // check if this setting is actually visible
+                if (configParamValues.getVisibilityLevel().ordinal() > maxVisibilityLevel.ordinal()) {
+                    return;
+                }
+                ConfigurationParameterDoc configParameterDoc = new ConfigurationParameterDoc();
+                configParameterDoc.name = group;
+                configParameterDoc.description = configParamValues.getDescription();
+                configParameterDoc.restartRequired = configParamValues.isRestartRequired();
+                configParameterDoc.type = configParamValues.getParameterType();
+
+                groupDoc.configParamInfo.add(configParameterDoc);
+            });
+
+            result.add(groupDoc);
+        }
+        return result;
+    }
+
     /**
      * Read the current configuration value identified by the parameter pair.
      * 
@@ -251,5 +357,25 @@ public class ConfigurationEndpoint {
         List<PlatformStorage.StorageStatus> writableApps =
             platformStorage.getStorageStatusFor(ObjectKind.TEMPLATE);
         return Response.ok(writableApps).build();
+    }
+
+    /**
+     * Wrapper for the parameter present in "Configuration Parameter". Contains the
+     * configuration's name, description, return type and if a restart is required.
+     */
+    static class ConfigurationParameterDoc {
+        public String name;
+        public String description;
+        public boolean restartRequired;
+        public String type;
+    }
+
+    /**
+     * Structural class for storing the Configuration Parameters as a group.
+     */
+    static class ConfigurationParameterGroupDoc {
+        public String groupName;
+        public String groupDescription;
+        public List<ConfigurationParameterDoc> configParamInfo;
     }
 }

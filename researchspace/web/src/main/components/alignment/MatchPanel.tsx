@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as classnames from 'classnames';
 import { Button, Popover, OverlayTrigger, Tooltip } from 'react-bootstrap';
@@ -24,7 +23,7 @@ import * as Immutable from 'immutable';
 import { Component } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
 
-import { ResourceLink } from 'platform/api/navigation/components';
+import { ResourceLink } from 'platform/components/navigation';
 import { Draggable, Droppable } from 'platform/components/dnd';
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
@@ -106,7 +105,7 @@ export class MatchPanel extends Component<MatchPanelProps, {}> {
         />
         <div className={styles.alignmentTreeContainer}>
           {expandingToScroll ? this.renderExpandToScrollMessage() : null}
-          <LazyTreeSelector {...props}
+          <LazyTreeSelector {...(props as LazyTreeSelectorProps<any>)}
             ref={this.onAlignmentTreeMount}
             className={styles.alignmentTree}
           />

@@ -1,13 +1,4 @@
-<ol class="page-breadcrumb">
-  <li>
-    <mp-link title="Home" url="/">Home</mp-link>
-  </li>
-  <li>
-    <semantic-link title="Help" data-uri="http://help.metaphacts.com/resource/Start">Help</semantic-link>
-  </li>
-  
-  <li class="active">Repository Manager</li>
-</ol>
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
 <div class="page">
   <div class='page__body'>
@@ -51,6 +42,8 @@
     
     <p>The configuration of these repositories can still be changed using the configuration Turtle files. However, in the absence of explicit configuration files the platform assumes that the default repository represents a SPARQL endpoint. Its URL is taken from the value of the <code>sparqlEndpoint</code> property in the <code>environment.prop</code> file. As the assets repository, the platform by default uses a native RDF4J repository storing its information locally in the subfolder <code>data/repositories/assets</code>.</p>
     
+    <p>As of the 3.5.0 release of the platform it is possible to configure the <code>linkedDefaultRepository</code> property in <code>environment.prop</code> (see the environment section in the <semantic-link uri="[[resolvePrefix "Admin:Configuration"]]">system configuration</semantic-link>). This property points to the ID of the linked default repository which is active and applied for all database operations if no specific target repository (other than 'default') is requested. It can be used to redirect the default query target (e.g. to activate a federation use case), meaning that standard UI components evaluate queries against this target. If no value is configured the system performs database operations against the active default repository.</p>
+    
     <h2>Commonly Used Repository Types</h2>
     <p>This section lists some of the commonly used repository types and provides example configurations.</p>
     
@@ -93,105 +86,7 @@
     </ul>
     <p>See <semantic-link uri="[[resolvePrefix "Help:ExternalizedSecrets"]]">Externalized Secrets</semantic-link> for details.</p>
     
-    <h3>RDF4J native repository</h3>
-    <p>The RDF4J native repository is a special RDF4J implementation of a local triple store, which runs in the same process as the user application and stores the data on disk. The platform keeps the storage files of the repository in the subfolder <code>data/repositories/{repository ID}</code>.</p>
     
-    <mp-code-block mode="text/turtle"><![CDATA[
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
-@prefix rep: <http://www.openrdf.org/config/repository#>.
-@prefix sr: <http://www.openrdf.org/config/repository/sail#>.
-@prefix sail: <http://www.openrdf.org/config/sail#>.
-@prefix ns: <http://www.openrdf.org/config/sail/native#>.
-
-[] a rep:Repository ;
-  rep:repositoryID "default" ; # Replace with your repository ID
-  rdfs:label "Native store" ; 
-  rep:repositoryImpl [
-    rep:repositoryType "openrdf:SailRepository" ;
-    sr:sailImpl [
-      sail:sailType "openrdf:NativeStore" ;
-      sail:iterationCacheSyncThreshold "0"; # Threshold for syncing query evaluation iteration caches to disk
-      ns:tripleIndexes "spoc,posc" # Triple indices
-    ]
-  ].
-]]>
-    </mp-code-block>
+    [[> Help:RepositoryManagerExtensions ]]
     
-    <p>Most of the state-of-the-art triple stores available on the market now outperform the RDF4J native repository. For this reason, RDF4J native repository should only be used in scenarios involving small amount of data.</p>
-    
-    <h3>Neptune SPARQL repository</h3>
-    <p>The recently introduced <a href='https://aws.amazon.com/neptune/' target='_blank'>Amazon Neptune database</a> provides a graph database solution optimized for running in a cluster environment. While it is a special case of a SPARQL repository, it requires its own special handling for data loading operations. </p>
-    <mp-code-block mode="text/turtle"><![CDATA[
-@prefix rep: <http://www.openrdf.org/config/repository#> .
-@prefix sparqlr: <http://www.openrdf.org/config/repository/sparql#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
-
-[] a rep:Repository ;
-  rep:repositoryID "default" ; # Replace with your repository ID
-  rdfs:label "Amazon Neptune repository" ;
-  rep:repositoryImpl [
-    rep:repositoryType "metaphactory:NeptuneSPARQLRepository" ;
-    sparqlr:query-endpoint <http://example.org/query> ;
-    mph:neptuneDataLoaderUrl <http://example.org/loader>; # Data loader endpoint to be used for bulk loading of the data from an S3 bucket.
-    mph:quadMode "true"
-  ].
-]]>
-    </mp-code-block>
-    
-    <h3>Ephedra federation repository</h3>
-    <semantic-link uri="[[resolvePrefix "Help:Ephedra"]]">Ephedra</semantic-link> is a SPARQL query federation architecture that is able to send federated queries over several repositories registered in the Repository Manager.
-    <mp-code-block mode='text/turtle'>
-      <![CDATA[
-      @prefix rep: <http://www.openrdf.org/config/repository#> .
-      @prefix sail: <http://www.openrdf.org/config/sail#> .
-      @prefix sr: <http://www.openrdf.org/config/repository/sail#> .
-      @prefix sparqlr: <http://www.openrdf.org/config/repository/sparql#> .
-      @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-      @prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
-      @prefix mps: <http://www.metaphacts.com/ontologies/platform/service#> .
-      @prefix mpf: <http://www.metaphacts.com/ontologies/platform/repository/federation#> .
-      @prefix fedsail: <http://www.openrdf.org/config/sail/federation#> .
-
-      [] a rep:Repository ;
-         rep:repositoryID "ephedra" ;
-         rdfs:label "Local Ephedra federation" ;
-         rep:repositoryImpl [
-            rep:repositoryType "metaphacts:FederationSailRepository" ;
-            sr:sailImpl [
-                sail:sailType "metaphacts:Federation" ;
-                mph:defaultMember "default" # Repository ID of the default member of the federation
-                fedsail:member [
-                  mph:delegateRepositoryID "{%Repository ID of the federation member|wikidata-text%}" ;
-                  mph:serviceReference {%URI to reference this federation member in a SERVICE clause|mpf:wikidata-text%}
-                ] ;
-                fedsail:member [
-                  mph:delegateRepositoryID "{%Repository ID of the federation member|assets%}" ;
-                  mph:serviceReference {%URI to reference this federation member in a SERVICE clause|mpf:assets%}
-                ] 
-            ] 
-         ] .
-      ]]>
-    </mp-code-block> 
-    
-    <h3>Virtuoso repository</h3>
-    <p><a href='https://virtuoso.openlinksw.com/'>Virtuoso</a> is a popular state of the art triple store used in many use case scenarios. To use a Virtuoso repository with the platform, a standard configuration for SPARQL repositories can be used. However, Virtuoso triple stores have certain distinctions in the way they support SPARQL queries. Most notably, Virtuoso does not process correctly SPARQL 1.1 ASK queries sent via the endpoint. To overcome this, in the platform repository manager a special Virtuoso Wrapper repository should be configured. This wrapper repository does not provide a standalone repository instance, but must be used as a proxy to a separately configured SPARQL repository representing the Virtuoso triple store. This proxy will adapt the queries sent to it to transform them into the format accepted by Virtuoso. An example configuration of a wrapper repository is provided below.</p>
-    
-    <mp-code-block mode="text/turtle"><![CDATA[
-@prefix rep: <http://www.openrdf.org/config/repository#> .
-@prefix sparqlr: <http://www.openrdf.org/config/repository/sparql#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
-
-[] a rep:Repository ;
-  rep:repositoryID "default" ;
-  rdfs:label "Test Virtuoso SPARQL repository wrapper" ;
-  rep:repositoryImpl [ 
-    rep:repositoryType "metaphacts:VirtuosoWrapperRepository" ;
-    mph:delegateRepositoryID "{Virtuoso Repository ID}" ;
-  ] .
-]]>
-    </mp-code-block>
-    <p>This configuration defines a wrapper repository which serves as a proxy to another one: a SPARQL repository denoted by <code>{Virtuoso Repository ID}</code>.</p>
-  </div>
 </div>

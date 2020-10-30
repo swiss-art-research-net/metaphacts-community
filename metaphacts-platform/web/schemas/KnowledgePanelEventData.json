@@ -1,0 +1,62 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "KnowledgePanel.Close": {
+            "description": "Command to close knowledge panel.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "KnowledgePanel.Open": {
+            "description": "Command to open knowledge panel.",
+            "properties": {
+                "additionalData": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "iri": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "iri",
+                "additionalData"
+            ],
+            "required": [
+                "additionalData",
+                "iri"
+            ],
+            "type": "object"
+        },
+        "KnowledgePanel.Pin": {
+            "description": "Command to pin knowledge panel.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "KnowledgePanel.Unpin": {
+            "description": "Command to unpin knowledge panel.",
+            "properties": {
+            },
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "KnowledgePanel.Open",
+        "KnowledgePanel.Close",
+        "KnowledgePanel.Pin",
+        "KnowledgePanel.Unpin"
+    ],
+    "required": [
+        "KnowledgePanel.Close",
+        "KnowledgePanel.Open",
+        "KnowledgePanel.Pin",
+        "KnowledgePanel.Unpin"
+    ],
+    "type": "object"
+}
+

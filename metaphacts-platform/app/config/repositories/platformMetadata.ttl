@@ -1,0 +1,29 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rep: <http://www.openrdf.org/config/repository#>.
+@prefix sr: <http://www.openrdf.org/config/repository/sail#>.
+@prefix sail: <http://www.openrdf.org/config/sail#>.
+@prefix spin: <http://www.openrdf.org/config/sail/spin#>.
+@prefix sail-luc: <http://www.openrdf.org/config/sail/lucene#>.
+@prefix cgqi: <http://www.openrdf.org/config/sail/customGraphQueryInferencer#>.
+@prefix ns: <http://www.openrdf.org/config/sail/native#>.
+@prefix sp: <http://spinrdf.org/sp#>.
+@prefix sb: <http://www.openrdf.org/config/sail/base#>.
+@prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+
+
+[] a rep:Repository ;
+    lookup:configuration [
+      lookup:type "metaphacts:templateLookup" ;
+    ];
+   rep:repositoryID "platformMetadata" ;
+   rdfs:label "Platform Metadata" ;
+   rep:repositoryImpl [
+      rep:repositoryType "openrdf:SailRepository" ;
+      sr:sailImpl [
+            sail:sailType "openrdf:LuceneSail";
+            sail-luc:indexDir "luceneIndex/" ;
+            sail:delegate [
+                sail:sailType "openrdf:NativeStore" 
+            ]
+        ] 
+   ].

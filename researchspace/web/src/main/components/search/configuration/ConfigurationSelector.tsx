@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019, © Trustees of the British Museum
+ * Copyright (C) 2015-2020, © Trustees of the British Museum
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-
 import * as React from 'react';
 import * as Maybe from 'data.maybe';
 import * as classnames from 'classnames';
@@ -87,12 +86,17 @@ class ConfigurationSelectorInner extends React.Component<InnerProps, State> {
     if (_.isEmpty(context.selectedDatasets)) {
       return null;
     } else {
+      const selectedAlignment = context.selectedAlignment.map(a => a.label).getOrElse(undefined);
       return <div>
         <div className={styles.viewHolder}>
           <b>Datasets: </b>
           {_.map(context.selectedDatasets, dataset => dataset.label).join(', ')}.
-          <b> Alignment: </b>
-          {context.selectedAlignment.map(a => a.label).getOrElse('NONE')}
+          {selectedAlignment ? (
+            <span>
+              <b> Alignment: </b>
+              {selectedAlignment}
+            </span>
+          ): null}
         </div>
         <div className='clearfix'></div>
       </div>;
@@ -108,7 +112,6 @@ class ConfigurationSelectorInner extends React.Component<InnerProps, State> {
           <span>Datasets for search:</span>
             <div className={styles.datasetSelector}>
             <DatasetSelector
-              disabled={!context.isConfigurationEditable}
               availableDatasets={context.availableDatasets}
               selectedDatasets={context.selectedDatasets}
               onDatasetsSelection={this.selectDatasets}
@@ -116,7 +119,6 @@ class ConfigurationSelectorInner extends React.Component<InnerProps, State> {
           </div>
           <div className={styles.alignmentSelector}>
             <AlignmentSelector
-              disabled={!context.isConfigurationEditable}
               selectedDatasets={context.selectedDatasets}
               selectedAlignment={context.selectedAlignment}
               onAlignmentSelection={context.setSelectedAlignment}
