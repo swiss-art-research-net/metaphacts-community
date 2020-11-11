@@ -61,7 +61,7 @@ The metaphacts platform provides building blocks for building semantic web appli
 
 ### Technical Overview
 
-See [Development Instructions](DevelopmentInstructions.md) for details on source code structure and how to build the platform.
+See [Development Instructions](DEVELOPMENT.md) for details on source code structure and how to build the platform.
 
 ### Built on open standards
 
@@ -99,6 +99,10 @@ Also see [CONTRIBUTORS](metaphacts-platform/CONTRIBUTORS.md).
 ## License
 
 The metaphacts platform is released under the [LGPL 2.1 + Commons Clause](LICENSE.txt).
+
+## Binaries
+
+Docker images are available from Docker Hub at https://hub.docker.com/r/metaphacts/glam-community
 
 ## Contributions
 
