@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,8 +38,8 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 @import "./variables-base.scss";
-$btn-default-bg:  #fff;
-$btn-default-border: #ddd;
+$btn-secondary-bg:  #fff;
+$btn-secondary-border: #ddd;
 
 $alert-success-text: #000000;
 $alert-danger-text: #000000;

@@ -74,13 +74,14 @@
             "type": "object"
         },
         "FieldDefinitionConfig": {
+            "additionalProperties": false,
             "properties": {
                 "askPattern": {
                     "description": "Single constraint (SPARQL ASK query) to to validate values entered by\nthe user against the database.\n\nQuery bindings:\n   * `?value` - validated field value;\n\nIf both `askPattern` and `constraints` are specified then all of them will\nbe evaluated for each validated value.",
                     "type": "string"
                 },
                 "autosuggestionPattern": {
-                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     # ?value lookup:type :MyType\n   }\n}\n```",
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     ?value lookup:name ?label .\n     # ?value lookup:type :MyType\n   }\n}\n```",
                     "type": "string"
                 },
                 "categories": {
@@ -154,8 +155,8 @@
                             "type": "number"
                         }
                     ],
-                    "default": "'unbound'",
-                    "description": "XSD schema max cardinality (inclusive) or `'unbound'` (i.e. infinite)."
+                    "default": "unbound",
+                    "description": "XSD schema max cardinality (inclusive) or `\"unbound\"` (i.e. infinite)."
                 },
                 "minOccurs": {
                     "anyOf": [
@@ -169,8 +170,8 @@
                             "type": "number"
                         }
                     ],
-                    "default": "'unbound'",
-                    "description": "XSD schema min cardinality (inclusive) or `'unbound'` (i.e. 0)."
+                    "default": "unbound",
+                    "description": "XSD schema min cardinality (inclusive) or `\"unbound\"` (i.e. 0)."
                 },
                 "order": {
                     "description": "Number used for ordering field definitions.",
@@ -245,15 +246,13 @@
                 "testSubject",
                 "orderedWith"
             ],
-            "required": [
-                "id"
-            ],
             "type": "object"
         },
         "FieldDependency": {
+            "additionalProperties": false,
             "properties": {
                 "autosuggestionPattern": {
-                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependend field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependent field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
                     "type": "string"
                 },
                 "dependencies": {
@@ -336,6 +335,7 @@
             "type": "object"
         },
         "MultipleFieldConstraint": {
+            "additionalProperties": false,
             "properties": {
                 "fields": {
                     "additionalProperties": {
@@ -433,6 +433,7 @@
             "type": "object"
         },
         "SingleFieldConstraint": {
+            "additionalProperties": false,
             "properties": {
                 "message": {
                     "description": "Error message to display if constraint is violated.",

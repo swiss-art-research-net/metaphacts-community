@@ -24,6 +24,14 @@
             "type": "object"
         }
     },
+    "patternProperties": {
+        "^queryparam": {
+            "type": "string"
+        },
+        "^redirect": {
+            "type": "string"
+        }
+    },
     "properties": {
         "confirmationOptions": {
             "$ref": "#/definitions/ConfirmationOptions",

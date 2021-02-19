@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -547,7 +547,7 @@ public class PlatformPluginManager extends DefaultPluginManager {
             }
             catch (ConfigurationException e) {
                 // if there is none specified try to create an instance using a parameter-less constructor
-                T instance = targetClass.newInstance();
+                T instance = targetClass.getDeclaredConstructor().newInstance();
                 initializeExtension(instance, false);
                 return Optional.of(instance);
             }
@@ -568,7 +568,7 @@ public class PlatformPluginManager extends DefaultPluginManager {
                 ClassLoader pluginClassLoader = getPluginClassLoader(wrapper.getPluginId());
                 Class<?> clazz = Class.forName(className, true, pluginClassLoader);
                 Class<? extends T> targetClass = clazz.asSubclass(superClassOrInterface);
-                T instance = targetClass.newInstance();
+                T instance = targetClass.getDeclaredConstructor().newInstance();
                 initializeExtension(instance, true);
                 return Optional.of(instance);
             }

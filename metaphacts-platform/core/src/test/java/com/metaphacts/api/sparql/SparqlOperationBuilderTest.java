@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,13 +69,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.metaphacts.junit.MetaphactsGuiceTestModule;
 import com.metaphacts.junit.MetaphactsJukitoRunner;
+import com.metaphacts.junit.MpAssert;
 import com.metaphacts.junit.RepositoryRule;
 
 /**
@@ -88,8 +88,6 @@ public class SparqlOperationBuilderTest {
     @Rule
     public RepositoryRule repositoryRule;
     
-    @Rule
-    public ExpectedException exception= ExpectedException.none();
     
     private static final ValueFactory vf = SimpleValueFactory.getInstance();
     
@@ -186,9 +184,10 @@ public class SparqlOperationBuilderTest {
         SparqlOperationBuilder<BooleanQuery> builder = SparqlOperationBuilder.<BooleanQuery>create("SELECT * WHERE {?a ?b ?c} LIMIT 10", BooleanQuery.class);
 
         try (RepositoryConnection con = repositoryRule.getRepository().getConnection()) {
-            exception.expect(IllegalArgumentException.class);
-            exception.expectMessage(containsString("Query is a SPARQL SELECT query. Expected a boolean query."));
-            builder.build(con);
+            MpAssert.assertThrows(containsString("Query is a SPARQL SELECT query. Expected a boolean query."),
+                    IllegalArgumentException.class, () -> {
+                        builder.build(con);
+                    });
         }
         
     }

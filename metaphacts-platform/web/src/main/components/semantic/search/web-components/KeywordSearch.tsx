@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,6 +65,8 @@ export interface SemanticSearchKeywordConfig extends SemanticSimpleSearchBaseCon
   /**
    * SPARQL SELECT query string to show default suggestions without the need for the user
    * to type anything if specified.
+   *
+   * Needs to define `?subject` as projection variable.
    */
   defaultQuery?: string;
 
@@ -112,8 +114,12 @@ interface State {
   value: string;
 }
 
+type DefaultProps = Required<Pick<KeywordSearchProps,
+  'placeholder' | 'searchTermVariable' | 'minSearchTermLength' | 'debounce'
+>>;
+
 class KeywordSearchInner extends React.Component<InnerProps, State> {
-  static defaultProps: Partial<KeywordSearchProps> = {
+  static defaultProps: DefaultProps = {
     placeholder: 'type to search, minimum 3 symbols ...',
     searchTermVariable: '__token__',
     minSearchTermLength: 3,
@@ -178,7 +184,6 @@ class KeywordSearchInner extends React.Component<InnerProps, State> {
     const queryProp =
       this.keys.$property
         .filter(str => str.length >= this.props.minSearchTermLength)
-        .debounce(this.props.debounce)
         .map(
           this.buildQuery(query)
         );
@@ -198,6 +203,7 @@ class KeywordSearchInner extends React.Component<InnerProps, State> {
     }
 
     Kefir.merge(initializers)
+      .debounce(this.props.debounce)
       .onValue(
         q => {
           this.props.context.setBaseQuery(Maybe.Just(q));
@@ -212,8 +218,8 @@ class KeywordSearchInner extends React.Component<InnerProps, State> {
       );
   }
 
-  private onKeyPress = (event: React.FormEvent<FormControl>) =>
-    this.setState({value: (event.target as HTMLInputElement).value})
+  private onKeyPress = (event: React.ChangeEvent<HTMLInputElement>) =>
+    this.setState({value: event.target.value})
 
   private buildQuery =
     (baseQuery: SparqlJs.SelectQuery) => (token: string): SparqlJs.SelectQuery => {
@@ -231,8 +237,12 @@ class KeywordSearchInner extends React.Component<InnerProps, State> {
     }
 
   private clearSearch() {
-    this.props.context.setBaseQuery(Maybe.Nothing());
-    this.props.context.setBaseQueryStructure(Maybe.Nothing());
+    if (this.props.defaultQuery) {
+      this.keys(this.state.value);
+    } else {
+      this.props.context.setBaseQuery(Maybe.Nothing());
+      this.props.context.setBaseQueryStructure(Maybe.Nothing());
+    }
   }
 }
 

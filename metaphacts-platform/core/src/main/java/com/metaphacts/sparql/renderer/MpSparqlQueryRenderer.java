@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,6 @@
  */
 package com.metaphacts.sparql.renderer;
 
-import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.query.QueryLanguage;
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
 import org.eclipse.rdf4j.query.algebra.UpdateExpr;
@@ -147,21 +146,6 @@ public class MpSparqlQueryRenderer extends BaseTupleExprRenderer implements Quer
         PreprocessedQuerySerializer serializerVisitor = new PreprocessedQuerySerializer();
         theExpr.visit(serializerVisitor);
         return serializerVisitor.builder.toString();
-    }
-
-    /**
-     * Renders a single {@link Value} as string.
-     *
-     * @param val an RDF {@link Value}
-     * @return string representation of {@code val}
-     *
-     * @deprecated use {@link QueryUtil#toSPARQL(Value)} instead.
-     */
-    @Deprecated
-    public String renderValue(Value val) {
-        StringBuilder builder = new StringBuilder();
-        MpSparqlQueryRendererUtils.writeAsSparqlValue(val, builder, true);
-        return builder.toString();
     }
 
 }

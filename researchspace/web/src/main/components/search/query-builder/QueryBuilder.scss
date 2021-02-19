@@ -60,7 +60,7 @@
 }
 
 .searchCollapseExpand {
-  color: $brand-primary;
+  color: $primary;
   cursor: pointer;
   margin-right: $padding-base-horizontal;
 }
@@ -169,7 +169,7 @@
 .selectedItem {
   display: flex;
   align-items: center;
-  padding-left: $padding-base-horizontal + $rs-button-arrow-border / 2;
+  padding-left: calc(#{$padding-base-horizontal} + #{$rs-button-arrow-border / 2});
   padding-right: $padding-base-horizontal;
   cursor: auto;
 

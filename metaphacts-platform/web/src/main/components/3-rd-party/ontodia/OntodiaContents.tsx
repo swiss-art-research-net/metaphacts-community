@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +38,7 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as React from 'react';
-import { createElement, cloneElement, ReactNode } from 'react';
+import { cloneElement, ReactNode } from 'react';
 import * as maybe from 'data.maybe';
 import { DiagramModel, AuthoringState, TemporaryState, ElementIri } from 'ontodia';
 
@@ -56,23 +56,25 @@ import * as OntodiaEvents from './OntodiaEvents';
 
 import * as styles from './OntodiaContents.scss';
 
-export interface Props {
+export interface OntodiaContentsConfig {
   id: string;
   template?: string;
 }
 
-export interface State {
+export type OntodiaContentsProps = OntodiaContentsConfig;
+
+interface State {
   elements?: Array<{ iri: string; persisted: boolean }>;
 }
 
-export class OntodiaContents extends Component<Props, State> {
-  static defaultProps: Partial<Props> = {
+export class OntodiaContents extends Component<OntodiaContentsProps, State> {
+  static defaultProps: Pick<OntodiaContentsProps, 'template'> = {
     template: `<semantic-link iri='{{iri.value}}'></semantic-link>`,
   };
 
   private readonly cancellation = new Cancellation();
 
-  constructor(props: Props, context: any) {
+  constructor(props: OntodiaContentsProps, context: any) {
     super(props, context);
     this.state = {
       elements: [],
@@ -129,8 +131,8 @@ export class OntodiaContents extends Component<Props, State> {
     const hideDialog = () => getOverlaySystem().hide(dialogRef);
     getOverlaySystem().show(
       dialogRef,
-      createElement(SaveSetDialog, {
-        onSave: name => {
+      <SaveSetDialog
+        onSave={name => {
           const items: Array<Rdf.Iri> = [];
           this.state.elements.forEach(({iri, persisted}) => {
             if (persisted) {
@@ -139,11 +141,11 @@ export class OntodiaContents extends Component<Props, State> {
               );
             }
           });
-          return createNewSetFromItems(this.props.id, name, items).map(hideDialog)
-        },
-        onHide: hideDialog,
-        maxSetSize: maybe.Nothing<number>(),
-      })
+          return createNewSetFromItems(this.props.id, name, items).map(hideDialog);
+        }}
+        onHide={hideDialog}
+        maxSetSize={maybe.Nothing<number>()}
+      />
     );
   }
 
@@ -167,10 +169,9 @@ export class OntodiaContents extends Component<Props, State> {
         <div className={styles.container}>
         {
           this.state.elements.map(({iri, persisted}) =>
-            createElement(TemplateItem, {
-              key: iri,
-              template: {source: this.props.template, options: {iri: Rdf.iri(iri), persisted}},
-            })
+            <TemplateItem key={iri}
+              template={{source: this.props.template, options: {iri: Rdf.iri(iri), persisted}}}
+            />
           )
         }
         </div>

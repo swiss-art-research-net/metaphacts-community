@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,13 +40,11 @@
 import * as React from 'react';
 
 import { Link } from '../diagram/elements';
-import { DiagramView } from '../diagram/view';
 import { PaperWidgetProps } from '../diagram/paperArea';
 
 const CLASS_NAME = 'ontodia-edit-form';
 
 export interface EditLinkLabelFormProps extends PaperWidgetProps {
-    view: DiagramView;
     link: Link;
     onDone: () => void;
 }
@@ -76,11 +74,10 @@ export class EditLinkLabelForm extends React.Component<EditLinkLabelFormProps, S
 
         const linkType = view.model.getLinkType(link.typeId)!;
         const template = renderingState.createLinkTemplate(linkType);
-        const {label = {}} = template.renderLink(link, view.model);
+        const {label = {}} = template.renderLink(link, view);
 
-        const labelTexts = label.attrs && label.attrs.text ? label.attrs.text.text : undefined;
-        return (labelTexts && labelTexts.length > 0)
-            ? view.selectLabel(labelTexts)!.value
+        return typeof label.content === 'string'
+            ? label.content
             : view.formatLabel(linkType.label, linkType.id);
     }
 

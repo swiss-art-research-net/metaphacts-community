@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,7 +54,7 @@ import org.eclipse.rdf4j.model.datatypes.XMLDatatypeUtil;
 import org.eclipse.rdf4j.model.vocabulary.OWL;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.query.BooleanQuery;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
@@ -157,7 +157,7 @@ public class PropertyBasedGenerator extends AbstractFieldDefinitionGenerator imp
                 IRI dataType = determineDatatype(conn, iri, ranges);
                 fieldDefinition.setXsdDatatype(dataType);
 
-                if(dataType.equals(XMLSchema.ANYURI)) {
+                if (dataType.equals(XSD.ANYURI)) {
                    StringBuilder queryString = new StringBuilder();
                    queryString.append("SELECT ?value ?label WHERE {");
                    queryString.append("?value rdfs:label|skos:prefLabel ?label. ");
@@ -206,12 +206,12 @@ public class PropertyBasedGenerator extends AbstractFieldDefinitionGenerator imp
             if (XMLDatatypeUtil.isBuiltInDatatype(singleRange)) {
                 return singleRange;
             } else if (!RDFS.LITERAL.equals(singleRange)) {
-                return XMLSchema.ANYURI;
+                return XSD.ANYURI;
             }
         }
 
         if (conn.hasStatement(iri, RDF.TYPE, OWL.OBJECTPROPERTY, true)) {
-            return XMLSchema.ANYURI;
+            return XSD.ANYURI;
         }
 
         // look at occurrence patterns: if any existing value of the property is not a literal, the type should be
@@ -220,10 +220,10 @@ public class PropertyBasedGenerator extends AbstractFieldDefinitionGenerator imp
                 .prepareBooleanQuery("ASK WHERE { [] ?iri ?value. FILTER(!isLiteral(?value)) }");
         query.setBinding("iri", iri);
         if (query.evaluate()) {
-            return XMLSchema.ANYURI;
+            return XSD.ANYURI;
         }
 
-        return XMLSchema.STRING;
+        return XSD.STRING;
     }
 
     private boolean isKnownProperty(RepositoryConnection conn, IRI iri) {

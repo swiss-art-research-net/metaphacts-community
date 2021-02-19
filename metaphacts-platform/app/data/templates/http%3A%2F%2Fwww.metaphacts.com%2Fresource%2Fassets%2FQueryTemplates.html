@@ -18,14 +18,14 @@
       <h2>Query Templates</h2>
     </div>
   </div>
-  <div class='page__body'> 
-    
+  <div class='page__body'>
+
       [[#if (urlParam "queryTemplateFilter")]]
-					<bs-alert bs-style="warning">
+					<bs-alert variant="warning">
             Current view is filtered to a particular query. <mp-link url="/resource/?uri=[[this]]">Show all</mp-link>.
           </bs-alert>
-      [[/if]]  
-      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#queryTemplateContainer>:read:any")]]         
+      [[/if]]
+      [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#queryTemplateContainer>:read:any")]]
       		<semantic-context repository="assets">
             <semantic-table config='{
               "query":"SELECT ?template ?label ?text ?author ?modified WHERE {
@@ -33,7 +33,7 @@
                         <http://www.w3.org/ns/prov#wasAttributedTo> ?author;
                         <http://www.w3.org/ns/prov#generatedAtTime> ?modified
                         OPTIONAL {?template <http://www.w3.org/2000/01/rdf-schema#label> ?label.}
-                        [[#if (urlParam "queryTemplateFilter")]]FILTER(?template=<[[urlParam "queryTemplateFilter"]]>) [[/if]]            
+                        [[#if (urlParam "queryTemplateFilter")]]FILTER(?template=<[[urlParam "queryTemplateFilter"]]>) [[/if]]
                         } ORDER BY DESC(?modified)",
                    "columnConfiguration" : [
                         {"variableName":"template", "displayName":"Template", "cellTemplate": "
@@ -47,7 +47,7 @@
                                           </div>
                                       </mp-overlay-dialog-content>
                                     </mp-overlay-dialog>
-                                   "},                                                          
+                                   "},
                         {"variableName":"author", "displayName":"Author", "cellTemplate": "<mp-label iri=\"{{author.value}}\"></mp-label>" },
                         {"variableName":"modified", "displayName":"Modified", "cellTemplate": "{{dateTimeFormat modified.value \"LLL\"}}" },
                         {"displayName": "Actions", "cellTemplate": "{{> actions}}"}
@@ -62,23 +62,23 @@
               <template id='actions'>
                 <div>
                   <mp-copy-to-clipboard text='{{template.value}}' message='Query Template IRI has been copied to clipboard!'>
-                    <button class="btn btn-xs btn-default" style="margin-right: 8px">
+                    <button class="btn btn-sm btn-secondary" style="margin-right: 8px">
                       <i class="fa fa-clipboard" aria-hidden=true></i> Copy IRI
                     </button>
                   </mp-copy-to-clipboard>
-                  [[#if (hasPermission "api:ldp:container:http://www.metaphacts.com/ontologies/platform#querytemplatecontainer:delete:any")]]   
+                  [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#queryTemplateContainer>:delete:any")]]
                     <mp-ldp-remove-from-container-action iri="{{template.value}}" container="http://www.metaphacts.com/ontologies/platform#queryTemplateContainer">
-                      <button class="btn btn-xs btn-danger" style="margin-right: 8px;"><i class="fa fa-trash" aria-hidden=true></i> Delete</button>
-                    </mp-ldp-remove-from-container-action>   
+                      <button class="btn btn-sm btn-danger" style="margin-right: 8px;"><i class="fa fa-trash" aria-hidden=true></i> Delete</button>
+                    </mp-ldp-remove-from-container-action>
                   [[/if]]
                 </div>
               </template>
             </semantic-table>
     </semantic-context>
-    
-          [[#if (hasPermission "api:ldp:container:http://www.metaphacts.com/ontologies/platform#querytemplatecontainer:create:any")]]         
+
+          [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#queryTemplateContainer>:create:any")]]
             <mp-overlay-dialog title="Create Query Template" type="modal" bs-size="large">
-              <mp-overlay-dialog-trigger><button class="btn btn-default btn btn-sm btn-primary">Create Query Template</button></mp-overlay-dialog-trigger>
+              <mp-overlay-dialog-trigger><button class="btn btn-secondary btn btn-sm btn-primary">Create Query Template</button></mp-overlay-dialog-trigger>
               <mp-overlay-dialog-content>
                   <div>
                      <semantic-context repository="assets">

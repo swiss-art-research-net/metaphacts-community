@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -292,7 +292,6 @@ function applyRedrawRequests(
                 };
             }
             computed.set(elementId, state);
-            batch.requests.delete(elementId);
             // tslint:enable:no-bitwise
         } else {
             computed.set(element.id, {
@@ -303,6 +302,7 @@ function applyRedrawRequests(
         }
     }
     batch.forAll = RedrawFlags.None;
+    batch.requests.clear();
     return computed;
 }
 
@@ -511,7 +511,7 @@ function computePropertyTable(
 }
 
 function computeStyleFor(model: Element, view: DiagramView) {
-    const {color: {h, c, l}, icon} = view.getTypeStyle(model.data.types);
+    const {color: {h, c, l}, icon} = view.getElementStyle(model.data);
     return {
         icon,
         color: hcl(h, c, l).toString(),

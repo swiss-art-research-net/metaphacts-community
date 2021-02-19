@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,8 @@
  */
 package com.metaphacts.shacl;
 
+import org.eclipse.rdf4j.repository.config.RepositoryConfig;
+
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.groups.DataQualityConfiguration;
 
@@ -46,6 +48,7 @@ public interface ShaclEngineFactory {
 
     public String getEngineType();
     
-    public ShaclEngine getShaclEngine(NamespaceRegistry ns, DataQualityConfiguration config);
+    public ShaclEngine getShaclEngine(NamespaceRegistry ns, DataQualityConfiguration dataQualityConfig,
+            RepositoryConfig repositoryConfig);
     
 }

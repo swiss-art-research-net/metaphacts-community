@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,17 +49,17 @@ import java.util.Vector;
 import javax.servlet.http.HttpServletRequest;
 
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultFormat;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.google.common.collect.Lists;
+import com.metaphacts.junit.MpAssert;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -67,13 +67,11 @@ import com.google.common.collect.Lists;
 public class ServletRequestUtilTest {
     @Mock
     private HttpServletRequest req;
-    
-    @Rule
-    public ExpectedException exception= ExpectedException.none();
+
     
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
     
     private static final String standardHTMLAcceptHeader = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
@@ -106,9 +104,12 @@ public class ServletRequestUtilTest {
         when(req.getContentType()).thenReturn("application/sparql-query; charset=utf-8");
         Assert.assertEquals("application/sparql-query",ServletRequestUtil.getContentType(req, Optional.of(Lists.newArrayList("application/sparql-query"))).get());
         
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("list of possible content types not be empty");
-        Assert.assertFalse(ServletRequestUtil.getContentType(req, Optional.of(Lists.<String>newArrayList())).isPresent());
+        MpAssert.assertThrows(Matchers.containsString("list of possible content types not be empty"),
+                IllegalArgumentException.class, () -> {
+
+            Assert.assertFalse(
+                    ServletRequestUtil.getContentType(req, Optional.of(Lists.<String>newArrayList())).isPresent());
+        });
     }
     
     private Answer<Enumeration<String>> getMimetypeAnswer(final List<String> listOfMimeTypes) {

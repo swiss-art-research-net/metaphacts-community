@@ -15,13 +15,13 @@ We use Gradle as a single entry point for compiling and bundling the sources, wh
 
 * `metaphacts-platform/core` - platform backend
 
-  Developed in Java 8. Mainly builds upon RDF4J 3.x for processing and handling RDF data, Guice for dependency injection, Apache Shiro for security matters and Jersey for developing RESTful services.
+  Developed in Java 11. Mainly builds upon RDF4J 3.x for processing and handling RDF data, Guice for dependency injection, Apache Shiro for security matters and Jersey for developing RESTful services.
 
   OSS dependencies are managed by Gradle and NPM and are retrieved from the public repositories.
 
 * `metaphacts-platform/client-api` - platform client
 
-  Initial Java 8 based client to (remotely) connect to the platform. Provides dedicated interfaces for accessing assets and services such as queries. Provides some further utils ontop of RDF4J.
+  Initial Java 11 based client to (remotely) connect to the platform. Provides dedicated interfaces for accessing assets and services such as queries. Provides some further utils ontop of RDF4J.
 
 * `metaphacts-platform/web` - platform frontend
 
@@ -32,7 +32,7 @@ We use Gradle as a single entry point for compiling and bundling the sources, wh
 ### Prerequisites
 It is possible to use an unix-based OS as well as Windows for development against the platform. As prerequisites you need to have installed on your machine:
 
-* OpenJDK 8 (preferred, but Oracle JDK 8 is fine too)
+* OpenJDK 11
 * Node.js 8.x (or later)
 * Gradle
 * Yarn
@@ -46,8 +46,8 @@ On Windows the use of [Chocolatey](https://chocolatey.org/) is highly recommende
 For most developments (i.e. for starting-up the platform properly) you will need to have a RDF database in place. The database does not necessarily need to run on your local machine as long as it is accessible over a standard conform SPARQL endpoint interface. For your convenience, we recommend to run, for example, Blazegraph as a container on your local docker daemon so you can easily run serveral databases in parallel and switch between them:
 
 1. Login into DockerHub: `docker login`
-2. Pull latest blazegraph image: `docker pull metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.31-jre8-268ccbf`
-3. Run Blazegraph container with local storage mounted as data volume: `docker run --name blazegraph -d --restart=always -p 10080:8080 --env JAVA_OPTS="" -v /home/user/path-to-blazegraph-journal:/blazegraph-data metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.31-jre8-268ccbf`
+2. Pull latest blazegraph image: `docker pull metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.35-jre8-a53ba9b`
+3. Run Blazegraph container with local storage mounted as data volume: `docker run --name blazegraph -d --restart=always -p 10080:8080 --env JAVA_OPTS="" -v /home/user/path-to-blazegraph-journal:/blazegraph-data metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.35-jre8-a53ba9b`
 
 Where `/home/user/path-to-blazegraph-journal-folder` is the folder on the host system where blazegraph journal will be stored.
 
@@ -71,9 +71,11 @@ For convenience it is possible to create a `gradle.properties` file in the root 
 In the Gradle environment we provide a convenience task to initialize all web projects. The script basically invokes `yarn install` on all relevant projects. This script can be executed using `./gradlew initializeNpm`. Note that this may take some time.
 
 #### Eclipse
-If you are used to develop in Eclipse, you can automatically generate the relevant Eclipse projects by executing the `./gradlew cleanEclipse eclipse` from the project root folder.
+If you are used to develop in Eclipse, you can import the Gradle project using Buildship tooling, i.e. use the regular import functionality with project type `Gradle`.
 
-The Gradle environment first resolves all required dependencies and then automatically generates the classpath file as well as required Eclipse metadata files. Finally, you can import the project into your Eclipse Workspace using the "Existing Projects into Workspace" wizard.
+The Gradle environment first resolves all required dependencies and then automatically generates the classpath file as well as required Eclipse metadata files.
+
+To update the classpath (e.g. if there are new dependencies) right click on the project, select `Gradle` and then `Refresh Gradle project`. 
 
 #### VSCode
 When developing frontend code in the Visual Studio Code we recommend setting TypeScript compiler to locally installed one by clicking on compiler version number in the status bar while viewing any `*.ts` file, or manually setting `"typescript.tsdk": "project/webpack/node_modules/typescript/lib"` in the `.vscode/settings.json`.
@@ -92,7 +94,6 @@ Finally, go to [http://127.0.0.1:10214/](http://127.0.0.1:10214/). You should se
 ./gradlew appRun
 ./gradlew -Ddebug=true appRun
 ./gradlew platformWar
-./gradlew cleanEclipse eclipse
 ./gradlew appZip
 ./gradlew test
 ./gradlew generateLicenseReport

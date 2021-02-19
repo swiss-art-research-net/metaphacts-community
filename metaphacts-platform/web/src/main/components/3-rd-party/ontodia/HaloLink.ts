@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,24 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import { HaloLink } from 'ontodia';
+
+/**
+ * Allows selecting a link and produce actions with it.
+ */
+interface OntodiaHaloLinkConfig {
+  /** @default "halo-link" */
+  id?: string;
+  /** @default false */
+  editProperties?: boolean;
+  /** @default true */
+  editType?: boolean;
+  /** @default 20 */
+  buttonSize?: number;
+  /** @default 5 */
+  buttonMargin?: number;
+}
+
+export type HaloLinkProps = OntodiaHaloLinkConfig;
 
 export { HaloLink };
 

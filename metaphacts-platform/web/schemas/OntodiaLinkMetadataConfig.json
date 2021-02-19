@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "children": {
+            "description": "Semantic form override. If developer wants to override auto-generated form,\nit should be placed inside `<ontodia-entity-metadata>`.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "editableWhen": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "description": "Link properties required for the link to be editable",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "fields": {
+            "description": "Ordered list of fields to be used for this link. Automatically generated forms will honor\nthe order of the fields specified here.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "hasIdentity": {
+            "default": false,
+            "description": "Defines whether the link has separate identity IRI which allows multiple links\nof the same type between source and target entities.",
+            "type": "boolean"
+        },
+        "linkTypeIri": {
+            "description": "Iri of the type to be configured. For example, 'http://xmlns.com/foaf/0.1/knows'",
+            "type": "string"
+        },
+        "newSubjectTemplate": {
+            "description": "Subject template override for generating IRIs for new links of this type.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "linkTypeIri",
+        "hasIdentity",
+        "fields",
+        "newSubjectTemplate",
+        "editableWhen",
+        "children"
+    ],
+    "required": [
+        "linkTypeIri"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,12 +43,12 @@ import {
   createElement,
   CSSProperties,
   ComponentClass,
+  FunctionComponent,
 } from 'react';
 import * as D from 'react-dom-factories';
 
 import * as assign from 'object-assign';
 import * as _ from 'lodash';
-import { Set } from 'immutable';
 import * as React from 'react';
 import * as he from 'he';
 import { Parser as ToReactParser, ProcessNodeDefinitions, Node, Instruction } from 'html-to-react';
@@ -65,25 +65,21 @@ import { WrappingError } from 'platform/api/async';
 import { FormattedError } from 'platform/components/ui/notification/FormattedError';
 
 import { loadPermittedComponents, isComponentPermittedSync } from './ComponentBasedSecurity';
-import { hasComponent, loadComponents, loadComponentSync } from './ComponentsStore';
+import {
+  hasComponent, isRegisteredNativeComponent, loadComponents, loadComponentSync,
+} from './ComponentsStore';
 import { safeReactCreateElement } from './ReactErrorCatcher';
 
 const processNodeDefinitions = new ProcessNodeDefinitions(React);
 
-/**
- * Holds all natively registered custom elements.
- */
-const NativeRegistry = Set<string>().asMutable();
-
 /*
  * Intercept calls to customElements.define to track all custom components.
  */
-const registerElement = customElements.define;
+const originalRegisterElement = customElements.define.bind(customElements);
 customElements.define = function(
   name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions
 ) {
-  NativeRegistry.add(name);
-  return registerElement.bind(customElements)(name, constructor, options);
+  return originalRegisterElement(name, constructor, options);
 };
 
 /**
@@ -267,6 +263,9 @@ export function renderWebComponent(
     return null;
   }
   const component = loadComponentSync(componentTag);
+  if (typeof component === 'string') {
+    return React.createElement(component, props, children);
+  }
   templateScope = templateScope || TemplateScope.empty();
   return createElementWithTemplateScope(
     component, props, children, templateScope, dataContext
@@ -311,13 +310,18 @@ function isStyleChild(node: Node): boolean {
 }
 
 function isReactComponent(node: Node): boolean {
-  return hasComponent(node.name);
+  return hasComponent(node.name) && !isRegisteredNativeComponent(node.name);
 }
 
 function isNativeComponent(node: Node): boolean {
-  // according to specification name of the custom element must contain dash.
-  // see https://developer.mozilla.org/en-US/docs/Web/API/CustomElementRegistry/define
-  return !hasComponent(node.name) && (node.type === 'tag' && node.name.indexOf('-') !== -1);
+  if (node.type !== 'tag') { return false; }
+  if (hasComponent(node.name)) {
+    return isRegisteredNativeComponent(node.name);
+  } else {
+    // according to specification name of the custom element must contain dash.
+    // see https://developer.mozilla.org/en-US/docs/Web/API/CustomElementRegistry/define
+    return node.name.indexOf('-') >= 0;
+  }
 }
 
 function processNativeComponent(
@@ -464,7 +468,7 @@ function nodeHasTemplate(node: Node) {
 }
 
 function createElementWithTemplateScope(
-  component: ComponentClass<any>,
+  component: ComponentClass<any> | FunctionComponent,
   componentProps: any,
   children: ReactNode[],
   templateScope: TemplateScope,

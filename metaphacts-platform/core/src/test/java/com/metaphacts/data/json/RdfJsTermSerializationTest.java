@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,7 @@ import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -70,10 +70,10 @@ public class RdfJsTermSerializationTest {
         Assert.assertEquals("{\"termType\":\"NamedNode\",\"value\":\"http://example.org/subject\"}",
                 mapper.writeValueAsString(vf.createIRI("http://example.org/subject")));
         
-        Assert.assertEquals("{\"termType\":\"Literal\",\"value\":\"Hello World\",\"datatype\":{\"termType\":\"NamedNode\",\"value\":\"" + XMLSchema.STRING + "\"}}",
+        Assert.assertEquals("{\"termType\":\"Literal\",\"value\":\"Hello World\",\"datatype\":{\"termType\":\"NamedNode\",\"value\":\"" + XSD.STRING + "\"}}",
                 mapper.writeValueAsString(vf.createLiteral("Hello World")));
         
-        Assert.assertEquals("{\"termType\":\"Literal\",\"value\":\"42\",\"datatype\":{\"termType\":\"NamedNode\",\"value\":\"" + XMLSchema.INT + "\"}}",
+        Assert.assertEquals("{\"termType\":\"Literal\",\"value\":\"42\",\"datatype\":{\"termType\":\"NamedNode\",\"value\":\"" + XSD.INT + "\"}}",
                 mapper.writeValueAsString(vf.createLiteral(42)));
         
         Assert.assertEquals(
@@ -91,13 +91,13 @@ public class RdfJsTermSerializationTest {
                 mapper.readValue("{\"termType\" : \"NamedNode\", \"value\" : \"http://example.org/subject\"}", IRI.class));
 
         Assert.assertEquals(vf.createLiteral("Hello World"),
-                mapper.readValue("{\"termType\" : \"Literal\", \"value\" : \"Hello World\",  \"datatype\" : { \"termType\" : \"NamedNode\", \"value\" : \"" + XMLSchema.STRING + "\" } }", Value.class));
+                mapper.readValue("{\"termType\" : \"Literal\", \"value\" : \"Hello World\",  \"datatype\" : { \"termType\" : \"NamedNode\", \"value\" : \"" + XSD.STRING + "\" } }", Value.class));
         
         Assert.assertEquals(vf.createLiteral("Hello World"),
-                mapper.readValue("{\"termType\" : \"Literal\", \"value\" : \"Hello World\",  \"datatype\" : { \"termType\" : \"NamedNode\", \"value\" : \"" + XMLSchema.STRING + "\" } }", Literal.class));
+                mapper.readValue("{\"termType\" : \"Literal\", \"value\" : \"Hello World\",  \"datatype\" : { \"termType\" : \"NamedNode\", \"value\" : \"" + XSD.STRING + "\" } }", Literal.class));
 
         Assert.assertEquals(vf.createLiteral(42),
-                mapper.readValue("{\"termType\" : \"Literal\", \"value\" : \"42\",  \"datatype\" : { \"termType\" : \"NamedNode\", \"value\" : \"" + XMLSchema.INT + "\" } }", Value.class));
+                mapper.readValue("{\"termType\" : \"Literal\", \"value\" : \"42\",  \"datatype\" : { \"termType\" : \"NamedNode\", \"value\" : \"" + XSD.INT + "\" } }", Value.class));
 
         Assert.assertEquals(vf.createLiteral("Hallo Welt", "de"),
                 mapper.readValue("{\"termType\" : \"Literal\", \"value\" : \"Hallo Welt\", \"language\" : \"de\", \"datatype\" : { \"termType\" : \"NamedNode\", \"value\" : \"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString\" } }", Literal.class));

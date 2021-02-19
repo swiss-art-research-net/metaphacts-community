@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,7 +76,7 @@ public class RepositoryBasedLookupConfig extends CommonLookupConfig implements T
         Resource implNode = super.export(model);
         
         if (getTargetRepository() != null) {
-            model.add(implNode, LOOKUP_TARGETREPOSITORY, VF.createLiteral(getTargetRepository()));
+            model.add(implNode, LOOKUP_TARGET_REPOSITORY, VF.createLiteral(getTargetRepository()));
         }
         
         return implNode;
@@ -86,7 +86,7 @@ public class RepositoryBasedLookupConfig extends CommonLookupConfig implements T
     public void parse(Model model, Resource resource) throws LookupServiceConfigException {
         super.parse(model, resource);
         
-        Models.objectLiteral(model.filter(resource, LOOKUP_TARGETREPOSITORY, null))
+        Models.objectLiteral(model.filter(resource, LOOKUP_TARGET_REPOSITORY, null))
             .ifPresent(literal -> setTargetRepository(literal.stringValue()));
     }
     

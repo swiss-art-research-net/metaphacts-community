@@ -1,0 +1,45 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "**Example**:\n```\n<mp-highlight highlight=\"text\">some text here</mp-highlight>\n```",
+    "properties": {
+        "className": {
+            "description": "Additional class names for component root element",
+            "type": "string"
+        },
+        "highlight": {
+            "description": "Substring to highlight",
+            "type": [
+                "string",
+                "number"
+            ]
+        },
+        "highlightProps": {
+            "description": "Props for highlighted substring span",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "splitToken": {
+            "description": "Whether to split the highlight term into individual tokens / words.\nIf active, highlighting is done on matched words.",
+            "type": "boolean"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Additional styles for label element"
+        }
+    },
+    "propertyOrder": [
+        "className",
+        "style",
+        "highlight",
+        "highlightProps",
+        "splitToken"
+    ],
+    "type": "object"
+}
+

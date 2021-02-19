@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,15 @@ import { Spinner } from 'platform/components/ui/spinner';
 import * as DescriptionService from 'platform/api/services/resource-description';
 import { Cancellation } from 'platform/api/async';
 
-export interface DescriptionProps {
+/**
+ * **Example**:
+ * ```
+ * <mp-description iri="http://www.wikidata.org/entity/Q937"
+ *   inline-html=true>
+ * </mp-description>
+ * ```
+ */
+interface DescriptionConfig {
   /**
    * IRI of resource to fetch description for
    */
@@ -66,29 +74,23 @@ export interface DescriptionProps {
    * Only used if no custom template has been provided.
    */
   inlineHtml?: boolean;
-
   /**
    * Template that gets the description as a parameter. Can be used with `{{description}}`.
    */
-  template: string;
+  template?: string;
+  /**
+   * Template which is applied when there is no description.
+   */
+  noResultTemplate?: string;
 }
+
+export type DescriptionProps = DescriptionConfig;
 
 interface State {
   description: string | undefined | null;
   error?: any;
 }
 
-/**
- * @example
- * <div style="
- *  max-width: 500px;
- *  text-overflow: ellipsis;
- *  white-space: nowrap;
- *  overflow: hidden;
- * ">
- *  <mp-description iri="http://www.wikidata.org/entity/Q937" inline-html=true/>
- * </div>
- */
 export class ResourceDescription extends Component<DescriptionProps, State> {
   private cancellation = new Cancellation();
 
@@ -123,7 +125,7 @@ export class ResourceDescription extends Component<DescriptionProps, State> {
   }
 
   render() {
-    const {className, style, inlineHtml} = this.props;
+    const {className, style, inlineHtml, template, noResultTemplate} = this.props;
     const {description, error} = this.state;
 
     if (error) {
@@ -131,14 +133,18 @@ export class ResourceDescription extends Component<DescriptionProps, State> {
     } else if (description === undefined) {
       return <Spinner></Spinner>;
     } else if (description === null) {
-      return null;
+      if (noResultTemplate) {
+        return <TemplateItem template={{ source: noResultTemplate }} />;
+      } else {
+        return null;
+      }
     // Right now we support only strings: html or plain
     } else if (typeof description !== 'string') {
       return <ErrorNotification
         errorMessage='Description has unsupported type!'>
       </ErrorNotification>;
     } else {
-      const templateString = this.getTemplateString(this.props.template, this.props.inlineHtml);
+      const templateString = this.getTemplateString(template, inlineHtml);
       return <TemplateItem
         template={{source: templateString, options: {description}}}
         componentProps={{style, className}}

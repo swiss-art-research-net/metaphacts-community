@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,32 +47,52 @@ import { TemplateItem } from 'platform/components/ui/template';
 import { Spinner } from 'platform/components/ui/spinner';
 import { getCurrentResource } from 'platform/api/navigation';
 
-import { FieldDefinitionProp, normalizeFieldDefinition } from './FieldDefinition';
+import {
+  FieldDefinitionConfig, FieldDefinitionProp, normalizeFieldDefinition,
+} from './FieldDefinition';
 import { queryValues } from './QueryValues';
 import {SparqlBindingValue } from './FieldValues';
 
-export interface FieldBasedVisualizationConfig {
+interface FieldBasedVisualizationConfigBase {
   /**
    * The IRI of the resource that needs to be visualized.
    */
   subject?: string;
 
-  /**
-   * Definition for fields that need to be visualized.
-   *
-   * See <semantic-link uri='http://help.metaphacts.com/resource/Help:SemanticForm'></semantic-link> for more details about field definitions.
-   */
-  fields: FieldDefinitionProp[];
-
  /**
-  * <semantic-link uri='http://help.metaphacts.com/resource/Help:FrontendTemplating'>Template</semantic-link>, that gets the `fields` value with the list of field definitions injected as template context.
-  * [each helper](http://handlebarsjs.com/builtin_helpers.html#iteration) can be used to iterate over the fields.
+  * Template, that gets the `fields` value with the list of field definitions
+  * injected as template context.
+  * [each helper](http://handlebarsjs.com/builtin_helpers.html#iteration) can be used
+  * to iterate over the fields.
   *
   * Every field has corresponding metadata (label, xsdDatatype, etc.), as well as list of `values`.
   *
-  * See <semantic-link uri='http://help.metaphacts.com/resource/Help:SemanticForm'></semantic-link> for more details about field definitions.
+  * @mpSeeResource [{
+  *   "name": "Client-side templating",
+  *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+  * }, {
+  *   "name": "Semantic Form and Field Definitions",
+  *   "iri": "http://help.metaphacts.com/resource/Help:SemanticForm"
+  * }]
   */
   template: string;
+}
+
+// exported for documentation
+interface FieldBasedVisualizationConfig extends FieldBasedVisualizationConfigBase {
+  /**
+   * Definition for fields that need to be visualized.
+   *
+   * @mpSeeResource {
+   *   "name": "Semantic Form and Field Definitions",
+   *   "iri": "http://help.metaphacts.com/resource/Help:SemanticForm"
+   * }
+   */
+  fields: ReadonlyArray<FieldDefinitionConfig>;
+}
+
+export interface FieldBasedVisualizationProps extends FieldBasedVisualizationConfigBase {
+  fields: ReadonlyArray<FieldDefinitionProp>;
 }
 
 export interface FieldDefinitionWithData extends FieldDefinitionProp {
@@ -83,8 +103,9 @@ interface State {
   fieldsData: Array<FieldDefinitionWithData>;
   isLoading: boolean
 }
-export class FieldBasedVisualization extends Component<FieldBasedVisualizationConfig, State> {
-  constructor(props: FieldBasedVisualizationConfig, context: any) {
+
+export class FieldBasedVisualization extends Component<FieldBasedVisualizationProps, State> {
+  constructor(props: FieldBasedVisualizationProps, context: any) {
     super(props, context);
     this.state = {
       fieldsData: [],
@@ -92,11 +113,11 @@ export class FieldBasedVisualization extends Component<FieldBasedVisualizationCo
     };
   }
 
-  static defaultProps = {
-    subject: getCurrentResource().value
-  };
+  private getSubject() {
+    return this.props.subject ? Rdf.iri(this.props.subject) : getCurrentResource();
+  }
 
-  public componentDidMount() {
+  componentDidMount() {
     this.fetchFieldValues();
   }
 
@@ -109,7 +130,7 @@ export class FieldBasedVisualization extends Component<FieldBasedVisualizationCo
       template: {
         source: this.props.template,
         options: {
-          subject: this.props.subject,
+          subject: this.getSubject().value,
           fields: this.state.fieldsData,
         },
       },
@@ -117,8 +138,8 @@ export class FieldBasedVisualization extends Component<FieldBasedVisualizationCo
   }
 
   private fetchFieldValues() {
-    const { fields, subject } = this.props;
-    const subjectIri = Rdf.iri(subject);
+    const {fields} = this.props;
+    const subjectIri = this.getSubject();
     Kefir.combine(
       fields.map(
         normalizeFieldDefinition
@@ -138,4 +159,5 @@ export class FieldBasedVisualization extends Component<FieldBasedVisualizationCo
     );
   }
 }
+
 export default FieldBasedVisualization;

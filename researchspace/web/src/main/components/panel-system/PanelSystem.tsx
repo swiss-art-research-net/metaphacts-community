@@ -63,12 +63,12 @@ export class PanelSystem extends React.Component<Props, State> {
           onChangeHolder: () => { this.onChangeHolder(key); }
         })}
         {expandedPanelKey === key ? (
-          <button className={`btn btn-default btn-xs ${styles.fullScreenButton}`}
+          <button className={`btn btn-secondary btn-sm ${styles.fullScreenButton}`}
             onClick={() => this.setState({size: this.prevSize, expandedPanelKey: undefined})}>
             <i className='fa fa-compress'/>
           </button>
         ) : (
-          <button className={`btn btn-default btn-xs ${styles.fullScreenButton}`}
+          <button className={`btn btn-secondary btn-sm ${styles.fullScreenButton}`}
             onClick={() =>
               this.setState(({size}) => {
                 this.prevSize = size;

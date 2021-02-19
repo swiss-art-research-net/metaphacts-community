@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,10 +41,12 @@ import * as React from 'react';
 import { Component } from 'platform/api/components';
 import { Cancellation } from 'platform/api/async';
 
-export interface FormSwitchCaseProps {
-    label?: string;
-    children?: React.ReactNode;
-    for?: string;
+interface SemanticFormSwitchCaseConfig {
+  label?: string;
+}
+
+export interface FormSwitchCaseProps extends SemanticFormSwitchCaseConfig {
+  children?: React.ReactNode;
 }
 
 export class FormSwitchCase extends Component<FormSwitchCaseProps, {}> {

@@ -31,5 +31,13 @@
       ]]></notes>
       <packageUrl regex="true">^pkg:maven/org\.linguafranca\.pwdb/database@.*$</packageUrl>
       <cve>CVE-2016-5119</cve>
+   </suppress>
+   <suppress>
+      <notes><![CDATA[
+      file name: pf4j-3.5.0.jar
+      false positive detection as sonatype
+      ]]></notes>
+      <packageUrl regex="true">^pkg:maven/org\.pf4j/pf4j@.*$</packageUrl>
+      <cpe>cpe:/a:sonatype:nexus</cpe>
 </suppress>
 </suppressions>

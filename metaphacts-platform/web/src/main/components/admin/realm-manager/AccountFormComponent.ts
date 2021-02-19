@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { ReactElement, createFactory, createElement, Component, FormEvent } from 'react';
+import { ReactElement, createFactory, createElement, Component, FormEvent, FunctionComponent } from 'react';
 import * as D from 'react-dom-factories';
 import * as Kefir from 'kefir';
 import {isEmpty, isNull} from 'lodash';
@@ -52,10 +52,12 @@ import RoleMultiSelector from './RoleMultiSelectorComponent';
 import './RealmManager.scss';
 
 const Input = createFactory(ReactBootstrap.FormControl);
+const FormLabel = createFactory(ReactBootstrap.FormLabel as FunctionComponent);
 const FormGroup = createFactory(ReactBootstrap.FormGroup);
-const ControlLabel = createFactory(ReactBootstrap.ControlLabel);
 const Btn = createFactory(ReactBootstrap.Button);
-const Panel = createFactory(ReactBootstrap.Panel);
+const Card = createFactory(ReactBootstrap.Card);
+const CardHeader = createFactory(ReactBootstrap.Card.Header);
+const CardBody = createFactory(ReactBootstrap.Card.Body);
 
 interface State {
   principal?: string;
@@ -194,7 +196,7 @@ class AccountFormComponent extends Component<Props, State> {
 
     }
 
-    private onChangeAccount = (e: FormEvent<ReactBootstrap.FormControl>) => {
+    private onChangeAccount = (e: React.ChangeEvent<HTMLInputElement>) => {
       const el = (e.target as any);
       this.plugValueToAccountStore(el.name, el.value);
     }
@@ -225,36 +227,37 @@ class AccountFormComponent extends Component<Props, State> {
       const create = existingAccount.isNothing;
       return D.div(
         { className: 'account-manager-component__create-account-panel' },
-        Panel(
-          {header: create ? 'New Account' : 'Update Account'},
-          D.form(
+        Card(
+          {},
+          CardHeader({}, create ? 'New Account' : 'Update Account'),
+          CardBody({}, D.form(
             {
               key: 'account-panel',
               onSubmit: create ? this.onSubmitCreateAccount : this.onSubmitUpdateAccount,
             },
             FormGroup(
               {controlId: 'principal'},
-              ControlLabel({}, 'Principal'),
+              FormLabel({}, 'Principal'),
               Input({
                 name: 'principal', type: 'text', placeholder: 'Unique username',
                 disabled: !create, value: this.state.principal, onChange: this.onChangeAccount,
-              })
+              } as ReactBootstrap.FormControlProps)
             ),
             FormGroup(
               {controlId: 'password'},
-              ControlLabel({}, 'Password'),
+              FormLabel({}, 'Password'),
               Input({
                 name: 'password', type: 'password', placeholder: 'Password',
                 value: this.state.password, onChange: this.onChangeAccount,
-              })
+              } as ReactBootstrap.FormControlProps)
             ),
             FormGroup(
               {controlId: 'passwordrepeat'},
-              ControlLabel({}, 'Repeat Password'),
+              FormLabel({}, 'Repeat Password'),
               Input({
                 name: 'passwordrepeat', type: 'password', placeholder: 'Repeat Password',
                 value: this.state.passwordrepeat, onChange: this.onChangeAccount,
-              })
+              } as ReactBootstrap.FormControlProps)
             ),
             D.div({
                 key: 'role-selector-container',
@@ -283,23 +286,24 @@ class AccountFormComponent extends Component<Props, State> {
                 className: 'account-manager-component__create-account-btn',
               },
               Btn({
-                  type: 'submit', bsSize: 'small',
-                  bsStyle: 'primary', disabled: this.submitDisabled(),
+                  type: 'submit', size: 'sm',
+                  variant: 'primary', disabled: this.submitDisabled(),
                 },
                 create ? 'Create' : 'Update'
               )
             )
-        ), // end of form
-          (create
-            ? null
-            : Btn({
+          ), // end of form
+            (create
+              ? null
+              : Btn({
                 key: 'delete-account-btn',
-                type: 'submit', bsSize: 'small',
-                bsStyle: 'primary', onClick: this.onClickDeleteAccount,
-                }, 'Delete'
+                type: 'submit', size: 'sm',
+                variant: 'primary', onClick: this.onClickDeleteAccount,
+              }, 'Delete'
               )
-          )
-        ) // end of panel
+            )
+          ) // end of card body
+        ) // end of card
       );
     }
 

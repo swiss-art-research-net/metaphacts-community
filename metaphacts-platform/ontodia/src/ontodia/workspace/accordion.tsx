@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,12 +76,13 @@ export interface State {
     readonly resizing: boolean;
 }
 
-type RequiredProps = Props & Required<Pick<Props, 'direction' | 'animationDuration'>>;
+type RequiredProps = Props & DefaultComponentProps;
+type DefaultComponentProps = Required<Pick<Props, 'direction' | 'animationDuration'>>;
 
 const CLASS_NAME = 'ontodia-accordion';
 
 export class Accordion extends React.Component<Props, State> {
-    static defaultProps: Partial<Props> = {
+    static defaultProps: DefaultComponentProps = {
         direction: 'vertical',
         animationDuration: 300,
     };

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,7 +53,6 @@ export interface TemplateContent {
   definedByApps: ReadonlyArray<string>;
   applicableTemplates: string[];
   appliedTemplate: string;
-  includes: Array<{ readonly '@id': string }>;
 }
 
 interface RenderedTemplate {
@@ -108,6 +107,14 @@ export module PageService {
   const DELETE_REVISIONS = '/rest/template/deleteRevisions';
   const GET_STORAGE_STATUS = '/rest/template/storageStatus';
   const GET_KNOWLEDGE_PANEL = '/rest/template/knowledgePanel/html';
+
+  export function getVendorBundleUrl(): string {
+    return '/rest/template/vendor';
+  }
+
+  export function getWorkerBundleUrl(workerBundle: string): string {
+    return `/rest/template/workers/${workerBundle}`;
+  }
 
   export function loadTemplateSource(iri: string): Kefir.Property<TemplateContent> {
     const req = request
@@ -192,7 +199,7 @@ export module PageService {
     beforeSaveEmitter.emit();
 
     const req = request
-        .put(PUT_SOURCE)
+      .put(PUT_SOURCE)
       .query({
         iri,
         targetAppId,

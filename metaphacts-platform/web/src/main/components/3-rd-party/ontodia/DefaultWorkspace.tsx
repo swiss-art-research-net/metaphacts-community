@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,6 +48,7 @@ import { Canvas } from './Canvas';
 import { ClassTree } from './ClassTree';
 import { InstancesSearch } from './InstancesSearch';
 import { LinkTypesToolbox } from './LinkTypesToolbox';
+import { NavigationMenu } from './NavigationMenu';
 import { ElementSearch } from './ElementSearch';
 import { Halo } from './Halo';
 import { HaloLink } from './HaloLink';
@@ -75,6 +76,7 @@ export class DefaultWorkspace extends Component<{ factory: OntodiaFactory }, {}>
         <WorkspaceItem id='paper'>
           <Canvas id={canvasId}>
             {toolbar}
+            <NavigationMenu />
             <Halo />
             <HaloLink />
             <Navigator />

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,7 +57,7 @@ import org.eclipse.rdf4j.model.vocabulary.FOAF;
 import org.eclipse.rdf4j.model.vocabulary.OWL;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.util.Repositories;
@@ -142,14 +142,14 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
     public void testGenerate_DatatypeConstraint() throws Exception {
         Repositories.consume(rep, conn -> {
             conn.add(property, RDF.TYPE, RDF.PROPERTY);
-            conn.add(property, RDFS.RANGE, XMLSchema.POSITIVE_INTEGER);
+            conn.add(property, RDFS.RANGE, XSD.POSITIVE_INTEGER);
         });
         Optional<FieldDefinition> result = subject.generate(property);
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertTrue(fd.getRange().contains(XMLSchema.POSITIVE_INTEGER));
-        assertEquals(XMLSchema.POSITIVE_INTEGER, fd.getXsdDatatype());
+        assertTrue(fd.getRange().contains(XSD.POSITIVE_INTEGER));
+        assertEquals(XSD.POSITIVE_INTEGER, fd.getXsdDatatype());
     }
 
     @Test
@@ -162,7 +162,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.STRING, fd.getXsdDatatype());
+        assertEquals(XSD.STRING, fd.getXsdDatatype());
     }
 
     @Test
@@ -175,7 +175,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.ANYURI, fd.getXsdDatatype());
+        assertEquals(XSD.ANYURI, fd.getXsdDatatype());
     }
 
     @Test
@@ -188,7 +188,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.ANYURI, fd.getXsdDatatype());
+        assertEquals(XSD.ANYURI, fd.getXsdDatatype());
     }
 
     @Test
@@ -202,7 +202,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.STRING, fd.getXsdDatatype());
+        assertEquals(XSD.STRING, fd.getXsdDatatype());
     }
 
     @Test
@@ -216,7 +216,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.STRING, fd.getXsdDatatype());
+        assertEquals(XSD.STRING, fd.getXsdDatatype());
     }
 
     @Test
@@ -229,7 +229,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.ANYURI, fd.getXsdDatatype());
+        assertEquals(XSD.ANYURI, fd.getXsdDatatype());
     }
 
     @Test
@@ -243,7 +243,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.ANYURI, fd.getXsdDatatype());
+        assertEquals(XSD.ANYURI, fd.getXsdDatatype());
     }
 
     @Test
@@ -257,7 +257,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         assertTrue(result.isPresent());
 
         FieldDefinition fd = result.get();
-        assertEquals(XMLSchema.STRING, fd.getXsdDatatype());
+        assertEquals(XSD.STRING, fd.getXsdDatatype());
     }
 
     @Test
@@ -270,7 +270,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
 
         assertNotNull(fd.getIri());
         assertEquals(expectedInsertPattern, fd.getInsertPattern());
-        assertEquals(XMLSchema.STRING, fd.getXsdDatatype());
+        assertEquals(XSD.STRING, fd.getXsdDatatype());
     }
 
     @Test
@@ -282,7 +282,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         FieldDefinition fd = result.get();
         assertNotNull(fd.getIri());
         assertEquals(expectedInsertPattern, fd.getInsertPattern());
-        assertEquals(XMLSchema.ANYURI, fd.getXsdDatatype());
+        assertEquals(XSD.ANYURI, fd.getXsdDatatype());
     }
 
     @Test
@@ -296,7 +296,7 @@ public class PropertyBasedGeneratorTest extends AbstractIntegrationTest {
         FieldDefinition fd = result.get();
         assertNotNull(fd.getIri());
         assertEquals(expectedInsertPattern, fd.getInsertPattern());
-        assertEquals(XMLSchema.ANYURI, fd.getXsdDatatype());
+        assertEquals(XSD.ANYURI, fd.getXsdDatatype());
 
     }
 

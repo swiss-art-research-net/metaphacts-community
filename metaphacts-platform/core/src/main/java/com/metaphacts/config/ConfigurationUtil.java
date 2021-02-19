@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -59,6 +60,8 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.io.FileHandler;
 import org.apache.commons.configuration2.tree.OverrideCombiner;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.metaphacts.config.ConfigurationParameter.VisibilityLevel;
@@ -77,6 +80,8 @@ import com.metaphacts.util.ReflectionUtil;
  * @author Michael Schmidt <ms@metaphacts.com>
  */
 public class ConfigurationUtil {
+
+    private static final Logger logger = LogManager.getLogger(ConfigurationUtil.class);
 
     /**
      * Return a comma-based delimiter handler, which is what we use for encoding
@@ -109,30 +114,56 @@ public class ConfigurationUtil {
         return delimHandler.escapeList(list, item -> item);
     }
 
-    @SuppressWarnings("unchecked")
     public static PropertiesConfiguration createEmptyConfig() {
-        FileBasedConfigurationBuilder builder =
-            new FileBasedConfigurationBuilder(PropertiesConfiguration.class)
+        FileBasedConfigurationBuilder<PropertiesConfiguration> builder = new FileBasedConfigurationBuilder<PropertiesConfiguration>(
+                PropertiesConfiguration.class)
                 .configure(new Parameters().properties()
                     .setListDelimiterHandler(commaBasedDelimiterHandler())
                     .setEncoding("UTF-8")
                 );
 
         try {
-            return (PropertiesConfiguration) builder.getConfiguration();
+            return builder.getConfiguration();
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Creates a {@link CombinedConfiguration} by finding matching configuration
+     * files in the existing storages. The configuration is in override order, i.e.
+     * the configuration returns the most specific configuration value.
+     * 
+     * @param platformStorage
+     * @param objectId
+     * @param ignoreStorages  set of storages that are ignored (i.e. not added to
+     *                        the configuration). Can be empty
+     * @return
+     * @throws IOException
+     * @throws ConfigurationException
+     */
     public static CombinedConfiguration readConfigFromStorageOverrides(
         PlatformStorage platformStorage,
-        StoragePath objectId
+            StoragePath objectId, Set<String> ignoreStorages
     ) throws IOException, ConfigurationException {
         CombinedConfiguration combined = new CombinedConfiguration(new OverrideCombiner());
 
         List<PlatformStorage.FindResult> overrides =
             platformStorage.findOverrides(objectId);
+        
+        
+        // filter ignored storages (if any)
+        overrides = overrides.stream().filter(f -> {
+            if (ignoreStorages.contains(f.getAppId())) {
+                logger.warn(
+                        "Ignoring configuration file {} from storage {}: storage is not allowed to define this configuration",
+                        objectId, f.getAppId());
+                return false;
+             }
+            return true;
+        }).collect(Collectors.toList());
+
+
         // use inverted order [...override2, override1, base] for OverrideCombiner
         Collections.reverse(overrides);
 

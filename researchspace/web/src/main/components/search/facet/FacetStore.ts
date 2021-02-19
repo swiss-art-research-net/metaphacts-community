@@ -206,7 +206,11 @@ export class FacetStore {
           selected.get(value.relation).filterNot(
             selectedValue => F.partialValueEquals(value.value, selectedValue)
           ) as List<F.FacetValue>;
-        this.selectedValues(selected.set(value.relation, selectedValues));
+        this.selectedValues(
+          selectedValues.size === 0
+            ? selected.delete(value.relation)
+            : selected.set(value.relation, selectedValues)
+        );
       }
     );
 

@@ -37,7 +37,7 @@ export interface YearInputProps extends React.Props<YearInput> {
 
 interface State {
   year?: string
-  isYearValid?: 'success' | 'warning' | 'error'
+  isYearValid?: boolean
   epoch?: Epoch
 }
 
@@ -51,7 +51,7 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
     const isYearValid = this.props.isYearValid;
     this.state = {
       year: props.value ? '' + props.value.year : '',
-      isYearValid: isYearValid ? this.booleanToValidState(isYearValid) : undefined,
+      isYearValid: isYearValid,
       epoch: props.value ? props.value.epoch as Epoch : AD,
     };
   }
@@ -63,14 +63,11 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
        ) {
       this.setState({
         year: '' + nextProps.value.year, epoch: nextProps.value.epoch as Epoch,
-        isYearValid: this.booleanToValidState(nextProps.isYearValid),
+        isYearValid: nextProps.isYearValid,
       });
     }
   }
 
-
-  private booleanToValidState = (isValid: boolean) =>
-    isValid ? 'success' : 'error';
 
   private isValidYear = (year: string): boolean => !_.isNaN(parseInt(year))
 
@@ -78,7 +75,7 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
     const yearText = (event.target as any).value;
     this.setState({
       year: yearText,
-      isYearValid: this.booleanToValidState(this.isValidYear(yearText)),
+      isYearValid: this.isValidYear(yearText),
     });
   }
 
@@ -86,12 +83,12 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
     const eventValue = (event.target as any).value;
     this.setState(state => ({
       epoch: eventValue,
-      isYearValid: this.booleanToValidState(this.isValidYear(state.year)),
+      isYearValid: this.isValidYear(state.year),
     }));
   }
 
   componentWillUpdate(nextProps: YearInputProps, nextState: State) {
-    if (nextState.isYearValid === 'success') {
+    if (nextState.isYearValid) {
       const { year, epoch } = nextState;
       const newValue = {year: parseInt(year), epoch: epoch};
       if (!_.isEqual(nextProps.value, newValue)) {
@@ -102,19 +99,23 @@ export class YearInput extends React.PureComponent<YearInputProps, State> {
 
   render() {
     return <div className={classNames(styles.holder, this.props.className)}>
-      <FormGroup validationState={this.state.isYearValid}>
+      <FormGroup>
         <FormControl className={styles.year}
                      value={this.state.year}
                      autoFocus={this.props.autoFocus}
                      onChange={this.onYearChange}
+                     isValid={this.state.isYearValid}
+                     isInvalid={this.state.isYearValid == null ? null : !this.state.isYearValid}
                      type='number' min='0' placeholder='YYYY' required={true}
         />
       </FormGroup>
-      <FormGroup validationState={this.state.isYearValid}>
+      <FormGroup>
         <FormControl className={styles.epoch}
                      value={this.state.epoch}
                      onChange={this.onEpochChange}
-                     componentClass='select' placeholder='AD/BC' required={true}
+                     isValid={this.state.isYearValid}
+                     isInvalid={this.state.isYearValid == null ? null : !this.state.isYearValid}
+                     as='select' placeholder='AD/BC' required={true}
         >
          <option value={AD}>{AD}</option>
          <option value={BC}>{BC}</option>

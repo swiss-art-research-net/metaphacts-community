@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,7 +53,6 @@ import org.jukito.UseModules;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.google.inject.Inject;
@@ -85,8 +84,6 @@ public abstract class MetaphactsJerseyTest extends JerseyTestNg.ContainerPerMeth
     @Rule
     public NamespaceRule namespaceRule;
     
-    @Rule
-    public ExpectedException exception= ExpectedException.none();
     
     /**
      * Mocked request object, the should be used to mock, for example, headers

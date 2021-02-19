@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,20 +41,20 @@ import {
   Component,
   createElement,
   createFactory,
-  ReactType,
-  Props as ReactProps,
+  ElementType,
+  ClassAttributes
 } from 'react';
 import * as maybe from 'data.maybe';
 
 import { loadComponent } from './ComponentsStore';
 
-export interface Props extends ReactProps<ComponentLoader> {
+export interface Props extends ClassAttributes<ComponentLoader> {
   componentTagName: string;
   componentProps: any;
 }
 
 interface State {
-  component: Data.Maybe<ReactType>;
+  component: Data.Maybe<ElementType | string>;
 }
 
 /**
@@ -65,7 +65,7 @@ class ComponentLoader extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      component: maybe.Nothing<ReactType>(),
+      component: maybe.Nothing<ElementType | string>(),
     };
   }
 
@@ -73,17 +73,17 @@ class ComponentLoader extends Component<Props, State> {
     loadComponent(
       this.props.componentTagName
     ).then(
-      (component) =>
+      (componentType) =>
         this.setState({
-          component: maybe.Just(component),
+          component: maybe.Just(componentType),
         })
     );
   }
 
   render() {
     return this.state.component.map(
-      component => createElement(
-        component as any, this.props.componentProps, this.props.children
+      componentType => createElement(
+        componentType, this.props.componentProps, this.props.children
       )
     ).getOrElse(null);
   }

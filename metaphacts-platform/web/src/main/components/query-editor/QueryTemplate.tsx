@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -68,13 +68,13 @@ import { Template, Argument, Value, CheckedArgument } from './QueryTemplateTypes
 import { QueryValidatorComponent } from './QueryValidatorComponent';
 import { QueryTemplateArgumentsComponent } from './QueryTemplateArgumentsComponent';
 
-const Well = createFactory(ReactBootstrap.Well);
+const Card = createFactory(ReactBootstrap.Card);
 const FormGroup = createFactory(ReactBootstrap.FormGroup);
 const FormControl = createFactory(ReactBootstrap.FormControl);
-const ControlLabel = createFactory(ReactBootstrap.ControlLabel);
-const HelpBlock = createFactory(ReactBootstrap.HelpBlock);
+const FormLabel = createFactory(ReactBootstrap.FormLabel as React.FunctionComponent);
+const FormText = createFactory(ReactBootstrap.FormText);
 const Button = createFactory(ReactBootstrap.Button);
-const Radio = createFactory(ReactBootstrap.Radio);
+const FormCheck = createFactory(ReactBootstrap.FormCheck);
 
 const QueryValidator = createFactory(QueryValidatorComponent);
 
@@ -89,7 +89,7 @@ SELECT (COUNT(?template) as ?templateCount) WHERE {
   ?template spin:body ?query
 }`;
 
-export interface QueryTemplateProps {
+interface QueryTemplateConfig {
   /** IRI of an existing template to edit. */
   iri?: string;
   /** Initial value for query body when creating a new template. */
@@ -101,6 +101,8 @@ export interface QueryTemplateProps {
   /** Default query to choose template categories, e.g from a skos list of terms. */
   categoryDefaultQuery?: string;
 }
+
+export type QueryTemplateProps = QueryTemplateConfig;
 
 type EditMode = 'create' | 'update' | 'reference';
 
@@ -124,8 +126,12 @@ interface State {
   inProgress?: boolean;
 }
 
+type DefaultProps = Required<Pick<QueryTemplateProps,
+  'categorySuggestionQuery' | 'categoryDefaultQuery'
+>>;
+
 export class QueryTemplate extends Component<QueryTemplateProps, State> {
-  static readonly defaultProps: Partial<QueryTemplateProps> = {
+  static readonly defaultProps: DefaultProps = {
     categorySuggestionQuery: `
       PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
       SELECT DISTINCT ?iri ?label WHERE {
@@ -504,10 +510,8 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     }
   }
 
-  private getValidationState = (value: Data.Maybe<Value>): 'success' | 'warning' | 'error' => {
-    if (value.isJust && value.get().error) {
-      return 'error';
-    }
+  private isInvalid = (value: Data.Maybe<Value>): boolean => {
+    return Boolean(value.isJust && value.get().error);
   }
 
   private getQuerySection = (): ReactElement<any> => {
@@ -521,7 +525,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     } else if (selectQuery === 'update') {
       return D.div({},
         templateCount > 1
-          ? HelpBlock({},
+          ? FormText({muted: true},
             `* This query is used in ${templateCount}
              templates and inline editing is disabled. Click `,
             createElement(ResourceLink, {
@@ -634,41 +638,44 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     const identifierField =
       this.isUpdateMode()
       ? null
-      : FormGroup({validationState: this.getValidationState(identifier)},
-          ControlLabel({}, 'Preferred Identifier*'),
+      : FormGroup({},
+          FormLabel({}, 'Preferred Identifier*'),
           FormControl({
             type: 'text',
             value: identifier.isJust ? identifier.get().value : '',
             onChange: e => this.identifier.plug((e.currentTarget as any).value),
             disabled: this.isUpdateMode(),
+            isInvalid: this.isInvalid(identifier),
           }),
-          this.getValidationState(identifier) === 'error'
-            ? HelpBlock({}, identifier.get().error.message)
+          this.isInvalid(identifier)
+            ? FormText({muted: true}, identifier.get().error.message)
             : null
         );
 
-    const labelField = FormGroup({validationState: this.getValidationState(label)},
-      ControlLabel({}, 'Label*'),
+    const labelField = FormGroup({},
+      FormLabel({}, 'Label*'),
       FormControl({
         type: 'text',
         value: label.isJust ? label.get().value : '',
         onChange: this.onLabelChanged,
+        isInvalid: this.isInvalid(label),
       }),
-      this.getValidationState(label) === 'error'
-        ? HelpBlock({}, label.get().error.message)
+      this.isInvalid(label)
+        ? FormText({muted: true}, label.get().error.message)
         : null
     );
 
-    const descriptionField = FormGroup({validationState: this.getValidationState(description)},
-      ControlLabel({}, 'Description*'),
+    const descriptionField = FormGroup({},
+      FormLabel({}, 'Description*'),
       FormControl({
-        componentClass: 'textarea',
+        as: 'textarea',
         style: {resize: 'vertical'},
         value: description.isJust ? description.get().value : '',
         onChange: this.onDescriptionChanged,
-      }),
-      this.getValidationState(description) === 'error'
-        ? HelpBlock({}, description.get().error.message)
+        isInvalid: this.isInvalid(description),
+      } as ReactBootstrap.FormControlProps),
+      this.isInvalid(description)
+        ? FormText({muted: true}, description.get().error.message)
         : null
     );
 
@@ -680,15 +687,17 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
 
     const selectQueryField = FormGroup({},
       selectQueryOptions.map(
-        opt => Radio({
+        opt => FormCheck({
           key: opt.value,
-          name: 'mode',
+          id: 'selectQuery-' + opt.value,
+          type: 'radio',
           value: opt.value,
+          name: 'selectQuery',
           inline: true,
+          label: opt.label,
           checked: opt.value === selectQuery,
-          onChange: e => e,
-          onClick: e => {
-            const target = e.target as HTMLInputElement;
+          onClick: (e: React.ChangeEvent<HTMLInputElement>) => {
+            const target = e.target;
             if (selectQuery !== target.value) {
               this.setState({selectQuery: target.value as EditMode, variables: []}, () => {
                 const query = {
@@ -701,7 +710,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
               });
             }
           },
-        }, opt.label)
+        } as ReactBootstrap.FormCheckProps)
       )
     );
 
@@ -718,8 +727,8 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
       identifierField,
       descriptionField,
       this.renderCategoriesField(),
-      ControlLabel({}, 'Query*'),
-      Well({}, selectQueryField, querySection),
+      FormLabel({}, 'Query*'),
+      Card({body: true, bg: 'light'}, selectQueryField, querySection),
       React.createElement(QueryTemplateArgumentsComponent, {
         args,
         variables,
@@ -729,7 +738,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
       }),
       Button(
         {
-          bsStyle: 'success',
+          variant: 'success',
           disabled: disableSave,
           onClick: this.isUpdateMode() ? this.updateTemplate : this.createTemplate,
         },
@@ -742,7 +751,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     if (!this.props.categorySuggestionQuery) { return null; }
 
     return FormGroup({},
-      ControlLabel({}, 'Categories'),
+      FormLabel({}, 'Categories'),
       createElement(AutoCompletionInput, {
         query: this.props.categorySuggestionQuery,
         defaultQuery: this.props.categoryDefaultQuery,
@@ -765,7 +774,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     );
   }
 
-  private onLabelChanged = (e: FormEvent<ReactBootstrap.FormControl>) => {
+  private onLabelChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
     const oldSource = this.state.label.map(old => old.value);
     const newSource = (e.currentTarget as any).value;
 
@@ -801,7 +810,7 @@ export class QueryTemplate extends Component<QueryTemplateProps, State> {
     }
   }
 
-  private onDescriptionChanged = (e: FormEvent<ReactBootstrap.FormControl>) => {
+  private onDescriptionChanged = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const oldSource = this.state.description.map(old => old.value);
     const newSource = (e.currentTarget as any).value;
 

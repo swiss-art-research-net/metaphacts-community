@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "File uploader which uploads a file into a storage and\ncreates RDF meta-data, which is managed as a LDP resource.\n\n**Example**:\n```\n<mp-file-uploader\n   placeholder=\"Please drag&drop your image-file here\"\n   accept-pattern='image/*'\n   generate-iri-query='\n     SELECT ?resourceIri WHERE {\n       BIND(URI(CONCAT(STR(?__contextUri__), \"/\", ?__fileName__)) as ?resourceIri)\n     }\n   '\n   context-uri='[[this]]'\n   storage='file-storage'>\n</mp-file-uploader>\n```",
+    "properties": {
+        "acceptPattern": {
+            "description": "Allow specific types of files. Several pattern can be concatenated by a comma.\nSee https://github.com/okonet/attr-accept for more information.\n\n**Example**:\n```\naccept-pattern='application/json,video/*'\n```",
+            "type": "string"
+        },
+        "contextUri": {
+            "description": "Context variable that will be propagated to the `resourceQuery` and `generateIdQuery`.",
+            "type": "string"
+        },
+        "generateIriQuery": {
+            "description": "SPARQL select query to generate a unique IRI for the file to be uploaded.\nThe must have exactly one projection variable *?newId* with the IRI.\n\nAlso the query can use some variables which will be bound with values at runtime:\n   - `?__contextUri__` - see `contextUri` property\n   - `?__mediaType__` - Media type: jpg, pdf. By default = 'auto'\n   - `?__fileName__` - Name of the file",
+            "type": "string"
+        },
+        "placeholder": {
+            "description": "Placeholder for the drop zone.\n\nIf any `<mp-file-uploader>` child component is defined\nit will be be used as drop zone placeholder.",
+            "type": "string"
+        },
+        "resourceQuery": {
+            "description": "SPARQL construct query to generate additional metadata\nwhich will be stored together with the file metadata.\n\nAlso the query can use some variables which will be bound with values at runtime:\n   - `?__contextUri__` - see `contextUri` property\n   - `?__resourceIri__` - IRI generated with `generateIdQuery`\n   - `?__mediaType__` - Media type: jpg, pdf. By default = 'auto'\n   - `?__fileName__` - Name of the file",
+            "type": "string"
+        },
+        "storage": {
+            "description": "ID of the storage to upload the file to.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "acceptPattern",
+        "contextUri",
+        "generateIriQuery",
+        "resourceQuery",
+        "placeholder",
+        "storage"
+    ],
+    "required": [
+        "contextUri",
+        "storage"
+    ],
+    "type": "object"
+}
+

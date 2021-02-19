@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -64,9 +64,8 @@ import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
-import com.metaphacts.cache.DescriptionCache;
-import com.metaphacts.cache.LabelCache;
-import com.metaphacts.config.Configuration;
+import com.metaphacts.cache.DescriptionService;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.lookup.api.LookupService;
 import com.metaphacts.lookup.model.LookupCandidate;
@@ -115,19 +114,16 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
     "}";
 
     @Inject
-    protected LabelCache labelCache;
+    protected LabelService labelCache;
 
     @Inject
-    protected DescriptionCache descriptionCache;
+    protected DescriptionService descriptionCache;
 
     @Inject
     protected RepositoryManager repositoryManager;
 
     @Inject
     protected NamespaceRegistry namespaceRegistry;
-
-    @Inject
-    protected Configuration globalConfig;
 
     public AbstractSPARQLSearchLookupService(SparqlQueryLookupConfig config) {
         super(config);
@@ -153,12 +149,12 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
             }
         }
         Map<IRI, Optional<Literal>> labels = this.labelCache.getLabels(
-            entityTypes, targetRepository, getPreferredLanguage()
+            entityTypes, targetRepository, globalConfig.getUiConfig().resolvePreferredLanguage(null)
         );
 
         return labels.entrySet().stream().map(entry -> new LookupEntityType(
             entry.getKey().stringValue(),
-            LabelCache.resolveLabelWithFallback(entry.getValue(), entry.getKey())
+            LabelService.resolveLabelWithFallback(entry.getValue(), entry.getKey())
         )).collect(Collectors.toList());
     }
 
@@ -211,25 +207,25 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
 
         // Fetch labels for candidates, entity types and datasets
         Map<IRI, Optional<Literal>> labelMap = this.labelCache.getLabels(
-            irisToFetchLabels, targetRepository, getPreferredLanguage()
+            irisToFetchLabels, targetRepository, request.getQuery().getPreferredLanguage()
         );
 
         // Fetch descriptions for candidates
         Map<IRI, Optional<Literal>> descriptionMap = this.descriptionCache.getDescriptions(
-            irisToFetchDescriptions, targetRepository, this.getPreferredLanguage()
+            irisToFetchDescriptions, targetRepository, request.getQuery().getPreferredLanguage()
         );
 
         // Set entity type labels
         for (LookupEntityType entityType : entityTypes.values()) {
             IRI entityTypeIri = idToIri.get(entityType.getId());
-            entityType.setName(LabelCache.resolveLabelWithFallback(labelMap.get(entityTypeIri), entityTypeIri));
+            entityType.setName(LabelService.resolveLabelWithFallback(labelMap.get(entityTypeIri), entityTypeIri));
         }
 
         // Set dataset labels
         for (LookupDataset dataset : datasets.values()) {
             if (dataset.getName() == null) {
                 IRI datasetIri = idToIri.get(dataset.getId());
-                dataset.setName(LabelCache.resolveLabelWithFallback(labelMap.get(datasetIri), datasetIri));
+                dataset.setName(LabelService.resolveLabelWithFallback(labelMap.get(datasetIri), datasetIri));
             }
         }
 
@@ -237,7 +233,7 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
         for (LookupCandidate candidate : candidates) {
             IRI candidateIri = idToIri.get(candidate.getId());
             if (candidate.getName() == null) {
-                candidate.setName(LabelCache.resolveLabelWithFallback(labelMap.get(candidateIri), candidateIri));
+                candidate.setName(LabelService.resolveLabelWithFallback(labelMap.get(candidateIri), candidateIri));
             }
             Literal description = descriptionMap.get(candidateIri).orElse(null);
             if (description != null) {
@@ -260,7 +256,7 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
      * @return executable TupleQuery.
      */
     protected abstract TupleQuery createQuery(LookupQuery query, RepositoryConnection con);
-    
+
     protected SparqlQueryLookupConfig getSparqlQueryConfig() {
         return config;
     }
@@ -366,9 +362,5 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
             }
         }
        return datasets;
-    }
-
-    protected String getPreferredLanguage() {
-        return globalConfig.getUiConfig().resolvePreferredLanguage(null);
     }
 }

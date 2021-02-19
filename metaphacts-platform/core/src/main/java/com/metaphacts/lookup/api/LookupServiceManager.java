@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,6 +58,17 @@ public interface LookupServiceManager {
      * @return lookup service or empty if not specified.
      */
     public Optional<LookupService> getDefaultLookupService();
+
+    /**
+     * Get default LookupService for external use via rest.
+     *
+     * <p>
+     * Note: the default LookupService typically corresponds to the default repository.
+     * </p>
+     *
+     * @return lookup service or use #getDefaultLookupService as a fallback.
+     */
+    public Optional<LookupService> getDefaultExternalLookupService();
     
     /**
      * Get LookupService by name.

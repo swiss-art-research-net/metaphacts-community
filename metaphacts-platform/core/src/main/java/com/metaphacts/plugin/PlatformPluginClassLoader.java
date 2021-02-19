@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
 
+import org.pf4j.ClassLoadingStrategy;
 import org.pf4j.PluginClassLoader;
 import org.pf4j.PluginDescriptor;
 import org.pf4j.PluginManager;
@@ -62,7 +63,8 @@ public class PlatformPluginClassLoader extends PluginClassLoader {
 
     public PlatformPluginClassLoader(PluginManager pluginManager, PluginDescriptor pluginDescriptor, ClassLoader parent,
             boolean parentFirst) {
-        super(pluginManager, pluginDescriptor, parent, parentFirst);
+        super(pluginManager, pluginDescriptor, parent,
+                parentFirst ? ClassLoadingStrategy.APD : ClassLoadingStrategy.PDA);
     }
 
     public PlatformPluginClassLoader(PluginManager pluginManager, PluginDescriptor pluginDescriptor,

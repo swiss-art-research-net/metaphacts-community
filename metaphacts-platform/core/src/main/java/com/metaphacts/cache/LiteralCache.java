@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,13 +39,21 @@
  */
 package com.metaphacts.cache;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-import com.metaphacts.config.Configuration;
-import com.metaphacts.config.NamespaceRegistry;
-import com.metaphacts.config.PropertyPattern;
-import com.metaphacts.config.groups.UIConfiguration;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
@@ -53,13 +61,12 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.repository.Repository;
 
-import javax.annotation.Nullable;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import com.metaphacts.config.NamespaceRegistry;
+import com.metaphacts.config.PropertyPattern;
+import com.metaphacts.config.groups.UIConfiguration;
 
 /**
  * Extraction and caching logics for batched access to literals.
@@ -85,14 +92,26 @@ public abstract class LiteralCache extends ResourcePropertyCache<LiteralCacheKey
 
     @Override
     protected IRI keyToIri(LiteralCacheKey key) {
-        return key.iri;
+        return key.getIri();
     }
 
     protected abstract List<String> getPreferredProperties();
 
-    protected abstract List<String> getPreferredLanguages();
+    /**
+     * Function which accepts preferredLanguage and returns a list of language tags.
+     * Merges the provided language with system preferred languages attached.
+     * 
+     * @param preferredLanguage A language tag (or comma-separated list of language
+     *                          tags with decreasing order of preference) of the
+     *                          preferred language(s). A language tag consists of
+     *                          the language and optionally variant, e.g.
+     *                          <code>de</code> or <code>de-CH</code>. See <a href=
+     *                          "https://tools.ietf.org/html/rfc4647">RFC4647</a>
+     *                          for details.
+     * @return languageTags the list of languages with at least one item
+     */
+    protected abstract @NotNull List<String> resolvePreferredLanguages(@Nullable String preferredLanguage);
 
-    protected abstract String resolvePreferredLanguage(String preferredLanguage);
 
     /**
      * Extracts the preferred labels for a given IRI according to the specs
@@ -159,7 +178,7 @@ public abstract class LiteralCache extends ResourcePropertyCache<LiteralCacheKey
                     .map(pattern -> PropertyPattern.parse(pattern, namespaceRegistry))
                     .collect(Collectors.toList());
 
-            Iterable<IRI> iris = Iterables.transform(keys, key -> key.iri);
+            Iterable<IRI> iris = Iterables.transform(keys, key -> key.getIri());
             String queryString = constructPropertyQuery(iris, labelPatterns);
 
             // for each input IRI we map to a list of lists of literal, where
@@ -174,7 +193,7 @@ public abstract class LiteralCache extends ResourcePropertyCache<LiteralCacheKey
             // making sure that we have one entry per IRI
             Map<LiteralCacheKey, List<Literal>> literalByKey = new HashMap<>();
             for (LiteralCacheKey key : keys) {
-                List<List<Literal>> literals = iriToListList.get(key.iri);
+                List<List<Literal>> literals = iriToListList.get(key.getIri());
                 literalByKey.put(key, flattenProperties(literals));
             }
 
@@ -194,13 +213,11 @@ public abstract class LiteralCache extends ResourcePropertyCache<LiteralCacheKey
     private Map<LiteralCacheKey, Optional<Literal>> chooseLiteralsWithPreferredLanguage(
             Map<LiteralCacheKey, List<Literal>> labelCandidates
     ) {
-        List<String> systemPreferredLanguages = this.getPreferredLanguages();
-
         Map<LiteralCacheKey, Optional<Literal>> chosenLabels = new HashMap<>(labelCandidates.size());
 
         labelCandidates.forEach((key, literals) -> {
             Optional<Literal> chosen = chooseLabelWithPreferredLanguage(
-                    literals, key.languageTag, systemPreferredLanguages);
+                    literals, key.getLanguageTag(), key.getPreferredLanguages());
             chosenLabels.put(key, chosen);
         });
 
@@ -229,10 +246,10 @@ public abstract class LiteralCache extends ResourcePropertyCache<LiteralCacheKey
      * @return the most appropriate literal in the list according to the selected language
      *         and the preferred language configuration
      */
-    private Optional<Literal> chooseLabelWithPreferredLanguage(
+    public static Optional<Literal> chooseLabelWithPreferredLanguage(
             List<Literal> literals,
-            String selectedLanguage,
-            List<String> otherPreferredLanguages
+            @NotNull String selectedLanguage,
+            @NotNull List<String> otherPreferredLanguages
     ) {
         if (literals.isEmpty()) { // fast path: no labels detected
             return Optional.empty();
@@ -313,16 +330,16 @@ public abstract class LiteralCache extends ResourcePropertyCache<LiteralCacheKey
             Repository repository,
             @Nullable String preferredLanguage
     ) {
-        String languageTag = this.resolvePreferredLanguage(preferredLanguage);
+        List<String> preferredLanguages = this.resolvePreferredLanguages(preferredLanguage);
 
         Iterable<LiteralCacheKey> keys = StreamSupport
                 .stream(resourceIris.spliterator(), false)
-                .map(iri -> new LiteralCacheKey(iri, languageTag))
+                .map(iri -> new LiteralCacheKey(iri, preferredLanguages))
                 .collect(Collectors.toList());
 
         Map<IRI, Optional<Literal>> result = new HashMap<>();
         this.getAll(repository, keys).forEach(
-                (key, literal) -> result.put(key.iri, literal)
+                (key, literal) -> result.put(key.getIri(), literal)
         );
         return result;
     }

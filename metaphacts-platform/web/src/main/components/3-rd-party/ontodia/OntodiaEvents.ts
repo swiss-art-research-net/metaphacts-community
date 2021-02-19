@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -63,31 +63,33 @@ export interface OntodiaTriggerEventData {
    */
   'Ontodia.DiagramIsDirty': {
     /**
-     * Equals to `true` if a diagram has been changed, otherwise equals to `false`.
+     * `true` if a diagram has been changed; otherwise `false`.
      */
     hasChanges: boolean;
   };
+  'Ontodia.InAuthoringMode': {
+    /**
+     * `true` if OntodiA is currently in authoring mode; otherwise `false`.
+     */
+    inAuthoringMode: boolean;
+  };
+  /**
+   * Event which should be triggered when changes to the data are persisted.
+   */
+  'Ontodia.ChangesPersisted': {};
   /**
    * Observable property which tracks selected elements.
    */
   'Ontodia.SelectedElements': {
     elements: ReadonlyArray<{ iri: string }> | undefined;
-  }
+  };
   /**
    * Observable property which tracks selected links.
    */
   'Ontodia.SelectedLinks': {
-    links: ReadonlyArray<{ linkTypeIri: string; sourceIri: string; targetIri: string }> | undefined;
-  }
-  /**
-   * Event which should be triggered when user press "showInfoButton".
-   */
-  'Ontodia.ShowElementInfo': {
-    /**
-     * IRI of an entity to show information dialog for.
-     * If provided IRI is undefined the dialog will be hidden on event.
-     */
-    iri: string | undefined;
+    links: ReadonlyArray<{
+      linkIri?: string, linkTypeIri: string; sourceIri: string; targetIri: string
+    }> | undefined;
   };
 }
 
@@ -107,11 +109,97 @@ export interface BaseOntodiaListenEventData {
   /**
    * Event which should be triggered to save the diagram.
    */
-  'Ontodia.Save': {};
+  'Ontodia.Save': {
+    /**
+     * Persist changes, if changes are available
+     *
+     * @default false
+     */
+    persistChanges?: boolean;
+    /**
+     * Save current diagram. Cannot be used together with saveDiagramAs.
+     *
+     * @default true
+     */
+    saveDiagram?: boolean;
+    /**
+     * Save diagram as. Cannot be used together with saveDiagram or persistChanges.
+     *
+     * @default false
+     */
+    saveDiagramAs?: boolean;
+    /**
+     * Custom notification message to show when the diagram has been saved.
+     */
+    successMessage?: string;
+    /**
+     * Custom notification message to show when saving the diagram failed.
+     */
+    errorMessage?: string;
+  };
   /**
    * Event which should be triggered to delete all elements from the diagram.
    */
   'Ontodia.ClearAll': {};
+  /**
+   * Event which should be triggered to toggle between view and authoring mode.
+   */
+  'Ontodia.SetAuthoringMode': {
+    /**
+     * `true` to use authoring mode; otherwise `false` to use view mode.
+     */
+    authoringMode: boolean;
+  };
+  /**
+   * Event which should be triggered to open navigation menu for target element.
+   */
+  'Ontodia.OpenConnectionsMenu': {
+    /**
+     * ID of element to open navigation menu for.
+     * If provided ID is `undefined` the dialog will be hidden on event.
+     */
+    id: string | undefined;
+  };
+  /**
+   * Event which should be triggered when user requests to show information about an element.
+   */
+  'Ontodia.ShowElementInfo': {
+    /**
+     * IRI of an entity to show information dialog for.
+     * If provided IRI is `undefined` the dialog will be hidden on event.
+     */
+    iri: string | undefined;
+  };
+  /**
+   * Event which should be triggered when user initiates editing an entity.
+   */
+  'Ontodia.StartEntityEditing': {
+    /**
+     * IRI of the entity to start editing with.
+     *
+     * If provided IRI is undefined the editing will be stopped.
+     */
+    iri?: string;
+  };
+  /**
+   * Event which should be triggered when user initiates editing a link.
+   *
+   * If multiple links matches specified restrictions the editing will be stopped.
+   */
+  'Ontodia.StartLinkEditing': {
+    /** IRI of the link to start editing with. */
+    iri?: string;
+    /** Source of the link to start editing with. */
+    sourceIri?: string;
+    /** Target of the link to start editing with. */
+    targetIri?: string;
+    /** Type of the link to start editing with. */
+    typeIri?: string;
+  };
+  /**
+   * Event which should be triggered to stop editing an entity or a link.
+   */
+  'Ontodia.StopEditing': {};
 }
 
 /**
@@ -126,12 +214,6 @@ export interface OntodiaListenEventData extends BaseOntodiaListenEventData {
    * Event which should be triggered to redo changes on the diagram.
    */
   'Ontodia.Redo': {};
-  /**
-   * Event which should be triggered to open connection menu for target element.
-   */
-  'Ontodia.OpenConnectionsMenu': {
-    id: string | undefined;
-  }
 }
 
 export type OntodiaEventData = OntodiaTriggerEventData & OntodiaListenEventData;
@@ -146,7 +228,7 @@ export interface InternalOntodiaEventData {
     temporaryState: OpaqueTemporaryState;
   };
   /**
-   * Event which should be triggered to create a new entity and connections from it to target entities.
+   * Event which should be triggered to create a new entity and edges from it to target entities.
    */
   'Ontodia.CreateElement': {
     /**
@@ -190,23 +272,30 @@ export interface InternalOntodiaEventData {
     iri: string;
   };
 }
+
 const event: EventMaker<OntodiaEventData & InternalOntodiaEventData> = EventMaker;
 
 export const DiagramSaved = event('Ontodia.DiagramSaved');
 export const DiagramChanged = event('Ontodia.DiagramChanged');
 export const DiagramIsDirty = event('Ontodia.DiagramIsDirty');
+export const InAuthoringMode = event('Ontodia.InAuthoringMode');
+export const ChangesPersisted = event('Ontodia.ChangesPersisted');
 export const SelectedElements = event('Ontodia.SelectedElements');
 export const SelectedLinks = event('Ontodia.SelectedLinks');
+
+export const FocusOnElement = event('Ontodia.FocusOnElement');
+export const Save = event('Ontodia.Save');
+export const ClearAll = event('Ontodia.ClearAll');
+export const SetAuthoringMode = event('Ontodia.SetAuthoringMode');
+export const OpenConnectionsMenu = event('Ontodia.OpenConnectionsMenu');
 export const ShowElementInfo = event('Ontodia.ShowElementInfo');
+export const StartEntityEditing = event('Ontodia.StartEntityEditing');
+export const StartLinkEditing = event('Ontodia.StartLinkEditing');
+export const StopEditing = event('Ontodia.StopEditing');
+
+export const Undo = event('Ontodia.Undo');
+export const Redo = event('Ontodia.Redo');
 
 export const CreateElement = event('Ontodia.CreateElement');
 export const EditElement = event('Ontodia.EditElement');
 export const DeleteElement = event('Ontodia.DeleteElement');
-
-export const OpenConnectionsMenu = event('Ontodia.OpenConnectionsMenu');
-export const FocusOnElement = event('Ontodia.FocusOnElement');
-
-export const Save = event('Ontodia.Save');
-export const Undo = event('Ontodia.Undo');
-export const Redo = event('Ontodia.Redo');
-export const ClearAll = event('Ontodia.ClearAll');

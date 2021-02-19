@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,13 +46,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.model.vocabulary.SP;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
+import org.junit.Test;
 
 import com.metaphacts.api.dto.query.Query;
 import com.metaphacts.api.dto.querytemplate.QueryArgument;
@@ -107,7 +107,7 @@ public class ModelToQueryTemplateTest extends BaseModelToDtoTest {
         assertEquals("name",arg2.getPredicate());
         
         assertEquals(RDFS.RESOURCE,arg1.getValueType());
-        assertEquals(XMLSchema.STRING,arg2.getValueType());
+        assertEquals(XSD.STRING, arg2.getValueType());
         
     }
 

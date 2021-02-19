@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -95,8 +95,8 @@ describe('Plain Text Component', () => {
 
     it('show empty language when default don\'t exist', () => {
       expect(inputWithLang.find(ReactSelect).props().value).to.eql({
-        key: undefined,
-        label: 'No language',
+        key: '',
+        label: '\u2014',
       });
     });
 
@@ -108,14 +108,14 @@ describe('Plain Text Component', () => {
       expect(wrapper.find(ReactSelect).props().value).to.eql({key: 'language', label: 'language'});
     });
 
-    it('show "No language" if literal', () => {
+    it('show empty language if literal', () => {
       const props: PlainTextInputProps = {...BASIC_PROPS, languages: ['lang1', 'lang2']};
       const literalInput = mount(createElement(PlainTextInput, props));
       expect(
         literalInput.find(ReactSelect).props().value
       ).to.eql({
-        key: undefined,
-        label: 'No language',
+        key: '',
+        label: '\u2014',
       });
     });
   });

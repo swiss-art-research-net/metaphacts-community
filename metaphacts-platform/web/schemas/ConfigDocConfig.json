@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Displays generated JSON schema for specified interface type.\n\nTo generate a schema for any TypeScript interface, execute the following\ncommand at `project/webpack` directory:\n   `yarn run generate-schema <project-name> <interface-name>`\n\n**Example**:\n```\n<mp-documentation type=\"SomeComponentConfig\"></mp-documentation>\n```",
+    "properties": {
+        "disableTransformAttributes": {
+            "default": false,
+            "type": "boolean"
+        },
+        "hideRequiredLabel": {
+            "default": false,
+            "type": "boolean"
+        },
+        "showTopDescription": {
+            "default": false,
+            "type": "boolean"
+        },
+        "type": {
+            "description": "Component schema name to display.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "type",
+        "showTopDescription",
+        "disableTransformAttributes",
+        "hideRequiredLabel"
+    ],
+    "required": [
+        "type"
+    ],
+    "type": "object"
+}
+

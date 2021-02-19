@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,45 @@ import { createFactory } from 'react';
 import {default as ReactScrollchor} from 'react-scrollchor';
 
 /**
+ * A trigger component to scroll to target element by ID or to the page top.
+ *
+ * **Example**:
+ * ```
+ * <mp-anchor to="#section123">Click to scroll</mp-anchor>
+ * <div style="padding-top:2000px;">Lorem ipsum dolor sit amet</div>
+ * <section id="section123"></section>
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <mp-anchor to="#section456"
+ *   animate='{"offset": 20, "duration": 6000}'>
+ *   Click to scroll
+ * </mp-anchor>
+ * <div style="padding-top:2000px;">Lorem ipsum dolor sit amet</div>
+ * <section id="section456"></section>
+ * ```
+ */
+interface ScrollAnchorConfig {
+  /**
+   * ID of the target node to scroll to (leading `#` can be omitted).
+   *
+   * Set to empty string (`to=''`) to scroll to the page top.
+   */
+  to: string;
+  /**
+   * Options for smooth scrolling animation:
+   *
+   * @default {"offset": 0, "duration": 400, "easing": "easeOutQuad"}
+   */
+  animate?: {
+    offset?: number;
+    duration?: number;
+    easing?: string;
+  };
+}
+
+/**
  * This is just a small wrapper around react-scrollchor
  * @example
  *  <mp-anchor to="#section123">Click to scroll</mp-anchor>
@@ -50,8 +89,7 @@ import {default as ReactScrollchor} from 'react-scrollchor';
  * @example
  *  <mp-anchor
  *      to="#section456"
- *      animate='{"offset": 20, "duration": 6000}'
- *      className="nav-link">
+ *      animate='{"offset": 20, "duration": 6000}'>
  *  Click to scroll</mp-anchor>
  *  <div style="padding-top:2000px;">Lorem ipsum dolor sit amet</div>
  *  <section id="section456"></section>

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,8 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 package com.metaphacts.security;
+
+import javax.annotation.Nullable;
 
 import org.eclipse.rdf4j.model.IRI;
 
@@ -297,25 +299,48 @@ public class Permissions {
         }
 
         @PermissionsDocField(
-            desc = "Grants permission to get, create, modify or delete any named graph by performing a HEAD operation on /rdf-graph-store?graph={URI}."
+                desc = "Grants permission to check whether any named graph (or optionally a specific one) exists by performing a HEAD operation on /rdf-graph-store?graph={URI}.",
+                pattern = "sparql:graphstore:head:{<namedGraphIRI>}"
         )
         public static final String GRAPH_STORE_HEAD = "sparql:graphstore:head";
         @PermissionsDocField(
-            desc = "Grants permission to get any named graph by performing a GET operation on /rdf-graph-store?graph={URI}."
+                desc = "Grants permission to get any named graph (or optionally a specific one) by performing a GET operation on /rdf-graph-store?graph={URI}.",
+                pattern = "sparql:graphstore:get:{<namedGraphIRI>}"
         )
         public static final String GRAPH_STORE_GET = "sparql:graphstore:get";
         @PermissionsDocField(
-            desc = "Grants permission to create any named graph by performing a PUT operation on /rdf-graph-store?graph={URI}."
+                desc = "Grants permission to create any named graph (or optionally restricted to a specific one) by performing a PUT operation on /rdf-graph-store?graph={URI}.",
+                pattern = "sparql:graphstore:create:{<namedGraphIRI>}"
         )
         public static final String GRAPH_STORE_CREATE = "sparql:graphstore:create";
         @PermissionsDocField(
-            desc = "Grants permission to modify any named graph by performing a POST operation on /rdf-graph-store?graph={URI}."
+                desc = "Grants permission to modify any named graph (or optionally a specific one) by performing a POST operation on /rdf-graph-store?graph={URI}.",
+                pattern = "sparql:graphstore:update:{<namedGraphIRI>}"
         )
         public static final String GRAPH_STORE_UPDATE = "sparql:graphstore:update";
         @PermissionsDocField(
-            desc = "Grants permission to delete any named graph by performing a DELETE operation on /rdf-graph-store?graph={URI}."
+                desc = "Grants permission to delete any named graph (or optionally a specific one) by performing a DELETE operation on /rdf-graph-store?graph={URI}. ",
+                pattern = "sparql:graphstore:delete:{<namedGraphIRI>}"
         )
         public static final String GRAPH_STORE_DELETE = "sparql:graphstore:delete";
+
+        /**
+         * Helper to build GraphStore permission strings:
+         * 
+         * <code>sparql:graphstore:head|get|create|update|delete:&lt;named-graph-iri&gt;</code>
+         * 
+         * @param action one of {@code GRAPH_STORE_*}
+         * @param iri    IRI of the target named graph (optional). If unspecified
+         *               (<code>null</code>) the permission will request full access to
+         *               all named graphs
+         * @return permission string
+         */
+        public static String graphStorePermission(String action, @Nullable IRI iri) {
+            if (iri != null) {
+                return action + ":<" + iri.stringValue() + ">";
+            }
+            return action;
+        }
     }
 
     @PermissionsDocGroup(desc = "Permissions for managing and accessing LDP containers.")
@@ -513,6 +538,12 @@ public class Permissions {
             example="/com/metaphacts/security/aclhelp/storage_upload.html"
         )
         public static final String PREFIX_WRITE = "storage:upload:";
+        
+        @PermissionsDocField(
+            desc="Permissions for adding a new storage",
+            pattern="storage:add:*"
+        )
+        public static final String PREFIX_ADD = "storage:add:";
     }
 
     @PermissionsDocGroup(desc = "Permissions for managing file related operations (e.g. file upload in forms).")
@@ -555,6 +586,17 @@ public class Permissions {
                 pattern = "ontologies:*:*"
         )
         public static final String PREFIX_AUTHORING = "ontologies:";
+
+    }
+    
+    @PermissionsDocGroup(desc = "Permissions for managing and cataloging assets (e.g. ontologies).")
+    public static class ASSETS {
+
+        @PermissionsDocField(
+                desc = "Permissions for managing and cataloging assets (view, import, save, restore, tag).",
+                pattern = "assets:*:*"
+        )
+        public static final String PREFIX = "assets:";
 
     }
 

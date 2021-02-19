@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,6 +49,11 @@ import { PageService } from 'platform/api/services/page';
 import { Alert, AlertType } from 'platform/components/ui/alert';
 import { Spinner } from 'platform/components/ui/spinner';
 
+/**
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
+ */
 export interface KnowledgePanelConfig {
   /**
    * Resource IRI.
@@ -65,7 +70,7 @@ interface State {
 }
 
 export class KnowledgePanel extends Component<Props, State> {
-  private readonly cancellation = new Cancellation();
+  private loading = Cancellation.cancelled;
 
   constructor(props: Props, context: any) {
     super(props, context);
@@ -89,7 +94,7 @@ export class KnowledgePanel extends Component<Props, State> {
   }
 
   componentWillUnmount() {
-    this.cancellation.cancelAll();
+    this.loading.cancelAll();
   }
 
   render() {
@@ -104,9 +109,13 @@ export class KnowledgePanel extends Component<Props, State> {
   }
 
   private loadKnowledgePanelContent(iri: string) {
+    this.loading.cancelAll();
+    this.loading = new Cancellation();
     this.setState({loading: true, error: undefined});
     const params = extractParams(this.props);
-    PageService.loadKnowledgePanelTemplate(iri, params).flatMap(data =>
+    this.loading.map(
+      PageService.loadKnowledgePanelTemplate(iri, params)
+    ).flatMap(data =>
       ModuleRegistry.parseHtmlToReact(data.templateHtml)
     ).observe({
       value: knowledgePanelContent => this.setState({knowledgePanelContent, loading: false}),

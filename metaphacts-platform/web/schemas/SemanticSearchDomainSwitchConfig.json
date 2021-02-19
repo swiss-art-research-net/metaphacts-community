@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "availableDomains": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "description": "Specifies the available search domains, ties them with the projection variables",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "availableDomains"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,6 @@ import java.util.Map;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 import org.eclipse.rdf4j.query.QueryLanguage;
 import org.eclipse.rdf4j.query.parser.ParsedQuery;
 import org.eclipse.rdf4j.query.parser.QueryParserUtil;
@@ -66,6 +65,7 @@ public class ParametrizeVisitorTest extends AbstractIntegrationTest {
         this.parameters = ImmutableMap.of(
             "iri", vf.createIRI("test:iri"),
             "literal", vf.createLiteral("TestLiteral"),
+            "intLiteral", vf.createLiteral(42),
             "langLiteral", vf.createLiteral("TestLangLiteral", "en"),
             "blank", vf.createBNode("testBlank")
         );
@@ -75,7 +75,15 @@ public class ParametrizeVisitorTest extends AbstractIntegrationTest {
     public void testSingleTriples() throws Exception {
         assertParametrizationResult(
             "SELECT ?s ?p WHERE { ?s ?p ?iri . ?s ?p ?literal . }",
-            "SELECT ?s ?p WHERE { ?s ?p <test:iri> . ?s ?p \"TestLiteral\"^^<" + XMLSchema.STRING + "> . }"
+            "SELECT ?s ?p WHERE { ?s ?p <test:iri> . ?s ?p \"TestLiteral\" . }"
+        );
+    }
+    
+    @Test
+    public void testSingleTriples_intLiteral() throws Exception {
+        assertParametrizationResult(
+            "SELECT ?s ?p WHERE { ?s ?p ?iri . ?s ?p ?intLiteral . }",
+            "SELECT ?s ?p WHERE { ?s ?p <test:iri> . ?s ?p \"42\"^^<http://www.w3.org/2001/XMLSchema#int> . }"
         );
     }
 
@@ -98,10 +106,8 @@ public class ParametrizeVisitorTest extends AbstractIntegrationTest {
     @Test
     public void testInsideFilter() throws Exception {
         assertParametrizationResult(
-                "SELECT ?s ?o WHERE { ?s ?p ?o . FILTER((?iri + \"s\"^^<" + XMLSchema.STRING
-                        + ">) = \"abc\"^^<" + XMLSchema.STRING + ">) }",
-                "SELECT ?s ?o WHERE { ?s ?p ?o . FILTER((<test:iri> + \"s\"^^<" + XMLSchema.STRING
-                        + ">) = \"abc\"^^<" + XMLSchema.STRING + ">) }"
+                "SELECT ?s ?o WHERE { ?s ?p ?o . FILTER((?iri + \"s\") = \"abc\") }",
+                "SELECT ?s ?o WHERE { ?s ?p ?o . FILTER((<test:iri> + \"s\") = \"abc\") }"
         );
     }
 

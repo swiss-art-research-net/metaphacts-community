@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -123,7 +123,7 @@ public class PlatformPlugin {
     public void registerCustomConfigurationGroup(final Class<? extends ConfigurationGroup> configGroupClass) {
         // instantiate the class
         try {
-            final ConfigurationGroup configurationGroup = configGroupClass.newInstance();
+            final ConfigurationGroup configurationGroup = configGroupClass.getDeclaredConstructor().newInstance();
 
             final boolean success = config.registerCustomConfigurationGroup(configurationGroup);
             if (success) {

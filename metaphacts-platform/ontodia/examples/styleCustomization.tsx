@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { Workspace, SparqlDataProvider, LinkTemplate } from '../src/ontodia/index';
+import { Workspace, SparqlDataProvider, LinkTemplate, LinkStyle } from '../src/ontodia/index';
 
 import { renderExample, tryLoadLayoutFromLocalStorage } from './resources/common';
 import { ExampleWorkspaceLayout } from './resources/exampleWorkspaceLayout';
@@ -23,14 +23,13 @@ const CUSTOM_LINK_TEMPLATE: LinkTemplate = {
         width: 20,
         height: 12,
     },
-    renderLink: () => ({
+    renderLink: (): LinkStyle => ({
         connection: {
             stroke: '#3c4260',
             'stroke-width': 2,
         },
-        connector: {name: 'rounded'},
         label: {
-            attrs: {text: {fill: '#3c4260'}},
+            textStyle: {fill: '#3c4260'},
         },
     }),
 };

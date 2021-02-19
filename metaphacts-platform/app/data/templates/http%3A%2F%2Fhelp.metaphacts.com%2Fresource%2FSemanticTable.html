@@ -57,7 +57,40 @@
       </div>
     </div>
 
-		
+		<h3>Custom Default Cell Template</h3>
+
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        In addition to column specific <code>cellTemplate</code>(s), also a custom default cell template can be configured. This can be used to customize rendering behavior without having to specifiy a template for each column. The column value matching the specified <code>variableName</code> is available with the <code>cellValue</code> variable.
+      </div>
+      <div class="documentation__example__demo" id='demo2'>
+        <mp-code-example>
+<![CDATA[
+<semantic-table
+    query="
+      prefix person: <http://example.com/person/> 
+      prefix foaf: <http://xmlns.com/foaf/0.1/>
+      SELECT ?person ?age WHERE {                    
+        VALUES (?person ?prop ?age) { 
+          (person:alice foaf:age 35)
+          (person:bob foaf:age 17)
+        }
+      }"
+    options='{"defaultCellTemplate": "{{> defaultCell}}"}'
+>
+  <template id='defaultCell'>
+    {{#if (isIri cellValue)}}
+      <semantic-link iri="{{cellValue.value}}" target="_blank"></semantic-link>&amp;nbsp;<i class="fa fa-external-link" aria-hidden="true"></i>
+    {{else}}
+      {{cellValue.value}}
+    {{/if}}
+  </template>  
+</semantic-table>
+]]>
+        </mp-code-example>
+      </div>
+    </div>
+
     <h3>Sorting and Filtering</h3>
 
 		<div class="documentation__example">

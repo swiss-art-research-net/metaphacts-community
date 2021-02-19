@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,13 +39,16 @@
  */
 package com.metaphacts.templates;
 
-import com.metaphacts.config.NamespaceRegistry;
-import com.metaphacts.services.storage.api.*;
+import java.util.Optional;
+
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
-import java.util.Optional;
+import com.metaphacts.config.NamespaceRegistry;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StoragePath;
 
 public class TemplateByIriLoader extends FromStorageLoader {
     protected final NamespaceRegistry ns;
@@ -64,7 +67,7 @@ public class TemplateByIriLoader extends FromStorageLoader {
         return templatePathFromIri(templateIri);
     }
 
-    private IRI constructTemplateIri(String location) {
+    protected IRI constructTemplateIri(String location) {
         String prefix = this.getPrefix();
         if (location.startsWith(prefix)) {
             location = location.substring(prefix.length());

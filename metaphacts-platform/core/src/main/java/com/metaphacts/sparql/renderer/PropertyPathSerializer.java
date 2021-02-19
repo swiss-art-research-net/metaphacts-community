@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,6 +49,8 @@ import org.eclipse.rdf4j.query.algebra.Union;
 import org.eclipse.rdf4j.query.algebra.Var;
 import org.eclipse.rdf4j.query.algebra.ZeroLengthPath;
 import org.eclipse.rdf4j.query.algebra.helpers.AbstractQueryModelVisitor;
+
+import com.metaphacts.util.QueryUtil;
 
 public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeException> {
 
@@ -150,8 +152,7 @@ public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeExc
         }
 
         if (predicate.hasValue()) {
-            MpSparqlQueryRendererUtils.writeAsSparqlValue(node.getPredicateVar().getValue(),
-                    builder, true);
+            builder.append(QueryUtil.toSPARQL(node.getPredicateVar().getValue()));
         } else {
             builder.append("?");
             builder.append(predicate.getName());
@@ -161,7 +162,7 @@ public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeExc
     @Override
     public void meet(Var node) throws RuntimeException {
         if (node.hasValue()) {
-            MpSparqlQueryRendererUtils.writeAsSparqlValue(node.getValue(), builder, true);
+            builder.append(QueryUtil.toSPARQL(node.getValue()));
         } else {
             if (node.isAnonymous()) { 
                 if (currentQueryProfile.extensionElements.containsKey(node.getName())) {

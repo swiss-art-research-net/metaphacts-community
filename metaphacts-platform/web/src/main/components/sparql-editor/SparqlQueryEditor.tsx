@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ import * as React from 'react';
 import { Component, ReactNode, createElement } from 'react';
 import { Just, Nothing } from 'data.maybe';
 import * as Immutable from 'immutable';
-import { Row, Col, Button, FormControl, Modal, ModalDialogProps, Tabs, Tab } from 'react-bootstrap';
+import { Row, Col, Button, FormControl, Modal, ModalProps, Tabs, Tab } from 'react-bootstrap';
 import * as _ from 'lodash';
 import { SparqlQuery, Update } from 'sparqljs';
 
@@ -123,7 +123,7 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
     const queryExecutionTimeSec = queryExecutionTime / 1000;
     return (
       <Row className={styles.sparqlQueryEditor}>
-        <Col componentClass='div' md={12}>
+        <Col as='div' md={12}>
           <SparqlEditor ref={editor => this.editor = editor}
             backdrop={this.state.isExecuting}
             query={this.state.query}
@@ -145,7 +145,7 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
                 {this.renderRepositorySelector()}
               </HasPermission>
               <Button
-                bsStyle='primary'
+                variant='primary'
                 disabled={this.state.isExecuting}
                 onClick={() => this.executeQuery(this.state.query)}>
                 {this.state.isExecuting ? 'Executing...' : 'Execute'}
@@ -158,7 +158,9 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
                   'owner'
                 )
               }>
-                <Button onClick={() => getOverlaySystem().show(
+                <Button
+                  variant='secondary'
+                  onClick={() => getOverlaySystem().show(
                   SaveQueryModal.KEY,
                   <SaveQueryModal query={this.state.query}
                     onHide={() => getOverlaySystem().hide(SaveQueryModal.KEY)}>
@@ -232,6 +234,7 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
             ? null
             : (
               <Button className={styles.downloadButton}
+                variant='secondary'
                 onClick={() => exportData('text/turtle', [responseResults], 'results.ttl')}>
                 <i className={'fa fa-download'}></i>
               </Button>
@@ -283,7 +286,7 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
       <span className={styles.repositorySelector}>
         <label>
           Repository:
-          <FormControl componentClass='select'
+          <FormControl as='select'
             className={styles.repositorySelectorDropdown}
             value={this.state.selectedRepository}
             onChange={e => this.setState({
@@ -440,7 +443,7 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
   }
 }
 
-interface SaveQueryModalProps extends ModalDialogProps {
+interface SaveQueryModalProps extends ModalProps {
   query: string;
 }
 
@@ -449,7 +452,7 @@ class SaveQueryModal extends Component<SaveQueryModalProps, {}> {
   render() {
     const {onHide, query} = this.props;
     return (
-      <Modal show={true} onHide={onHide} bsSize='large' backdrop={'static'}>
+      <Modal show={true} onHide={onHide} size='lg' backdrop={'static'}>
         <Modal.Header closeButton={true}>
           <Modal.Title>Save Query</Modal.Title>
         </Modal.Header>

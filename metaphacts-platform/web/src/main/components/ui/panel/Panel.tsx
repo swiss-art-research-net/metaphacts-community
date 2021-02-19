@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,11 +38,13 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as React from 'react';
-import { ReactElement, ReactChild, ComponentClass, Component, Children } from 'react';
+import { ReactElement, ComponentClass, Component, Children } from 'react';
 import * as _ from 'lodash';
-import { Panel as BootstrapPanel, PanelProps as BootstrapPanelProps } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 
-export interface PanelProps extends BootstrapPanelProps {}
+export interface PanelProps {
+  className?: string;
+}
 
 import { PanelHeader } from './PanelHeader';
 import { PanelFooter } from './PanelFooter';
@@ -71,9 +73,12 @@ export class Panel extends Component<PanelProps, {}> {
     const body = this.findComponent(children, PanelBody);
     const footer = this.findComponent(children, PanelFooter);
 
-    return <BootstrapPanel {...this.props} header={header} footer={footer}>
-      {body}
-    </BootstrapPanel>;
+    const { className, ...restProps } = this.props;
+    return <Card className={'mb-4 ' + (className ?? '')} {...restProps}>
+      {header ? <Card.Header>{header}</Card.Header> : null}
+      <Card.Body>{body}</Card.Body>
+      {footer ? <Card.Footer>{footer}</Card.Footer> : null}
+    </Card>;
   }
 
   private findComponent =

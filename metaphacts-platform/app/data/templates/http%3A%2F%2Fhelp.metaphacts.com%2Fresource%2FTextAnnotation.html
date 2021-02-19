@@ -61,25 +61,25 @@
     <template id='annotation-tooltip'>
       <div>
         {{#if allowEdit}}
-          <button name='edit' class='btn btn-xs btn-default'
+          <button name='edit' class='btn btn-sm btn-secondary'
             data-annotation='{{iri.value}}'
             title='Edit annotation'>
             <span class='fa fa-pencil' style='pointer-events: none;'></span>
           </button>
         {{else}}
-          <button name='edit' class='btn btn-xs btn-default' disabled
+          <button name='edit' class='btn btn-sm btn-secondary' disabled
             title='Edit annotation'>
             <span class='fa fa-pencil' style='pointer-events: none;'></span>
           </button>
         {{/if}}
         {{#if allowDelete}}
-          <button name='delete' class='btn btn-xs btn-default'
+          <button name='delete' class='btn btn-sm btn-secondary'
             data-annotation='{{iri.value}}'
             title='Delete annotation'>
             <span class='fa fa-trash' style='pointer-events: none;'></span>
           </button>
         {{else}}
-          <button name='delete' class='btn btn-xs btn-default' disabled
+          <button name='delete' class='btn btn-sm btn-secondary' disabled
             title='Delete annotation'>
             <span class='fa fa-trash' style='pointer-events: none;'></span>
           </button>
@@ -104,7 +104,7 @@
               <div class='btn-group'>
                 {{#if allowEdit}}
                 <button name='edit'
-                  class='btn btn-xs btn-default dpub-ctrl-buttons-style'
+                  class='btn btn-sm btn-secondary dpub-ctrl-buttons-style'
                   data-annotation='{{iri.value}}'
                   title='Edit annotation'>
                   <span class='fa fa-pencil' style='pointer-events: none;'></span>
@@ -112,7 +112,7 @@
                 {{/if}}
                 {{#if allowDelete}}
                 <button name='delete'
-                  class='btn btn-xs btn-default dpub-ctrl-buttons-style'
+                  class='btn btn-sm btn-secondary dpub-ctrl-buttons-style'
                   data-annotation='{{iri.value}}'
                   title='Delete annotation'>
                   <span class='fa fa-trash' style='pointer-events: none;'></span>
@@ -123,7 +123,7 @@
           </template>
         </semantic-query>
       </template>
-      
+
    <semantic-form-composite-input for='oaHasBody'
         new-subject-template='body'
         fields='[

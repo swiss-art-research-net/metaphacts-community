@@ -2,11 +2,17 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "description": "`ontodia` triggers events.",
     "properties": {
+        "Ontodia.ChangesPersisted": {
+            "description": "Event which should be triggered when changes to the data are persisted.",
+            "properties": {
+            },
+            "type": "object"
+        },
         "Ontodia.DiagramIsDirty": {
             "description": "Observable property which tracks whether diagram has been changed.",
             "properties": {
                 "hasChanges": {
-                    "description": "Equals to `true` if a diagram has been changed, otherwise equals to `false`.",
+                    "description": "`true` if a diagram has been changed; otherwise `false`.",
                     "type": "boolean"
                 }
             },
@@ -31,6 +37,21 @@
             ],
             "required": [
                 "resourceIri"
+            ],
+            "type": "object"
+        },
+        "Ontodia.InAuthoringMode": {
+            "properties": {
+                "inAuthoringMode": {
+                    "description": "`true` if OntodiA is currently in authoring mode; otherwise `false`.",
+                    "type": "boolean"
+                }
+            },
+            "propertyOrder": [
+                "inAuthoringMode"
+            ],
+            "required": [
+                "inAuthoringMode"
             ],
             "type": "object"
         },
@@ -69,6 +90,9 @@
                 "links": {
                     "items": {
                         "properties": {
+                            "linkIri": {
+                                "type": "string"
+                            },
                             "linkTypeIri": {
                                 "type": "string"
                             },
@@ -80,6 +104,7 @@
                             }
                         },
                         "propertyOrder": [
+                            "linkIri",
                             "linkTypeIri",
                             "sourceIri",
                             "targetIri"
@@ -101,37 +126,23 @@
                 "links"
             ],
             "type": "object"
-        },
-        "Ontodia.ShowElementInfo": {
-            "description": "Event which should be triggered when user press \"showInfoButton\".",
-            "properties": {
-                "iri": {
-                    "description": "IRI of an entity to show information dialog for.\nIf provided IRI is undefined the dialog will be hidden on event.",
-                    "type": "string"
-                }
-            },
-            "propertyOrder": [
-                "iri"
-            ],
-            "required": [
-                "iri"
-            ],
-            "type": "object"
         }
     },
     "propertyOrder": [
         "Ontodia.DiagramSaved",
         "Ontodia.DiagramIsDirty",
+        "Ontodia.InAuthoringMode",
+        "Ontodia.ChangesPersisted",
         "Ontodia.SelectedElements",
-        "Ontodia.SelectedLinks",
-        "Ontodia.ShowElementInfo"
+        "Ontodia.SelectedLinks"
     ],
     "required": [
+        "Ontodia.ChangesPersisted",
         "Ontodia.DiagramIsDirty",
         "Ontodia.DiagramSaved",
+        "Ontodia.InAuthoringMode",
         "Ontodia.SelectedElements",
-        "Ontodia.SelectedLinks",
-        "Ontodia.ShowElementInfo"
+        "Ontodia.SelectedLinks"
     ],
     "type": "object"
 }

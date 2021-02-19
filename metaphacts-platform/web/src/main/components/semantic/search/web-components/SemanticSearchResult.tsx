@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -67,7 +67,11 @@ import {
   tryGetRelationPatterns, generateQueryForMultipleDatasets,
 } from '../data/search/SparqlQueryGenerator';
 
-class SemanticSearchResult extends React.Component<{}, {}> {
+interface SemanticSearchResultConfig {}
+
+export type SemanticSearchResultProps = SemanticSearchResultConfig;
+
+export class SemanticSearchResult extends React.Component<{}, {}> {
   render() {
     return (
       <SemanticSearchContext.Consumer>
@@ -84,8 +88,6 @@ interface InnerProps {
 interface State {
   error?: string;
 }
-
-type Bindings = { [variable: string]: Rdf.Node };
 
 class SemanticSearchResultInner extends React.Component<InnerProps, State> {
   private readonly cancellation = new Cancellation();

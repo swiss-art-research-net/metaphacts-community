@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,30 +39,45 @@
  */
 package com.metaphacts.rest.endpoint;
 
-import com.metaphacts.repository.MpRepositoryProvider;
-import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.security.Permissions.*;
-import com.metaphacts.security.WildcardPermission;
-import com.metaphacts.services.files.FileManager;
-import com.metaphacts.services.files.ManagedFileName;
-import com.metaphacts.services.storage.api.*;
-import com.metaphacts.services.storage.utils.ExactSizeInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
-import org.eclipse.rdf4j.model.*;
+import org.eclipse.rdf4j.model.IRI;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
-import java.io.FileNotFoundException;
-import javax.inject.Inject;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.InputStream;
+import com.metaphacts.repository.MpRepositoryProvider;
+import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.security.Permissions.FILE;
+import com.metaphacts.security.Permissions.STORAGE;
+import com.metaphacts.security.WildcardPermission;
+import com.metaphacts.services.files.FileManager;
+import com.metaphacts.services.files.ManagedFileName;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.ObjectRecord;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.SizedStream;
+import com.metaphacts.services.storage.api.StoragePath;
+import com.metaphacts.services.storage.utils.ExactSizeInputStream;
 
 @Path("")
 public class FileStorageEndpoint {
@@ -214,7 +229,7 @@ public class FileStorageEndpoint {
                 throw e;
             }
 
-            return Response.created(new java.net.URI(resourceIri.toString())).build();
+            return Response.created(new java.net.URI(resourceIri.stringValue())).build();
         } catch (Exception e) {
             logger.error(e.getMessage());
             logger.debug("Details:" , e);
@@ -344,7 +359,7 @@ public class FileStorageEndpoint {
                 throw e;
             }
 
-            return Response.created(new java.net.URI(resourceIri.toString())).build();
+            return Response.created(new java.net.URI(resourceIri.stringValue())).build();
         } catch (Exception e) {
             logger.error(e.getMessage());
             logger.debug("Details:" , e);

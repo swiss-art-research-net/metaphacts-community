@@ -11,7 +11,7 @@
     <div class='knowledgeGraphBar__summaryTitle'>
       <h1>
         <mp-popover>
-          <mp-popover-trigger placement='bottom' trigger='["hover"]'>
+          <mp-popover-trigger placement='bottom' trigger='["hover", "focus"]'>
             <span class='knowledgeGraphBar__summaryLabel'><mp-label iri="[[this]]"></mp-label></span>
           </mp-popover-trigger>
           <mp-popover-content>
@@ -24,7 +24,7 @@
         <div class='knowledgeGraphBar__graphInfos'>
             <div class="knowledgeGraphBar__uriRow">
             <b>URI</b>: <span title=[[this]]>[[this]]</span> <mp-copy-to-clipboard text="[[this]]">
-            <button class="btn btn-default knowledgeGraphBar__copyIri"></button>
+            <button class="btn btn-secondary knowledgeGraphBar__copyIri"></button>
             </mp-copy-to-clipboard>
             </div>
             <semantic-query query="SELECT DISTINCT ?type WHERE { ?? [[#if type]][[type]][[else]]a[[/if]] ?type }" style="display:inline;" template="{{> template}}">
@@ -57,7 +57,7 @@
       </mp-description>
     </div>
   </div>
-  
+
 
   [[> "http://www.metaphacts.com/resource/KnowledgeGraphBarViewControls" ]]
 </div>

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@
 import * as React from 'react';
 import { Component, ReactElement, KeyboardEvent, SyntheticEvent } from 'react';
 import { findDOMNode } from 'react-dom';
-import { Modal } from 'react-bootstrap';
+import { Modal, ModalProps } from 'react-bootstrap';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 import * as classNames from 'classnames';
@@ -51,7 +51,7 @@ export type SaveSetDialogProps = HeadlessSaveSetDialogProps & {
   onHide: () => void;
 };
 
-export interface HeadlessSaveSetDialogProps extends ReactBootstrap.ModalDialogProps {
+export interface HeadlessSaveSetDialogProps extends ModalProps {
   onSave: (name: string) => Kefir.Observable<any>;
   maxSetSize: Data.Maybe<number>;
   title?: string;

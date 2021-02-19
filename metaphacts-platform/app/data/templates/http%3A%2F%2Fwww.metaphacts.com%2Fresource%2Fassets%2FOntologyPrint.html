@@ -1,11 +1,16 @@
 [[#*inline "axiom"]]
   <semantic-query 
-    query='SELECT ?item ?pattern WHERE { [[pattern]] BIND("[[pattern]]" AS ?pattern) .}'
+    query='SELECT ?item ?pattern WHERE { [[pattern]] BIND("[[pattern]]" AS ?pattern) .} LIMIT 10'
     template='{{> template}}'
   >
     <template id='template'>
       <dl style='margin-bottom: 0px;'>
         <dt>[[title]]:</dt>
+        {{#ifCond bindings.length ">=" 10}} 
+          <bs-alert variant="warning">
+            The following listing is limited to 10 values.
+          </bs-alert>
+        {{/ifCond}}
         {{#each bindings}}
           <dd style='margin-left: 15px;'>
             {{#if (isIri item)}}
@@ -78,7 +83,7 @@
 
       [[! we should use semantic-lang-literal when we have it ]]
       <semantic-query 
-        query='SELECT ?comment { <[[this]]> rdfs:comment ?comment } LIMIT 1'
+        query='SELECT ?comment { <[[this]]> <http://purl.org/dc/terms/description>|rdfs:comment ?comment } LIMIT 1'
         template='{{> comment}}'
       >
         <template id='comment'>
@@ -94,17 +99,21 @@
       <semantic-query 
         query='
           SELECT DISTINCT ?Class WHERE { 
-            ?Class rdf:type owl:Class .
-            GRAPH ?g { { ?Class rdf:type ?type } UNION { ?Class rdfs:subClassOf ?class . }  . <[[this]]> rdf:type owl:Ontology  } 
-            FILTER(!isBlank(?Class))
-          } ORDER BY ?Class
+            GRAPH ?g { <[[this]]> rdf:type owl:Ontology . ?Class rdf:type owl:Class .   }
+            FILTER(!isBlank(?Class)) 
+          } ORDER BY ?Class LIMIT 100
         ' 
             template='{{> classes}}'
             no-result-template='<h2>Classes (0)</h2>'
       >
         <template id='classes'>
           <div>
-            <h2>Classes ({{bindings.length}}) </h2>  
+            <h2>Classes ({{bindings.length}}) </h2> 
+            {{#ifCond bindings.length ">=" 100}} 
+              <bs-alert variant="warning">
+                The following listing is limited to 100 classes.
+              </bs-alert>
+            {{/ifCond}}
             {{#each bindings}}
               <mp-anchor to="#{{Class.value}}">
                 <mp-label iri="{{Class.value}}"></mp-label>
@@ -160,7 +169,7 @@
               GRAPH ?g { 
                 ?ObjectProperty rdf:type owl:ObjectProperty . <[[this]]> rdf:type owl:Ontology 
               } 
-            } ORDER BY ?ObjectProperty
+            } ORDER BY ?ObjectProperty LIMIT 100
           ' 
           template='{{> properties}}'
           no-result-template='<h2>Object Properties (0)</h2>'
@@ -168,6 +177,11 @@
         <template id='properties'>
           <div>
             <h2>Object Properties ({{bindings.length}})</h2> 
+            {{#ifCond bindings.length ">=" 100}} 
+              <bs-alert variant="warning">
+                The following listing is limited to 100 object properties.
+              </bs-alert>
+            {{/ifCond}}
             {{#each bindings}}
               <mp-anchor to="#{{ObjectProperty.value}}">
                 <mp-label iri="{{ObjectProperty.value}}"></mp-label>
@@ -222,7 +236,7 @@
               ?DatatypeProperty rdf:type owl:DatatypeProperty . 
               <[[this]]> rdf:type owl:Ontology
             } 
-          } ORDER BY ?DatatypeProperty
+          } ORDER BY ?DatatypeProperty LIMIT 100
         ' 
         template='{{> properties}}'
         no-result-template='<h2>Object Properties (0)</h2>'
@@ -230,6 +244,11 @@
         <template id='properties'>
           <div>
             <h2>Datatype Properties ({{bindings.length}}) </h2> 
+            {{#ifCond bindings.length ">=" 100}} 
+              <bs-alert variant="warning">
+                The following listing is limited to 100 datatype properties.
+              </bs-alert>
+            {{/ifCond}}
             {{#each bindings}}
               <mp-anchor to="#{{DatatypeProperty.value}}">
                 <mp-label iri="{{DatatypeProperty.value}}"></mp-label>

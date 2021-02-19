@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,23 +48,37 @@ import {
   FieldValue, AtomicValue, CompositeValue, LabeledValue, EmptyValue, DataState, ErrorKind,
 } from '../FieldValues';
 
-export interface SingleValueInputProps {
-  /** Key to associate with FieldDefinition by name */
+export interface SingleValueInputConfig {
+  /**
+   * Field definition ID to associate input with.
+   */
   for?: string;
   defaultValue?: string | number | boolean;
   defaultValues?: ReadonlyArray<string>;
+  /**
+   * Determines whether field label and description should be displayed above the input.
+   *
+   * If explicitly set to `false` the header will not be rendered and other markup may
+   * be used instead.
+   *
+   * Defaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.
+   */
+  renderHeader?: boolean;
+}
+
+export interface SingleValueInputProps extends SingleValueInputConfig {
   handler?: SingleValueHandler;
   definition?: FieldDefinition;
   dataState?: DataState;
   value?: FieldValue;
   updateValue?: (reducer: (value: FieldValue) => FieldValue) => void;
   dependencyContext?: DependencyContext;
-  /** @see MultipleValuesProps.renderHeader */
-  renderHeader?: boolean;
 }
 
 export interface SingleValueHandler {
   validate(value: FieldValue): FieldValue;
+  discard?(value: FieldValue): void;
+  beforeFinalize?(): void;
   finalize(
     value: FieldValue,
     owner: EmptyValue | CompositeValue
@@ -128,11 +142,6 @@ export interface AtomicValueInputProps extends SingleValueInputProps {
 export class AtomicValueInput<P extends AtomicValueInputProps, S> extends SingleValueInput<P, S> {
   constructor(props: P, context: any) {
     super(props, context);
-    AtomicValueHandler.assertAtomicOrEmpty(props.value);
-  }
-
-  componentWillReceiveProps(props: P) {
-    AtomicValueHandler.assertAtomicOrEmpty(props.value);
   }
 
   protected setAndValidate(value: FieldValue) {
@@ -231,11 +240,11 @@ function coerceTo(datatype: Rdf.Iri, value: Rdf.Literal): Rdf.Literal {
     return value;
   } else if (XsdDataTypeValidation.sameXsdDatatype(datatype, vocabularies.xsd._string)
     && XsdDataTypeValidation.sameXsdDatatype(value.datatype, vocabularies.rdf.langString)) {
-    // langString -> string
-    return Rdf.literal(value.value, datatype);
+    // rdf:langString is assignable to xsd:string as-is
+    return value;
   } else if (XsdDataTypeValidation.sameXsdDatatype(datatype, vocabularies.rdf.langString)
     && XsdDataTypeValidation.sameXsdDatatype(value.datatype, vocabularies.xsd._string)) {
-    // string -> langString
+    // xsd:string is assignable to rdf:langString as-is
     return value;
   } else {
     return undefined;

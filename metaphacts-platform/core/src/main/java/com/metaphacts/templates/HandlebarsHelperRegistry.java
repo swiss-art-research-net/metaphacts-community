@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,7 +46,7 @@ import javax.inject.Inject;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Singleton;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.repository.RepositoryManager;
@@ -81,7 +81,7 @@ public class HandlebarsHelperRegistry {
         FieldDefinitionGeneratorChain generatorChain,
         FieldsBasedSearch fieldsBasedSearch,
         QueryTemplateCache queryTemplateCache,
-        LabelCache labelCache
+        LabelService labelCache
     ) {
         this.helpers = ImmutableList.of(
             new AskHelperSource(),

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,29 +39,48 @@
  */
 import * as React from 'react';
 
+import { TemplateProps } from '../customization/props';
+
+import { setElementExpanded } from '../diagram/commands';
 import { Element, ElementEvents } from '../diagram/elements';
+import { computeTemplateProps } from '../diagram/elementLayer';
 import { boundsOf } from '../diagram/geometry';
 import { PaperWidgetProps } from '../diagram/paperArea';
 import { WidgetAttachment, assertWidgetComponent, IriClickIntent } from '../diagram/view';
 
-import { WorkspaceContextTypes, WorkspaceContextWrapper } from '../workspace/workspaceContext';
-import { HaloDefaultTemplate } from './haloDefaultTemplate';
-import { EventObserver, AnyListener } from '../viewUtils/events';
-import { Debouncer, Cancellation, CancellationToken } from '../viewUtils/async';
-import { TemplateProps } from '../customization/props';
-import { computeTemplateProps } from '../diagram/elementLayer';
-import { EditLayerMode } from '../editor/editLayer';
-import { setElementExpanded } from '../diagram/commands';
 import { AuthoringState } from '../editor/authoringState';
+import { EditLayerMode } from '../editor/editLayer';
+
+import { EventObserver, EventTrigger, AnyListener } from '../viewUtils/events';
+import { Debouncer, Cancellation, CancellationToken } from '../viewUtils/async';
+
+import { ConnectionsMenuCommands } from '../widgets/connectionsMenu';
+import { WorkspaceContextTypes, WorkspaceContextWrapper } from '../workspace/workspaceContext';
+
+import { HaloDefaultTemplate } from './haloDefaultTemplate';
 import * as styles from './halo.scss';
 
 export interface HaloProps extends PaperWidgetProps {
+    commands: EventTrigger<ConnectionsMenuCommands>;
     id?: string;
+    scalable?: boolean;
+    margin?: number;
 }
 
 export interface HaloTemplateProps extends TemplateProps {
+    /**
+     * `true` if new links are allowed to be established from this element
+     */
     canLink: boolean;
+
+    /**
+     * `true` if the element is newly created and `false` if not
+     */
     isNewElement?: boolean;
+
+    /**
+     * `true` if the ontodia in Authoring mode
+     */
     inAuthoringMode?: boolean;
 }
 
@@ -83,7 +102,7 @@ export interface State {
 type RequiredProps = HaloProps & Required<PaperWidgetProps>;
 
 export class Halo extends React.Component<HaloProps, State> {
-    static defaultProps: Partial<HaloProps> = {
+    static defaultProps: Pick<HaloProps, 'id'> = {
         id: 'halo',
     };
 
@@ -110,6 +129,9 @@ export class Halo extends React.Component<HaloProps, State> {
                 this.forceUpdate();
             }
         });
+        this.listener.listen(editor.events, 'changeMode', () => {
+            this.forceUpdate();
+        });
         this.listener.listen(editor.events, 'changeAuthoringState', () => {
             this.queryAllowedActions();
         });
@@ -123,7 +145,8 @@ export class Halo extends React.Component<HaloProps, State> {
     }
 
     componentDidUpdate(prevProps: HaloProps, prevState: State) {
-        const {editor} = this.context.ontodiaWorkspace;
+        const {overlayController} = this.context.ontodiaWorkspace;
+        const {commands} = this.props;
         const {target, showConnectionsMenu} = this.state;
         if (target !== prevState.target) {
             this.listenToElement(target);
@@ -131,9 +154,9 @@ export class Halo extends React.Component<HaloProps, State> {
         }
         if (showConnectionsMenu !== prevState.showConnectionsMenu) {
             if (showConnectionsMenu) {
-                editor.showConnectionsMenu(target!);
+                commands.trigger('showConnectionsMenu', {target: target!});
             } else {
-                editor.hideDialog();
+                overlayController.hideDialog();
             }
         }
     }
@@ -177,7 +200,7 @@ export class Halo extends React.Component<HaloProps, State> {
             const signal = this.queryCancellation.signal;
             CancellationToken.mapCancelledToNull(
                 signal,
-                metadataApi.canLinkElement(target.data, signal)
+                metadataApi.canConnect(target.data, null, null, signal)
             ).then(canLink => {
                 if (canLink === null) { return; }
                 if (this.state.target?.iri === target.iri) {
@@ -197,7 +220,9 @@ export class Halo extends React.Component<HaloProps, State> {
     }
 
     render() {
-        const {paperArea, renderingState, view} = this.props as RequiredProps;
+        const {
+            paperArea, renderingState, scalable, paperTransform, margin = 5,
+        } = this.props as RequiredProps;
         const {target} = this.state;
 
         if (!target) {
@@ -209,13 +234,28 @@ export class Halo extends React.Component<HaloProps, State> {
 
         const bbox = boundsOf(target, renderingState);
         const {x: x0, y: y0} = paperArea.paperToScrollablePaneCoords(bbox.x, bbox.y);
-        const {x: x1, y: y1} = paperArea.paperToScrollablePaneCoords(
-            bbox.x + bbox.width,
-            bbox.y + bbox.height,
-        );
-        const MARGIN = 5;
-        const style: React.CSSProperties = {left: x0 - MARGIN, top: y0 - MARGIN,
-            width: ((x1 - x0) + MARGIN * 2), height: ((y1 - y0) + MARGIN * 2)};
+
+        let style: React.CSSProperties;
+        if (scalable) {
+            const {scale} = paperTransform;
+            style = {
+                left: x0 - margin * scale,
+                top: y0 - margin * scale,
+                width: bbox.width + margin * 2,
+                height: bbox.height + margin * 2,
+                transform: `scale(${scale})`,
+                transformOrigin: '0 0',
+            };
+        } else {
+            const {x: x1, y: y1} = paperArea.paperToScrollablePaneCoords(
+                bbox.x + bbox.width,
+                bbox.y + bbox.height,
+            );
+            style = {
+                left: x0 - margin, top: y0 - margin,
+                width: ((x1 - x0) + margin * 2), height: ((y1 - y0) + margin * 2)
+            };
+        }
 
         const templateProps = this.prepareTemplateProps();
         return (
@@ -239,8 +279,8 @@ export class Halo extends React.Component<HaloProps, State> {
     }
 
     private prepareTemplateProps(): HaloTemplateProps & HaloActions {
-        const {paperArea, view} = this.props as RequiredProps;
-        const {editor} = this.context.ontodiaWorkspace;
+        const {paperArea, view, commands} = this.props as RequiredProps;
+        const {editor, overlayController} = this.context.ontodiaWorkspace;
         const {target, canLink} = this.state;
         if (!target) { throw new Error('Target is undefined.'); }
         return {
@@ -251,11 +291,11 @@ export class Halo extends React.Component<HaloProps, State> {
             canLink: Boolean(canLink),
             inAuthoringMode: editor.inAuthoringMode,
             onOpenConnectionMenu: () => {
-                editor.showConnectionsMenu(target);
+                commands.trigger('showConnectionsMenu', {target});
             },
             onAddToFilter: () => target.addToFilter(),
             onExpand: () => view.model.history.execute(
-                setElementExpanded(target, target.isExpanded)
+                setElementExpanded(target, !target.isExpanded)
             ),
             onFollowLink: (e: React.MouseEvent<any>) => {
                 view.onIriClick(target.iri, target, IriClickIntent.JumpToEntity, e);
@@ -263,7 +303,7 @@ export class Halo extends React.Component<HaloProps, State> {
             onRemoveSelectedElements: () => editor.removeSelectedElements(),
             onEstablishNewLink: (e: React.MouseEvent<HTMLElement>) => {
                 const point = paperArea.pageToPaperCoords(e.pageX, e.pageY);
-                editor.startEditing({
+                overlayController.startEditing({
                     target,
                     mode: EditLayerMode.establishLink,
                     point,

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -200,21 +200,21 @@ export class NamespaceManager extends Component<{}, State> {
   private getUpdatePanel() {
     return (
       <div className={classnames(styles.updatePanel, 'row')}>
-        <div className='col-xs-2'>
+        <div className='col-sm-2'>
           <FormControl type='text'
             placeholder='Prefix'
             value={this.state.selectedPrefix}
             onChange={this.onPrefixInput}
           />
         </div>
-        <div className='col-xs-6'>
+        <div className='col-sm-5'>
           <FormControl type='text'
             placeholder='Namespace'
             value={this.state.selectedNamespace}
             onChange={this.onNamespaceInput}
           />
         </div>
-        <div className='col-xs-3'>
+        <div className='col-sm-3'>
           <StorageSelector
             allApps={this.state.appStatus}
             sourceApps={[]}
@@ -222,11 +222,11 @@ export class NamespaceManager extends Component<{}, State> {
             onChange={this.onSelectedAppChange}
           />
         </div>
-        <div className='col-xs-1'>
+        <div className='col-sm-2'>
           <ButtonToolbar>
             <Button type='submit'
-              bsSize='small'
-              bsStyle='primary'
+              size='sm'
+              variant='primary'
               onClick={this.onSetNamespaceClick}
               disabled={!(
                 this.state.selectedPrefix &&
@@ -241,17 +241,17 @@ export class NamespaceManager extends Component<{}, State> {
     );
   }
 
-  private onPrefixInput = (e: React.KeyboardEvent<FormControl>) => {
+  private onPrefixInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({
       isLoading: false,
-      selectedPrefix: (e.target as HTMLInputElement).value.trim(),
+      selectedPrefix: e.target.value.trim(),
     });
   }
 
-  private onNamespaceInput = (e: KeyboardEvent<FormControl>): void => {
+  private onNamespaceInput = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.setState({
       isLoading: false,
-      selectedNamespace: (e.target as HTMLInputElement).value.trim(),
+      selectedNamespace: e.target.value.trim(),
     });
   }
 
@@ -270,7 +270,7 @@ export class NamespaceManager extends Component<{}, State> {
     });
   }
 
-  private onSetNamespaceClick = (e: MouseEvent<ReactBootstrap.Button>) => {
+  private onSetNamespaceClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
     if (this.state.data.some(({prefix}) => prefix === this.state.selectedPrefix)) {
@@ -320,13 +320,13 @@ function createActionsCellRenderer(params: {
           <div>
             Delete prefix "{record.prefix}"?
             <div>
-              <Button bsSize='xs' bsStyle='danger' onClick={this.onConfirm}>Delete</Button>
-              <Button bsSize='xs' onClick={this.onCancel}>Cancel</Button>
+              <Button size='sm' variant='danger' onClick={this.onConfirm}>Delete</Button>
+              <Button size='sm' variant='secondary' onClick={this.onCancel}>Cancel</Button>
             </div>
           </div>
         );
       } else {
-        return <Button bsSize='xs'
+        return <Button size='sm' variant='secondary'
           onClick={this.onDeleteClick}>
           <span className='fa fa-trash-o' />&nbsp;Delete
         </Button>;

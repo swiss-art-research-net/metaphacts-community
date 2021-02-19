@@ -1,204 +1,105 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "anyOf": [
-        {
-            "$ref": "#/definitions/BaseSplitPaneConfig"
-        },
-        {
-            "$ref": "#/definitions/SplitPaneConfigWithDock"
-        }
-    ],
     "definitions": {
-        "BaseSplitPaneConfig": {
-            "properties": {
-                "className": {
-                    "description": "SplitPane custom class name",
-                    "type": "string"
-                },
-                "contentStyle": {
-                    "description": "Pane2 custom style, accepts JSON object with camelCased properties"
-                },
-                "defaultOpen": {
-                    "default": true,
-                    "description": "Whether should be open by default.",
-                    "type": "boolean"
-                },
-                "defaultSize": {
-                    "default": 300,
-                    "description": "Width of open sidebar",
-                    "type": "number"
-                },
-                "dock": {
-                    "description": "Dock mode",
-                    "type": "boolean"
-                },
-                "id": {
-                    "description": "Prefix for the local storage identifier",
-                    "type": "string"
-                },
-                "minSize": {
-                    "description": "Width of closed sidebar",
-                    "type": "number"
-                },
-                "persistResize": {
-                    "default": true,
-                    "description": "Persisting the current size to local storage",
-                    "type": "boolean"
-                },
-                "primary": {
-                    "description": "Defined which pane will be used as a sidebar.",
-                    "enum": [
-                        "first",
-                        "second"
-                    ],
-                    "type": "string"
-                },
-                "resizerClassName": {
-                    "description": "Resizer custom class name",
-                    "type": "string"
-                },
-                "resizerStyle": {
-                    "description": "Resizer custom style, accepts JSON object with camelCased properties"
-                },
-                "sidebarStyle": {
-                    "description": "Pane1 custom style, accepts JSON object with camelCased properties"
-                },
-                "snapThreshold": {
-                    "description": "Threshold which used for switch the state of the sidebar",
-                    "type": "number"
-                },
-                "split": {
-                    "description": "Splitting mode",
-                    "enum": [
-                        "horizontal",
-                        "vertical"
-                    ],
-                    "type": "string"
-                },
-                "style": {
-                    "description": "SplitPane custom style"
-                }
-            },
-            "propertyOrder": [
-                "minSize",
-                "defaultSize",
-                "className",
-                "resizerClassName",
-                "style",
-                "resizerStyle",
-                "sidebarStyle",
-                "contentStyle",
-                "persistResize",
-                "defaultOpen",
-                "id",
-                "dock",
-                "snapThreshold",
-                "split",
-                "primary"
-            ],
-            "required": [
-                "minSize"
-            ],
-            "type": "object"
-        },
-        "SplitPaneConfigWithDock": {
-            "properties": {
-                "className": {
-                    "description": "SplitPane custom class name",
-                    "type": "string"
-                },
-                "contentStyle": {
-                    "description": "Pane2 custom style, accepts JSON object with camelCased properties"
-                },
-                "defaultOpen": {
-                    "default": true,
-                    "description": "Whether should be open by default.",
-                    "type": "boolean"
-                },
-                "defaultSize": {
-                    "default": 300,
-                    "description": "Width of open sidebar",
-                    "type": "number"
-                },
-                "dock": {
-                    "description": "Dock mode",
-                    "type": "boolean"
-                },
-                "id": {
-                    "description": "Prefix for the local storage identifier",
-                    "type": "string"
-                },
-                "minSize": {
-                    "description": "Width of closed sidebar",
-                    "type": "number"
-                },
-                "navHeight": {
-                    "description": "Height of page elements above sidebar. Used to set height of sidebar",
-                    "type": "number"
-                },
-                "persistResize": {
-                    "default": true,
-                    "description": "Persisting the current size to local storage",
-                    "type": "boolean"
-                },
-                "primary": {
-                    "description": "Defined which pane will be used as a sidebar.",
-                    "enum": [
-                        "first",
-                        "second"
-                    ],
-                    "type": "string"
-                },
-                "resizerClassName": {
-                    "description": "Resizer custom class name",
-                    "type": "string"
-                },
-                "resizerStyle": {
-                    "description": "Resizer custom style, accepts JSON object with camelCased properties"
-                },
-                "sidebarStyle": {
-                    "description": "Pane1 custom style, accepts JSON object with camelCased properties"
-                },
-                "snapThreshold": {
-                    "description": "Threshold which used for switch the state of the sidebar",
-                    "type": "number"
-                },
-                "split": {
-                    "description": "Splitting mode",
-                    "enum": [
-                        "horizontal",
-                        "vertical"
-                    ],
-                    "type": "string"
-                },
-                "style": {
-                    "description": "SplitPane custom style"
-                }
-            },
-            "propertyOrder": [
-                "dock",
-                "navHeight",
-                "minSize",
-                "defaultSize",
-                "className",
-                "resizerClassName",
-                "style",
-                "resizerStyle",
-                "sidebarStyle",
-                "contentStyle",
-                "persistResize",
-                "defaultOpen",
-                "id",
-                "snapThreshold",
-                "split",
-                "primary"
-            ],
-            "required": [
-                "dock",
-                "minSize"
-            ],
-            "type": "object"
+        "CSSProperties": {
+            "type": "string"
         }
-    }
+    },
+    "properties": {
+        "className": {
+            "description": "SplitPane custom class name",
+            "type": "string"
+        },
+        "contentStyle": {
+            "description": "Pane2 custom style, accepts JSON object with camelCased properties"
+        },
+        "defaultOpen": {
+            "default": true,
+            "description": "Whether should be open by default.",
+            "type": "boolean"
+        },
+        "defaultSize": {
+            "default": 300,
+            "description": "Width of open sidebar",
+            "type": "number"
+        },
+        "dock": {
+            "description": "Dock mode",
+            "type": "boolean"
+        },
+        "id": {
+            "description": "Prefix for the local storage identifier",
+            "type": "string"
+        },
+        "minSize": {
+            "description": "Width of closed sidebar",
+            "type": "number"
+        },
+        "navHeight": {
+            "description": "Height of page elements above sidebar; used to set height of sidebar.\n\nApplicable only when `dock` is set to `true`.",
+            "type": "number"
+        },
+        "persistResize": {
+            "default": true,
+            "description": "Persisting the current size to local storage",
+            "type": "boolean"
+        },
+        "primary": {
+            "description": "Defined which pane will be used as a sidebar.",
+            "enum": [
+                "first",
+                "second"
+            ],
+            "type": "string"
+        },
+        "resizerClassName": {
+            "description": "Resizer custom class name",
+            "type": "string"
+        },
+        "resizerStyle": {
+            "description": "Resizer custom style, accepts JSON object with camelCased properties"
+        },
+        "sidebarStyle": {
+            "description": "Pane1 custom style, accepts JSON object with camelCased properties"
+        },
+        "snapThreshold": {
+            "description": "Threshold which used for switch the state of the sidebar",
+            "type": "number"
+        },
+        "split": {
+            "description": "Splitting mode",
+            "enum": [
+                "horizontal",
+                "vertical"
+            ],
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "SplitPane custom style"
+        }
+    },
+    "propertyOrder": [
+        "minSize",
+        "defaultSize",
+        "className",
+        "resizerClassName",
+        "style",
+        "resizerStyle",
+        "sidebarStyle",
+        "contentStyle",
+        "persistResize",
+        "defaultOpen",
+        "id",
+        "dock",
+        "navHeight",
+        "snapThreshold",
+        "split",
+        "primary"
+    ],
+    "required": [
+        "minSize"
+    ],
+    "type": "object"
 }
 

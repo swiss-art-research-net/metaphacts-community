@@ -37,9 +37,15 @@ export interface DashboardViewConfig {
    */
   id: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is used to render the view
-   * when users drop a resource on it. Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code>
-   * (or a variable specified in <code>frameVariable</code>) as context variables.
+   * Template which is used to render the view when users drop a resource on it.
+   *
+   * Expects `{{iri}}` and `{{dashboardId}}`
+   * (or a variable specified in `frameVariable`) as context variables.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   template: string;
   /**
@@ -55,15 +61,24 @@ export interface DashboardViewConfig {
    */
   image?: string;
   /**
-   * Class of the icon that will be used as the representation of the specific View in the Dashboard Item. It will be applied if the <code>image</code> attribute isn't specified.
+   * Class of the icon that will be used as the representation of the specific
+   * View in the Dashboard Item. It will be applied if the `image` attribute isn't specified.
    */
   iconClass?: string;
   /**
-   * SPARQL Ask query that is used to check whether it is possible to display a specific resource type in the specific view. Resource IRI is injected into the query using the <code>?value</code> binding variable.
+   * SPARQL Ask query that is used to check whether it is possible to display a specific
+   * resource type in the specific view.
+   *
+   * Resource IRI is injected into the query using the `?value` binding variable.
    */
   checkQuery?: string;
   /**
-   * Allows initiating a component/template without a resource. For instance, <code><ontodia></ontodia></code> component can be initiated in the Dashboard without a specific resource. When <code>resourceNotRequired</code> is set to <code>true</code> the version of the dialogue is rendered to suggests "Create new" option for the user, which means that the user can start this particular View from scratch and populate it with resources later.
+   * Allows initiating a component/template without a resource. For instance, `<ontodia>`
+   * component can be initiated in the Dashboard without a specific resource.
+   *
+   * When `resourceNotRequired` is set to `true` the version of the dialogue is rendered
+   * to suggests "Create new" option for the user, which means that the user can start this
+   * particular View from scratch and populate it with resources later.
    */
   resourceNotRequired?: boolean;
   /**
@@ -72,17 +87,29 @@ export interface DashboardViewConfig {
    */
   frameVariable?: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the label of a frame, it is used in the frame controller.
-   * By default the <code><mp-label></mp-label></code> component is used.
-   * Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code>
-   * (or a variable specified in <code>frameVariable</code>) as context variables.
+   * Template for the label of a frame, it is used in the frame controller.
+   *
+   * By default the `<mp-label>` component is used.
+   * Expects `{{iri}}` and `{{dashboardId}}`
+   * (or a variable specified in `frameVariable`) as context variables.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   itemLabelTemplate?: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the body of a frame item.
+   * Template for the body of a frame item.
+   *
    * If it is specified, it will applied to the contents of the frame item displayed as dropdown
-   * of the frame controller. Expects <code>{{iri}}</code> and <code>{{dashboardId}}</code>
-   * (or a variable specified in <code>frameVariable</code>) as context variables.
+   * of the frame controller. Expects `{{iri}}` and `{{dashboardId}}`
+   * (or a variable specified in `frameVariable`) as context variables.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   itemBodyTemplate?: string;
 }

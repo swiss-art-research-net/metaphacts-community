@@ -34,14 +34,7 @@ fi
 # this creates a garbage collection log which can be inspected with gcViewer
 # see https://github.com/chewiebug/GCViewer
 export JAVA_TOOL_OPTS="$JAVA_TOOL_OPTS \
- -Xloggc:/var/lib/jetty/logs/garbageCollection.log \
- -XX:+PrintGCDetails \
- -XX:+PrintGCDateStamps \
- -XX:+PrintGCTimeStamps \
- -XX:+UseGCLogFileRotation \
- -XX:NumberOfGCLogFiles=10 \
- -XX:GCLogFileSize=10M \
- -XX:+PrintGCCause"
+ -Xlog:gc=info:file=/var/lib/jetty/logs/gc.log:time,uptime,pid:filecount=10,filesize=10000"
 
 # execute java command
 exec java $JAVA_TOOL_OPTS $JAVA_OPTS -jar -Djava.io.tmpdir=$TMPDIR $JETTY_HOME/start.jar /usr/local/jetty/etc/jetty.xml /usr/local/jetty/etc/jetty-http-forwarded.xml $PLATFORM_JETTY_OPTS $RUNTIME_OPTS $PLATFORM_OPTS

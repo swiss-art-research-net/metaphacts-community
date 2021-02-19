@@ -19,6 +19,7 @@ gradle.properties
 
 # IntelliJ IDEA
 .idea/
+/buildSrc/build/source-roots/buildSrc/source-roots.txt
 
 # Visual Studio Code
 .vscode/

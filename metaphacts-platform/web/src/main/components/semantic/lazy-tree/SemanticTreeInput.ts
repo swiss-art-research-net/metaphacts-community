@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,13 +38,13 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import {
-  ReactElement, createElement, ReactNode, Children, ClassAttributes,
+  ReactElement, createElement, ReactNode, Children, ClassAttributes, FunctionComponent
 } from 'react';
 import * as D from 'react-dom-factories';
 import { findDOMNode } from 'react-dom';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
-import { Overlay, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Overlay, Button, Tooltip, OverlayTrigger, OverlayTriggerProps, OverlayProps } from 'react-bootstrap';
 import * as SparqlJs from 'sparqljs';
 import * as classnames from 'classnames';
 
@@ -477,39 +477,37 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
   }
 
   renderBrowseButton() {
-    return createElement(
-      OverlayTrigger,
-      {
-        placement: 'bottom',
-        overlay: createElement(Tooltip, {
-          id: 'SemanticTreeInput__tooltip',
-        }, 'Browse full hierarchy'),
-      },
-      createElement(Button,
-        {
-          className: styles.browseButton,
-          active: this.state.mode.type === 'full',
-          onClick: () => {
-            const modeType = this.state.mode.type;
-            if (modeType === 'collapsed' || modeType === 'search') {
-              this.search.cancelAll();
-              this.setState({
-                searchText: undefined,
-                searching: false,
-                searchResult: undefined,
-                mode: {type: 'full', selection: this.state.confirmedSelection},
-              });
-            } else if (modeType === 'full') {
-              this.closeDropdown({saveSelection: false});
-            }
-          },
+    const Trigger = OverlayTrigger as FunctionComponent<OverlayTriggerProps>;
+    return createElement(Trigger, {
+      placement: 'bottom',
+      overlay: () => createElement(Tooltip, {
+        id: 'SemanticTreeInput__tooltip',
+      }, 'Browse full hierarchy'),
+      children: createElement(Button, {
+        className: styles.browseButton,
+        variant: 'secondary',
+        active: this.state.mode.type === 'full',
+        onClick: () => {
+          const modeType = this.state.mode.type;
+          if (modeType === 'collapsed' || modeType === 'search') {
+            this.search.cancelAll();
+            this.setState({
+              searchText: undefined,
+              searching: false,
+              searchResult: undefined,
+              mode: { type: 'full', selection: this.state.confirmedSelection },
+            });
+          } else if (modeType === 'full') {
+            this.closeDropdown({ saveSelection: false });
+          }
         },
+      },
         D.span({
           className: 'fa fa-sitemap fa-lg',
           ['aria-hidden' as any]: true,
         })
       )
-    );
+    });
   }
 
   private closeDropdown(options: {saveSelection: boolean}) {
@@ -534,25 +532,20 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
 
   private renderOverlay() {
     const mode = this.state.mode;
-    return createElement(Overlay,
-      {
-        show: mode.type !== 'collapsed',
-        placement: 'bottom',
-        container: this.overlayHolder,
-        target: () => findDOMNode(this.textInput),
-      },
-      // use proxy component for overlay content to avoid warnings
-      // about unknown props provided by React.Bootstrap
-      createElement(OverlayProxy, {},
-        mode.type === 'collapsed'
-        ? D.div({})
-        : D.div(
-          {className: styles.dropdown},
-          this.renderDropdownContent(mode),
-          this.renderDropdownFooter(mode)
-        )
-      )
-    );
+    return createElement(Overlay as FunctionComponent<OverlayProps>, {
+      show: mode.type !== 'collapsed',
+      placement: 'bottom',
+      container: this.overlayHolder,
+      target: () => findDOMNode(this.textInput) as HTMLElement,
+      children: (mode.type === 'collapsed'
+          ? D.div({})
+          : D.div(
+            { className: styles.dropdown },
+            this.renderDropdownContent(mode),
+            this.renderDropdownFooter(mode)
+          )
+      ) as ReactElement
+    });
   }
 
   private updateForest(
@@ -620,12 +613,12 @@ export class SemanticTreeInput extends Component<SemanticTreeInputProps, State> 
     return D.div({className: styles.dropdownFooter},
       createElement(Button, {
         className: styles.dropdownButton,
-        bsStyle: 'danger',
+        variant: 'danger',
         onClick: () => this.closeDropdown({saveSelection: false}),
       }, 'Cancel'),
       createElement(Button, {
         className: styles.dropdownButton,
-        bsStyle: 'success',
+        variant: 'success',
         disabled: !enableSelectionSave,
         onClick: () => this.closeDropdown({saveSelection: true}),
       }, 'Select')

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,13 +43,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.metaphacts.config.NamespaceRegistry;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,9 +62,7 @@ import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
-import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.query.GraphQuery;
 import org.eclipse.rdf4j.query.GraphQueryResult;
 import org.eclipse.rdf4j.query.QueryResults;
@@ -70,13 +71,14 @@ import org.eclipse.rdf4j.repository.RepositoryConnection;
 import com.google.common.collect.Sets;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.cache.CacheManager;
+import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.data.rdf.PointedGraph;
 import com.metaphacts.data.rdf.container.FormContainer;
 import com.metaphacts.data.rdf.container.LDPApiInternal;
 import com.metaphacts.data.rdf.container.LDPApiInternalRegistry;
 import com.metaphacts.data.rdf.container.LDPImplManager;
-import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.MpRepositoryProvider;
+import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.Permissions.FORMS_LDP;
 import com.metaphacts.vocabulary.LDP;
 
@@ -103,7 +105,6 @@ public class FormPersistenceLdpEndpoint {
     @Inject
     private NamespaceRegistry nsRegistry;
 
-    private ValueFactory vf = SimpleValueFactory.getInstance();
 
     /**
      * Executes and array of SPARQL CONSTRUCT strings as graph queries on the

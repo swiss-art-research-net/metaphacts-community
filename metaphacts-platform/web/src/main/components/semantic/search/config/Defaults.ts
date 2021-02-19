@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -129,6 +129,7 @@ export function DefaultTextPattern(): Patterns {
            {
              SERVICE Repository:lookup {
                 $subject <${lookupNamespace}token> ?__value__;
+                  <${lookupNamespace}name> ?label ;
                   <${lookupNamespace}limit> 400 .
                 # might not be used depending on lookup configuration
                 $subject a ?__domain__ .
@@ -237,6 +238,7 @@ export function DefaultResourceSelectorQuery() {
     SELECT DISTINCT ?suggestion ?label WHERE {
       SERVICE Repository:lookup {
         ?suggestion lookup:token ?__token__ ;
+          lookup:name ?label ;
           lookup:limit 100 .
       }
       FILTER(EXISTS {

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,13 @@ import { Spinner } from 'platform/components/ui/spinner';
 
 import * as LabelsService from 'platform/api/services/resource-label';
 
-export interface ResourceLabelProps {
+/**
+ * **Example**:
+ * ```
+ * <mp-label iri='some:resource'></mp-label>
+ * ```
+ */
+interface ResourceLabelConfig {
   /**
    * IRI of resource to fetch label for
    */
@@ -68,6 +74,10 @@ export interface ResourceLabelProps {
   /**
    * Props for highlighted substring span
    */
+  highlightProps?: {};
+}
+
+export interface ResourceLabelProps extends ResourceLabelConfig {
   highlightProps?: HTMLProps<HTMLSpanElement>;
 }
 
@@ -76,12 +86,9 @@ interface State {
   error?: any;
 }
 
-/**
- * @example
- * <mp-label iri='some:resource'></mp-label>
- */
 export class ResourceLabel extends Component<ResourceLabelProps, State> {
-  private subscription: Kefir.Subscription;
+  private subscription: Kefir.Subscription | undefined;
+
   constructor(props: ResourceLabelProps, context: any) {
     super(props, context);
     this.state = {};
@@ -91,24 +98,34 @@ export class ResourceLabel extends Component<ResourceLabelProps, State> {
     this.fetchLabel(Rdf.iri(this.props.iri));
   }
 
-  componentWillReceiveProps(nextProps: ResourceLabelProps) {
+  componentDidUpdate(prevProps: ResourceLabelProps) {
     const {iri} = this.props;
-    if (nextProps.iri !== iri) {
-      this.subscription.unsubscribe();
-      this.fetchLabel(Rdf.iri(nextProps.iri));
+    if (prevProps.iri !== iri) {
+      this.fetchLabel(Rdf.iri(iri));
     }
   }
 
   componentWillUnmount() {
-    this.subscription.unsubscribe();
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+      this.subscription = undefined;
+    }
   }
 
   private fetchLabel = (iri: Rdf.Iri) => {
-    const context = this.context.semanticContext;
-    this.subscription = LabelsService.getLabel(iri, {context}).observe({
-      value: label => this.setState({label: label, error: undefined}),
-      error: error => this.setState({label: undefined, error: error}),
-    });
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+      this.subscription = undefined;
+    }
+    if (iri.value) {
+      const context = this.context.semanticContext;
+      this.subscription = LabelsService.getLabel(iri, {context}).observe({
+        value: label => this.setState({label: label, error: undefined}),
+        error: error => this.setState({label: undefined, error: error}),
+      });
+    } else {
+      this.setState({label: '', error: undefined});
+    }
   }
 
   render(): ReactElement<any> {

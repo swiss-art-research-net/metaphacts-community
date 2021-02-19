@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -99,6 +99,7 @@ public class FieldDefinitionTest {
         assertEquals(iri.stringValue(), result.get("iri"));
         assertEquals(description.stringValue(), result.get("description"));
 
+        @SuppressWarnings("unchecked")
         List<String> jsonDomains = (List<String>) result.get("domain");
         assertTrue(jsonDomains.contains(FOAF.AGENT.stringValue()));
         assertTrue(jsonDomains.contains(FOAF.PERSON.stringValue()));

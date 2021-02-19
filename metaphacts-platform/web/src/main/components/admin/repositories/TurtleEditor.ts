@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,8 +47,13 @@ import 'codemirror/addon/fold/brace-fold';
 import 'codemirror/addon/fold/indent-fold';
 import 'codemirror/addon/edit/matchtags';
 import 'codemirror/addon/edit/matchbrackets';
+import 'codemirror/addon/search/search';
+import 'codemirror/addon/search/searchcursor';
+import 'codemirror/addon/dialog/dialog';
+import 'codemirror/addon/dialog/dialog.css';
 
 import { Controlled as ReactCodeMirror } from 'react-codemirror2';
+import type { Editor } from 'codemirror';
 
 interface Props {
  turtleString: string;
@@ -56,6 +61,8 @@ interface Props {
 }
 
 export class TurtleEditorComponent extends React.Component<Props, {source: string}> {
+  private instance: Editor;
+
   constructor(props: Props, context: any) {
     super(props, context);
     this.state = {
@@ -65,9 +72,19 @@ export class TurtleEditorComponent extends React.Component<Props, {source: strin
 
   componentWillReceiveProps(nextProps: Props) {
     if (this.props.turtleString !== nextProps.turtleString) {
-      this.setState({source: nextProps.turtleString});
+      this.setState({ source: nextProps.turtleString }, () => {
+        if (this.instance) {
+          this.instance.refresh();
+        }
+      });
     }
-}
+  }
+
+  componentDidMount() {
+    if (this.instance) {
+      this.instance.refresh();
+    }
+  }
 
   public render() {
     const codeMirrorAddonOptions = {
@@ -79,12 +96,12 @@ export class TurtleEditorComponent extends React.Component<Props, {source: strin
     return React.createElement(ReactCodeMirror, {
       className: 'turtle-editor',
       value: this.state.source,
+      editorDidMount: (editor) => { this.instance = editor; },
       onBeforeChange: this.onChangeTurtle,
       options: {
         ...codeMirrorAddonOptions,
         mode: 'text/turtle',
         indentWithTabs: false, indentUnit: 2, tabSize: 2,
-        viewportMargin: Infinity,
         lineNumbers: true,
         lineWrapping: true,
         gutters: ['CodeMirror-linenumbers'],

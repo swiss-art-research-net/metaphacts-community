@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,27 +42,32 @@ import * as CopyToClipboard from 'react-copy-to-clipboard';
 
 import { addNotification } from 'platform/components/ui/notification';
 
-export interface Props {
+/**
+ * **Example**:
+ * ```
+ * <mp-copy-to-clipboard text='text'>
+ *   <button class='btn btn-secondary'>
+ *     <i class='fa fa-copy'></i>
+ *   </button>
+ * </mp-copy-to-clipboard>
+ * ```
+ */
+interface CopyToClipboardConfig {
   /**
-   * The text that will be copied to clipboard
+   * The text that will be copied to clipboard.
    */
   text: string;
   /**
-   * The message that will be displayed in the notification when the text has been copied
-   * @default 'The content has been copied!'
+   * The message that will be displayed in the notification when the text has been copied.
+   *
+   * @default "The content has been copied!"
    */
   message?: string;
 }
 
-/**
- * @example
- * <mp-copy-to-clipboard text='text'>
- *     <button class='btn btn-default'>
- *         <i class='fa fa-copy'></i>
- *     </button>
- * </mp-copy-to-clipboard>
- */
-export class CopyToClipboardComponent extends React.Component<Props, {}> {
+export type CopyToClipboardProps = CopyToClipboardConfig;
+
+export class CopyToClipboardComponent extends React.Component<CopyToClipboardProps, {}> {
   static defaultProps = {
     message: 'The content has been copied!',
   };

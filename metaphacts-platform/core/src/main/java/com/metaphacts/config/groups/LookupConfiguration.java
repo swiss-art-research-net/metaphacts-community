@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,12 +65,21 @@ public class LookupConfiguration extends ConfigurationGroupBase {
     }
     
     @ConfigurationParameter(
+        name = "experimental.defaultExternalLookupServiceName",
+        restartRequired = false,
+        desc = "Name of the lookup service to use by default in the rest service."
+    )
+    public String getDefaultExternalLookupServiceName() {
+        return getString("experimental.defaultExternalLookupServiceName");
+    }
+
+    @ConfigurationParameter(
         name = "experimental.defaultLookupServiceName",
         restartRequired = false,
         desc = "Name of the lookup service to use by default."
     )
     public String getDefaultLookupServiceName() {
-        return getString("experimental.defaultLookupServiceName"); 
+        return getString("experimental.defaultLookupServiceName");
     }
     
     @Override

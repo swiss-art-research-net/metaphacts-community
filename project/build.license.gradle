@@ -63,6 +63,31 @@ licenseReport {
 
 generateLicenseReport.dependsOn ':project:webpack:generateNpmLicenseReportFiles'
 
+
+
+configure(project.ext.allAppProjects) {
+
+	apply plugin: 'com.github.jk1.dependency-license-report'
+	
+	project.logger.debug("configuring license report for app " + project)
+	
+	licenseReport {
+
+		outputDir = project.file("target/reports/licenses/")
+
+		projects = [project]
+		configurations = ['runtimeClasspath']
+		
+		filters = [new LicenseBundleNormalizer(bundlePath: project(':project').file('license-normalizer-bundle.json'))] 
+		
+		def renderer = new MPLicenseRenderer('THIRDPARTY.html', new LicenseComparator())
+		renderer.renderLinks = false;
+		renderer.modulesBundleName = project.name + ' dependencies'
+		renderers = [renderer]
+	}
+}
+
+
 // normalize some NPM licenses (e.g. modified components)
 class MPNpmLicenseItemNormalizer implements NpmLicenseItemNormalizer {
 

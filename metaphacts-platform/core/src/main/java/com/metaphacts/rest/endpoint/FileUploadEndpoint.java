@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,6 @@ package com.metaphacts.rest.endpoint;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -60,8 +59,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -75,6 +72,8 @@ import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Injector;
@@ -82,8 +81,8 @@ import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.data.rdf.PointedGraph;
 import com.metaphacts.data.rdf.container.FileContainer;
 import com.metaphacts.data.rdf.container.LDPImplManager;
-import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.MpRepositoryProvider;
+import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.upload.MetadataExtractor;
 import com.metaphacts.upload.UploadHandler;
 import com.metaphacts.vocabulary.LDP;
@@ -198,7 +197,7 @@ public class FileUploadEndpoint {
             //adding resource to container
             fileContainer.add(ldpGraph);
 
-            return Response.created(new java.net.URI(newId.toString())).build();
+            return Response.created(new java.net.URI(newId.stringValue())).build();
 
         } catch (Exception e) {
             logger.error("Failed to upload file with context " + contextUri + ", sequence " + sequence + ":" + e.getMessage());

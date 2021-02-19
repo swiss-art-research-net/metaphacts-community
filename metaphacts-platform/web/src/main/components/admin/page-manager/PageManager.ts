@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -234,35 +234,36 @@ export class PageManager extends Component<{}, PageAdminState> {
       }),
       D.div(
         {className: 'row', style: rowStyle, key: 'selected-pages'},
-        D.div({className: 'col-xs-2'}, 'Selected pages: '),
+        D.div({className: 'col-sm-2'}, 'Selected pages: '),
         D.div(
-          {className: 'col-xs-4'},
+          {className: 'col-sm-4'},
           D.b({}, this.state.selectedPages.length)
         )
       ),
       D.div(
         {className: 'row', style: rowStyle},
-        D.div({className: 'col-xs-2', key: '1'}, 'Select pages: '),
-        D.div({className: 'col-xs-4', key: '2'}, ReactSelect(selectOptions))
+        D.div({className: 'col-sm-2', key: '1'}, 'Select pages: '),
+        D.div({className: 'col-sm-4', key: '2'}, ReactSelect(selectOptions))
       ),
       createElement(Alert, this.state.alert.map(config => config).getOrElse(
         { alert: AlertType.NONE, message: '' }
       )),
       D.div(
         {className: 'row', style: rowStyle, key: 'actions'},
-        D.div({className: 'col-xs-2'}),
-        D.div({className: 'col-xs-4'},
+        D.div({className: 'col-sm-2'}),
+        D.div({className: 'col-sm-4'},
           ButtonToolbar({},
             Button({
                 type: 'submit',
-                bsSize: 'small',
-                bsStyle: 'primary',
+                size: 'sm',
+                variant: 'primary',
+                className: 'mr-2',
                 onClick: this.onClickExportSelected,
               }, 'Export Selected'),
             Button({
                 type: 'submit',
-                bsSize: 'small',
-                bsStyle: 'primary',
+                size: 'sm',
+                variant: 'primary',
                 onClick: this.onClickDeleteSelected,
                 disabled: this.state.selectedPages.length === this.state.data.length,
               }, 'Delete Selected')

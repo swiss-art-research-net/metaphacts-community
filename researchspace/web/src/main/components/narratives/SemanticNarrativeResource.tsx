@@ -33,7 +33,7 @@ import { SemanticNarrativeEditorProps } from './SemanticNarrativeEditor';
 
 import { BottomToolbar } from 'ory-editor-ui';
 import { AutoCompletionInput } from 'platform/components/ui/inputs';
-import { ControlLabel, FormGroup, Col, Form } from 'react-bootstrap';
+import { FormLabel, FormGroup, Col, Form } from 'react-bootstrap';
 
 function getTypesFromRepository(
   repository: string, resource: Rdf.Iri
@@ -152,7 +152,7 @@ export class SemanticNarrativeResource extends Component<Props, State> {
     return <BottomToolbar open={focused}>
       <Form className='ory-resource-component-bottom-form'>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={4}>Display Entity as</Col>
+          <Col as={FormLabel} sm={4}>Display Entity as</Col>
           <Col sm={8}>
             <ReactSelect
               className='react-select-open-top'
@@ -170,7 +170,7 @@ export class SemanticNarrativeResource extends Component<Props, State> {
           </Col>
         </FormGroup>
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={4}>Semantic Relation</Col>
+          <Col as={FormLabel} sm={4}>Semantic Relation</Col>
           <Col sm={8}>
             <AutoCompletionInput
               className='react-select-open-top'

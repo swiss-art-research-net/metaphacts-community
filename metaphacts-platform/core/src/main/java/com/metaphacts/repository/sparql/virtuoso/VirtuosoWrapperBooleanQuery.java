@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -83,17 +83,17 @@ public class VirtuosoWrapperBooleanQuery implements BooleanQuery {
     }
 
     public String getQueryString() {
-        return QueryStringUtil.getQueryString(queryString, getBindings());
+        return QueryStringUtil.getTupleQueryString(queryString, getBindings());
     }
 
     @Override
     public void setMaxQueryTime(int maxQueryTime) {
-        delegate.setMaxQueryTime(maxQueryTime);        
+        delegate.setMaxExecutionTime(maxQueryTime);
     }
 
     @Override
     public int getMaxQueryTime() {
-        return delegate.getMaxQueryTime();
+        return delegate.getMaxExecutionTime();
     }
 
     @Override

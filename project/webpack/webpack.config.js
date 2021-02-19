@@ -29,6 +29,9 @@ const resolveTheme = require('./theme');
 
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
+/* Enable this flag to see stack traces for DeprecationWarning log messages: */
+/* process.traceDeprecation = true; */
+
 /**
  * @typedef {Object} PlatformWebpackOptions
  * @property {'test' | 'dev' | 'prod'} buildMode
@@ -45,18 +48,14 @@ module.exports = function (defaults, platformOptions) {
       ROOT_DIR,
       METAPHACTORY_ROOT_DIR,
       METAPHACTORY_DIRS,
-      GRAPHSCOPE_ROOT_DIR,
-      GRAPHSCOPE_SOURCE_DIR,
-      GRAPHSCOPE_NEW_SOURCE_DIR,
       DIST,
       TEST_DIRS,
-      SRC_DIRS
+      SRC_DIRS,
+      resolveModulePath
     } = defaults;
     const {buildMode} = platformOptions;
 
     console.log('Building the following web projects: ' + WEB_PROJECTS.map(p => p.name).join(', '));
-
-    const isTest = buildMode === 'test';
 
     /** @type {{ [entryKey: string]: Array<string> }} */
     const entries = {};
@@ -69,14 +68,14 @@ module.exports = function (defaults, platformOptions) {
      * @type {{ [schemaName: string]: string }}
      */
     const jsonSchemas = {};
-    /** @type {{ [componentTag: string]: string }} */
+    /** @type {{ [componentTag: string]: string | { propsSchema?: string } }} */
     const components = {};
 
     for (const project of WEB_PROJECTS) {
       if (project.entries) {
         Object.keys(project.entries).forEach(key => {
           const entryPath = project.entries[key];
-          entries[key] = [path.join(project.webDir, entryPath)];
+          entries[key] = [resolveModulePath(project, entryPath)];
         });
       }
 
@@ -101,8 +100,18 @@ module.exports = function (defaults, platformOptions) {
 
       const componentsJsonPath = path.join(project.webDir, 'component.json');
       if (fs.existsSync(componentsJsonPath)) {
+        /** @type {typeof components} */
         const componentsJson = JSON.parse(fs.readFileSync(componentsJsonPath, 'utf8'));
         Object.assign(components, componentsJson);
+
+        for (const componentName of Object.keys(componentsJson)) {
+          const metadata = componentsJson[componentName];
+          if (typeof metadata === 'object' && metadata.propsSchema) {
+            const schemaName = metadata.propsSchema;
+            const schemaPath = `${project.schemasAlias}/${schemaName}.json`;
+            jsonSchemas[schemaName] = schemaPath;
+          }
+        }
       }
     }
 
@@ -165,9 +174,7 @@ module.exports = function (defaults, platformOptions) {
                         } : undefined,
                       }
                     }
-                  ],
-                  include: [SRC_DIRS.concat(TEST_DIRS), GRAPHSCOPE_NEW_SOURCE_DIR],
-                  exclude: GRAPHSCOPE_SOURCE_DIR
+                  ]
                 },
                 {
                   test: /\.scss$/,
@@ -193,10 +200,10 @@ module.exports = function (defaults, platformOptions) {
                       }
                     },
                   ],
-                  exclude: GRAPHSCOPE_SOURCE_DIR
                 },
                 {
                   test: /\.scss$/,
+                  exclude: [cssModulesBasedComponents],
                   use: [
                     threadLoader,
                     'style-loader',
@@ -213,8 +220,7 @@ module.exports = function (defaults, platformOptions) {
                         outputStyle: 'expanded'
                       }
                     },
-                  ],
-                  exclude: [cssModulesBasedComponents, GRAPHSCOPE_SOURCE_DIR]
+                  ]
                 },
                 {
                   test: /\.css$/,
@@ -222,8 +228,7 @@ module.exports = function (defaults, platformOptions) {
                     threadLoader,
                     'style-loader',
                     'css-loader'
-                  ],
-                  exclude: GRAPHSCOPE_SOURCE_DIR
+                  ]
                 },
                 {
                     test: /\.mp-components$/,
@@ -249,13 +254,11 @@ module.exports = function (defaults, platformOptions) {
                             limit: 100000,
                             mimetype: 'image/png'
                         }
-                    }],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
+                    }]
                 },
                 {
                     test: /\.gif$/,
-                    loader: "file-loader",
-                    exclude: GRAPHSCOPE_SOURCE_DIR
+                    loader: "file-loader"
                 },
 
                 // exclude highcharts
@@ -264,7 +267,7 @@ module.exports = function (defaults, platformOptions) {
                     use: process.env.BUNDLE_HIGHCHARTS ? [] : [{
                         loader: 'noop-loader'
                     }],
-                    exclude: [/node_modules/, GRAPHSCOPE_SOURCE_DIR]
+                    exclude: [/node_modules/]
                 },
                 {
                     test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
@@ -274,163 +277,30 @@ module.exports = function (defaults, platformOptions) {
                             limit: 10000,
                             mimetype: 'application/font-woff'
                         }
-                    }],
-                    exclude: GRAPHSCOPE_SOURCE_DIR
+                    }]
                 },
                 {
                     test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                     loader: "file-loader",
-                    exclude: [GRAPHSCOPE_SOURCE_DIR, /.*ketcher\.svg$/, /.*library\.svg$/]
+                    exclude: [/.*ketcher\.svg$/, /.*library\.svg$/]
                 },
-
                 {
                     test: path.join(METAPHACTORY_ROOT_DIR, 'node_modules/codemirror/lib/codemirror.js'),
-                    loader: "expose-loader?CodeMirror",
-                    exclude: GRAPHSCOPE_SOURCE_DIR
-                },
-                // graphscope
-                // .ts
-                // {
-                //   test: /\.ts$/,
-                //   include: GRAPHSCOPE_SOURCE_DIR,
-                //   enforce: "pre",
-                //   use: isTest ? [] : [{
-                //     loader: "tslint-loader",
-                //     options: {
-                //       emitErrors: false,
-                //       failOnHint: false
-                //     }
-                //   }],
-                //   // always exclude .e2e.ts, if not testing also exclude .spec.ts and .livespec.ts
-                //   exclude: [isTest ? /\.(e2e)\.ts$/ : /\.(livespec|spec|e2e)\.ts$/, /node_modules\/(?!(ng2-.+))/]
-                // },
-                {
-                  test: /\.ts$/,
-                  include: GRAPHSCOPE_SOURCE_DIR,
-                  use: [{
-                    loader: "ts-loader",
-                    options: {
-                      transpileOnly: true
-                    }
-                  }],
-                  // always exclude .e2e.ts, if not testing also exclude .spec.ts and .livespec.ts
-                  exclude: [isTest ? /\.(e2e)\.ts$/ : /\.(livespec|spec|e2e)\.ts$/, /node_modules\/(?!(ng2-.+))/]
-                },
-                // assets not in public, moved to dist/fonts
-                {
-                  test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)$/,
-                  include: GRAPHSCOPE_SOURCE_DIR,
-                  use: [{
-                    loader: "file-loader",
-                    options: {
-                      name: "fonts/[name].[hash].[ext]?"
-                    }
-                  }]
-                },
-                // .html maybe specific loader?
-                {
-                  test: /\.html$/,
-                  include: GRAPHSCOPE_SOURCE_DIR,
-                  use: [{
-                    loader: "raw-loader"
-                  }]
-                },
-                // Support for CSS as raw text
-                // use 'null' loader in test mode (https://github.com/webpack/null-loader)
-                // all css in src/style will be bundled in an external css file
-                {
-                  test: /\.css$/,
-                  include: GRAPHSCOPE_SOURCE_DIR,
-                  exclude: path.join(GRAPHSCOPE_SOURCE_DIR, 'app'),
-                  use: isTest ? 'null' : [{
-                        loader: "css-loader",
-                        options: {
-                          sourceMap: "true"
-                        }
-                      },
-                      {
-                        loader: "postcss-loader",
-                        options: {
-                          options: {}
-                        }
-                      }
-                    ]
-                },
-                // all css required in src/app files will be merged in js files
-                {
-                  test: /\.css$/,
-                  include: path.join(GRAPHSCOPE_SOURCE_DIR, 'app'),
-                  use: [{
-                      loader: "raw-loader"
-                    },
-                    {
-                      loader: "postcss-loader",
-                      options: {
-                        options: {}
-                      }
-                    }
-                  ]
-                },
-
-                // support for .scss files
-                // use 'null' loader in test mode (https://github.com/webpack/null-loader)
-                // all css in src/style will be bundled in an external css file
-                {
-                  test: /\.scss$/,
-                  include: GRAPHSCOPE_SOURCE_DIR,
-                  exclude: path.join(GRAPHSCOPE_SOURCE_DIR, 'app'),
-                  use: isTest ? 'null' : [{
-                        loader: "css-loader",
-                        options: {
-                          sourceMap: "true"
-                        }
-                      },
-                      {
-                        loader: "postcss-loader",
-                        options: {
-                          options: {}
-                        }
-                      }
-                    ]
-                },
-                // all css required in src/app files will be merged in js files
-                {
-                  test: /\.scss$/,
-                  include: path.join(GRAPHSCOPE_SOURCE_DIR, 'app'),
-                  use: [{
-                      loader: "raw-loader"
-                    },
-                    {
-                      loader: "sass-loader"
-                    }
-                  ]
-                },
-                {
-                  test: /\.(js|ts)$/,
-                  enforce: "post",
-                  include: GRAPHSCOPE_SOURCE_DIR,
-                  use: isTest ? [] : [{
-                    loader: 'istanbul-instrumenter-loader'
-                  }],
-                  exclude: [/\.spec\.ts$/, /\.livespec\.ts$/, /\.e2e\.ts$/, /node_modules/]
+                    loader: "expose-loader?CodeMirror"
                 },
                 {
                   test: /.*ketcher\.svg$/,
-                  loader: 'raw-loader',
-                  exclude: GRAPHSCOPE_SOURCE_DIR
+                  loader: 'raw-loader'
                 },
                 {
                   test: /.*library\.svg$/,
-                  loader: 'raw-loader',
-                  exclude: GRAPHSCOPE_SOURCE_DIR
+                  loader: 'raw-loader'
                 },
                 {
                   test: /.*library\.sdf$/,
-                  loader: 'raw-loader',
-                  exclude: GRAPHSCOPE_SOURCE_DIR
+                  loader: 'raw-loader'
                 }
-              ],
-              noParse: [/.+zone\.js\/dist\/.+/, /.+angular2\/bundles\/.+/, /angular2-polyfills\.js/]
+              ]
         },
         resolve: {
             modules: ['node_modules'].concat(
@@ -526,7 +396,12 @@ module.exports = function (defaults, platformOptions) {
             // set the current working directory for displaying module paths
             cwd: process.cwd(),
           }),
-        ]
+        ],
+        watchOptions: {
+          // check for changes every second (seems to fix busy CPU issue)
+          poll: 1000,
+          ignored: 'node_modules',
+        },
     };
 
     if (!(buildMode === 'dev' && defaults.ROOT_BUILD_CONFIG.noTsCheck)) {

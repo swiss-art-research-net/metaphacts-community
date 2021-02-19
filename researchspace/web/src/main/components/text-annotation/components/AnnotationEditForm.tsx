@@ -114,7 +114,7 @@ export class AnnotationEditForm extends Component<AnnotationEditFormProps, State
           {Schema.sameIri(subject, Schema.PLACEHOLDER_ANNOTATION)
             ? 'Create annotation' : 'Update annotation'}
         </button>
-        <button className={`btn btn-default ${styles.cancelButton}`}
+        <button className={`btn btn-secondary ${styles.cancelButton}`}
           onClick={handlers.cancelEditingAnnotation}>
           Cancel
         </button>

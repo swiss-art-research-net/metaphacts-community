@@ -19,6 +19,7 @@
 const _ = require('lodash');
 
 module.exports.default = function(input) {
+  const tags = [];
   const cases = _.reduce(JSON.parse(input), (acc, entry, component) => {
     let path, metadata;
     if (typeof entry === 'string') {
@@ -29,6 +30,8 @@ module.exports.default = function(input) {
       metadata = {...entry};
       delete metadata.path;
     }
+
+    tags.push(component);
 
     const snippet = `
       case '${component}': return {
@@ -45,7 +48,7 @@ module.exports.default = function(input) {
     return acc + snippet;
   }, '');
 
-  return `module.exports = function(tagName) {
+  return `module.exports = function (tagName) {
     function onLoaded(comp) {
       if (!comp.default) {
         throw new Error('Failed to load component <' + tagName + '>');
@@ -56,5 +59,5 @@ module.exports.default = function(input) {
       ${cases}
     }
     return null;
-  };`;
+  }; module.exports.allTags = ${JSON.stringify(tags)};`;
 };

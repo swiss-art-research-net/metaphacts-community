@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import * as React from 'react';
 import { Component, FormEvent } from 'react';
-import { FormGroup, FormControl, Col, ControlLabel, HelpBlock, Button } from 'react-bootstrap';
+import { FormText, FormGroup, FormControl, Col, FormLabel, Button } from 'react-bootstrap';
 import { Just, Nothing } from 'data.maybe';
 import * as Kefir from 'kefir';
 import { isEqual } from 'lodash';
@@ -140,7 +140,7 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
         const value = XsdDataTypeValidation.sameXsdDatatype(type, vocabularies.xsd.anyURI)
           ? Rdf.iri(defaultValue) : Rdf.literal(defaultValue, type);
         return validateType({value}, type);
-      },
+      }
     ).flatMap(v => FieldValue.getErrors(v).length > 0 ? Kefir.constantError(v) : Kefir.constant(v));
 
     defaultValueMapped.observe({
@@ -170,7 +170,7 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
         if (!label || !variable || !valueType) { return; }
         this.setState({isValid: true}, this.onChange);
         return {};
-      },
+      }
     ).onValue(() => { /* nothing */ });
   }
 
@@ -271,7 +271,7 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
     return Kefir.constant<Value>({value: v});
   }
 
-  private getFormValue = (e: FormEvent<FormControl>) : Kefir.Property<any> => {
+  private getFormValue = (e: FormEvent<HTMLInputElement>): Kefir.Property<any> => {
     return Kefir.constant((e.target as any).value);
   }
 
@@ -280,39 +280,42 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
     const {label, variable, comment, valueType, defaultValue, optional} = this.state;
 
     return <div className='form-horizontal'>
-      <FormGroup validationState={label.isJust && label.get().error ? 'error' : undefined}>
-        <Col sm={2}><ControlLabel>Label</ControlLabel></Col>
+      <FormGroup>
+        <Col sm={2}><FormLabel>Label</FormLabel></Col>
         <Col sm={10}>
           <FormControl type='text'
             value={label.isJust ? label.get().value : ''}
-            onChange={e => this.label.plug(this.getFormValue(e))} />
+            onChange={(e: React.FormEvent<any>) => this.label.plug(this.getFormValue(e))}
+            isInvalid={Boolean(label.isJust && label.get().error)} />
           {label.isJust && label.get().error
-            ? <HelpBlock>{label.get().error.message}</HelpBlock>
+            ? <FormControl.Feedback type='invalid'>{label.get().error.message}</FormControl.Feedback>
             : null}
         </Col>
       </FormGroup>
-      <FormGroup validationState={variable.isJust && variable.get().error ? 'error' : undefined}>
-        <Col sm={2}><ControlLabel>Variable</ControlLabel></Col>
+      <FormGroup>
+        <Col sm={2}><FormLabel>Variable</FormLabel></Col>
         <Col sm={10}>
-          <FormControl componentClass='select'
+          <FormControl as='select'
             value={variable.isJust ? variable.get().value : ''}
-            onChange={e => this.variable.plug(this.getFormValue(e))}>
+            onChange={(e: React.FormEvent<any>) => this.variable.plug(this.getFormValue(e))}
+            isInvalid={Boolean(variable.isJust && variable.get().error)}>
             <option value='' disabled={true} style={{display: 'none'}}>
               -- select variable --
             </option>
             {variables.map((item, index) => <option key={index} value={item}>{item}</option>)}
           </FormControl>
           {variable.isJust && variable.get().error
-            ? <HelpBlock>{variable.get().error.message}</HelpBlock>
+            ? <FormControl.Feedback type='invalid'>{variable.get().error.message}</FormControl.Feedback>
             : null}
         </Col>
       </FormGroup>
-      <FormGroup validationState={valueType.isJust && valueType.get().error ? 'error' : undefined}>
-        <Col sm={2}><ControlLabel>Value Type</ControlLabel></Col>
+      <FormGroup>
+        <Col sm={2}><FormLabel>Value Type</FormLabel></Col>
         <Col sm={10}>
-          <FormControl componentClass='select'
+          <FormControl as='select'
             value={valueType.isJust ? valueType.get().value : ''}
-            onChange={e => this.valueType.plug(this.getFormValue(e))}>
+            onChange={(e: React.FormEvent<any>) => this.valueType.plug(this.getFormValue(e))}
+            isInvalid={Boolean(valueType.isJust && valueType.get().error)}>
             <option value='' disabled={true} style={{display: 'none'}}>
               -- select value type --
             </option>
@@ -321,50 +324,50 @@ export class QueryTemplateEditArgument extends Component<Props, State> {
                 disabled={item.disabled}>{item.label}</option>)}
           </FormControl>
           {valueType.isJust && valueType.get().error
-            ? <HelpBlock>{valueType.get().error.message}</HelpBlock>
-            : null}
-        </Col>
-      </FormGroup>
-      <FormGroup validationState={
-        FieldValue.getErrors(defaultValue).length > 0 ? 'error' : undefined
-      }>
-        <Col sm={2}><ControlLabel>Default Value</ControlLabel></Col>
-        <Col sm={10}>
-          <FormControl type='text'
-            value={FieldValue.isAtomic(defaultValue) ? defaultValue.value.value : ''}
-            onChange={e => this.defaultValue.plug(this.getFormValue(e))} />
-          {FieldValue.getErrors(defaultValue).length > 0
-            ? <HelpBlock>{
-                FieldState.getFirst(FieldValue.getErrors(defaultValue)).message
-              }</HelpBlock>
-            : null}
-        </Col>
-      </FormGroup>
-      <FormGroup validationState={comment.isJust && comment.get().error ? 'error' : undefined}>
-        <Col sm={2}><ControlLabel>Comment</ControlLabel></Col>
-        <Col sm={10}>
-          <FormControl type='text'
-            value={comment.isJust ? comment.get().value : ''}
-            onChange={e => this.comment.plug(this.getFormValue(e))} />
-          {comment.isJust && comment.get().error
-            ? <HelpBlock>{comment.get().error.message}</HelpBlock>
+            ? <FormControl.Feedback type='invalid'>{valueType.get().error.message}</FormControl.Feedback>
             : null}
         </Col>
       </FormGroup>
       <FormGroup>
-        <Col sm={2}><ControlLabel>Optional</ControlLabel></Col>
+        <Col sm={2}><FormLabel>Default Value</FormLabel></Col>
+        <Col sm={10}>
+          <FormControl type='text'
+            value={FieldValue.isAtomic(defaultValue) ? defaultValue.value.value : ''}
+            onChange={(e: React.FormEvent<any>) => this.defaultValue.plug(this.getFormValue(e))}
+            isInvalid={FieldValue.getErrors(defaultValue).length > 0}/>
+          {FieldValue.getErrors(defaultValue).length > 0
+            ? <FormControl.Feedback type='invalid'>{
+                FieldState.getFirst(FieldValue.getErrors(defaultValue)).message
+              }</FormControl.Feedback>
+            : null}
+        </Col>
+      </FormGroup>
+      <FormGroup>
+        <Col sm={2}><FormLabel>Comment</FormLabel></Col>
+        <Col sm={10}>
+          <FormControl type='text'
+            value={comment.isJust ? comment.get().value : ''}
+            onChange={(e: React.FormEvent<any>) => this.comment.plug(this.getFormValue(e))}
+            isInvalid={Boolean(comment.isJust && comment.get().error)}/>
+          {comment.isJust && comment.get().error
+            ? <FormControl.Feedback type='invalid'>{comment.get().error.message}</FormControl.Feedback>
+            : null}
+        </Col>
+      </FormGroup>
+      <FormGroup>
+        <Col sm={2}><FormLabel>Optional</FormLabel></Col>
         <Col sm={10}>
           <FormControl type='checkbox' style={{width: '20px'}}
             checked={optional}
-            onChange={e => {
+            onChange={(e: React.FormEvent<any>) => {
               // TODO
               this.optional.plug(Kefir.constant((e.target as any).checked));
             }} />
         </Col>
       </FormGroup>
       <div className='text-right'>
-        <Button bsStyle='danger' bsSize='xsmall' onClick={onDelete}>
-          <span className='fa fa-times'> Delete</span>
+        <Button variant='danger' size='sm' onClick={onDelete}>
+          <span className='fa fa-times'></span> Delete
         </Button>
       </div>
     </div>;

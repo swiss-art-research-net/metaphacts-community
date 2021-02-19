@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,9 +38,11 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as React from 'react';
-import { Button, Dropdown, MenuItem } from 'react-bootstrap';
+import { Button, Dropdown } from 'react-bootstrap';
 import { WorkspaceContextWrapper, WorkspaceContextTypes, AuthoringState } from 'ontodia';
 
+import { Component, ComponentContext } from 'platform/api/components';
+import { TemplateItem } from 'platform/components/ui/template';
 import { OntodiaContextWrapper, OntodiaContextTypes } from './OntodiaContext';
 import * as styles from './Toolbar.scss';
 
@@ -61,12 +63,33 @@ export interface OntodiaSaveButtonConfig {
    * Toggles dropdown menu above the button.
    */
   dropup?: boolean;
+  /**
+   * Provide a custom template. Requires the ID to be set.
+   *
+   * **Example**:
+   * ```
+   * <mp-event-trigger id='event-trigger'
+   *   type='Ontodia.Save'
+   *   data='{"persistChanges": true, "saveDiagram": true}'
+   *   targets='["{{eventTarget}}"]'>
+   *   <button>Save changes and diagram</button>
+   * </mp-event-trigger>
+   * ```
+   */
+  template?: string;
+}
+
+// exported for documentation
+interface SaveButtonTemplateData {
+  readonly inAuthoringMode: boolean;
+  readonly canPersistChanges: boolean;
+  readonly eventTarget: string | undefined;
 }
 
 export type OntodiaSaveButtonProps = OntodiaSaveButtonConfig;
 
-export class SaveButton extends React.Component<OntodiaSaveButtonProps, {}> {
-  static defaultProps: Partial<OntodiaSaveButtonProps> = {
+export class SaveButton extends Component<OntodiaSaveButtonProps, {}> {
+  static defaultProps: Pick<OntodiaSaveButtonProps, 'saveDiagramLabel' | 'persistChangesLabel'> = {
     saveDiagramLabel: 'Save diagram',
     persistChangesLabel: 'Save data',
   };
@@ -75,48 +98,58 @@ export class SaveButton extends React.Component<OntodiaSaveButtonProps, {}> {
     ...WorkspaceContextTypes,
     ...OntodiaContextTypes,
   };
-  readonly context: WorkspaceContextWrapper & OntodiaContextWrapper;
+  readonly context: WorkspaceContextWrapper & OntodiaContextWrapper & ComponentContext;
 
   render() {
     const {editor} = this.context.ontodiaWorkspace;
     const {
       inAuthoringMode, onSaveDiagram, onSaveDiagramAs, onPersistChanges,
-      onPersistChangesAndSaveDiagram,
+      onPersistChangesAndSaveDiagram, ontodiaId,
     } = this.context.ontodiaContext;
-    const {saveDiagramLabel, persistChangesLabel, dropup} = this.props;
+    const {saveDiagramLabel, persistChangesLabel, dropup, template} = this.props;
+    const drop = dropup ? 'up' : 'down';
 
     const canPersistChanges = inAuthoringMode && !AuthoringState.isEmpty(editor.authoringState);
+    if (template) {
+      const templateData: SaveButtonTemplateData = {
+        inAuthoringMode: inAuthoringMode(),
+        canPersistChanges,
+        eventTarget: ontodiaId,
+      };
+      return <TemplateItem template={{ source: template, options: templateData }}></TemplateItem>;
+    }
+
     if (canPersistChanges) {
       return (
-        <Dropdown id='persist-changes-button' className='btn-group-sm' dropup={dropup}>
-          <Button bsStyle='success'
+        <Dropdown id='persist-changes-button' className='btn-group-sm' drop={drop}>
+          <Button variant='success'
             onClick={onPersistChanges}
             className={styles.saveButton}>
             <span className='fa fa-floppy-o' aria-hidden='true' />&nbsp;
             {persistChangesLabel}
           </Button>
-          <Dropdown.Toggle bsStyle='success' />
+          <Dropdown.Toggle variant='success' />
           <Dropdown.Menu>
-            <MenuItem href='#' onClick={onPersistChangesAndSaveDiagram}>
+            <Dropdown.Item href='#' onClick={onPersistChangesAndSaveDiagram}>
               {persistChangesLabel} &amp; {saveDiagramLabel}
-            </MenuItem>
+            </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
       );
     }
     return (
-      <Dropdown id='save-diagram-button' className='btn-group-sm' dropup={dropup}>
-        <Button bsStyle='primary'
+      <Dropdown id='save-diagram-button' className='btn-group-sm' drop={drop}>
+        <Button variant='primary'
           onClick={onSaveDiagram}
           className={styles.saveButton}>
           <span className='fa fa-floppy-o' aria-hidden='true' />&nbsp;
           {saveDiagramLabel}
         </Button>
-        <Dropdown.Toggle bsStyle='primary' />
+        <Dropdown.Toggle variant='primary' />
         <Dropdown.Menu>
-          <MenuItem href='#' onClick={onSaveDiagramAs}>
+          <Dropdown.Item href='#' onClick={onSaveDiagramAs}>
             {saveDiagramLabel} as...
-          </MenuItem>
+          </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown>
     );

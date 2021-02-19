@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,6 +50,8 @@ const {rdf, xsd} = vocabularies;
 export interface GenerateFormFromFieldsParams {
   fields: ReadonlyArray<FieldDefinition>;
   overrides: ReadonlyArray<InputOverride>;
+  /** @default false */
+  omitFooter?: boolean;
 }
 
 export interface InputOverride {
@@ -65,8 +67,8 @@ export interface InputOverrideTarget {
 export type FieldInputElement =
   React.ReactElement<Inputs.SingleValueInputProps | Inputs.MultipleValuesProps>;
 
-export function generateFormFromFields(params: GenerateFormFromFieldsParams): JSX.Element[] {
-  const content: JSX.Element[] = [];
+export function generateFormFromFields(params: GenerateFormFromFieldsParams): React.ReactNode[] {
+  const content: React.ReactNode[] = [];
   for (const field of params.fields) {
     let lastMatched: FieldInputElement | undefined;
     for (const override of params.overrides) {
@@ -80,15 +82,29 @@ export function generateFormFromFields(params: GenerateFormFromFieldsParams): JS
     const generatedInput = lastMatched
       ? React.cloneElement(lastMatched, {for: field.id})
       : generateInputForField(field);
-    content.push(generatedInput);
+    content.push(React.cloneElement(generatedInput, {key: field.id}));
   }
-  content.push(<FormErrors />);
-  content.push(<button name='submit' className='btn btn-default'>Save</button>);
-  content.push(<button name='reset' className='btn btn-default'>Reset</button>);
+  if (!params.omitFooter) {
+    content.push(<FormErrors key='generated-form-errors' />);
+    content.push(
+      <button key='generated-save-button'
+        name='submit'
+        className='btn btn-secondary'>
+        Save
+      </button>
+    );
+    content.push(
+      <button key='generated-rest-button'
+        name='reset'
+        className='btn btn-secondary'>
+        Reset
+      </button>
+    );
+  }
   return content;
 }
 
-function generateInputForField(field: FieldDefinition): JSX.Element {
+function generateInputForField(field: FieldDefinition): React.ReactElement<any> {
   if (field.treePatterns) {
     return <Inputs.TreePickerInput for={field.id} />;
   }

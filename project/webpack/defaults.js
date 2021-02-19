@@ -35,6 +35,7 @@ const fs = require('fs');
  * @property {string} webDir
  * @property {string} [schemasAlias]
  * @prop {{ [entry: string]: string }} [entries]
+ * @prop {Array<string>} [stableEntryNames]
  * @prop {{ [entry: string]: string }} [aliases]
  * @prop {Array<string>} [extensions]
  * @prop {Array<string>} [cssModulesBasedComponents]
@@ -87,10 +88,6 @@ module.exports = function () {
     test: path.join(METAPHACTORY_ROOT_DIR, 'src/test')
   };
 
-  const GRAPHSCOPE_ROOT_DIR = path.join(ROOT_DIR, 'graphscope'); // metaphactory
-  const GRAPHSCOPE_SOURCE_DIR = path.join(GRAPHSCOPE_ROOT_DIR, 'web/src/original');
-  const GRAPHSCOPE_NEW_SOURCE_DIR = path.join(GRAPHSCOPE_ROOT_DIR, 'web/src/new');
-
   const allRootDirs = WEB_PROJECTS.map(project => project.webDir);
   const srcs = allRootDirs.map(dir => path.join(dir, 'src/main'));
   const tests = allRootDirs.map(dir => path.join(dir, 'src/test'));
@@ -102,12 +99,10 @@ module.exports = function () {
     ROOT_DIR: ROOT_DIR,
     METAPHACTORY_ROOT_DIR: METAPHACTORY_ROOT_DIR,
     METAPHACTORY_DIRS: METAPHACTORY_DIRS,
-    GRAPHSCOPE_ROOT_DIR: GRAPHSCOPE_ROOT_DIR,
-    GRAPHSCOPE_SOURCE_DIR: GRAPHSCOPE_SOURCE_DIR,
-    GRAPHSCOPE_NEW_SOURCE_DIR: GRAPHSCOPE_NEW_SOURCE_DIR,
     DIST: DIST,
     SRC_DIRS: srcs,
     TEST_DIRS: tests,
+    resolveModulePath,
   };
 };
 
@@ -121,7 +116,7 @@ function makeAliasesConfig(projects) {
     if (project.aliases) {
       Object.keys(project.aliases).forEach(key => {
         const aliasPath = project.aliases[key];
-        aliases[key] = path.join(project.webDir, aliasPath);
+        aliases[key] = resolveModulePath(project, aliasPath);
       });
     }
     if (project.schemasAlias) {
@@ -129,4 +124,14 @@ function makeAliasesConfig(projects) {
     }
   }
   return aliases;
+}
+
+/**
+ * @param {WebProject} project
+ * @param {string} modulePath
+ */
+function resolveModulePath(project, modulePath) {
+  return modulePath.startsWith('./') || modulePath.startsWith('../')
+    ? path.join(project.webDir, modulePath)
+    : modulePath;
 }

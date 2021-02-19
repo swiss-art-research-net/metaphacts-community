@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -93,14 +93,14 @@ export class RepositoryManager extends Component<{}, State> {
     const {loadingError, repositoryToEdit, repositoryTemplates} = this.state;
 
     if (loadingError) {
-      return <Alert bsStyle='info'> {loadingError} </Alert>;
+      return <Alert variant='info'> {loadingError} </Alert>;
     }
     return (
       <div className={styles.holder} data-flex-layout='row top-center'>
         <div className={styles.RepositorySelectionArea}>
             {this.renderRepositories()}
             {repositoryToEdit && <Button
-                bsStyle='primary'
+                variant='primary'
                 className={styles.RepositoryButton}
                 onClick={() => this.setState({repositoryToEdit: undefined})}
               >Create New </Button>

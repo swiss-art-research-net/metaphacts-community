@@ -1,0 +1,8 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Stores all selected items, so the `<mp-selection-toggle>` component will be able\nto restore its state when it gets re-rendered.\n\n**Example**:\n```\n<mp-selection-group>\n   <div>\n     <mp-selection-action-choice id='Action' title='With selected ...' selection='example'>\n       <!-- actions -->\n     </mp-selection-action-choice>\n\n     <mp-selection-toggle selection='example' tag='http://example.com/resource1'>\n     </mp-selection-toggle>\n\n     <mp-selection-toggle selection='example' tag='http://example.com/resource2'>\n     </mp-selection-toggle>\n   </div>\n</mp-selection-group>\n```",
+    "propertyOrder": [
+    ],
+    "type": "object"
+}
+

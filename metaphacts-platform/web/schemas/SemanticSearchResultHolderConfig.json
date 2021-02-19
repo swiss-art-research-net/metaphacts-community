@@ -2,14 +2,14 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "properties": {
         "domainsExclude": {
-            "description": "An array of search domains categories (full IRIs without <>) to be shown.\nIf effective search domain is <b>in the array</b>, search result will be <b>hidden</b>,\notherwise - it will be shown in this <code>semantic-search-result-holder</code> visualization.\nCannot be used together with domains-include.",
+            "description": "An array of search domains categories (full IRIs without `<>`) to be shown.\n\nIf effective search domain is **in the array**, search result will be **hidden**,\notherwise it will be shown in this `<semantic-search-result-holder>` visualization.\n\nCannot be used together with `domains-include` attribute.",
             "items": {
                 "type": "string"
             },
             "type": "array"
         },
         "domainsInclude": {
-            "description": "An array of search domains categories (full IRIs without <>) to be shown.\nIf effective search domain is <b>in the array</b>, search result will be <b>shown</b>,\notherwise - it will be hidden in this <code>semantic-search-result-holder</code> visualization.\nCannot be used together with domains-exclude.",
+            "description": "An array of search domains categories (full IRIs without `<>`) to be shown.\n\nIf effective search domain is **in the array**, search result will be **shown**,\notherwise it will be hidden in this `<semantic-search-result-holder>` visualization.\n\nCannot be used together with `domains-exclude` attribute.",
             "items": {
                 "type": "string"
             },

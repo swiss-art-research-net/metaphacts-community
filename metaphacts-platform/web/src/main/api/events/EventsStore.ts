@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,12 +37,9 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import * as _ from 'lodash';
-import * as uuid from 'uuid';
 import * as Kefir from 'kefir';
-import * as Immutable from 'immutable';
 
-import { Rdf } from 'platform/api/rdf';
+import { Cancellation } from 'platform/api/async';
 
 import { Event, EventFilter, EventType } from './EventsApi';
 
@@ -51,18 +48,22 @@ interface Subscriber {
   emitter: Kefir.Emitter<Event<any>>;
 }
 
+const subscribers = new Set<Subscriber>();
+
 /**
- * exposed only for testing purpose
+ * Exposed only for testing purposes.
  */
-export const _subscribers: {[key: string]: Subscriber} = {};
+export function test_clearSubscribers() {
+  subscribers.clear();
+}
 
 /**
  * Listen to all events that satisfies given 'eventFilter'.
  */
 export function listen<Data>(eventFilter: EventFilter<Data>): Kefir.Stream<Event<Data>> {
   return Kefir.stream(emitter => {
-    const key = uuid.v4();
-    _subscribers[key] = {eventFilter, emitter};
+    const subscriber: Subscriber = {eventFilter, emitter};
+    subscribers.add(subscriber);
 
     // Emits the event if it has the current value
     const currentValue = EventSourceStore.getCurrentValue(eventFilter);
@@ -70,7 +71,7 @@ export function listen<Data>(eventFilter: EventFilter<Data>): Kefir.Stream<Event
       emitter.emit(currentValue);
     }
 
-    return () => delete _subscribers[key];
+    return () => subscribers.delete(subscriber);
   });
 }
 
@@ -78,93 +79,93 @@ export function listen<Data>(eventFilter: EventFilter<Data>): Kefir.Stream<Event
  * Trigger event.
  */
 export function trigger<Data>(event: Event<Data>) {
-  _.forEach(
-    _subscribers, ({eventFilter, emitter}) => {
-      if (
-          (eventFilter.eventType ? eventFilter.eventType === event.eventType : true) &&
-          (eventFilter.source ? eventFilter.source === event.source : true) &&
-          (eventFilter.target ? _.includes(event.targets || [], eventFilter.target) : true)
-      ) {
-        emitter.emit(event);
-      }
+  subscribers.forEach(({eventFilter, emitter}) => {
+    if (
+      (!eventFilter.eventType || eventFilter.eventType === event.eventType) &&
+      (!eventFilter.source || eventFilter.source === event.source) &&
+      targetFilterMatchesEvent(eventFilter.target, event)
+    ) {
+      emitter.emit(event);
     }
-  );
+  });
   EventSourceStore.updateCurrentValue(event);
 }
 
-export function registerEventSource(eventSource: EventSource) {
-  EventSourceStore.addEventSource(eventSource);
+function targetFilterMatchesEvent(target: string | undefined, event: Event<any>) {
+  if (!target) { return true; }
+  return event.targets ? event.targets.indexOf(target) >= 0 : false;
 }
 
-export function unregisterEventSource(eventSource: EventSource) {
-  EventSourceStore.deleteEventSource(eventSource);
+export interface EventSourceParam<Data> {
+  source: string | undefined;
+  eventType: EventType<Data>;
+  cancellation: Cancellation;
+  initialData?: Data;
+}
+
+export function registerEventSource<Data>(eventSourceParam: EventSourceParam<Data>) {
+  const {source, eventType, cancellation, initialData} = eventSourceParam;
+  const eventSource: EventSource = {
+    source,
+    eventType,
+    currentValue: initialData ? {source, eventType, data: initialData} : undefined,
+  };
+  EventSourceStore.addEventSource(eventSource);
+  cancellation.onCancel(() => {
+    EventSourceStore.deleteEventSource(eventSource);
+  });
 }
 
 interface EventSource {
-  source: string;
+  source: string | undefined;
   eventType: EventType<any>;
   currentValue?: Event<any>;
 }
 namespace EventSourceStore {
-  let sources: Immutable.Map<EventSourceKey, EventSource> = Immutable.Map();
+  const sourceByType = new Map<EventType<any>, EventSource[]>();
 
   export function getCurrentValue<Data>(eventFilter: EventFilter<Data>): Event<Data> | undefined {
-    const key = eventSourceKey(eventFilter.source, eventFilter.eventType);
-    const eventSource = sources.get(key);
-    if (eventSource) {
-      return eventSource.currentValue;
+    if (!eventFilter.eventType) {
+      return undefined;
+    }
+    const sources = sourceByType.get(eventFilter.eventType);
+    if (sources) {
+      for (const source of sources) {
+        if (!eventFilter.source || source.source === eventFilter.source) {
+          return source.currentValue;
+        }
+      }
     }
     return undefined;
   }
 
   export function updateCurrentValue<Data>(event: Event<Data>) {
-    const key = eventSourceKey(event.source, event.eventType);
-    const eventSource = sources.get(key);
-    if (eventSource) {
-      sources = sources.set(key, {...eventSource, currentValue: event});
+    const sources = sourceByType.get(event.eventType);
+    if (sources) {
+      for (const source of sources) {
+        if (source.source === event.source) {
+          source.currentValue = event;
+        }
+      }
     }
   }
 
   export function addEventSource(eventSource: EventSource) {
-    const key = eventSourceKey(eventSource.source, eventSource.eventType);
-    if (!sources.has(key)) {
-      sources = sources.set(key, eventSource);
+    let sources = sourceByType.get(eventSource.eventType);
+    if (!sources) {
+      sources = [];
+      sourceByType.set(eventSource.eventType, sources);
     }
+    sources.push(eventSource);
   }
 
   export function deleteEventSource(eventSource: EventSource) {
-    const key = eventSourceKey(eventSource.source, eventSource.eventType);
-    sources = sources.remove(key);
-  }
-
-  function eventSourceKey<Data>(source: string, eventType: EventType<Data>): EventSourceKey {
-    return new EventSourceKey(source, eventType);
-  }
-}
-
-class EventSourceKey {
-  constructor(
-    private _source: string,
-    private _eventType: EventType<any>
-    ) {}
-
-  get source() {
-    return this._source;
-  }
-
-  get eventType() {
-    return this._eventType;
-  }
-
-  public equals(other: EventSourceKey) {
-    return this.source === other.source &&
-      this.eventType === other.eventType;
-  }
-
-  public hashCode() {
-    let hash = 0;
-    hash = 31 * hash + Rdf.hashString(this.source);
-    hash = 31 * hash + Rdf.hashString(this.eventType);
-    return Rdf.smi(hash);
+    const sources = sourceByType.get(eventSource.eventType);
+    if (sources) {
+      const index = sources.indexOf(eventSource);
+      if (index >= 0) {
+        sources.splice(index, 1);
+      }
+    }
   }
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,8 @@
  */
 package com.metaphacts.lookup.util;
 
+import static com.metaphacts.lookup.impl.AbstractSPARQLSearchLookupService.*;
+import static com.metaphacts.lookup.impl.AbstractSPARQLSearchLookupService.SUBJECT_BINDING_VARIABLE;
 import static org.junit.Assert.assertEquals;
 
 import org.eclipse.rdf4j.model.Literal;
@@ -124,4 +126,56 @@ public class LookupSparqlQueryBuilderTest {
                 tokenizedQueryString.stringValue());
     }
 
+    @Test
+    public void testParseQueryWithLanguagesSupport() {
+        LookupQuery lookupQuery = new LookupQuery();
+        lookupQuery.setQuery("foo bar");
+
+        var parsedQueryNoLanguage = LookupSparqlQueryBuilder.parseQuery(
+            lookupQuery,
+            QUERY_TEMPLATE_WITH_LANGUAGE_SUPPORT,
+            q -> vf.createLiteral(LookupSparqlQueryBuilder.splitAppend.apply(q, "*"))
+        );
+
+        assertEquals(FILLED_QUERY_TEMPLATE_LANGUAGE_NOT_PROVIDED, parsedQueryNoLanguage.getAsString());
+
+        lookupQuery.setPreferredLanguage("en, de;q=0.4, ru;q=0.5");
+        var parsedQueryWithLanguage = LookupSparqlQueryBuilder.parseQuery(
+            lookupQuery,
+            QUERY_TEMPLATE_WITH_LANGUAGE_SUPPORT,
+            q -> vf.createLiteral(LookupSparqlQueryBuilder.splitAppend.apply(q, "*"))
+        );
+
+        assertEquals("en", parsedQueryWithLanguage.getBindings().get("__language__").stringValue());
+    }
+
+    public static LookupSparqlQueryBuilder.SparqlQueryTemplate QUERY_TEMPLATE_WITH_LANGUAGE_SUPPORT =
+        new LookupSparqlQueryBuilder.SparqlQueryTemplate(
+            // query template
+            "SELECT\n"
+                    + SUBJECT_BINDING_VARIABLE + "\n"
+                    + "(GROUP_CONCAT(DISTINCT ?type ; separator=\",\") as " + TYPES_BINDING_VARIABLE + ")\n"
+                    + "(MAX(?score_private) as " + SCORE_BINDING_VARIABLE + ")\n"
+                    + "WHERE {\n"
+                    +     LookupSparqlQueryBuilder.TYPE_BLOCK_PLACEHOLDER
+                    // TODO this should be covered by TYPE_BLOCK_PLACEHOLDER
+                    // e.g. for wikidata we require wdt:P31
+                    + "\n" + LookupSparqlQueryBuilder.SEARCH_BLOCK_PLACEHOLDER
+                    + "\n" + LookupSparqlQueryBuilder.PROPERTIES_BLOCK_PLACEHOLDER
+                    + "\n} GROUP BY " + SUBJECT_BINDING_VARIABLE + " "
+                    +     "ORDER BY DESC(" + SCORE_BINDING_VARIABLE + ")"
+                    +     LookupSparqlQueryBuilder.LIMIT_BLOCK_PLACEHOLDER,
+            "BIND(?__language__ as ?language)",
+            LookupSparqlQueryBuilder.DEFAULT_QUERY_TEMPLATE.typeBlockTemplate,
+            LookupSparqlQueryBuilder.DEFAULT_QUERY_TEMPLATE.objectPropertyBlockTemplate,
+            LookupSparqlQueryBuilder.DEFAULT_QUERY_TEMPLATE.dataPropertyBlockTemplate
+    );
+
+    private static String FILLED_QUERY_TEMPLATE_LANGUAGE_NOT_PROVIDED = "SELECT\n" +
+            "?candidate\n" +
+            "(GROUP_CONCAT(DISTINCT ?type ; separator=\",\") as ?types)\n" +
+            "(MAX(?score_private) as ?score)\n" +
+        "WHERE {\n\n" +
+            "BIND(?__language__ as ?language)\n\n" +
+        "} GROUP BY ?candidate ORDER BY DESC(?score)";
 }

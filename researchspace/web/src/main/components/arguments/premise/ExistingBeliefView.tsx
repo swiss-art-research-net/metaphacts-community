@@ -17,7 +17,7 @@
  */
 import * as React from 'react';
 import {
-  Panel, FormControl, FormGroup, Col, ControlLabel,
+  Card, FormControl, FormGroup, Col, FormLabel, FormText
 } from 'react-bootstrap';
 
 import { SemanticContextProvider, Component } from 'platform/api/components';
@@ -67,10 +67,12 @@ export class ExistingBeliefView extends Component<ExistingBeliefViewProps, {}> {
         return this.renderCustomBeliefTemplate(belief, assertionBasedBeliefTemplate);
       }
       return (
-        <Panel header={<div><span>Assertion based belief</span>{close}</div>}
-          className={`form-horizontal ${styles.evidence}`}>
-          {...ExistingBeliefContentView(belief)}
-        </Panel>
+        <Card className={`form-horizontal ${styles.evidence}`}>
+          <Card.Header>{<div><span>Assertion based belief</span>{close}</div>}</Card.Header>
+          <Card.Body>
+            {...ExistingBeliefContentView(belief)}
+          </Card.Body>
+        </Card>
       );
     }
     if (belief.argumentBeliefType === ArgumentsBeliefTypeFieldKind) {
@@ -78,10 +80,12 @@ export class ExistingBeliefView extends Component<ExistingBeliefViewProps, {}> {
         return this.renderCustomBeliefTemplate(belief, fieldBasedBeliefTemplate);
       }
       return (
-        <Panel header={<div><span>Field based belief</span>{close}</div>}
-          className={`form-horizontal ${styles.evidence}`}>
-          {...ExistingBeliefContentView(belief)}
-        </Panel>
+        <Card className={`form-horizontal ${styles.evidence}`}>
+            <Card.Header>{<div><span>Field based belief</span>{close}</div>}</Card.Header>
+            <Card.Body>
+              {...ExistingBeliefContentView(belief)}
+            </Card.Body>
+        </Card>
       );
     }
   }
@@ -92,35 +96,35 @@ export function ExistingBeliefContentView(belief: ArgumentsBelief) {
     case ArgumentsBeliefTypeAssertionKind:
       return [
         <FormGroup>
-          <Col componentClass={ControlLabel} sm={3}>Assertion</Col>
+          <Col as={FormLabel} sm={3}>Assertion</Col>
           <Col sm={9}>
-            <FormControl.Static>
+            <FormText>
               <SemanticContextProvider repository='assets'>
                 <ResourceLinkComponent uri={belief.assertion.value} />
               </SemanticContextProvider>
-            </FormControl.Static>
+            </FormText>
           </Col>
         </FormGroup>
       ];
       case ArgumentsBeliefTypeFieldKind:
         return [
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>Record</Col>
+            <Col as={FormLabel} sm={3}>Record</Col>
             <Col sm={9}>
-              <FormControl.Static>
+              <FormText>
                 <ResourceLinkComponent uri={belief.target.value} guessRepository={true} />
-              </FormControl.Static>
+              </FormText>
             </Col>
           </FormGroup>,
           <FormGroup>
-            <Col componentClass={ControlLabel} sm={3}>Field</Col>
+            <Col as={FormLabel} sm={3}>Field</Col>
             <Col sm={9}>
-              <FormControl.Static>
+              <FormText>
                 {/* fields are always stored in assets repository */}
                 <SemanticContextProvider repository='assets'>
                   <ResourceLinkComponent uri={belief.field.iri} />
                 </SemanticContextProvider>
-              </FormControl.Static>
+              </FormText>
             </Col>
           </FormGroup>,
         ];

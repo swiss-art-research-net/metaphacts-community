@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -112,7 +112,7 @@ export class PageToolbar extends Component<PageEditorToolbarProps, PageEditorToo
           {hasEditPermission
             ? <ResourceLink
               resource={iri}
-              className='btn btn-default component-page-toolbar__btn_edit'
+              className='btn btn-secondary component-page-toolbar__btn_edit'
               activeClassName='active'
               title='Edit page'
               action={ResourceLinkAction.edit}>

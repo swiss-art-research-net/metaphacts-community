@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "properties": {
+        "className": {
+            "type": "string"
+        },
+        "defaultPrint": {
+            "type": "boolean"
+        },
+        "id": {
+            "type": "string"
+        },
+        "label": {
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "label",
+        "className",
+        "style",
+        "defaultPrint"
+    ],
+    "required": [
+        "id",
+        "label"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,7 @@ $offsetTop: 44px;
         left: 0;
         bottom: 0;
         width: 100%;
+        max-width: unset;
       }
 
       .modal-content {
@@ -82,16 +83,13 @@ $offsetTop: 44px;
 
     // Media Queries ------------------------------
 
-    @media (min-width: $screen-sm-min) {
+    @include media-breakpoint-up(sm) {
       margin: 0;
       width: 100%
     }
 }
 
 .overlay-modal {
-    display: flex !important;
-    flex-direction: column;
-
     &__dialog {
         display: flex;
         max-height: 100%;

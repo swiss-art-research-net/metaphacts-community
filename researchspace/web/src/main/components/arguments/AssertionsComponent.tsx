@@ -17,7 +17,7 @@
  */
 import * as _ from 'lodash';
 import * as React from 'react';
-import { Panel, Button, Alert } from 'react-bootstrap';
+import { Card, Button, Alert } from 'react-bootstrap';
 import * as Kefir from 'kefir';
 import { Map } from 'immutable';
 import * as Maybe from 'data.maybe';
@@ -145,52 +145,56 @@ export class AssertionsComponent extends Component<AssertionsProps, State> {
     fieldClone.minOccurs = 1;
     fieldClone.maxOccurs = 1;
 
-    return <Panel header={title}>
-      {this.assertionHeader(target, fieldClone)}
-      <hr />
-      {this.noBeliefs() ? <Alert bsStyle='warning'>
-        <p><i className="fa fa-exclamation-triangle"></i>
-          <strong>Please add an opinion to at least one value!</strong> Opinions are required for
-          newly asserted values.</p>
-       </Alert> : null}
-      <SemanticContextProvider repository='default'>
-        <FieldBasedVisualization
-          subject={target.value}
-          template={visualizationTemplate}
-          fields={[fieldClone]}
-        />
-      </SemanticContextProvider>
-      <hr />
-      <TemplateItem
-        template={{
-          source: visualizationTemplate, options: {fields: [normalizeFieldDefinition(_.cloneDeep(fieldClone))], isNotCanonical: true}
-        }} />
-      { _.isEmpty(fieldClone.values) ? null : <hr /> }
-      {
-        this.state.addingNewValue && this.state.formTemplate.isJust ?
-          <SemanticContextProvider repository='default'>
-          <ResourceEditorForm
-            newSubjectTemplate={target.value} fields={[fieldClone]}
-            persistence={this}
-            browserPersistence={false}
-            postAction={this.postAction}
-          >
-            <div data-flex-layout='column justify-stretch' className={styles.valueHolder}>
-              <div>
-                {this.state.formTemplate.getOrElse(null)}
+    return <Card>
+      <Card.Header>{title}</Card.Header>
+      <Card.Body>
+        {this.assertionHeader(target, fieldClone)}
+        <hr />
+        {this.noBeliefs() ? <Alert variant='warning'>
+          <p><i className="fa fa-exclamation-triangle"></i>
+            <strong>Please add an opinion to at least one value!</strong> Opinions are required for
+            newly asserted values.</p>
+        </Alert> : null}
+        <SemanticContextProvider repository='default'>
+          <FieldBasedVisualization
+            subject={target.value}
+            template={visualizationTemplate}
+            fields={[fieldClone]}
+          />
+        </SemanticContextProvider>
+        <hr />
+        <TemplateItem
+          template={{
+            source: visualizationTemplate, options: {fields: [normalizeFieldDefinition(_.cloneDeep(fieldClone))], isNotCanonical: true}
+          }} />
+        { _.isEmpty(fieldClone.values) ? null : <hr /> }
+        {
+          this.state.addingNewValue && this.state.formTemplate.isJust ?
+            <SemanticContextProvider repository='default'>
+            <ResourceEditorForm
+              newSubjectTemplate={target.value} fields={[fieldClone]}
+              persistence={this}
+              browserPersistence={false}
+              postAction={this.postAction}
+            >
+              <div data-flex-layout='column justify-stretch' className={styles.valueHolder}>
+                <div>
+                  {this.state.formTemplate.getOrElse(null)}
+                </div>
+                <div className={styles.actions} data-flex-layout='row top-right'>
+                  <button className='btn btn-danger' onClick={this.toggleAddNewValue}>Cancel</button>
+                  <button name='submit' className='btn btn-success'>Submit</button>
+                </div>
               </div>
-              <div className={styles.actions} data-flex-layout='row top-right'>
-                <button className='btn btn-danger' onClick={this.toggleAddNewValue}>Cancel</button>
-                <button name='submit' className='btn btn-success'>Submit</button>
-              </div>
+            </ResourceEditorForm>
+            </SemanticContextProvider>
+            : <div data-flex-layout='row center-right'>
+              <Button variant='link' onClick={this.toggleAddNewValue}>Add an alternative value ...</Button>
             </div>
-          </ResourceEditorForm>
-          </SemanticContextProvider>
-          : <div data-flex-layout='row center-right'>
-            <Button bsStyle='link' onClick={this.toggleAddNewValue}>Add an alternative value ...</Button>
-          </div>
-      }
-    </Panel>;
+        }
+
+      </Card.Body>
+    </Card>;
   }
 
 

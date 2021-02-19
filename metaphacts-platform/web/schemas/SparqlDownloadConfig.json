@@ -1,0 +1,61 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ResultFormat": {
+            "enum": [
+                "application/json",
+                "application/ld+json",
+                "application/n-quads",
+                "application/n-triples",
+                "application/rdf+json",
+                "application/rdf+xml",
+                "application/sparql-results+json",
+                "application/sparql-results+xml",
+                "application/trig",
+                "application/trix",
+                "application/x-binary-rdf",
+                "application/x-binary-rdf-results-table",
+                "application/x-trig",
+                "application/x-turtle",
+                "application/xml",
+                "text/boolean",
+                "text/csv",
+                "text/n3",
+                "text/nquads",
+                "text/plain",
+                "text/rdf+n3",
+                "text/tab-separated-values",
+                "text/turtle",
+                "text/x-nquads",
+                "text/x-turtlestar"
+            ],
+            "type": "string"
+        }
+    },
+    "description": "Component to trigger the download of a SPARQL result set.\n\nDownloading starts when the child element has been clicked,\ntherefore component should contain only one child element.\nChild element could be any HTML-element (not text node).\n\n**Example**:\n```\n<mp-sparql-download query='SELECT * WHERE {?a ?b ?c} LIMIT 10'\n   header='application/sparql-results+json'>\n   <button>Download SPARQL JSON</button>\n</mp-sparql-download>\n```\n\n**Example**:\n```\n<mp-sparql-download query='SELECT * WHERE {?a ?b ?c} LIMIT 10'\n   header='text/csv'\n   filename='myresult.csv'>\n   <a href=\"#\">Download CSV</a>\n</mp-sparql-download>\n```",
+    "properties": {
+        "filename": {
+            "description": "Optional file name",
+            "type": "string"
+        },
+        "header": {
+            "$ref": "#/definitions/ResultFormat",
+            "description": "Result mime type header (according to the standards)"
+        },
+        "query": {
+            "description": "SPARQL SELECT or CONSTRUCT query",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "query",
+        "header",
+        "filename"
+    ],
+    "required": [
+        "header",
+        "query"
+    ],
+    "type": "object"
+}
+

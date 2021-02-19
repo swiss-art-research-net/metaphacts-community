@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,9 +59,9 @@ import {
 
 const Button = createFactory(ReactBootstrap.Button);
 const Modal = createFactory(ReactBootstrap.Modal);
-const ModalHeader = createFactory(ReactBootstrap.ModalHeader);
-const ModalFooter = createFactory(ReactBootstrap.ModalFooter);
-const ModalBody = createFactory(ReactBootstrap.ModalBody);
+const ModalHeader = createFactory(ReactBootstrap.Modal.Header);
+const ModalFooter = createFactory(ReactBootstrap.Modal.Footer);
+const ModalBody = createFactory(ReactBootstrap.Modal.Body);
 const FormControl = createFactory(ReactBootstrap.FormControl);
 const ResourceLink = createFactory(ResourceLinkComponent);
 
@@ -87,7 +87,7 @@ interface State {
 }
 
 export class ActionSaveComponent extends Component<Props, State> {
-  static defaultProps: Partial<Props> = {
+  static defaultProps: Required<Pick<Props, 'addToDefaultSet'>> = {
     addToDefaultSet: false,
   };
 

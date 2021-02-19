@@ -45,7 +45,7 @@
       min-width: 100px;
     }
 
-    @media (min-width: $screen-sm-min) and (max-width: 1366px) {
+    @include media-breakpoint-between(sm, 1366px) {
           zoom: 0.8;
     }
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,9 +60,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
-import com.metaphacts.config.Configuration;
-import com.metaphacts.ui.templates.ST;
-import com.metaphacts.util.BrowserDetector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
@@ -80,11 +77,14 @@ import org.eclipse.rdf4j.rio.Rio;
 import com.metaphacts.api.sparql.ServletRequestUtil;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.api.sparql.SparqlUtil;
+import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.data.rdf.ReadConnection;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
 import com.metaphacts.ui.templates.MainTemplate;
+import com.metaphacts.ui.templates.ST;
+import com.metaphacts.util.BrowserDetector;
 
 /**
  * Main application entry point.
@@ -129,7 +129,7 @@ public class ResourceEndpoint {
     public String getMainPage(@Context HttpServletRequest httpServletRequest) throws IOException {
         String browserId = BrowserDetector.detectBrowser(httpServletRequest.getHeader("User-Agent"));
         if (this.isBrowserUnsupported(browserId)) {
-            Map map = st.getDefaultPageLayoutTemplateParams();
+            Map<String, Object> map = st.getDefaultPageLayoutTemplateParams();
             map.put("assetsMap", this.assetsMap);
             return st.renderPageLayoutTemplate(ST.TEMPLATES.UNSUPPORTED_BROWSER, map);
         } else {
@@ -158,7 +158,7 @@ public class ResourceEndpoint {
             String path = uriInfo.getPathParameters().getFirst("path");
             Optional<IRI> convertedIri =  namespaceRegistry.resolveToIRI(path);
             if (!convertedIri.isPresent()) return Response.status(Response.Status.BAD_REQUEST).entity("Could not translate IRI " + path).build();
-            stringIri = convertedIri.get().toString();
+            stringIri = convertedIri.get().stringValue();
         }
 
         IRI iri;

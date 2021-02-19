@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, createFactory, createElement } from 'react';
+import { Component, createFactory, createElement, FunctionComponent } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
 
@@ -46,11 +46,14 @@ import { getOverlaySystem, OverlayDialog } from 'platform/components/ui/overlay'
 import { Argument, CheckedArgument } from './QueryTemplateTypes';
 import { QueryTemplateEditArgument } from './QueryTemplateEditArgument';
 
-const Well = createFactory(ReactBootstrap.Well);
-const Panel = createFactory(ReactBootstrap.Panel);
-const PanelGroup = createFactory(ReactBootstrap.PanelGroup);
+const Card = createFactory(ReactBootstrap.Card);
+const CardHeader = createFactory(ReactBootstrap.Card.Header);
+const CardBody = createFactory(ReactBootstrap.Card.Body);
+const Accordion = createFactory(ReactBootstrap.Accordion);
+const AccordionToggle = createFactory(ReactBootstrap.Accordion.Toggle);
+const AccordionCollapse = createFactory(ReactBootstrap.Accordion.Collapse);
 const FormGroup = createFactory(ReactBootstrap.FormGroup);
-const ControlLabel = createFactory(ReactBootstrap.ControlLabel);
+const FormLabel = createFactory(ReactBootstrap.FormLabel as FunctionComponent);
 const Button = createFactory(ReactBootstrap.Button);
 const ButtonToolbar = createFactory(ReactBootstrap.ButtonToolbar);
 
@@ -94,13 +97,13 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
     const title = 'Delete Argument';
     const body = D.div({style: {textAlign: 'center'}},
       D.h5({style: {margin: '0 0 20px'}}, 'Are You Sure?'),
-      ButtonToolbar({style: {display: 'inline-block'}},
-        Button({bsStyle: 'success', onClick: () => {
+      ButtonToolbar({style: {display: 'inline-block'}} as ReactBootstrap.ButtonToolbarProps,
+        Button({variant: 'success', onClick: () => {
           getOverlaySystem().hide(title);
 
           this.props.onDelete(index);
         }}, 'Yes'),
-        Button({bsStyle: 'danger', onClick: () => getOverlaySystem().hide(title)}, 'No')
+        Button({variant: 'danger', onClick: () => getOverlaySystem().hide(title)}, 'No')
       )
     );
 
@@ -135,43 +138,51 @@ export class QueryTemplateArgumentsComponent extends Component<Props, State> {
       return arg.argument.variable;
     });
 
-    return Panel(
-      {
-        key: index,
-        header: argument.label.length ? argument.label : 'No Label',
-        eventKey: index,
-        onSelect: (key: any) => this.setState({activeKey: key}),
-        bsStyle: isValid ? 'default' : 'danger',
-      },
-      createElement(QueryTemplateEditArgument, {
-        argument,
-        variables,
-        notAvailableLabels,
-        notAvailableVariables,
-        onDelete: () => {
-          this.handleDeleteArgument(index);
-        },
-        onChange: (arg, flag) => {
-          this.handleChangeArgument(arg, index, flag);
-        },
-      })
-    );
+    return Accordion({
+      key: index,
+      onSelect: (key: any) => this.setState({ activeKey: key }),
+    }, Card({
+      border: isValid ? 'default' : 'danger',
+    },
+      CardHeader({},
+        AccordionToggle({
+          as: ReactBootstrap.Button,
+          variant: 'link',
+          eventKey: '' + index
+        } as ReactBootstrap.AccordionToggleProps,
+          argument.label.length ? argument.label : 'No Label')
+      ),
+      AccordionCollapse({ eventKey: '' + index } as ReactBootstrap.AccordionCollapseProps,
+        CardBody({}, createElement(QueryTemplateEditArgument, {
+          argument,
+          variables,
+          notAvailableLabels,
+          notAvailableVariables,
+          onDelete: () => {
+            this.handleDeleteArgument(index);
+          },
+          onChange: (arg, flag) => {
+            this.handleChangeArgument(arg, index, flag);
+          },
+        }))
+      )
+    ));
   }
 
   render() {
     const {activeKey} = this.state;
 
-    return FormGroup({style: { width: '50%'}},
-      ControlLabel({}, 'Arguments'),
-      Well({},
+    return FormGroup({style: { width: '50%'}} as ReactBootstrap.FormGroupProps,
+      FormLabel({}, 'Arguments'),
+      Card({body: true, bg: 'light'},
         this.props.args.length
-          ? PanelGroup({activeKey: activeKey, accordion: true},
+          ? Accordion({activeKey: '' + activeKey},
             this.props.args.map((item, index) => {
               return this.renderArgument(item.argument, index, item.valid);
             })
           )
           : null,
-        Button({bsSize: 'small', onClick: this.handleAddNewArgument}, 'Add New Argument')
+        Button({size: 'sm', onClick: this.handleAddNewArgument}, 'Add New Argument')
       )
     );
   }

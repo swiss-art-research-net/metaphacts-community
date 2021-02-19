@@ -34,6 +34,7 @@ if (process.argv.length < 4) {
 const [nodePath,, projectName, ...otherArgs] = process.argv;
 const repositoryRoot = path.normalize(`${__dirname}/../..`);
 const buildJsonPath = path.join(repositoryRoot, projectName, 'web/platform-web-build.json');
+const componentJsonPath = path.join(repositoryRoot, projectName, 'web/component.json');
 
 if (!fs.existsSync(buildJsonPath)) {
   console.error(`Project "${projectName}" does not exists.`);
@@ -62,22 +63,48 @@ while (otherArgs.length > 0) {
   }
 }
 
+console.log('Reading JSON schemas from platform-web-build.json...');
 /** @type {import('./defaults').WebProject} */
 const buildJson = JSON.parse(fs.readFileSync(buildJsonPath, {encoding: 'utf8'}));
+
+/** @type {{ [componentTag: string]: string | { propsSchema?: string } }} */
+let componentJson;
+if (fs.existsSync(componentJsonPath)) {
+  console.log('Reading JSON schemas from component.json...');
+  componentJson = JSON.parse(fs.readFileSync(componentJsonPath, {encoding: 'utf8'}));
+}
 
 // optionally pass argument to schema generator
 /** @type {TJS.PartialArgs} */
 const settings = {
   required: true,
   propOrder: true,
+  validationKeywords: ['patternProperties', 'mpSeeResource']
 };
 
+console.log('Loading TypeScript codebase...');
 const program = TJS.programFromConfig(path.join(repositoryRoot, 'tsconfig.json'));
 const generator = TJS.buildGenerator(program, settings);
 
-const interfaces = flagAllInterfaces
-  ? (buildJson.generatedJsonSchemas || [])
-  : otherArgs;
+/** @type {Set<string>} */
+const allInterfaces = new Set();
+if (buildJson.generatedJsonSchemas) {
+  for (const schemaName of buildJson.generatedJsonSchemas) {
+    allInterfaces.add(schemaName);
+  }
+}
+if (componentJson) {
+  for (const componentTag of Object.keys(componentJson)) {
+    const metadata = componentJson[componentTag];
+    if (typeof metadata === 'object' && metadata.propsSchema) {
+      allInterfaces.add(metadata.propsSchema);
+    }
+  }
+}
+
+const interfaces = Array.from(
+  flagAllInterfaces ? allInterfaces : new Set(otherArgs)
+).sort();
 
 /** @type {Array<{ typeName: string; error: any }>} */
 const errors = [];
@@ -94,6 +121,12 @@ function resetGenerator(gen) {
   }
   generator.setSchemaOverride('JSX.Element', {"type": "object"});
   generator.setSchemaOverride('CSSProperties', {"type": "string"});
+  // HACK: reset internal mapping for unique type names to avoid names like "Literal_1"
+  // This also makes schema generation independent from each other.
+  // @ts-ignore
+  generator.typeNamesById = {};
+  // @ts-ignore
+  generator.typeIdsByName = {};
 }
 
 /**
@@ -137,11 +170,15 @@ function postProcessSchema(schema) {
   }
 }
 
+console.log('Generating schemas for interfaces...');
+
 for (const typeName of interfaces) {
   resetGenerator(generator);
   try {
-    if (!buildJson.generatedJsonSchemas || buildJson.generatedJsonSchemas.indexOf(typeName) < 0) {
-      throw new Error(`Cannot find interface "${typeName}" in platform-web-build.json`);
+    if (!allInterfaces.has(typeName)) {
+      throw new Error(
+        `Cannot find interface "${typeName}" in "platform-web-build.json" or "components.json"`
+      );
     }
     const schema = generator.getSchemaForSymbol(typeName, true);
     postProcessSchema(schema);

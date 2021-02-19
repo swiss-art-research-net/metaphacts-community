@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,18 +39,17 @@
  */
 package com.metaphacts.data.rdf.container;
 
-import org.junit.Before;
-import org.junit.Rule;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.junit.Before;
+import org.junit.Rule;
 
 import com.github.sdorra.shiro.ShiroRule;
 import com.google.inject.Inject;
 import com.metaphacts.junit.AbstractIntegrationTest;
 import com.metaphacts.junit.NamespaceRule;
-import com.metaphacts.junit.RepositoryRule;
-import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.MpRepositoryProvider;
+import com.metaphacts.repository.RepositoryManager;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>

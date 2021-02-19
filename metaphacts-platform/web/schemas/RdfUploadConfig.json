@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "properties": {
+        "accept": {
+            "anyOf": [
+                {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": "undefined",
+            "description": "Accepted file types. If set, the field will only allow to drop or select the\nspecified file types.\n\nBy default any file type is allowed.\n\nKeep in mind that mime type determination is not reliable across\nplatforms. CSV files, for example, are reported as text/plain under macOS but as\napplication/vnd.ms-excel under Windows. In some cases there might not be a\nmime type set at all. Instead of specifying the mime type, you can also specify file endings.\n\nSee https://github.com/okonet/attr-accept for more information.\n\n**Example**:\n```\naccept='application/rdf+xml'\naccept='[\"application/rdf+xml\", \".ttl\"]'\n```"
+        },
+        "className": {
+            "type": "string"
+        },
+        "contentType": {
+            "type": "string"
+        },
+        "keepSourceGraphs": {
+            "description": "Whether the NamedGraphs from the source serialization should be preserved\n(only applicable to .trig and .nq files).",
+            "type": "boolean"
+        },
+        "placeholderTemplate": {
+            "description": "A handlebars template string to shown as placeholder in the drop area.\n\nAs default context object it will get an object with elements from\nthe current state (`{targetGraph: string}`).",
+            "type": "string"
+        },
+        "postAction": {
+            "default": "refresh",
+            "description": "Action to perform after the data has been uploaded successfully.\n\nBy default the page will refresh. Other options:\n- `redirect`: will navigate to `Assets:NamedGraph?graph=<iri of the generated graph>`;\n- `{any iri string}`: will navigate to the resource IRI;",
+            "type": "string"
+        },
+        "showAdvancedOptions": {
+            "default": true,
+            "description": "Whether advanced options (specifying target named graph, keep source named graphs)\nshould be displayed to the user.",
+            "type": "boolean"
+        },
+        "showLoadByUrl": {
+            "default": true,
+            "description": "Whether the option/input to load data by URL should be displayed to the user.",
+            "type": "boolean"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties"
+        },
+        "targetGraph": {
+            "default": "undefined",
+            "description": "Optional IRI string (without brackets) of the target named graph to load the data into.\n\nBy default this is undefined and supposed to be either provided by the user at runtime or\ngenerated automatically.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "targetGraph",
+        "keepSourceGraphs",
+        "placeholderTemplate",
+        "showAdvancedOptions",
+        "showLoadByUrl",
+        "accept",
+        "postAction",
+        "className",
+        "style",
+        "contentType"
+    ],
+    "required": [
+        "postAction",
+        "showLoadByUrl"
+    ],
+    "type": "object"
+}
+

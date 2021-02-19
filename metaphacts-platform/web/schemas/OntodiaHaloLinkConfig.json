@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Allows selecting a link and produce actions with it.",
+    "properties": {
+        "buttonMargin": {
+            "default": 5,
+            "type": "number"
+        },
+        "buttonSize": {
+            "default": 20,
+            "type": "number"
+        },
+        "editProperties": {
+            "default": false,
+            "type": "boolean"
+        },
+        "editType": {
+            "default": true,
+            "type": "boolean"
+        },
+        "id": {
+            "default": "halo-link",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "editProperties",
+        "editType",
+        "buttonSize",
+        "buttonMargin"
+    ],
+    "type": "object"
+}
+

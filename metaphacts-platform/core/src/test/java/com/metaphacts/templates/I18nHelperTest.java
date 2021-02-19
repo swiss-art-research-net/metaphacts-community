@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,7 +69,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.junit.MetaphactsGuiceTestModule;
@@ -91,7 +91,7 @@ public class I18nHelperTest extends JerseyTest {
     private final ValueFactory vf = SimpleValueFactory.getInstance();
     final ContainerRequest containerRequest = new ContainerRequest( URI.create(""),
             URI.create("/?testParam=test123"), HttpMethod.GET,
-            null, new MapPropertiesDelegate());
+            null, new MapPropertiesDelegate(), null);
     
     @Inject
     @Rule
@@ -106,7 +106,7 @@ public class I18nHelperTest extends JerseyTest {
     public PlatformStorageRule platformStorageRule;
 
     @Inject
-    private LabelCache labelCache;
+    private LabelService labelCache;
     
     @Inject
     private CacheManager cacheManager;

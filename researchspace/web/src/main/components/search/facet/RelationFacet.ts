@@ -37,7 +37,6 @@ import { Resource } from 'platform/components/semantic/search/data/Common';
 import { FacetData, FacetViewState } from './FacetStore';
 import { Relation } from 'platform/components/semantic/search/data/profiles/Model';
 import * as F from 'platform/components/semantic/search/data/facet/Model';
-import * as Model from 'platform/components/semantic/search/data/search/Model';
 
 import FacetValue from './FacetValue';
 import { FacetSlider, FacetSliderProps } from './slider/FacetSlider';
@@ -47,7 +46,7 @@ import {
   SearchFacetPropertySelected,
 } from 'researchspace/components/search/query-builder/SearchEvents';
 
-interface RelationFacetProps extends Props<RelationFacetComponent> {
+interface RelationFacetProps {
   relation: Relation
   data: FacetData
   actions: F.Actions

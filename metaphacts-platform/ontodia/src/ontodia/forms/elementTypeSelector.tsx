@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,15 +42,15 @@ import * as React from 'react';
 import { PLACEHOLDER_ELEMENT_TYPE } from '../data/schema';
 import { ElementModel, ElementTypeIri } from '../data/model';
 
-import { EditorController } from '../editor/editorController';
 import { DiagramView } from '../diagram/view';
-import { MetadataApi } from '../data/metadataApi';
 
 import { createRequest } from '../widgets/instancesSearch';
 import { ListElementView } from '../widgets/listElementView';
 
 import { Cancellation, CancellationToken } from '../viewUtils/async';
 import { HtmlSpinner } from '../viewUtils/spinner';
+
+import { WorkspaceContextWrapper, WorkspaceContextTypes } from '../workspace/workspaceContext';
 
 const CLASS_NAME = 'ontodia-edit-form';
 
@@ -64,9 +64,6 @@ export interface ElementValue {
 }
 
 export interface ElementTypeSelectorProps {
-    editor: EditorController;
-    view: DiagramView;
-    metadataApi: MetadataApi | undefined;
     source: ElementModel;
     elementValue: ElementValue;
     onChange: (state: Pick<ElementValue, 'value' | 'isNew' | 'loading'>) => void;
@@ -80,6 +77,9 @@ interface State {
 }
 
 export class ElementTypeSelector extends React.Component<ElementTypeSelectorProps, State> {
+    static contextTypes = WorkspaceContextTypes;
+    declare readonly context: WorkspaceContextWrapper;
+
     private readonly cancellation = new Cancellation();
     private filterCancellation = new Cancellation();
     private loadingItemCancellation = new Cancellation();
@@ -107,7 +107,9 @@ export class ElementTypeSelector extends React.Component<ElementTypeSelectorProp
     }
 
     private async fetchPossibleElementTypes() {
-        const {view, metadataApi, source} = this.props;
+        const {editor, view} = this.context.ontodiaWorkspace;
+        const {source} = this.props;
+        const {metadataApi} = editor;
         if (!metadataApi) { return; }
         const elementTypes = await CancellationToken.mapCancelledToNull(
             this.cancellation.signal,
@@ -119,7 +121,7 @@ export class ElementTypeSelector extends React.Component<ElementTypeSelectorProp
     }
 
     private searchExistingElements() {
-        const {editor, view} = this.props;
+        const {model, editor, view} = this.context.ontodiaWorkspace;
         const {searchString} = this.state;
         this.setState({existingElements: []});
         if (searchString.length > 0) {
@@ -130,22 +132,25 @@ export class ElementTypeSelector extends React.Component<ElementTypeSelectorProp
             const signal = this.filterCancellation.signal;
 
             const request = createRequest({text: searchString}, view.getLanguage());
-            editor.model.dataProvider.filter(request).then(elements => {
+            model.dataProvider.filter(request).then(elements => {
                 if (signal.aborted) { return; }
-                const existingElements = Object.keys(elements).map(key => elements[key]!);
+                const existingElements = elements.map(item => item.element);
                 this.setState({existingElements, isLoading: false});
             });
         }
     }
 
     private onElementTypeChange = async (e: React.FormEvent<HTMLSelectElement>) => {
+        const {editor} = this.context.ontodiaWorkspace;
+        const {onChange} = this.props;
+        const {metadataApi} = editor;
+
         this.setState({isLoading: true});
 
         this.loadingItemCancellation.abort();
         this.loadingItemCancellation = new Cancellation();
         const signal = this.loadingItemCancellation.signal;
 
-        const {onChange, metadataApi} = this.props;
         const classId = (e.target as HTMLSelectElement).value as ElementTypeIri;
         const elementModel = await CancellationToken.mapCancelledToNull(
             signal,
@@ -161,8 +166,8 @@ export class ElementTypeSelector extends React.Component<ElementTypeSelectorProp
     }
 
     private renderPossibleElementType = (elementType: ElementTypeIri) => {
-        const {view} = this.props;
-        const type = view.model.createClass(elementType);
+        const {model, view} = this.context.ontodiaWorkspace;
+        const type = model.createClass(elementType);
         const label = view.formatLabel(type.label, type.id);
         return <option key={elementType} value={elementType}>{label}</option>;
     }
@@ -193,7 +198,8 @@ export class ElementTypeSelector extends React.Component<ElementTypeSelectorProp
     }
 
     private renderExistingElementsList() {
-        const {view, editor, elementValue} = this.props;
+        const {model: diagramModel, editor, view} = this.context.ontodiaWorkspace;
+        const {elementValue} = this.props;
         const {elementTypes, isLoading, existingElements} = this.state;
         if (isLoading) {
             return <HtmlSpinner width={20} height={20} />;
@@ -201,7 +207,7 @@ export class ElementTypeSelector extends React.Component<ElementTypeSelectorProp
         if (existingElements.length > 0) {
             return existingElements.map(element => {
                 const isAlreadyOnDiagram = !editor.temporaryState.elements.has(element.id) && Boolean(
-                    editor.model.elements.find(({iri, group}) => iri === element.id && group === undefined)
+                    diagramModel.elements.find(({iri, group}) => iri === element.id && group === undefined)
                 );
                 const hasAppropriateType = Boolean(elementTypes!.find(type => element.types.indexOf(type) >= 0));
                 return (
@@ -217,18 +223,19 @@ export class ElementTypeSelector extends React.Component<ElementTypeSelectorProp
         return <span>No results</span>;
     }
 
-    private async onSelectExistingItem(model: ElementModel) {
-        const {editor, onChange} = this.props;
+    private async onSelectExistingItem(item: ElementModel) {
+        const {model} = this.context.ontodiaWorkspace;
+        const {onChange} = this.props;
 
         this.loadingItemCancellation.abort();
         this.loadingItemCancellation = new Cancellation();
         const signal = this.loadingItemCancellation.signal;
 
-        onChange({value: model, isNew: false, loading: true});
-        const result = await editor.model.dataProvider.elementInfo({elementIds: [model.id]});
+        onChange({value: item, isNew: false, loading: true});
+        const result = await model.dataProvider.elementInfo({elementIds: [item.id]});
         if (signal.aborted) { return; }
 
-        const loadedModel = result[model.id] || model;
+        const loadedModel = result[item.id] || item;
         onChange({value: loadedModel, isNew: false, loading: false});
     }
 

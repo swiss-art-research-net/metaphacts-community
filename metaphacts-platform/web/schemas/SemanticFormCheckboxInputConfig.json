@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Form input displayed as a single checkbox with binary status to exclusively handle\n`xsd:boolean` values.\n\nIf the checkbox is checked it will persist `\"true\"^^xsd:boolean` literal value,\notherwise `\"false\"^^xsd:boolean`.\n\nMissing or non-boolean value is represented as checkbox in \"indeterminate\" state.\n\n**Example**:\n```\n<semantic-form-checkbox-input for='field-name'>\n</semantic-form-checkbox-input>\n```",
+    "properties": {
+        "className": {
+            "description": "Adds custom CSS class to checkbox.",
+            "type": "string"
+        },
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "className",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "type": "object"
+}
+

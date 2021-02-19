@@ -17,7 +17,7 @@
  */
 import { Component, createElement, createFactory } from 'react';
 import * as D from 'react-dom-factories';
-import { MenuItem, DropdownButton } from 'react-bootstrap';
+import { DropdownButton, Dropdown } from 'react-bootstrap';
 import { assign } from 'lodash';
 import * as block from 'bem-cn';
 import * as ReactBootstrap from 'react-bootstrap';
@@ -68,7 +68,7 @@ export const OverlayDialogComponent = (props: any) => {
         {},
         D.button(
           {
-            className: classNames('btn', 'btn-default', b('back-button').toString()),
+            className: classNames('btn', 'btn-secondary', b('back-button').toString()),
             onClick: () => getOverlaySystem().hide(ACTION_DIALOG_REF),
           },
           D.i({}),
@@ -115,11 +115,11 @@ class LightBoxTable extends Component<LightboxTableProps, any> {
           {
             id: 'lightbo-actions',
             title: 'Actions',
-            pullRight: true,
+            alignRight: true,
             onToggle: () => this.forceUpdate(),
           },
           createElement(
-            MenuItem, {
+            Dropdown.Item, {
               disabled: this.getSelectedCount() < 1,
               onClick: () =>
                 this.showDialogAction(
@@ -129,7 +129,7 @@ class LightBoxTable extends Component<LightboxTableProps, any> {
           ),
 
           createElement(
-            MenuItem, {
+            Dropdown.Item, {
               disabled: this.getSelectedCount() !== 2,
               onClick: () =>
                 this.showDialogAction(
@@ -138,12 +138,12 @@ class LightBoxTable extends Component<LightboxTableProps, any> {
             }, 'Overlay'),
 
           createElement(
-            MenuItem, {
+            Dropdown.Item, {
               onClick: this.showCreateNewSetDialog,
             }, 'Create new set'),
 
           createElement(
-            MenuItem, {
+            Dropdown.Item, {
               disabled: this.getSelectedCount() < 1,
               onClick: this.showLinkDialog,
             }, 'Link')

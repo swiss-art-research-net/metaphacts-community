@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -101,7 +101,7 @@ function wrap(component: any) {
  */
 function wrapComponent<F extends Function>(original: F): F {
   return function (this: any, comp: WrappedComponent) {
-    if (_.isUndefined(comp.prototype) ||
+    if (!isClassComponent(comp) ||
       comp instanceof ErrorNotification ||
       comp[WRAPPED_BY_CATCHER] // prevent multiple wrapping
     ) {
@@ -156,6 +156,12 @@ function wrapComponent<F extends Function>(original: F): F {
   } as any;
 }
 
+function isClassComponent(comp: WrappedComponent) {
+  return comp.prototype !== null
+    && comp.prototype !== undefined
+    && (comp.prototype instanceof React.Component || Boolean(comp.prototype.render));
+}
+
 function defaultGetDerivedStateFromError(error: any) {
   // Update state so the next render will show the fallback UI.
   return {[ERROR]: error};
@@ -182,14 +188,3 @@ function getError(componentInstance: any) {
  * Also user can override unstable_handleError in order to get other desired behavior
  */
 export const safeReactCreateElement = wrapComponent(React.createElement);
-export const safeReactCreateFactory = wrapComponent(React.createFactory);
-
-/**
- * Changes react functions like createElement and createFactory in a way that
- * all errors thrown from the components will not be propagated up the tree and
- * will not crash the main app. Instead error message will be shown in place of
- * failed component.
- */
-export function initReactErrorCatcher() {
-  /**/
-}

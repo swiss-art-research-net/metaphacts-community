@@ -2,7 +2,7 @@
   <semantic-context repository="assets">
     <semantic-table query='
       prefix ontodia: <http://ontodia.org/schema/v1#>
-      SELECT DISTINCT ?diagram ?label ?author ?modified ?diagramKindLabel ?context WHERE {
+      SELECT DISTINCT ?diagram ?label ?author ?modified ?diagramKind ?diagramKindLabel ?context WHERE {
         ?diagram a ontodia:Diagram;
         rdfs:label ?label;
         <http://www.w3.org/ns/prov#wasAttributedTo> ?author;

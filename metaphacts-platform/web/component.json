@@ -1,6 +1,16 @@
 {
-  "semantic-link": "platform/components/navigation/ResourceLinkComponent.ts",
-  "semantic-link-container": "platform/components/navigation/ResourceLinkContainer.ts",
+  "$schema": "../../project/jsonSchemas/ComponentJson.schema.json",
+
+  "semantic-link": {
+    "path": "platform/components/navigation/ResourceLinkComponent.ts",
+    "propsSchema": "ResourceLinkConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
+  "semantic-link-container": {
+    "path": "platform/components/navigation/ResourceLinkContainer.ts",
+    "propsSchema": "ResourceLinkContainerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
 
   "semantic-table-deprecated": {
     "path": "platform/components/semantic/table/SemanticTable.ts",
@@ -12,7 +22,9 @@
       "column-configuration": {
         "cellTemplate": true
       }
-    }
+    },
+    "propsSchema": "SemanticTableConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticTable"
   },
   "semantic-table-row-selection": "platform/components/semantic/table/TableSelectionComponent.ts",
 
@@ -26,8 +38,14 @@
       "column-configuration": {
         "cellTemplate": true,
         "aggregationCellTemplate": true
+      },
+      "options": {
+        "defaultCellTemplate": true,
+        "defaultAggregationCellTemplate": true
       }
-    }
+    },
+    "propsSchema": "SemanticDataTableConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticTable"
   },
 
   "semantic-query": {
@@ -35,57 +53,125 @@
     "deferAttributes": {
       "template": true,
       "no-result-template": true
-    }
+    },
+    "propsSchema": "SemanticQueryConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticQuery"
   },
   "semantic-carousel": {
     "path": "platform/components/semantic/carousel/SemanticCarousel.ts",
     "deferAttributes": {
       "tuple-template": true,
       "no-result-template": true
-    }
+    },
+    "propsSchema": "SemanticCarouselConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticCarousel"
   },
   "semantic-chart": {
     "path": "platform/components/semantic/chart/SemanticChart.ts",
     "deferAttributes": {
       "tooltip-template": true,
       "no-result-template": true
-    }
+    },
+    "propsSchema": "SemanticChartConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticChart"
   },
-  "semantic-chart-type-selector": "platform/components/semantic/chart/SemanticChartTypeSelector.tsx",
+  "semantic-chart-type-selector": {
+    "path": "platform/components/semantic/chart/SemanticChartTypeSelector.tsx",
+    "propsSchema": "SemanticChartTypeSelectorConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticChart"
+  },
   "semantic-tree": {
     "path": "platform/components/semantic/tree/SemanticTree.ts",
     "deferAttributes": {
       "tuple-template": true,
       "no-result-template": true
-    }
+    },
+    "propsSchema": "SemanticTreeConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticTree"
   },
   "semantic-map": {
     "path": "platform/components/semantic/map/SemanticMap.ts",
     "deferAttributes": {
       "tuple-template": true,
       "no-result-template": true
-    }
+    },
+    "propsSchema": "SemanticMapConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticMap"
   },
 
   "semantic-graph": {
     "path": "platform/components/semantic/graph/SemanticGraph.ts",
     "deferAttributes": {
       "no-result-template": true
-    }
+    },
+    "propsSchema": "SemanticGraphConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
   },
-  "semantic-graph-extension-expand-collapse": "platform/components/semantic/graph/extensions/CytoscapeExpandCollapse.ts",
-  "semantic-graph-extension-navigator": "platform/components/semantic/graph/extensions/CytoscapeNavigator.ts",
-  "semantic-graph-extension-panzoom": "platform/components/semantic/graph/extensions/CytoscapePanZoomExtension.ts",
-  "semantic-graph-layout-breadthfirst": "platform/components/semantic/graph/layouts/BreadthFirstLayout.ts",
-  "semantic-graph-layout-circle": "platform/components/semantic/graph/layouts/CircleLayout.ts",
-  "semantic-graph-layout-concentric": "platform/components/semantic/graph/layouts/ConcentricLayout.ts",
-  "semantic-graph-layout-cose-bilkent": "platform/components/semantic/graph/layouts/CoseBilkentLayout.ts",
-  "semantic-graph-layout-cose": "platform/components/semantic/graph/layouts/CoseLayout.ts",
-  "semantic-graph-layout-grid": "platform/components/semantic/graph/layouts/GridLayout.ts",
-  "semantic-graph-layout-preset": "platform/components/semantic/graph/layouts/PresetLayout.ts",
+  "semantic-graph-extension-expand-collapse": {
+    "path": "platform/components/semantic/graph/extensions/CytoscapeExpandCollapse.ts",
+    "propsSchema": "SemanticGraphExpandCollapseExtensionConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-extension-navigator": {
+    "path": "platform/components/semantic/graph/extensions/CytoscapeNavigator.ts",
+    "propsSchema": "SemanticGraphNavigatorExtensionConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-extension-panzoom": {
+    "path": "platform/components/semantic/graph/extensions/CytoscapePanZoomExtension.ts",
+    "propsSchema": "SemanticGraphPanZoomExtensionConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-layout-breadthfirst": {
+    "path": "platform/components/semantic/graph/layouts/BreadthFirstLayout.ts",
+    "propsSchema": "SemanticGraphBreadthFirstLayoutConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-layout-circle": {
+    "path": "platform/components/semantic/graph/layouts/CircleLayout.ts",
+    "propsSchema": "SemanticGraphCircleLayoutConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-layout-concentric": {
+    "path": "platform/components/semantic/graph/layouts/ConcentricLayout.ts",
+    "propsSchema": "SemanticGraphConcentricLayoutConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-layout-cose-bilkent": {
+    "path": "platform/components/semantic/graph/layouts/CoseBilkentLayout.ts",
+    "propsSchema": "SemanticGraphCoseBilkentLayoutConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-layout-cose": {
+    "path": "platform/components/semantic/graph/layouts/CoseLayout.ts",
+    "propsSchema": "SemanticGraphCoseLayoutConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-layout-grid": {
+    "path": "platform/components/semantic/graph/layouts/GridLayout.ts",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
+  "semantic-graph-layout-preset": {
+    "path": "platform/components/semantic/graph/layouts/PresetLayout.ts",
+    "propsSchema": "SemanticGraphPresetLayoutConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticGraph"
+  },
 
-  "semantic-search": "platform/components/semantic/search/web-components/SemanticSearch.ts",
-  "semantic-search-query-keyword": "platform/components/semantic/search/web-components/KeywordSearch.tsx",
+  "semantic-search": {
+    "path": "platform/components/semantic/search/web-components/SemanticSearch.ts",
+    "propsSchema": "SemanticSearchConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
+  },
+  "semantic-search-query-keyword": {
+    "path": "platform/components/semantic/search/web-components/KeywordSearch.tsx",
+    "propsSchema": "SemanticSearchKeywordConfig",
+    "helpResource": "http://help.metaphacts.com/resource/KeywordSearch"
+  },
+  "semantic-search-keyword-prefetch": {
+    "path": "platform/components/semantic/search/web-components/KeywordPrefetchSearch.tsx",
+    "propsSchema": "KeywordPrefetchSearchConfig",
+    "helpResource": "http://help.metaphacts.com/resource/KeywordPrefetchSearch"
+  },
   "semantic-search-query-entities": {
     "path": "platform/components/semantic/search/web-components/EntitySearch.tsx",
     "deferAttributes": {
@@ -93,19 +179,48 @@
     }
   },
   "semantic-search-query-chemical-drawing": "platform/components/semantic/search/web-components/ChemcialDrawingSearch.tsx",
-  "semantic-search-query-constant": "platform/components/semantic/search/web-components/QueryConstant.tsx",
-  "semantic-search-result": "platform/components/semantic/search/web-components/SemanticSearchResult.tsx",
-  "semantic-search-result-holder": "platform/components/semantic/search/web-components/SemanticSearchResultHolder.tsx",
-  "semantic-search-form-query": "platform/components/semantic/search/web-components/SemanticSearchFormQuery.tsx",
-  "semantic-search-domain-switch": "platform/components/semantic/search/web-components/SemanticSearchDomainSwitch.tsx",
-  "semantic-search-table-result": "platform/components/semantic/search/web-components/SemanticSearchTableResult.tsx",
-  "semantic-search-configuration-selector": "researchspace/components/search/configuration/ConfigurationSelector",
+  "semantic-search-query-constant": {
+    "path": "platform/components/semantic/search/web-components/QueryConstant.tsx",
+    "propsSchema": "SemanticSearchQueryConstantConfig",
+    "helpResource": "http://help.metaphacts.com/resource/ConstantSearch"
+  },
+  "semantic-search-result": {
+    "path": "platform/components/semantic/search/web-components/SemanticSearchResult.tsx",
+    "propsSchema": "SemanticSearchResultConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
+  },
+  "semantic-search-result-holder": {
+    "path": "platform/components/semantic/search/web-components/SemanticSearchResultHolder.tsx",
+    "propsSchema": "SemanticSearchResultHolderConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
+  },
+  "semantic-search-form-query": {
+    "path": "platform/components/semantic/search/web-components/SemanticSearchFormQuery.tsx",
+    "propsSchema": "SemanticFormBasedQueryConfig",
+    "helpResource": "http://help.metaphacts.com/resource/FormBasedSearch"
+  },
+  "semantic-search-domain-switch": {
+    "path": "platform/components/semantic/search/web-components/SemanticSearchDomainSwitch.tsx",
+    "propsSchema": "SemanticSearchDomainSwitchConfig"
+  },
+  "semantic-search-table-result": {
+    "path": "platform/components/semantic/search/web-components/SemanticSearchTableResult.tsx",
+    "propsSchema": "SemanticSearchTableResultConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
+  },
+  "semantic-search-configuration-selector": {
+    "path": "researchspace/components/search/configuration/ConfigurationSelector",
+    "propsSchema": "SemanticSearchConfigurationSelectorConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
+  },
 
   "semantic-simple-search": {
     "path": "platform/components/semantic/simple-search/SimpleSearch.ts",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "SemanticSimpleSearchConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSimpleSearch"
   },
 
   "semantic-if": {
@@ -113,72 +228,187 @@
     "deferAttributes": {
       "then": true,
       "else": true
-    }
+    },
+    "propsSchema": "SemanticIfConfig",
+    "helpResource": "http://help.metaphacts.com/resource/FrontendTemplating"
   },
   "semantic-switch": {
     "path": "platform/components/semantic/conditional/SemanticSwitch.tsx",
     "deferAttributes": {
       "cases": true
-    }
+    },
+    "propsSchema": "SemanticSwitchConfig",
+    "helpResource": "http://help.metaphacts.com/resource/FrontendTemplating"
   },
-  "semantic-update": "platform/components/semantic/update/SemanticUpdate.tsx",
+  "semantic-update": {
+    "path": "platform/components/semantic/update/SemanticUpdate.tsx",
+    "propsSchema": "SemanticUpdateConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticUpdate"
+  },
+  "semantic-context": {
+    "path": "platform/api/components/SemanticContext.ts",
+    "propsSchema": "SemanticContextProps",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticContext"
+  },
 
-  "semantic-context": "platform/api/components/SemanticContext.ts",
-
-  "mp-link": "platform/components/navigation/Link.ts",
-  "mp-resource-link": "platform/components/navigation/ResourceLinkComponent.ts",
-  "mp-resource-link-container": "platform/components/navigation/ResourceLinkContainer.ts",
-  "mp-resource-thumbnail": "platform/components/ui/thumbnail/ResourceThumbnail.ts",
-  "mp-resource-thumbnail-fallback": "platform/components/ui/thumbnail/NoResourceThumbnail.ts",
+  "mp-link": {
+    "path": "platform/components/navigation/Link.ts",
+    "propsSchema": "LinkConfig"
+  },
+  "mp-resource-link": {
+    "path": "platform/components/navigation/ResourceLinkComponent.ts",
+    "propsSchema": "ResourceLinkConfig"
+  },
+  "mp-resource-link-container": {
+    "path": "platform/components/navigation/ResourceLinkContainer.ts",
+    "propsSchema": "ResourceLinkContainerConfig"
+  },
+  "mp-resource-thumbnail": {
+    "path": "platform/components/ui/thumbnail/ResourceThumbnail.ts",
+    "propsSchema": "ResourceThumbnailConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
+  "mp-resource-thumbnail-fallback": {
+    "path": "platform/components/ui/thumbnail/NoResourceThumbnail.ts",
+    "propsSchema": "NoResourceThumbnailConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
   "mp-navigate-to-resource": "platform/components/navigation/NavigateToIri.tsx",
 
-  "mp-event-trigger": "platform/components/events/EventTrigger.ts",
-  "mp-event-proxy": "platform/components/events/EventProxy.ts",
-  "mp-event-target-refresh": "platform/components/events/EventTargetRefresh.ts",
+  "mp-event-trigger": {
+    "path": "platform/components/events/EventTrigger.ts",
+    "propsSchema": "EventTriggerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/EventSystem"
+  },
+  "mp-event-proxy": {
+    "path": "platform/components/events/EventProxy.ts",
+    "propsSchema": "EventProxyConfig",
+    "helpResource": "http://help.metaphacts.com/resource/EventSystem"
+  },
+  "mp-event-target-refresh": {
+    "path": "platform/components/events/EventTargetRefresh.ts",
+    "propsSchema": "EventTargetRefreshConfig",
+    "helpResource": "http://help.metaphacts.com/resource/EventSystem"
+  },
   "mp-event-target-template-render": {
     "path": "platform/components/events/EventTargetTemplateRender.tsx",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "EventTargetTemplateRenderConfig",
+    "helpResource": "http://help.metaphacts.com/resource/EventSystem"
   },
-  "mp-event-target-redirect": "platform/components/ui/redirect-action/RedirectAction.ts",
+  "mp-event-target-redirect": {
+    "path": "platform/components/ui/redirect-action/RedirectAction.ts",
+    "propsSchema": "RedirectActionProps",
+    "helpResource": "http://help.metaphacts.com/resource/EventSystem"
+  },
 
   "field-editor": "platform/components/forms/field-editor/FieldEditorComponent.ts",
-  "mp-field-editor": "platform/components/forms/field-editor/FieldEditorComponent.ts",
+  "mp-field-editor": {
+    "path": "platform/components/forms/field-editor/FieldEditorComponent.ts",
+    "propsSchema": "FieldEditorConfig"
+  },
   "semantic-form": {
     "path": "platform/components/forms/ResourceEditorForm.ts",
     "deferAttributes": {
       "new-subject-template": true
     },
     "deferJsonProperties": {
-      "endpointTemplate": true
-    }
+      "persistence": {
+        "endpointTemplate": true
+      }
+    },
+    "propsSchema": "ResourceEditorFormConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
   },
-  "semantic-form-switch": "platform/components/forms/inputs/FormSwitch.tsx",
-  "semantic-form-switch-case": "platform/components/forms/inputs/FormSwitchCase.tsx",
-  "semantic-form-text-input": "platform/components/forms/inputs/PlainTextInput.ts",
-  "semantic-form-hidden-input": "platform/components/forms/inputs/HiddenInput.ts",
+  "semantic-form-switch": {
+    "path": "platform/components/forms/inputs/FormSwitch.tsx",
+    "propsSchema": "SemanticFormSwitchConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-switch-case": {
+    "path": "platform/components/forms/inputs/FormSwitchCase.tsx",
+    "propsSchema": "SemanticFormSwitchCaseConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-text-input": {
+    "path": "platform/components/forms/inputs/PlainTextInput.tsx",
+    "propsSchema": "SemanticFormTextInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-hidden-input": {
+    "path": "platform/components/forms/inputs/HiddenInput.ts",
+    "propsSchema": "SemanticFormHiddenInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
   "semantic-form-select-input": {
     "path": "platform/components/forms/inputs/SelectInput.ts",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "SemanticFormSelectInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
   },
-  "semantic-form-checklist-input": "platform/components/forms/inputs/ChecklistInput.tsx",
-  "semantic-form-checkbox-input": "platform/components/forms/inputs/CheckboxInput.tsx",
+  "semantic-form-checklist-input": {
+    "path": "platform/components/forms/inputs/ChecklistInput.tsx",
+    "propsSchema": "SemanticFormChecklistInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-checkbox-input": {
+    "path": "platform/components/forms/inputs/CheckboxInput.tsx",
+    "propsSchema": "SemanticFormCheckboxInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
   "semantic-form-autocomplete-input": {
     "path": "platform/components/forms/inputs/AutocompleteInput.tsx",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "SemanticFormAutocompleteInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
   },
-  "semantic-form-datetime-input": "platform/components/forms/inputs/DatePickerInput.ts",
-  "semantic-form-recover-notification": "platform/components/forms/static/RecoverNotification.ts",
-  "semantic-form-errors": "platform/components/forms/static/FormErrors.ts",
-  "semantic-form-field-description": "platform/components/forms/static/Description.ts",
-  "semantic-form-field-label": "platform/components/forms/static/Label.ts",
-  "semantic-form-composite-input": "platform/components/forms/inputs/CompositeInput.ts",
-  "semantic-form-tree-picker-input": "platform/components/forms/inputs/TreePickerInput.tsx",
+  "semantic-form-datetime-input": {
+    "path": "platform/components/forms/inputs/DatePickerInput.ts",
+    "propsSchema": "SemanticFormDatePickerInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-composite-input": {
+    "path": "platform/components/forms/inputs/CompositeInput.ts",
+    "propsSchema": "SemanticFormCompositeInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-tree-picker-input": {
+    "path": "platform/components/forms/inputs/TreePickerInput.tsx",
+    "propsSchema": "SemanticFormTreePickerInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-subject-input": {
+    "path": "platform/components/forms/static/SubjectInput.tsx",
+    "propsSchema": "SemanticFormSubjectInputConfig"
+  },
+  "semantic-form-recover-notification": {
+    "path": "platform/components/forms/static/RecoverNotification.ts",
+    "propsSchema": "SemanticFormRecoverNotificationConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-errors": {
+    "path": "platform/components/forms/static/FormErrors.tsx",
+    "propsSchema": "SemanticFormErrorsConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
+  },
+  "semantic-form-template": {
+    "path": "platform/components/forms/static/FormTemplate.tsx",
+    "propsSchema": "SemanticFormTemplateConfig"
+  },
+  "semantic-form-field-label": {
+    "path": "platform/components/forms/static/FieldLabel.tsx",
+    "propsSchema": "SemanticFormFieldLabelConfig"
+  },
+  "semantic-form-field-description": {
+    "path": "platform/components/forms/static/FieldDescription.tsx",
+    "propsSchema": "SemanticFormFieldDescriptionConfig"
+  },
 
   "semantic-tree-input": "platform/components/semantic/lazy-tree/SemanticTreeInput.ts",
   "semantic-lazy-tree": {
@@ -186,45 +416,92 @@
     "deferAttributes": {
       "node-template": true,
       "no-result-template": true
-    }
+    },
+    "propsSchema": "SemanticLazyTreeConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticLazyTree"
   },
   "mp-field-visualization": {
     "path": "platform/components/forms/FieldBasedVisualization.ts",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "FieldBasedVisualizationConfig"
   },
 
-  "mp-code-highlight": "platform/components/documentation/CodeHighlight.ts",
-  "mp-code-example": "platform/components/documentation/CodeExample.tsx",
-  "mp-code-block": "platform/components/documentation/CodeBlock.tsx",
+  "mp-code-highlight": {
+    "path": "platform/components/documentation/CodeHighlight.ts",
+    "propsSchema": "CodeHighlightConfig"
+  },
+  "mp-code-example": {
+    "path": "platform/components/documentation/CodeExample.tsx",
+    "propsSchema": "CodeExampleConfig"
+  },
+  "mp-code-block": {
+    "path": "platform/components/documentation/CodeBlock.tsx",
+    "propsSchema": "CodeBlockConfig"
+  },
   "mp-anonymous-hidden": {
     "path": "platform/components/security/AnonymousHidden.ts",
     "deferAttributes": {
       "alt": true
-    }
+    },
+    "propsSchema": "AnonymousHiddenConfig"
   },
-  "mp-has-permission": "platform/components/security/HasPermission.tsx",
-  "mp-error": "platform/components/ui/notification/ErrorNotification.ts",
-  "mp-user-language-switch": "platform/components/language-switch/UserLanguageSwitch.tsx",
+  "mp-has-permission": {
+    "path": "platform/components/security/HasPermission.tsx",
+    "propsSchema": "HasPermissionConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
+  "mp-error": {
+    "path": "platform/components/ui/notification/ErrorNotification.tsx",
+    "propsSchema": "ErrorNotificationConfig"
+  },
+  "mp-user-language-switch": {
+    "path": "platform/components/language-switch/UserLanguageSwitch.tsx",
+    "propsSchema": "UserLanguageSwitchConfig"
+  },
 
-  "mp-graph-store-action": "platform/components/admin/rdf-upload/GraphActionLink.ts",
+  "mp-graph-store-action": {
+    "path": "platform/components/admin/rdf-upload/GraphActionLink.ts",
+    "propsSchema": "GraphStoreActionConfig"
+  },
   "mp-rdf-upload": {
     "path": "platform/components/admin/rdf-upload/RdfUpload.tsx",
     "deferAttributes": {
       "placeholderTemplate": true
-    }
+    },
+    "propsSchema": "RdfUploadConfig"
   },
   "mp-file-upload": "platform/components/admin/file-upload/FileUpload.tsx",
   "mp-app-upload": "platform/components/admin/app-upload/AppUpload.tsx",
   "mp-app-remove": "platform/components/admin/app-upload/AppRemoveAction.tsx",
-  "mp-page-loader": "platform/components/ui/page-loader.ts",
+  "mp-page-loader": {
+    "path": "platform/components/ui/page-loader.ts",
+    "propsSchema": "PageLoaderConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
 
-  "semantic-form-file-input": "platform/components/forms/file-manager/FileInput.tsx",
-  "mp-direct-file-uploader": "platform/components/forms/file-manager/DirectFileUploader.tsx",
-  "mp-file-uploader": "platform/components/forms/file-manager/FileUploader.tsx",
-  "mp-file-visualizer": "platform/components/forms/file-manager/FileVisualizer.tsx",
-  "mp-create-ontology": "platform/components/ontology/CreateOntology.tsx",
+  "semantic-form-file-input": {
+    "path": "platform/components/forms/file-manager/FileInput.tsx",
+    "propsSchema": "FileInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticFormAdvancedInputs"
+  },
+  "mp-direct-file-uploader": {
+    "path": "platform/components/forms/file-manager/DirectFileUploader.tsx",
+    "propsSchema": "DirectFileUploaderConfig"
+  },
+  "mp-file-uploader": {
+    "path": "platform/components/forms/file-manager/FileUploader.tsx",
+    "propsSchema": "FileUploaderConfig"
+  },
+  "mp-file-visualizer": {
+    "path": "platform/components/forms/file-manager/FileVisualizer.tsx",
+    "propsSchema": "FileVisualizerConfig"
+  },
+  "mp-create-ontology": {
+    "path": "platform/components/ontology/CreateOntology.tsx",
+    "propsSchema": "CreateOntologyConfig"
+  },
 
   "mp-admin-page-manager": "platform/components/admin/page-manager/PageManager.ts",
   "mp-admin-namespace-manager": "platform/components/admin/namespace-manager/NamespaceManager.tsx",
@@ -242,67 +519,173 @@
   "mp-account-manager": "platform/components/admin/realm-manager/AccountManagerComponent.ts",
   "mp-account-permission-check":"platform/components/admin/realm-manager/PermissionCheck.tsx",
 
-  "mp-sparql-download": "platform/components/semantic/results/SparqlDownloadComponent.ts",
+  "mp-sparql-download": {
+    "path": "platform/components/semantic/results/SparqlDownloadComponent.ts",
+    "propsSchema": "SparqlDownloadConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
   "mp-sparql-result-counts": {
     "path": "platform/components/semantic/results/ResultsNumber.ts",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "SparqlResultsNumberConfig"
   },
 
-  "mp-ldp-remove-from-container-action": "platform/components/ldp/RemoveFromContainerAction.ts",
-  "mp-ldp-create-new-resource-action": "platform/components/ldp/CreateNewResource.ts",
-  "mp-ldp-duplicate-resource-action": "platform/components/ldp/DuplicateResource.ts",
-  "mp-ldp-export-resource": "platform/components/ldp/ExportResource.ts",
-  "mp-ldp-import-resource": "platform/components/ldp/ImportResource.tsx",
+  "mp-ldp-remove-from-container-action": {
+    "path": "platform/components/ldp/RemoveFromContainerAction.ts",
+    "propsSchema": "LdpRemoveFromContainerActionConfig"
+  },
+  "mp-ldp-create-new-resource-action": {
+    "path": "platform/components/ldp/CreateNewResource.ts",
+    "propsSchema": "LdpCreateNewResourceActionConfig"
+  },
+  "mp-ldp-duplicate-resource-action": {
+    "path": "platform/components/ldp/DuplicateResource.ts",
+    "propsSchema": "LdpDuplicateResourceActionConfig"
+  },
+  "mp-ldp-export-resource": {
+    "path": "platform/components/ldp/ExportResource.ts",
+    "propsSchema": "LdpExportResourceConfig"
+  },
+  "mp-ldp-import-resource": {
+    "path": "platform/components/ldp/ImportResource.tsx",
+    "propsSchema": "LdpImportResourceConfig"
+  },
 
-  "mp-overlay-dialog": "platform/components/ui/overlay/OverlayDialog.ts",
-  "mp-overlay-dialog-content": "platform/components/ui/overlay/OverlayDialogContent.ts",
-  "mp-overlay-dialog-trigger": "platform/components/ui/overlay/OverlayDialogTrigger.ts",
+  "mp-overlay-dialog": {
+    "path": "platform/components/ui/overlay/OverlayDialog.ts",
+    "propsSchema": "OverlayComponentConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
+  "mp-overlay-dialog-content": {
+    "path": "platform/components/ui/overlay/OverlayDialogContent.ts",
+    "propsSchema": "OverlayDialogContentConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
+  "mp-overlay-dialog-trigger": {
+    "path": "platform/components/ui/overlay/OverlayDialogTrigger.ts",
+    "propsSchema": "OverlayDialogTriggerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
 
-  "mp-anchor" : "platform/components/ui/scrollchor.ts",
+  "mp-anchor": {
+    "path": "platform/components/ui/scrollchor.ts",
+    "propsSchema": "ScrollAnchorConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
 
-  "mp-platform-url" : "platform/components/ui/platform-url.ts",
+  "mp-platform-url": "platform/components/ui/platform-url.ts",
 
   "mp-nav-account": "platform/app/navbar/NavAccountComponent.tsx",
 
-  "mp-internal-page-editor": "platform/app/page/PageEditor.ts",
+  "mp-internal-page-editor": "platform/app/page/PageEditor.tsx",
   "mp-internal-sparql-endpoint": "platform/app/sparql/SparqlEndpoint.ts",
 
-  "mp-draggable": "platform/components/dnd/DraggableComponent.ts",
+  "mp-draggable": {
+    "path": "platform/components/dnd/DraggableComponent.ts",
+    "propsSchema": "DraggableConfig"
+  },
 
-  "mp-print": "platform/components/ui/print/PrintComponent.tsx",
-  "mp-print-section": "platform/components/ui/print/PrintSectionComponent.ts",
+  "mp-print": {
+    "path": "platform/components/ui/print/PrintComponent.tsx",
+    "propsSchema": "PrintComponentConfig"
+  },
+  "mp-print-section": {
+    "path": "platform/components/ui/print/PrintSectionComponent.ts",
+    "propsSchema": "PrintSectionConfig"
+  },
 
-  "mp-splitpane": "platform/components/ui/splitpane/SplitPaneComponent.ts",
-  "mp-splitpane-sidebar-closed": "platform/components/ui/splitpane/SplitPaneSidebarClosedComponent.ts",
-  "mp-splitpane-sidebar-open": "platform/components/ui/splitpane/SplitPaneSidebarOpenComponent.ts",
-  "mp-splitpane-toggle-on": "platform/components/ui/splitpane/SplitPaneToggleOnComponent.ts",
-  "mp-splitpane-toggle-off": "platform/components/ui/splitpane/SplitPaneToggleOffComponent.ts",
+  "mp-splitpane": {
+    "path": "platform/components/ui/splitpane/SplitPaneComponent.ts",
+    "propsSchema": "SplitPaneConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPSplitPaneComponent"
+  },
+  "mp-splitpane-sidebar-closed": {
+    "path": "platform/components/ui/splitpane/SplitPaneSidebarClosedComponent.ts",
+    "propsSchema": "SplitPaneSidebarClosedConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPSplitPaneComponent"
+  },
+  "mp-splitpane-sidebar-open": {
+    "path": "platform/components/ui/splitpane/SplitPaneSidebarOpenComponent.ts",
+    "propsSchema": "SplitPaneSidebarOpenConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPSplitPaneComponent"
+  },
+  "mp-splitpane-toggle-on": {
+    "path": "platform/components/ui/splitpane/SplitPaneToggleOnComponent.ts",
+    "propsSchema": "SplitPaneToggleOnConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPSplitPaneComponent"
+  },
+  "mp-splitpane-toggle-off": {
+    "path": "platform/components/ui/splitpane/SplitPaneToggleOffComponent.ts",
+    "propsSchema": "SplitPaneToggleOffConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPSplitPaneComponent"
+  },
 
-  "mp-label": "platform/components/ui/resource-label.ts",
+  "mp-label": {
+    "path": "platform/components/ui/resource-label.ts",
+    "propsSchema": "ResourceLabelConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
   "mp-description": {
     "path": "platform/components/ui/resource-description.tsx",
     "deferAttributes": {
-      "template": true
-    }
+      "template": true,
+      "no-result-template": true
+    },
+    "propsSchema": "DescriptionConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
   },
-  "mp-highlight": "platform/components/ui/highlight/HighlightComponent.ts",
+  "mp-highlight": {
+    "path": "platform/components/ui/highlight/HighlightComponent.ts",
+    "propsSchema": "HighlightConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
 
-  "mp-popover": "platform/components/ui/popover/PopoverComponent.ts",
-  "mp-popover-trigger": "platform/components/ui/popover/PopoverTriggerComponent.ts",
-  "mp-popover-content": "platform/components/ui/popover/PopoverContentComponent.ts",
+  "mp-popover": {
+    "path": "platform/components/ui/popover/PopoverComponent.tsx",
+    "propsSchema": "PopoverConfig",
+    "helpResource": "http://help.metaphacts.com/resource/ReactBootstrap"
+  },
+  "mp-popover-trigger": {
+    "path": "platform/components/ui/popover/PopoverTriggerComponent.tsx",
+    "propsSchema": "PopoverTriggerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/ReactBootstrap"
+  },
+  "mp-popover-content": {
+    "path": "platform/components/ui/popover/PopoverContentComponent.tsx",
+    "propsSchema": "PopoverContentConfig",
+    "helpResource": "http://help.metaphacts.com/resource/ReactBootstrap"
+  },
 
-  "mp-collapsible-div": "platform/components/ui/collapsible-div/CollapsibleDivComponent.ts",
-  "mp-collapsible-div-trigger": "platform/components/ui/collapsible-div/CollapsibleDivTriggerComponent.ts",
-  "mp-collapsible-div-content": "platform/components/ui/collapsible-div/CollapsibleDivContentComponent.ts",
+  "mp-collapsible-div": {
+    "path": "platform/components/ui/collapsible-div/CollapsibleDiv.tsx",
+    "propsSchema": "CollapsibleDivConfig"
+  },
+  "mp-collapsible-div-trigger": {
+    "path": "platform/components/ui/collapsible-div/CollapsibleDivTrigger.tsx",
+    "propsSchema": "CollapsibleDivTriggerConfig"
+  },
+  "mp-collapsible-div-content": {
+    "path": "platform/components/ui/collapsible-div/CollapsibleDivContent.tsx",
+    "propsSchema": "CollapsibleDivContentConfig"
+  },
 
   "mp-panel": "platform/components/ui/panel/Panel.tsx",
   "mp-panel-header": "platform/components/ui/panel/PanelHeader.tsx",
   "mp-panel-body": "platform/components/ui/panel/PanelBody.tsx",
   "mp-panel-footer": "platform/components/ui/panel/PanelFooter.tsx",
 
-  "mp-text-truncate": "platform/components/ui/truncate/TextTruncateComponent.ts",
+  "mp-text-truncate": {
+    "path": "platform/components/ui/truncate/TextTruncate.tsx",
+    "deferAttributes": {
+      "truncate": true,
+      "expand": true,
+      "collapse": true
+    },
+    "propsSchema": "TextTruncateConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
 
   "mp-set-management": {
     "path": "platform/components/sets/SetManagement.tsx",
@@ -311,7 +694,8 @@
         "gridTemplate": true,
         "listTemplate": true
       }
-    }
+    },
+    "propsSchema": "SetManagementConfig"
   },
   "mp-set-management-action-remove-set-item": "platform/components/sets/actions/RemoveSetItemAction.ts",
   "mp-set-management-action-fetch-set-items": "platform/components/sets/actions/FetchSetItemsAction.ts",
@@ -325,7 +709,8 @@
         "gridTemplate": true,
         "listTemplate": true
       }
-    }
+    },
+    "propsSchema": "SingleSetConfig"
   },
   "mp-create-set-action": "platform/components/sets/CreateSetActionComponent.tsx",
 
@@ -338,9 +723,15 @@
 
   "mp-url-minifier": "platform/components/ui/url-minifier.ts",
 
-  "mp-documentation": "platform/components/documentation/ConfigDocComponent.ts",
+  "mp-documentation": {
+    "path": "platform/components/documentation/ConfigDocComponent.ts",
+    "propsSchema": "ConfigDocConfig"
+  },
 
-  "mp-spin-query-template-editor": "platform/components/query-editor/QueryTemplate.tsx",
+  "mp-spin-query-template-editor": {
+    "path": "platform/components/query-editor/QueryTemplate.tsx",
+    "propsSchema": "QueryTemplateConfig"
+  },
   "mp-spin-query-editor": "platform/components/query-editor/QueryEditorComponent.ts",
 
   "mp-sparql-query-editor": "platform/components/sparql-editor/SparqlQueryEditor.tsx",
@@ -348,58 +739,190 @@
   "mp-recent-queries": "platform/components/sparql-editor/RecentQueries.tsx",
   "mp-query-catalog-template": "platform/components/sparql-editor/QueryCatalogTemplate.tsx",
 
-  "mp-selection-toggle": "platform/components/ui/selection/SelectionToggleComponent.tsx",
-  "mp-selection-action-choice": "platform/components/ui/selection/SelectionActionChoiceComponent.tsx",
-  "mp-selection-group": "platform/components/ui/selection/SelectionGroupComponent.tsx",
-
-  "mp-vowl" : "platform/components/Vowl.ts",
+  "mp-selection-toggle": {
+    "path": "platform/components/ui/selection/SelectionToggleComponent.tsx",
+    "propsSchema": "SelectionToggleConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MultipleSelection"
+  },
+  "mp-selection-action-choice": {
+    "path": "platform/components/ui/selection/SelectionActionChoiceComponent.tsx",
+    "propsSchema": "SelectionActionChoiceConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MultipleSelection"
+  },
+  "mp-selection-group": {
+    "path": "platform/components/ui/selection/SelectionGroupComponent.tsx",
+    "propsSchema": "SelectionGroupConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MultipleSelection"
+  },
 
   "mp-protein-viewer": "platform/components/3-rd-party/ProteinViewer.ts",
   "mp-smiles-code-drawer": "platform/components/3-rd-party/SmilesCodeDrawer.tsx",
-  "ontodia": "platform/components/3-rd-party/ontodia/Ontodia.tsx",
-  "diagram-search-result": "platform/components/3-rd-party/ontodia/DiagramSearchResult.tsx",
-  "ontodia-nested-nodes": "platform/components/3-rd-party/ontodia/OntodiaNestedNodes.ts",
-  "ontodia-entity-metadata": "platform/components/3-rd-party/ontodia/authoring/OntodiaEntityMetadata.ts",
+  "ontodia": {
+    "path": "platform/components/3-rd-party/ontodia/Ontodia.tsx",
+    "propsSchema": "BaseOntodiaConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "diagram-search-result": {
+    "path": "platform/components/3-rd-party/ontodia/DiagramSearchResult.tsx",
+    "propsSchema": "DiagramSearchResultConfig"
+  },
+  "ontodia-nested-nodes": {
+    "path": "platform/components/3-rd-party/ontodia/OntodiaNestedNodes.ts",
+    "propsSchema": "OntodiaNestedNodes"
+  },
   "ontodia-contents": {
     "path": "platform/components/3-rd-party/ontodia/OntodiaContents.tsx",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "OntodiaContentsConfig"
   },
   "ontodia-canvas": {
     "path": "platform/components/3-rd-party/ontodia/CanvasComponent.ts",
     "deferAttributes": {
       "node-templates": true,
-      "default-node-template": true
-    }
+      "default-node-template": true,
+      "default-edge-property-template": true
+    },
+    "deferJsonProperties": {
+      "edge-property-groups": {
+        "template": true
+      }
+    },
+    "propsSchema": "CanvasConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
-  "ontodia-class-tree": "platform/components/3-rd-party/ontodia/ClassTree.tsx",
-  "ontodia-instances-search": "platform/components/3-rd-party/ontodia/InstancesSearch.tsx",
-  "ontodia-connections": "platform/components/3-rd-party/ontodia/LinkTypesToolbox.ts",
-  "ontodia-element-search": "platform/components/3-rd-party/ontodia/ElementSearchComponent.ts",
-  "ontodia-canvas-widget": "platform/components/3-rd-party/ontodia/CanvasWidget.ts",
-  "ontodia-navigator": "platform/components/3-rd-party/ontodia/Navigator.ts",
+  "ontodia-class-tree": {
+    "path": "platform/components/3-rd-party/ontodia/ClassTree.tsx",
+    "propsSchema": "ClassTreeConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-instances-search": {
+    "path": "platform/components/3-rd-party/ontodia/InstancesSearch.tsx",
+    "propsSchema": "InstancesSearchConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-connections": {
+    "path": "platform/components/3-rd-party/ontodia/LinkTypesToolbox.ts",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-element-search": {
+    "path": "platform/components/3-rd-party/ontodia/ElementSearchComponent.ts",
+    "propsSchema": "ElementSearchConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-edit-entity-panel": "platform/components/3-rd-party/ontodia/EditEntityPanel.tsx",
+  "ontodia-canvas-widget": {
+    "path": "platform/components/3-rd-party/ontodia/CanvasWidget.ts",
+    "propsSchema": "CanvasWidgetConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-navigation-menu": {
+    "path": "platform/components/3-rd-party/ontodia/NavigationMenu.tsx",
+    "propsSchema": "OntodiaNavigationMenuConfig"
+  },
+  "ontodia-navigator": {
+    "path": "platform/components/3-rd-party/ontodia/Navigator.tsx",
+    "propsSchema": "NavigatorWidgetConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
   "ontodia-halo": {
     "path": "platform/components/3-rd-party/ontodia/Halo.tsx",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "OntodiaHaloConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
-  "ontodia-halo-link": "platform/components/3-rd-party/ontodia/HaloLink.ts",
-  "ontodia-toolbar": "platform/components/3-rd-party/ontodia/ToolbarComponent.ts",
-  "ontodia-save-button": "platform/components/3-rd-party/ontodia/SaveButton.tsx",
-  "ontodia-field-configuration": "platform/components/3-rd-party/ontodia/authoring/OntodiaFieldConfiguration.ts",
-  "ontodia-field-input-override": "platform/components/3-rd-party/ontodia/authoring/FieldInputOverride.tsx",
-  "ontodia-data-providers": "platform/components/3-rd-party/ontodia/data/OntodiaDataProviders.ts",
-  "ontodia-rdf-provider": "platform/components/3-rd-party/ontodia/data/OntodiaRdfDataProvider.ts",
-  "ontodia-sparql-provider": "platform/components/3-rd-party/ontodia/data/OntodiaSparqlDataProvider.ts",
+  "ontodia-halo-link": {
+    "path": "platform/components/3-rd-party/ontodia/HaloLink.ts",
+    "propsSchema": "OntodiaHaloLinkConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-toolbar": {
+    "path": "platform/components/3-rd-party/ontodia/ToolbarComponent.ts",
+    "propsSchema": "ToolbarConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-save-button": {
+    "path": "platform/components/3-rd-party/ontodia/SaveButton.tsx",
+    "deferAttributes": {
+      "template": true
+    },
+    "propsSchema": "OntodiaSaveButtonConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-field-configuration": {
+    "path": "platform/components/3-rd-party/ontodia/authoring/OntodiaFieldConfiguration.ts",
+    "propsSchema": "OntodiaFieldConfigurationConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-entity-metadata": {
+    "path": "platform/components/3-rd-party/ontodia/authoring/OntodiaEntityMetadata.ts",
+    "propsSchema": "OntodiaEntityMetadataConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-link-metadata": {
+    "path": "platform/components/3-rd-party/ontodia/authoring/OntodiaLinkMetadata.tsx",
+    "propsSchema": "OntodiaLinkMetadataConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-field-input-override": {
+    "path": "platform/components/3-rd-party/ontodia/authoring/FieldInputOverride.tsx",
+    "propsSchema": "OntodiaFieldInputOverrideConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-form-override": {
+    "path": "platform/components/3-rd-party/ontodia/authoring/FormOverride.tsx",
+    "propsSchema": "OntodiaFormOverrideConfig"
+  },
+  "ontodia-inline-entity-input": {
+    "path": "platform/components/3-rd-party/ontodia/authoring/InlineEntityInput.tsx",
+    "propsSchema": "OntodiaInlineEntityInputConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-data-providers": {
+    "path": "platform/components/3-rd-party/ontodia/data/OntodiaDataProviders.ts",
+    "propsSchema": "OntodiaDataProvidersConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-rdf-provider": {
+    "path": "platform/components/3-rd-party/ontodia/data/OntodiaRdfDataProvider.ts",
+    "propsSchema": "OntodiaRdfDataProviderConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
+  "ontodia-sparql-provider": {
+    "path": "platform/components/3-rd-party/ontodia/data/OntodiaSparqlDataProvider.ts",
+    "propsSchema": "OntodiaSparqlDataProviderConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Ontodia"
+  },
 
-  "mp-workspace-layout": "platform/components/3-rd-party/ontodia/workspace/WorkspaceLayout.ts",
-  "mp-workspace-row": "platform/components/3-rd-party/ontodia/workspace/WorkspaceRow.ts",
-  "mp-workspace-column": "platform/components/3-rd-party/ontodia/workspace/WorkspaceColumn.ts",
-  "mp-workspace-item": "platform/components/3-rd-party/ontodia/workspace/WorkspaceItem.ts",
+  "mp-workspace-layout": {
+    "path": "platform/components/3-rd-party/ontodia/workspace/WorkspaceLayout.ts",
+    "propsSchema": "WorkspaceLayoutConfig",
+    "helpResource": "http://help.metaphacts.com/resource/CSSLayout"
+  },
+  "mp-workspace-row": {
+    "path": "platform/components/3-rd-party/ontodia/workspace/WorkspaceRow.ts",
+    "propsSchema": "WorkspaceContainerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/CSSLayout"
+  },
+  "mp-workspace-column": {
+    "path": "platform/components/3-rd-party/ontodia/workspace/WorkspaceColumn.ts",
+    "propsSchema": "WorkspaceContainerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/CSSLayout"
+  },
+  "mp-workspace-item": {
+    "path": "platform/components/3-rd-party/ontodia/workspace/WorkspaceItem.ts",
+    "propsSchema": "WorkspaceItemConfig",
+    "helpResource": "http://help.metaphacts.com/resource/CSSLayout"
+  },
 
-  "mp-copy-to-clipboard": "platform/components/copy-to-clipboard/CopyToClipboardComponent.tsx",
+  "mp-copy-to-clipboard": {
+    "path": "platform/components/copy-to-clipboard/CopyToClipboardComponent.tsx",
+    "propsSchema": "CopyToClipboardConfig",
+    "helpResource": "http://help.metaphacts.com/resource/MPComponents"
+  },
 
   "mp-lang-literal": {
     "path": "platform/components/ui/lang-literal/LangLiteral.tsx",
@@ -416,44 +939,71 @@
     "path": "platform/components/ui/json/json-renderer.tsx",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "JsonRendererConfig"
   },
-  "mp-file-download" : "platform/components/ui/file-download.tsx",
+  "mp-file-download": {
+    "path": "platform/components/ui/file-download.tsx",
+    "propsSchema": "FileDownloadConfig"
+  },
 
-  "mp-workflow-create" : "platform/components/workflow/WorkflowCreateComponent.tsx",
-  "mp-workflow-manager" : "platform/components/workflow/WorkflowManagerComponent.tsx",
-  "mp-workflow-selection-action" : "platform/components/workflow/WorkflowSelectionAction.tsx",
+  "mp-workflow-create": {
+    "path": "platform/components/workflow/WorkflowCreateComponent.tsx",
+    "propsSchema": "WorkflowCreateConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Workflow"
+  },
+  "mp-workflow-manager": {
+    "path": "platform/components/workflow/WorkflowManagerComponent.tsx",
+    "propsSchema": "WorkflowManagerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Workflow"
+  },
+  "mp-workflow-selection-action": {
+    "path": "platform/components/workflow/WorkflowSelectionAction.tsx",
+    "propsSchema": "WorkflowSelectionActionConfig",
+    "helpResource": "http://help.metaphacts.com/resource/Workflow"
+  },
 
-  "mp-knowledge-panel" : "platform/components/knowledge-panel/KnowledgePanel.tsx",
-  "mp-knowledge-panel-frame" : {
+  "mp-knowledge-panel": {
+    "path": "platform/components/knowledge-panel/KnowledgePanel.tsx",
+    "propsSchema": "KnowledgePanelConfig",
+    "helpResource": "http://help.metaphacts.com/resource/KnowledgePanel"
+  },
+  "mp-knowledge-panel-frame": {
     "path": "platform/components/knowledge-panel/KnowledgePanelFrame.tsx",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "KnowledgePanelFrameConfig",
+    "helpResource": "http://help.metaphacts.com/resource/KnowledgePanel"
   },
-  "mp-knowledge-panel-trigger" : "platform/components/knowledge-panel/KnowledgePanelTrigger.tsx",
+  "mp-knowledge-panel-trigger": {
+    "path": "platform/components/knowledge-panel/KnowledgePanelTrigger.tsx",
+    "propsSchema": "KnowledgePanelTriggerConfig",
+    "helpResource": "http://help.metaphacts.com/resource/KnowledgePanel"
+  },
 
-  "bs-row": "react-bootstrap/es/Row.js",
-  "bs-col": "react-bootstrap/es/Col.js",
-  "bs-tabs": "react-bootstrap/es/Tabs.js",
-  "bs-tab": "react-bootstrap/es/Tab.js",
-  "bs-tab-container": "react-bootstrap/es/TabContainer.js",
-  "bs-tab-pane": "react-bootstrap/es/TabPane.js",
-  "bs-tab-content": "react-bootstrap/es/TabContent.js",
-  "bs-panel": "react-bootstrap/es/Panel.js",
-  "bs-panel-group": "react-bootstrap/es/PanelGroup.js",
-  "bs-navbar": "react-bootstrap/es/Navbar.js",
-  "bs-navbar-brand": "react-bootstrap/es/NavbarBrand.js",
-  "bs-navbar-collapse": "react-bootstrap/es/NavbarCollapse.js",
-  "bs-navbar-header": "react-bootstrap/es/NavbarHeader.js",
-  "bs-navbar-toggle": "react-bootstrap/es/NavbarToggle.js",
-  "bs-nav": "react-bootstrap/es/Nav.js",
-  "bs-nav-item": "react-bootstrap/es/NavItem.js",
-  "bs-nav-dropdown": "react-bootstrap/es/NavDropdown.js",
-  "bs-menu-item": "react-bootstrap/es/MenuItem.js",
-  "bs-dropdown-button": "react-bootstrap/es/DropdownButton.js",
-  "bs-alert": "react-bootstrap/es/Alert.js",
-  "bs-dropdown": "react-bootstrap/es/Dropdown.js",
-  "bs-dropdown-menu": "react-bootstrap/es/DropdownMenu.js",
-  "bs-dropdown-toggle": "react-bootstrap/es/DropdownToggle.js"
+  "bs-row": "react-bootstrap/esm/Row.js",
+  "bs-col": "platform/components/compatibility/Bootstrap3Col.tsx",
+  "bs-tabs": "react-bootstrap/esm/Tabs.js",
+  "bs-tab": "react-bootstrap/esm/Tab.js",
+  "bs-tab-container": "react-bootstrap/esm/TabContainer.js",
+  "bs-tab-pane": "react-bootstrap/esm/TabPane.js",
+  "bs-tab-content": "react-bootstrap/esm/TabContent.js",
+  "bs-panel": "platform/components/compatibility/Bootstrap3Panel.tsx",
+  "bs-navbar": "react-bootstrap/esm/Navbar.js",
+  "bs-navbar-brand": "react-bootstrap/esm/NavbarBrand.js",
+  "bs-navbar-collapse": "react-bootstrap/esm/NavbarCollapse.js",
+  "bs-navbar-toggle": "react-bootstrap/esm/NavbarToggle.js",
+  "bs-nav": "react-bootstrap/esm/Nav.js",
+  "bs-nav-item": "react-bootstrap/esm/NavItem.js",
+  "bs-nav-link": "react-bootstrap/esm/NavLink.js",
+  "bs-nav-dropdown": "react-bootstrap/esm/NavDropdown.js",
+  "bs-menu-item": "react-bootstrap/esm/DropdownItem.js",
+  "bs-dropdown-item": "react-bootstrap/esm/DropdownItem.js",
+  "bs-dropdown-button": "react-bootstrap/esm/DropdownButton.js",
+  "bs-dropdown-divider": "platform/components/compatibility/DropdownDivider.ts",
+  "bs-alert": "react-bootstrap/esm/Alert.js",
+  "bs-dropdown": "react-bootstrap/esm/Dropdown.js",
+  "bs-dropdown-menu": "react-bootstrap/esm/DropdownMenu.js",
+  "bs-dropdown-toggle": "react-bootstrap/esm/DropdownToggle.js"
 }

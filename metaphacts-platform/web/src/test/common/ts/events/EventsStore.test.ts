@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,11 +38,17 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import { expect } from 'chai';
-import { listen, trigger, _subscribers } from 'platform/api/events';
+
+import { Cancellation } from 'platform/api/async';
+import {
+  EventType, listen, trigger, registerEventSource, test_clearSubscribers,
+} from 'platform/api/events';
 
 describe('EventStore', function() {
+  const NUMERIC_EVENT: EventType<{ n: number }> = 'NUMERIC_EVENT';
+
   beforeEach(function() {
-    for (let x in _subscribers) { if (x) { delete _subscribers[x]; }}
+    test_clearSubscribers();
   });
 
   it('listen to events of specific type', function(done) {
@@ -105,7 +111,7 @@ describe('EventStore', function() {
     trigger({ eventType: 'SOME_OTHER_EVENT_TYPE', targets: ['1'], source: '3' });
   });
 
-  it('multiple listeners', function(done) {
+  it('subscribe with multiple listeners', function(done) {
     let i = 0;
     const SOME_EVENT_TYPE = 'SOME_EVENT_TYPE';
     listen({ eventType: SOME_EVENT_TYPE }).onValue(
@@ -125,5 +131,74 @@ describe('EventStore', function() {
     trigger({ eventType: 'SOME_OTHER_EVENT_TYPE', source: '1' });
     trigger({ eventType: 'SOME_OTHER_EVENT_TYPE', targets: ['1'], source: '2' });
     trigger({ eventType: SOME_EVENT_TYPE, source: '3' });
+  });
+
+  it('use event source', () => {
+    // register event source
+    const cancellation = new Cancellation();
+    registerEventSource({eventType: NUMERIC_EVENT, source: '1', cancellation});
+    // immediately trigger event from source (last event should be stored as "current" value)
+    trigger({eventType: NUMERIC_EVENT, source: '1', data: {n: 1}});
+    trigger({eventType: NUMERIC_EVENT, source: '1', data: {n: 10}});
+
+    let sum = 0;
+    listen({eventType: NUMERIC_EVENT}).observe({
+      value: event => sum += event.data.n,
+    });
+    // check that event triggered after subscription
+    expect(sum).to.be.equal(10);
+
+    // check again after multiple triggers
+    trigger({eventType: NUMERIC_EVENT, source: '1', data: {n: 200}});
+    // (should still trigger even when unregistered as source)
+    cancellation.cancelAll();
+    trigger({eventType: NUMERIC_EVENT, source: '1', data: {n: 3000}});
+    expect(sum).to.be.equal(3210);
+  });
+
+  it('trigger same event type as in an event source', () => {
+    // register event source
+    const cancellation = new Cancellation();
+    registerEventSource({eventType: NUMERIC_EVENT, source: '1', cancellation});
+    // immediately trigger event NOT from event source
+    trigger({eventType: NUMERIC_EVENT, source: '2', data: {n: 10}});
+
+    let sum = 0;
+    listen({eventType: NUMERIC_EVENT}).observe({
+      value: event => sum += event.data.n,
+    });
+    // check that event NOT triggered after subscription
+    expect(sum).to.be.equal(0);
+
+    // check again after multiple triggers
+    trigger({eventType: NUMERIC_EVENT, source: '1', data: {n: 200}});
+    // (should still trigger even when unregistered as source)
+    cancellation.cancelAll();
+    trigger({eventType: NUMERIC_EVENT, source: '2', data: {n: 3000}});
+    expect(sum).to.be.equal(3200);
+  });
+
+  it('register multiple event sources with same ID', () => {
+    // register event source
+    const cancellation1 = new Cancellation();
+    const cancellation2 = new Cancellation();
+    registerEventSource({eventType: NUMERIC_EVENT, source: '1', cancellation: cancellation1});
+    registerEventSource({eventType: NUMERIC_EVENT, source: '1', cancellation: cancellation2});
+    // immediately trigger event from source
+    trigger({eventType: NUMERIC_EVENT, source: '1', data: {n: 10}});
+
+    let sum = 0;
+    listen({eventType: NUMERIC_EVENT}).observe({
+      value: event => sum += event.data.n,
+    });
+    // check that event triggered after subscription exactly once
+    expect(sum).to.be.equal(10);
+
+    // check again after multiple triggers
+    trigger({eventType: NUMERIC_EVENT, source: '1', data: {n: 200}});
+    cancellation1.cancelAll();
+    trigger({eventType: NUMERIC_EVENT, source: '2', data: {n: 3000}});
+    cancellation2.cancelAll();
+    expect(sum).to.be.equal(3210);
   });
 });

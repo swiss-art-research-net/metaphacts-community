@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,12 +39,12 @@
  */
 import { Rdf } from 'platform/api/rdf';
 
-import { SetManagementProps, KeywordFilter } from './Configuration';
+import { SetManagementConfig, KeywordFilter } from './Configuration';
 
 export const SetKind = Rdf.iri('http://www.metaphacts.com/ontologies/platform#Set');
 const DefaultSetItemActions = `
   <div class='set-management__item-actions'>
-    <bs-dropdown-button pull-right=true bs-style='link' title=''
+    <bs-dropdown-button align-right=true bs-style='link' title=''
                         id='set-actions-{{iri.value}}'>
       <mp-set-management-action-remove-set-item>
         <bs-menu-item event-key='remove'>Remove</bs-menu-item>
@@ -69,7 +69,7 @@ export const SetListTemplate = `
       ${DefaultItemLabel}
     </div>
     <div class='set-management__item-actions' style='margin-left: auto;'>
-      <bs-dropdown-button pull-right=true bs-style='link' title=''
+      <bs-dropdown-button align-right=true bs-style='link' title=''
                           id='set-actions-{{iri.value}}'>
         <mp-set-management-action-manage-set>
           <bs-menu-item event-key='manage'>Manage set</bs-menu-item>
@@ -160,7 +160,18 @@ export function itemConfig(kind: Rdf.Node) {
 
 export const AcceptResourceQuery = 'ASK {}';
 
-export const ForAllProps: Partial<SetManagementProps> = {
+type DefaultProps = Required<Pick<SetManagementConfig,
+  'setItemsQuery' |
+  'setItemsMetadataQuery' |
+  'setCountQuery' |
+  'acceptResourceQuery' |
+  'keywordFilter' |
+  'filters' |
+  'defaultViewMode' |
+  'persistViewMode'
+>>;
+
+export const ForAllProps: DefaultProps = {
   setItemsQuery: SetItemsQuery,
   setItemsMetadataQuery: SetItemsMetadataQuery,
   setCountQuery: SetCountQuery,

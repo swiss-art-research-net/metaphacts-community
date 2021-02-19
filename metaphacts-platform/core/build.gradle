@@ -7,6 +7,10 @@ project.ext {
 eclipse.project.name = project.externalName
 jar.archiveFileName = project.externalName + '.jar'
 
+configurations.all {
+	// available in JDK, java.xml
+	exclude group: 'xml-apis', module: 'xml-apis'
+}
 
 dependencies {
 
@@ -70,6 +74,19 @@ dependencies {
 	implementation group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-base', version: JACKSON_VERSION, transitive: false
 	implementation group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: JACKSON_VERSION, transitive: false
 	implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-jaxb-annotations', version: JACKSON_VERSION, transitive: false
+	
+	constraints {
+		// transitive dependencies (swagger, awscli)
+		api('com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:' + JACKSON_VERSION) {
+			because 'use consistent jackson version also for transitive runtime dependencies'
+		}
+		api('com.fasterxml.jackson.datatype:jackson-datatype-jsr310:' + JACKSON_VERSION) {
+			because 'use consistent jackson version also for transitive runtime dependencies'
+		}
+		api('com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:' + JACKSON_VERSION) {
+			because 'use consistent jackson version also for transitive runtime dependencies'
+		}
+	}
 
 	// Dependency injection
 	api group: 'com.google.inject', name: 'guice', version: GUICE_VERSION
@@ -85,19 +102,23 @@ dependencies {
 
 	// not required at compile time, but likely used as transitive dependency
 	runtime group: 'org.apache.commons', name: 'commons-compress', version: '1.20'
+	// transitive dependency of various components, force resolving as 3.2.2 (e.g pac4j-saml-opensamlv3)
+	runtime('commons-collections:commons-collections:3.2.2') {
+		force = true
+	}
 
 
 
 	//http core and client, successor of and replacement for Commons HttpClient 3.x
-	api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.12'
-	implementation group: 'org.apache.httpcomponents', name: 'httpclient-cache', version: '4.5.12'
-	implementation group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.13'
+	api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+	implementation group: 'org.apache.httpcomponents', name: 'httpclient-cache', version: '4.5.13'
+	implementation group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.14'
 
 	// needed for configuration
 	implementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
 
 	// configuration
-	api group: 'org.apache.commons', name: 'commons-configuration2', version: '2.1'
+	api group: 'org.apache.commons', name: 'commons-configuration2', version: '2.7'
 
 
 	// TODO check provided
@@ -107,7 +128,7 @@ dependencies {
 	api group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
 
 	// jersey-guice integration
-	implementation group: 'org.glassfish.hk2', name: 'guice-bridge', version: '2.4.0-b34'
+	implementation group: 'org.glassfish.hk2', name: 'guice-bridge', version: '2.6.1'
 
 	implementation('com.squarespace.jersey2-guice:jersey2-guice:0.10') {
 		exclude group: 'commons-beanutils', module: 'commons-beanutils'  // depends on old commons-beanutils 1.8.3, but we need 1.9.x for common-configuration2
@@ -118,8 +139,8 @@ dependencies {
 	api group: 'org.apache.shiro', name: 'shiro-core', version: SHIRO_VERSION
 	api group: 'org.apache.shiro', name: 'shiro-web', version: SHIRO_VERSION
 	api group: 'org.apache.shiro', name: 'shiro-guice', version: SHIRO_VERSION // exclude: { group: 'com.google.inject', module: 'guice' }),
-	api group: 'org.secnod.shiro', name: 'shiro-jersey', version: '0.2.0', transitive: false // depends on old jersey-core 2.16/ jersey-servlet2.16 / shiro-core 1.2.3
-
+	implementation group: 'org.apache.shiro', name: 'shiro-jaxrs', version: SHIRO_VERSION
+	
 	// templates
 	implementation group: 'com.github.jknack', name: 'handlebars', version: '4.2.0'
 
@@ -130,7 +151,7 @@ dependencies {
 	implementation group: 'org.owasp.encoder', name: 'encoder', version: '1.2'
 
 	// java classes and resources reflection, i.e. annotation scanning on classpath
-	implementation group: 'io.github.classgraph', name: 'classgraph', version: '4.6.13'
+	implementation group: 'io.github.classgraph', name: 'classgraph', version: '4.8.90'
 
 	// extracting the prefered mime type, for example, sparql servlet
 	implementation group: 'org.commonjava.mimeparse', name: 'mimeparse', version: '0.1.3.3'
@@ -139,18 +160,12 @@ dependencies {
 	implementation group: 'org.ccil.cowan.tagsoup', name: 'tagsoup', version: '1.2.1'
 
 	//pf4j plugin framework
-	implementation group: 'org.pf4j', name: 'pf4j', version: '3.2.0'
+	implementation group: 'org.pf4j', name: 'pf4j', version: '3.5.0'
 
 	// semargl rdfa parser
 	implementation group: 'org.semarglproject', name: 'semargl-rdfa', version: '0.7'
 	implementation group: 'org.semarglproject', name: 'semargl-rdf4j', version: '0.7', transitive: false
 
-	// OWL2VOWL
-	implementation ('org.visualdataweb.vowl.owl2vowl:OWL2VOWL:0.2.1') {
-		exclude group: 'net.sourceforge.owlapi'
-		exclude group: 'org.apache.servicemix.bundles'
-	}
-	implementation group: 'net.sourceforge.owlapi', name: 'owlapi-distribution', version: '3.5.0', transitive: false
 	runtimeOnly group: 'commons-cli', name: 'commons-cli', version: '1.4'	// TODO check if required
 
 	implementation group: 'org.mitre.dsmiley.httpproxy', name: 'smiley-http-proxy-servlet', version: '1.9'
@@ -160,8 +175,8 @@ dependencies {
 
 
 	// JGit for Git storage support
-	implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.4.0.201906121030-r'
-
+	implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: JGIT_VERSION
+	implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit.ssh.jsch', version: JGIT_VERSION
 
 	constraints {
 		implementation('commons-beanutils:commons-beanutils:1.9.4') {

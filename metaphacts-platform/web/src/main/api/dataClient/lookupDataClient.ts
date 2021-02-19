@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,10 +39,11 @@
  */
 import * as Kefir from 'kefir';
 import {
-  ReconciliationService, ReconciliationRequest, ReconciliationResponse, EntityType,
+  ReconciliationService, ReconciliationRequest, ReconciliationResponse, ReconciliationCandidate,
 } from 'platform/api/services/reconciliation';
 import { SparqlClient } from 'platform/api/sparql';
 import { Rdf, vocabularies } from 'platform/api/rdf';
+import { getPreferredUserLanguage } from 'platform/api/services/language';
 
 const { xsd } = vocabularies;
 
@@ -54,7 +55,7 @@ export const TOKEN_VARIABLE_NAME = '__token__';
  */
 export interface LookupDataQuery {
   /**
-   * Type of the query. Should be always "<b>lookup</b>" in order to be of a type LookupDataQuery
+   * Type of the query. Should be always `lookup` in order to be of a type LookupDataQuery
    */
   type: 'lookup';
 
@@ -72,6 +73,24 @@ export interface LookupDataQuery {
    * Filter result by specified entityType. See documentation for Reconciliation API.
    */
   entityType?: string;
+
+  /**
+   * Direct query to a specific implementation of the lookup service.
+   * If not specified the default lookup service is used.
+   */
+  lookupServiceName?: string;
+
+  /**
+   * Language tag (or comma-separated list of language tags with decreasing order of preference)
+   * of the preferred language(s) (optional). A language tag consists of the language and
+   * optionally variant, e.g. `de` or `de-CH`.
+   * See <a href="https://tools.ietf.org/html/rfc4647">RFC4647</a> for details.
+   * Examples: `ru`, `ru,fr-CH,de,en`
+   * The default value is the user selected preferred language.
+   * So the default language can be changed using dedicated switched in the toolbar
+   * (if provided more then one preferred language, otherwise the switch is hidden).
+   */
+  preferredLanguage?: string;
 }
 
 /**
@@ -105,8 +124,11 @@ export function fetchData(
   args: { [arg: string]: Rdf.Node }
 ): Kefir.Property<SparqlClient.Bindings> {
   const reconciliationRequest = makeReconciliationRequest(query, args);
-  return ReconciliationService.reconcile(reconciliationRequest).map(requests => {
-    return responseToSparqlBindings(requests, query);
+  return ReconciliationService.reconcile(
+    reconciliationRequest,
+    query.lookupServiceName
+  ).map(response => {
+    return responseToSparqlBindings(response, query);
   });
 }
 
@@ -175,6 +197,7 @@ function makeReconciliationRequest(
       query,
       limit: lookupDataQuery.limit,
       type: lookupDataQuery.entityType,
+      preferredLanguage: lookupDataQuery.preferredLanguage ?? getPreferredUserLanguage(),
     }
   };
 }
@@ -184,37 +207,57 @@ function responseToSparqlBindings(
   query: LookupDataQuery
 ): SparqlClient.Bindings {
   const bindings: {[id: string]: Rdf.Node}[] = [];
+  const allCandidates = getAllCandidatesFromResponse(response);
+  allCandidates.sort(compareByScore);
+  for (const candidate of allCandidates) {
+    /**
+     * TODO: Use rdf-graphs
+     * It's essential to use RDF-graph instead of
+     * sparql-bindings! In other way we do we loose data,
+     * because we cant provided array of types
+     */
+    const types = candidate.type || [];
+    let indexToSelect = 0;
+    if (query.entityType) {
+      const targetIndex = types.map(t => t.id).indexOf(query.entityType);
+      indexToSelect = targetIndex !== -1 ? targetIndex : indexToSelect;
+    }
+    const entityType = types[indexToSelect];
+    const binding: SparqlClient.Binding = {
+      [SUBJECT_VARIABLE_NAME]: Rdf.iri(candidate.id),
+      label: Rdf.literal(candidate.name, xsd._string),
+      type: entityType ? Rdf.iri(entityType.id) : undefined,
+      typeLabel: entityType ? Rdf.literal(entityType.name) : undefined,
+      score: Rdf.literal(`${candidate.score}`, xsd.double),
+      match: Rdf.literal(`${candidate.match}`, xsd.boolean),
+      datasetId: candidate.dataset ? Rdf.iri(candidate.dataset.id) : undefined,
+      datasetLabel: candidate.dataset ? Rdf.literal(candidate.dataset.name) : undefined,
+      description: candidate.description ? Rdf.literal(candidate.description) : undefined,
+    };
+    bindings.push(binding);
+  }
+  return bindings;
+}
+
+function getAllCandidatesFromResponse(response: ReconciliationResponse) {
+  const allCandidates: ReconciliationCandidate[] = [];
   for (const respId in response) {
     if (response.hasOwnProperty(respId)) {
       const candidates = response[respId].result;
       for (const candidate of candidates) {
-        /**
-         * TODO: Use rdf-graphs
-         * It's essential to use RDF-graph instead of
-         * sparql-bindings! In other way we do we loose data,
-         * because we cant provided array of types
-         */
-        const types = candidate.type || [];
-        let indexToSelect = 0;
-        if (query.entityType) {
-          const targetIndex = types.map(t => t.id).indexOf(query.entityType);
-          indexToSelect = targetIndex !== -1 ? targetIndex : indexToSelect;
-        }
-        const entityType = types[indexToSelect];
-        const binding: SparqlClient.Binding = {
-          [SUBJECT_VARIABLE_NAME]: Rdf.iri(candidate.id),
-          label: Rdf.literal(candidate.name, xsd._string),
-          type: entityType ? Rdf.iri(entityType.id) : undefined,
-          typeLabel: entityType ? Rdf.literal(entityType.name) : undefined,
-          score: Rdf.literal(`${candidate.score}`, xsd.double),
-          match: Rdf.literal(`${candidate.match}`, xsd.boolean),
-          datasetId: candidate.dataset ? Rdf.iri(candidate.dataset.id) : undefined,
-          datasetLabel: candidate.dataset ? Rdf.literal(candidate.dataset.name) : undefined,
-          description: candidate.description ? Rdf.literal(candidate.description) : undefined,
-        };
-        bindings.push(binding);
+        allCandidates.push(candidate);
       }
     }
   }
-  return bindings;
+  return allCandidates;
+}
+
+function compareByScore(a: ReconciliationCandidate, b: ReconciliationCandidate) {
+  if (a.score < b.score) {
+    return 1;
+  } else if (a.score > b.score) {
+    return -1;
+  } else {
+    return 0;
+  }
 }

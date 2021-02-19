@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,8 +40,9 @@
 @import "./variables.scss";
 @import "~platform-theme/theme.scss";
 
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/_variables.scss";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/_mixins.scss";
+@import "~bootstrap/scss/_functions.scss";
+@import "~bootstrap/scss/_variables.scss";
+@import "~bootstrap/scss/_mixins.scss";
 
 $fa-font-path: "~font-awesome/fonts";
 @import "~font-awesome/scss/_mixins.scss";

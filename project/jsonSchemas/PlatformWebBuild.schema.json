@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Defines schema for `platform-web-build.json` files in metaphactory platform",
+  "type": "object",
+  "properties": {
+    "$schema": true,
+    "entries": {
+      "type": "object",
+      "description": "Exported Webpack entries to build.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "stableEntryNames": {
+      "type": "array",
+      "description": "Entry names which should not be rewritten by Webpack.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "aliases": {
+      "type": "object",
+      "description": "Exported Webpack module aliases.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "description": "Exported Webpack entries to execute on platform initialization.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cssModulesBasedComponents": {
+      "type": "array",
+      "description": "Directories where SCSS files should be built in CSS-modules aware mode",
+      "items": {
+        "type": "string"
+      }
+    },
+    "generatedJsonSchemas": {
+      "type": "array",
+      "description": "TypeScript interface names to generate schemas from in addition to schemas for component props.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

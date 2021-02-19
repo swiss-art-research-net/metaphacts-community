@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -152,11 +152,11 @@ export class QueryCatalogTemplate extends Component<Props, State> {
           <Modal.Title>Do you want to apply the default arguments?</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Button bsStyle='primary' onClick={() => {
+          <Button variant='primary' onClick={() => {
             onHide();
             onSelect(true);
           }}>Apply</Button>
-          <Button bsStyle='default' style={{marginLeft: 5}} onClick={() => {
+          <Button variant='secondary' style={{marginLeft: 5}} onClick={() => {
             onHide();
             onSelect(false);
           }}>

@@ -31,7 +31,13 @@ $rs-widest-button-size: 160px;
 
 //facets
 .facet-holder {
-  @include make-md-column(3);
+  // TODO: validate mixins
+  @include make-col-ready();
+
+  @include media-breakpoint-up(md) {
+    @include make-col(3);
+  }
+  // @include make-md-column(3);
   border-right: 1px $table-border-color solid;
 }
 
@@ -51,7 +57,7 @@ $rs-widest-button-size: 160px;
   border: none;
   z-index: 10;
   outline: none;
-  width: 80px;
+  width: 90px;
   height: 30px;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
@@ -92,7 +98,7 @@ $rs-widest-button-size: 160px;
 }
 
 .facet {
-  border-right: 1px solid $hr-border;
+  border-right: 1px solid $border-color;
   padding-right: $padding-base-horizontal;
 
   &__category-selector-holder {
@@ -198,7 +204,6 @@ $rs-widest-button-size: 160px;
       &:hover,
       &:focus {
         text-decoration: none;
-        color: $list-group-link-hover-color;
         background-color: $list-group-hover-bg;
       }
 
@@ -249,7 +254,6 @@ $rs-widest-button-size: 160px;
         &:hover,
         &:focus {
           text-decoration: none;
-          color: $list-group-link-hover-color;
           background-color: $list-group-hover-bg;
         }
       }

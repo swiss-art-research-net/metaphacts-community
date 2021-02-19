@@ -110,21 +110,22 @@ export class PanelSystemHolder extends React.Component<Props, State> {
   private mapChildren(children: React.ReactNode) {
     const {holder, data, holderKey} = this.state;
     return Children.map(children, child => {
-        if (isValidChild(child)) {
-          if (holder === Holder.PageLoader && componentHasType(child, PageLoaderComponent) &&
-            (child.props as any).id === data.pageId) {
-            return cloneElement(child, {key: holderKey, ...data.pageProps});
-          }
-          if (
-            (holder === Holder.GraphAuthoring && componentHasType(child, OntodiaPanel)) ||
-            (holder === Holder.IIIFViewer && componentHasType(child, IIIFViewerPanel))
-          ) {
-            return cloneElement(child, {key: holderKey, ...data});
-          }
-          return null;
-        }
+      if (!isValidChild(child)) {
         return child;
-      });
+      }
+      if (holder === Holder.PageLoader
+        && componentHasType(child, PageLoaderComponent)
+        && (child.props as any).id === data.pageId
+      ) {
+        return cloneElement(child, {key: holderKey, ...data.pageProps});
+      } else if (holder === Holder.GraphAuthoring && componentHasType(child, OntodiaPanel)) {
+        return cloneElement(child, {key: holderKey, ...data});
+      } else if (holder === Holder.IIIFViewer && componentHasType(child, IIIFViewerPanel)) {
+        return cloneElement(child, {key: holderKey, ...data});
+      } else {
+        return null;
+      }
+    });
   }
 
   render() {

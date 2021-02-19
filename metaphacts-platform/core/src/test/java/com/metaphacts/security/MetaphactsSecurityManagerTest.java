@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -268,7 +268,9 @@ public class MetaphactsSecurityManagerTest {
     }
 
 
-    private final class TestAuthenticatingRealm extends AuthorizingRealm implements OneTimeRolePermissionResolverAware {
+    // TODO move to new standalone class
+    public static final class TestAuthenticatingRealm extends AuthorizingRealm
+            implements OneTimeRolePermissionResolverAware {
 
         AtomicInteger loginCount = new AtomicInteger(0);
 
@@ -277,7 +279,7 @@ public class MetaphactsSecurityManagerTest {
 
         private RolePermissionResolver oneTimeRolePermissionResolver;
 
-        TestAuthenticatingRealm() {
+        public TestAuthenticatingRealm() {
             super();
             setPermissionResolver(new WildcardPermissionResolver());
         }

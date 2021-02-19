@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
-        "Literal_1": {
+        "Literal": {
             "properties": {
                 "datatype": {
                     "$ref": "#/definitions/NamedNode<string>",
@@ -76,7 +76,7 @@
                         },
                         "labels": {
                             "items": {
-                                "$ref": "#/definitions/Literal_1"
+                                "$ref": "#/definitions/Literal"
                             },
                             "type": "array"
                         }
@@ -104,7 +104,7 @@
                         },
                         "labels": {
                             "items": {
-                                "$ref": "#/definitions/Literal_1"
+                                "$ref": "#/definitions/Literal"
                             },
                             "type": "array"
                         }
@@ -125,7 +125,7 @@
                         },
                         "labels": {
                             "items": {
-                                "$ref": "#/definitions/Literal_1"
+                                "$ref": "#/definitions/Literal"
                             },
                             "type": "array"
                         }

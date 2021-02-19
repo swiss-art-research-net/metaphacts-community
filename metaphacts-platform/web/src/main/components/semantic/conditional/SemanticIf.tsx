@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,24 +47,9 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
 
-export interface SemanticIfProps extends ComponentProps {
-  /**
-   * Sparql ASK query to determine whether to display `then` or `else`
-   * template.
-   */
-  query: string;
-  then?: string;
-  else?: string;
-}
-
-interface State {
-  readonly loading?: boolean;
-  readonly error?: any;
-  readonly askResult?: boolean;
-}
-
 /**
- * @example
+ * **Example**:
+ * ```
  * <semantic-if query='ASK query' then='{{> then}}' else='{{> else}}'>
  *   <template id='then'><!-- then markup --></template>
  *   <template id='else'><!-- else markup --></template>
@@ -78,7 +63,25 @@ interface State {
  *
  * // use inline templates, leave 'else' template empty
  * <semantic-if query='ASK query' then='<!-- then markup -->'></semantic-if>
+ * ```
  */
+interface SemanticIfConfig {
+  /**
+   * SPARQL ASK query to determine whether to display `then` or `else` template.
+   */
+  query: string;
+  then?: string;
+  else?: string;
+}
+
+export interface SemanticIfProps extends SemanticIfConfig, ComponentProps {}
+
+interface State {
+  readonly loading?: boolean;
+  readonly error?: any;
+  readonly askResult?: boolean;
+}
+
 export class SemanticIf extends Component<SemanticIfProps, State> {
   private readonly cancellation = new Cancellation();
 

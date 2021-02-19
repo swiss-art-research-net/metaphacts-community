@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -359,11 +359,11 @@ export function placeElementsAround(params: {
     model: DiagramModel;
     sizeProvider: SizeProvider;
     elements: ReadonlyArray<Element>;
-    prefferedLinksLength: number;
+    preferredLinksLength: number;
     targetElement: Element;
     startAngle?: number;
-}) {
-    const {model, sizeProvider, elements, targetElement, prefferedLinksLength} = params;
+}): void {
+    const {model, sizeProvider, elements, targetElement, preferredLinksLength} = params;
     const targetElementBounds = boundsOf(targetElement, sizeProvider);
     const targetPosition: Vector = {
         x: targetElementBounds.x + targetElementBounds.width / 2,
@@ -394,8 +394,8 @@ export function placeElementsAround(params: {
         if (element) {
             const size = sizeProvider.getElementSize(element);
             element.setPosition({
-                x: targetPosition.x + prefferedLinksLength * Math.cos(curAngle) - size.width / 2,
-                y: targetPosition.y + prefferedLinksLength * Math.sin(curAngle) - size.height / 2,
+                x: targetPosition.x + preferredLinksLength * Math.cos(curAngle) - size.width / 2,
+                y: targetPosition.y + preferredLinksLength * Math.sin(curAngle) - size.height / 2,
             });
         }
     };
@@ -413,20 +413,6 @@ export function placeElementsAround(params: {
             placeElementFromStack(outgoingAngle + angle);
         }
     }
-
-    return new Promise(resolve => {
-        const listener = new EventObserver();
-        listener.listen(model.events, 'changeCells', () => {
-            listener.stopListening();
-
-            removeOverlaps({
-                model,
-                sizeProvider,
-                padding: { x: 15, y: 15 },
-            });
-            resolve();
-        });
-    });
 }
 
 export function removeOverlaps(params: {

@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Simple wrapper around `PageViewer` component to be invoked from HTML code.\nTakes a simple IRI string as input parameter and passes it on to the `PageViewer`\nin order to load and render the requested page.\n\nThe context of the requested page will be set to the current `ResourceContext.resource`.\nBy design the context is not supposed to be re-written to a different resource\n(i.e. by providing an additional input parameter to this component).\n\nComponent inherits all query parameters from the current page.\n\n**Example**:\n```\n<mp-page-loader iri=\"http://www.metaphacts.com/resource/Start\"></mp-page-loader>\n```\n\n**Example**:\n```\n<!-- with additional URL parameter(s) -->\n<mp-page-loader\n   iri=\"http://www.metaphacts.com/resource/Start\"\n   urlqueryparam-param1=\"hello world\">\n</mp-page-loader>\n```",
+    "patternProperties": {
+        "^urlqueryparam": {
+            "type": "string"
+        }
+    },
+    "properties": {
+        "iri": {
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "iri"
+    ],
+    "required": [
+        "iri"
+    ],
+    "type": "object"
+}
+

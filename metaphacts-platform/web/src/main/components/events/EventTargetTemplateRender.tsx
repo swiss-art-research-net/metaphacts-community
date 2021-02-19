@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,47 +44,51 @@ import { listen, BuiltInEvents } from 'platform/api/events';
 import { Cancellation } from 'platform/api/async/Cancellation';
 import { TemplateItem } from 'platform/components/ui/template';
 
-export interface EventTargetTemplateRenderConfig {
+/**
+ * Updates the template component when receives `Component.TemplateUpdate` event.
+ *
+ * **Example**:
+ * ```
+ * <mp-event-trigger type='Component.TemplateUpdate'
+ *   targets='["event-target"]'
+ *   data='{"iri": "http://example.com/resource"}'>
+ *   <button>Update</button>
+ * </mp-event-trigger>
+ *
+ * <mp-event-target-template-render id='event-target' template='{{> template}}'>
+ *   <template id='template'>
+ *     {{#if iri}}<mp-label iri='{{iri}}'></mp-label>{{/if}}
+ *   </template>
+ * </mp-event-target-template-render>
+ * ```
+ */
+interface EventTargetTemplateRenderConfig {
   /**
    * Identifier which will be used as event target id.
    */
   id: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>
-   * that will be rendered with data passed as context variables.
+   * Template that will be rendered with data passed as context variables.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   template: string;
 }
-type Props = EventTargetTemplateRenderConfig;
 
-export interface State {
+export type EventTargetTemplateRenderProps = EventTargetTemplateRenderConfig;
+
+interface State {
   key?: number;
   data?: object;
 }
 
-/**
- * Updates the template component and passes it new properties.
- *
- * @example
- * <mp-event-trigger id='event-trigger' type='Component.TemplateUpdate' targets='["event-target"]'
- *     data='{"iri": "http://example.com/resource"}'>
- *     <button>Update</button>
- * </mp-event-trigger>
- *
- * <mp-event-target-template-render id='event-target' template='{{> template}}'>
- *     <template id='template'>
- *        <div>
- *          {{#if iri}}
- *            <mp-label iri='{{iri}}'></mp-label>
- *          {{/if}}
- *        </div>
- *     </template>
- * </mp-event-target-template-render>
- */
-export class EventTargetTemplateRender extends Component<Props, State> {
+export class EventTargetTemplateRender extends Component<EventTargetTemplateRenderProps, State> {
   private readonly cancellation = new Cancellation();
 
-  constructor(props: Props, context: any) {
+  constructor(props: EventTargetTemplateRenderProps, context: any) {
     super(props, context);
     this.state = {
       key: 0,

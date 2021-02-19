@@ -1,5 +1,9 @@
 {
   "rules": {
+    "ban-types": [
+      true,
+      ["JSX.Element", "Use ReactNode or ReactElement instead (JSX.Element is an implementation type)."]
+    ],
     "class-name": true,
     "comment-format": [true, "check-space"],
     "curly": true,

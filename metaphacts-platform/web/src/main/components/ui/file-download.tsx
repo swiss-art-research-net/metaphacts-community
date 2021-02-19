@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,11 +48,18 @@ import { LoadingBackdrop } from 'platform/components/utils/LoadingBackdrop';
 
 import * as _ from 'lodash';
 
-interface State {
-  isLoading: boolean;
-}
-
-interface Props {
+/**
+ * Opens the given downloadUrl in a new window or tab after a delay.
+ *
+ * **Example**:
+ * ```
+ * <mp-file-download download-url="/rest/admin/storages/runtime/zip"
+ *   delay='2000' post-action="reload">
+ *   <button class="btn btn-primary btn-sm active">OK. Start Download.</button>
+ * </mp-file-download>
+ * ```
+ */
+interface FileDownloadConfig {
   /**
    * The GET url that is supposed to return a file (stream).
    */
@@ -63,21 +70,24 @@ interface Props {
    **/
   delay: number;
   /**
-   * @default 'reload'
+   * @default "reload"
    */
   postAction?: 'reload' | string;
 }
-/**
- * Opens the given downloadUrl in a new window or tab after a delay.
- * @example
- *  <mp-file-download delay='2000' post-action="reload" download-url="/rest/admin/storages/runtime/zip">
- *    <button class="btn btn-primary btn-sm active">OK. Start Download.</button>
- *  </mp-file-download>
- */
-export class FileDownload extends Component<Props, State> {
-  defaultProps = { delay: 1000, postAction: 'reload' }
 
-  constructor(props: Props, state: State) {
+export type FileDownloadProps = FileDownloadConfig;
+
+interface State {
+  isLoading: boolean;
+}
+
+export class FileDownload extends Component<FileDownloadProps, State> {
+  defaultProps: Required<Pick<FileDownloadProps, 'delay' | 'postAction'>> = {
+    delay: 1000,
+    postAction: 'reload',
+  };
+
+  constructor(props: FileDownloadProps, state: State) {
     super(props, state);
     this.state = {
       isLoading: false,
@@ -87,7 +97,7 @@ export class FileDownload extends Component<Props, State> {
   public render() {
     const Backdrop = createFactory(LoadingBackdrop);
     if (this.state.isLoading) {
-      return <Backdrop />
+      return <Backdrop />;
     }
     const child = Children.only(this.props.children) as ReactElement<any>;
     const props = {

@@ -34,12 +34,12 @@
 <bs-tab-container id="some-ide" class="bs-left-vertical-tabs" default-active-key="first">
   <bs-row class="clearfix">
     <bs-col sm="2">
-      <bs-nav bs-style="tabs" stacked="true">
-      	<bs-nav-item event-key="first">
-      		Tab 1
+      <bs-nav variant="tabs" class="flex-column">
+      	<bs-nav-item>
+      		<bs-nav-link event-key="first">Tab 1</bs-nav-link>
       	</bs-nav-item>
-      	<bs-nav-item event-key="second">
-      		Tab 2
+      	<bs-nav-item>
+      		<bs-nav-link event-key="second">Tab 2</bs-nav-link>
       	</bs-nav-item>
       </bs-nav>
     </bs-col>
@@ -88,7 +88,7 @@
     <h3>Example</h3>
     <mp-code-example>
 <![CDATA[
-<bs-alert bs-style="warning">
+<bs-alert variant="warning">
 	<strong>Holy guacamole!</strong> Best check yo self, you're not looking too good.
 </bs-alert>
 ]]>

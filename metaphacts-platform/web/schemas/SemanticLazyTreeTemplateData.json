@@ -116,7 +116,7 @@
             ],
             "type": "object"
         },
-        "Literal_1": {
+        "Literal": {
             "properties": {
                 "datatype": {
                     "$ref": "#/definitions/NamedNode<string>",
@@ -196,7 +196,7 @@
                             "$ref": "#/definitions/DefaultGraph"
                         },
                         {
-                            "$ref": "#/definitions/Iri<string>_1"
+                            "$ref": "#/definitions/Iri<string>"
                         }
                     ],
                     "description": "The named graph."
@@ -204,7 +204,7 @@
                 "o": {
                     "anyOf": [
                         {
-                            "$ref": "#/definitions/Literal_1"
+                            "$ref": "#/definitions/Literal"
                         },
                         {
                             "$ref": "#/definitions/BNode"
@@ -216,7 +216,7 @@
                             "$ref": "#/definitions/Quad"
                         },
                         {
-                            "$ref": "#/definitions/Iri<string>_1"
+                            "$ref": "#/definitions/Iri<string>"
                         }
                     ],
                     "description": "Alias for `Quad.object`"
@@ -224,7 +224,7 @@
                 "object": {
                     "anyOf": [
                         {
-                            "$ref": "#/definitions/Literal_1"
+                            "$ref": "#/definitions/Literal"
                         },
                         {
                             "$ref": "#/definitions/BNode"
@@ -236,7 +236,7 @@
                             "$ref": "#/definitions/Quad"
                         },
                         {
-                            "$ref": "#/definitions/Iri<string>_1"
+                            "$ref": "#/definitions/Iri<string>"
                         }
                     ],
                     "description": "The object."
@@ -247,7 +247,7 @@
                             "$ref": "#/definitions/Variable"
                         },
                         {
-                            "$ref": "#/definitions/Iri<string>_1"
+                            "$ref": "#/definitions/Iri<string>"
                         }
                     ],
                     "description": "Alias for `Quad.predicate`"
@@ -258,7 +258,7 @@
                             "$ref": "#/definitions/Variable"
                         },
                         {
-                            "$ref": "#/definitions/Iri<string>_1"
+                            "$ref": "#/definitions/Iri<string>"
                         }
                     ],
                     "description": "The predicate."
@@ -275,7 +275,7 @@
                             "$ref": "#/definitions/Quad"
                         },
                         {
-                            "$ref": "#/definitions/Iri<string>_1"
+                            "$ref": "#/definitions/Iri<string>"
                         }
                     ],
                     "description": "Alias for `Quad.subject`"
@@ -292,7 +292,7 @@
                             "$ref": "#/definitions/Quad"
                         },
                         {
-                            "$ref": "#/definitions/Iri<string>_1"
+                            "$ref": "#/definitions/Iri<string>"
                         }
                     ],
                     "description": "The subject."
@@ -374,7 +374,7 @@
             "additionalProperties": {
                 "anyOf": [
                     {
-                        "$ref": "#/definitions/Literal_1"
+                        "$ref": "#/definitions/Literal"
                     },
                     {
                         "$ref": "#/definitions/BNode"
@@ -383,7 +383,7 @@
                         "$ref": "#/definitions/Quad"
                     },
                     {
-                        "$ref": "#/definitions/Iri<string>"
+                        "$ref": "#/definitions/Iri<string>_1"
                     }
                 ]
             },

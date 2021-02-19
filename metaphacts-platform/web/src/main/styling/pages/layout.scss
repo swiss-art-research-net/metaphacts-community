@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,21 +47,21 @@ $header-border-color: #DDD;
 
 // mixins
 @mixin bodyTabs() {
-  & > .nav-tabs {
+  &.nav-tabs {
     background-color: $color-base;
   }
 
-  & > .nav-tabs > li:first-child {
+  &.nav-tabs > a:first-child {
     margin-left: calc(#{percentage((1/12))} + #{$padding-base-horizontal} - 2px);
   }
 }
 
 @mixin bodyTabsNoImageOffset() {
-  & > .nav-tabs {
+  &.nav-tabs {
     background-color: $color-base;
   }
 
-  & > .nav-tabs > li:first-child {
+  &.nav-tabs > .nav-item:first-child {
     margin-left: $padding-base-horizontal * 2;
   }
 }
@@ -71,7 +71,7 @@ $header-border-color: #DDD;
   background-color: $color-base;
   padding: $padding-base-vertical * 2 $padding-base-horizontal;
 
-  @media (max-width: $screen-md-min) {
+  @include media-breakpoint-down(md) {
     padding: $padding-base-vertical $padding-base-horizontal;
   }
 }
@@ -117,7 +117,11 @@ $header-border-color: #DDD;
     }
 
     &-thumbnail {
-      @include make-md-column(1);
+      @include media-breakpoint-up(md) {
+        @include make-col-ready();
+        @include make-col(1);
+        padding: 0;
+      }
       padding: 0;
       display: flex;
       align-items: center;
@@ -134,14 +138,18 @@ $header-border-color: #DDD;
     }
 
     &-body {
-      @include make-md-column(11);
+      @include media-breakpoint-up(md) {
+        @include make-col-ready();
+        @include make-col(11);
+        padding: 0;
+      }
       padding: 0;
       &--inline {
         display: flex;
         align-items: flex-start;
       }
 
-      @media (max-width: $screen-lg-min) {
+      @include media-breakpoint-down(lg) {
         flex-direction: column;
       }
     }
@@ -175,26 +183,35 @@ $header-border-color: #DDD;
   }
 
   &__body {
-    @include make-md-column-offset(1);
-    @include make-md-column(10);
-    padding: $padding-base-vertical $padding-base-horizontal;
+    @include make-col-ready();
 
-    @media (max-width: $screen-md-min) {
-      padding: $padding-base-vertical $padding-base-horizontal;
+    @include media-breakpoint-up(md) {
+      @include make-col(10);
+      @include make-col-offset(1);
     }
+
+    padding: $padding-base-vertical $padding-base-horizontal;
   }
 
   &__body--borderless {
-    @include make-md-column(12);
+    @include make-col-ready();
+    @include media-breakpoint-up(md) {
+      @include make-col(12);
+    }
+
     padding: $padding-base-vertical*3 $padding-base-vertical*3;
   }
 
   &__body-navtabs {
     @include bodyTabs;
 
-    & > .tab-content > .tab-pane {
-      @include make-md-column-offset(1);
-      @include make-md-column(10);
+    & ~ .tab-content > .tab-pane {
+      @include make-col-ready();
+      @include media-breakpoint-up(md) {
+        @include make-col(10);
+        @include make-col-offset(1);
+      }
+
       padding-top: $padding-base-vertical*2;
     }
   }
@@ -210,8 +227,13 @@ $header-border-color: #DDD;
 
   &__body-navtabs--borderless, &__body-navtabs--borderless-no-image {
 
-    & > .tab-content > .tab-pane {
-      @include make-md-column(12);
+    & ~ .tab-content > .tab-pane {
+      @include make-col-ready();
+
+      @include media-breakpoint-up(md) {
+        @include make-col(12);
+      }
+
       padding: $padding-base-vertical*3 $padding-base-vertical*3;
 
       &.vertical-nav-tabs {

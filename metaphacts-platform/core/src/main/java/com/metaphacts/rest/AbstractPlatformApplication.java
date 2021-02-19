@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,17 +44,15 @@ import java.util.logging.Logger;
 
 import javax.inject.Inject;
 
+import org.apache.shiro.mgt.SubjectFactory;
+import org.apache.shiro.web.jaxrs.ShiroFeature;
 import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.jersey.filter.LoggingFilter;
 import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
 import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
-import org.secnod.shiro.jaxrs.ShiroExceptionMapper;
-import org.secnod.shiro.jersey.AuthInjectionBinder;
-import org.secnod.shiro.jersey.AuthorizationFilterFeature;
-import org.secnod.shiro.jersey.SubjectFactory;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
@@ -87,6 +85,9 @@ public abstract class AbstractPlatformApplication extends ResourceConfig {
         guiceBridge.bridgeGuiceInjector(getEndpointInjector());
 
         getAuxiliaryComponentClasses().forEach(clazz -> register(clazz));
+        
+        // Shiro Jax-RS
+        register(ShiroFeature.class);
 
         register(CacheControlFeature.class);
         
@@ -103,11 +104,7 @@ public abstract class AbstractPlatformApplication extends ResourceConfig {
         register(DefaultExceptionMapper.class);
 
         if(logger.isLoggable(java.util.logging.Level.FINER)) {
-            registerInstances(
-                new LoggingFilter(
-                    Logger.getLogger(AbstractPlatformApplication.class.getName()), false
-                )
-            );
+            register(new LoggingFeature(Logger.getLogger(AbstractPlatformApplication.class.getName())));
         }
     }
     
@@ -138,10 +135,7 @@ public abstract class AbstractPlatformApplication extends ResourceConfig {
             IriParamProvider.class,
         
             OptionalParamProvider.class,
-            AuthorizationFilterFeature.class,
             SubjectFactory.class,
-            AuthInjectionBinder.class,
-            ShiroExceptionMapper.class,
             Rdf4jModelTurtleMessageBodyWriter.class,
             MultiPartFeature.class);
     }

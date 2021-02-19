@@ -80,20 +80,38 @@
         </tr>
         <tr>
           <td><code>git</code></td>
-          <td>Reads and writes from/to a locally-cloned Git repository. Every change is translated into a single commit.</td>
+          <td>
+            <p>Reads and writes from/to a locally-cloned Git repository. Every change is translated into a single commit.</p>
+            <p>For configuration of the authentication settings (e.g. <code>key</code>) it is recommended to make use of <semantic-link iri="[[resolvePrefix "Help:ExternalizedSecrets"]]">externalized secrets</semantic-link>.</p>
+          </td>
           <td>
             <dl class="config-params">
               <dt><code>localPath</code>*</dt>
-              <dd><p>Git repository directory on local file system, e.g.: <code>/var/myRepo</code> or <code>C:\MyRepo</code></p></dd>
+              <dd><p>Git repository directory on local file system, e.g.: <code>/var/myRepo</code> or <code>C:\MyRepo</code></p>
+                <p>Typically in a docker environment this directory is mounted as volume. If the location is a sub-directory of the platform's <code>storageDirectory</code> (in the docker environment pointing to <code>/storage</code>), the directory is created on-demand at initialization time.</p>
+              </dd>
               <dt><code>branch</code></dt>
               <dd><p>Name of a repository branch to check out when platform starts.</p></dd>
               <dt><code>remoteUrl</code></dt>
-              <dd><p>Remote Git repository URL to push changes to.</p>
-                <p>Currently the repository is required to be manually cloned into local directory with Git remote <code>origin</code> set to this URL; otherwise an error will be thrown.</p>
-                <p>If the property is set, the storage is automatically attempts to push commited changes. The credentials for push are assumed to be configured externally with either default SHH private key based access or user/password embeded directly in the <code>remoteUrl</code>.</p></dd>
+              <dd><p>Remote Git repository URL to push changes to (Optional).</p>
+                <p>If the repository is not yet cloned into the local directory, the Git storage attempts to clone it upon initialization. When manually preparing the clone in the local directory, the Git remote <code>origin</code> must be set to this URL</p>
+                <p>If the property is set, the storage automatically attempts to push committed changes.</p>
+                <p>The credentials for remote operations are assumed to be either configured externally with a default SSH private key based access or user/password embedded directly in the <code>remoteUrl</code>, or explicitly as part of the configuration.</p></dd>
+              <dt><code>keyPath</code> (optional)</dt>
+              <dd><p>The location of a private key (different from the current users's <code>~/.ssh</code> configuration) used for authenticating SSH communication. The key is expected to exist in the referenced location in the file system. Furthermore, the key must be in the classic openssh format and must not have a passphrase.</p>
+              <p>When using a custom SSH authentication configuration, it is typically required to also set <code>verifyKnownHosts=false</code>.</p></dd>
+              <dt><code>key</code> (optional)</dt>
+              <dd><p>The private key in classic openssh format used for authenticating SSH communication. When using a custom SSH authentication configuration, it is typically required to also set <code>verifyKnownHosts=false</code>.</p></dd>
+              <dt><code>username</code> (optional)</dt>
+              <dd><p>The username used together with <code>password</code> for authenticating HTTPS communication. This can also be used for authentication with tokens (e.g. Github personal access tokens).</p></dd>
+              <dt><code>password</code> (optional)</dt>
+              <dd><p>The password or token used together with <code>username</code> for authenticating HTTPS communication.</p></dd>
+              <dt><code>verifyKnownHosts</code> (default: <code>true</code>)</dt>
+              <dd><p>A boolean value to enable / disable known hosts verification. If enabled, the host is validated against the externally managed <code>~/.ssh/known_hosts</code> entries during SSH communication.</p></dd>
               <dt><code>maxPushAttempts</code> (default: <code>3</code>)</dt>
               <dd><p>Maximum count of attempts to automatically push changes when attempt fails due to commits in remote repository made outside the platform.</p></dd>
             </dl>
+            <p>Note that the settings <code>key</code>, <code>keyPath</code>, <code>remoteUrl</code>, <code>username</code> and <code>password</code> can make use of <semantic-link iri="[[resolvePrefix "Help:ExternalizedSecrets"]]">externalized secrets</semantic-link>.</p>
           </td>
         </tr>
       </tbody>
@@ -133,10 +151,12 @@
     <p>Notes:</p>
     
     <ul>
-      <li>The local GIT repository must exist and the configured branch must be initialized with a commit. Configuration of a remote is optional.</li>
+      <li>If the Git repository does not exist in the file system, the Git Storage attempts to clone the repository (if a remote is configured) or initialize an empty one with an initial commit. Configuration of a remote is optional. If a remote is configured, the configured branch must exist. Note that the <code>localPath</code> must exist unless it is a sub-directory of the platform's <code>storageDirectory</code> (i.e. <code>/storage</code> in the docker environment).</li>
+      <li>For accessing a remote Git repository, the platform supports different authentication mechanisms. The <b>built-in</b> configuration relies on the openssh configuration in the host's filesystem (i.e. the user's SSH configuration in <code>~/.ssh</code>, typically the <code>jetty</code> user with UID <code>100</code>). Alternatively a private key or credentials can be provided through the configuration.</li>
+      <li>It is best practice to provide authentication configuration through <semantic-link iri="[[resolvePrefix "Help:ExternalizedSecrets"]]">externalized secrets</semantic-link>.</li>
       <li>Commits are always synchronously merged to the local GIT repository. All remote push operations are added to a queue and are executed as background operations.</li>
-      <li>If a remote Git repository is configured, the Git storage should be the only client interacting with it to guarantee linear commit order.   The Git storage only supports fast-forward pushs to the remote</li>
-      <li>If a remote GIT push fails (e.g. due to a non-fast-forward push), the local commit will always be kept, and a warning is written to the log. It is left to the system administrator to bring the local and remote GIT repositories back into synch. Note that temporary outages (e.g. the remote is not reachable) are recovered automatically with the next push operation, i.e. in that case a number of locally available commits are pushed to the remote as fast-forward operation.</li>
+      <li>If a remote Git repository is configured, the Git storage should be the only client interacting with it to guarantee linear commit order. The Git storage only supports fast-forward pushs to the remote</li>
+      <li>If a remote Git push fails (e.g. due to a non-fast-forward push), the local commit will always be kept, and a warning is written to the log. It is left to the system administrator to bring the local and remote GIT repositories back into synch. Note that temporary outages (e.g. the remote is not reachable) are recovered automatically with the next push operation, i.e. in that case a number of locally available commits are pushed to the remote as fast-forward operation.</li>
     </ul>
     
     <p>An example configuration to use a git storage as runtime looks as follows:</p>
@@ -272,7 +292,7 @@ s3:GetBucketLocation
     
 
     <h3 id="implicit-apps">Implicit Apps</h3>
-    <bs-alert bs-style="info" style="width: 800px;margin-left:2%;">
+    <bs-alert variant="info" style="width: 800px;margin-left:2%;">
       <strong>Info!</strong><br/>
       <p>
         Please note that mechanism of <i>"Implicit Apps"</i> is experimental and may change or even be removed from future versions.

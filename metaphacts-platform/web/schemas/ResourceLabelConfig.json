@@ -1,0 +1,45 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "**Example**:\n```\n<mp-label iri='some:resource'></mp-label>\n```",
+    "properties": {
+        "className": {
+            "description": "Additional class names for component root element",
+            "type": "string"
+        },
+        "highlight": {
+            "description": "Substring to highlight",
+            "type": "string"
+        },
+        "highlightProps": {
+            "description": "Props for highlighted substring span",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "iri": {
+            "description": "IRI of resource to fetch label for",
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Additional styles for label element"
+        }
+    },
+    "propertyOrder": [
+        "iri",
+        "className",
+        "style",
+        "highlight",
+        "highlightProps"
+    ],
+    "required": [
+        "iri"
+    ],
+    "type": "object"
+}
+

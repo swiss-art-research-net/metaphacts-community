@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,11 +48,18 @@ import org.eclipse.rdf4j.rio.RDFWriterRegistry;
 import com.github.jknack.handlebars.HelperRegistry;
 import com.google.inject.Injector;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.DescriptionService;
+import com.metaphacts.cache.ExternalLabelDescriptionService;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.cache.QueryTemplateCache;
+import com.metaphacts.cache.ResourceDescriptionCacheHolder;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.repository.RepositoryManagerInterface;
+import com.metaphacts.resource.DescriptionPropertiesProvider;
+import com.metaphacts.resource.DescriptionRenderer;
+import com.metaphacts.resource.ResourceDescriptionService;
+import com.metaphacts.resource.TypeService;
 import com.metaphacts.rest.AbstractPlatformApplication;
 import com.metaphacts.rest.swagger.SwaggerRegistry;
 import com.metaphacts.secrets.SecretResolver;
@@ -89,7 +96,14 @@ public class PluginModule extends DelegateModule {
         
         // data services
         bindDelegate(NamespaceRegistry.class);
-        bindDelegate(LabelCache.class);
+        bindDelegate(LabelService.class);
+        bindDelegate(ExternalLabelDescriptionService.class);
+        bindDelegate(TypeService.class);
+        bindDelegate(DescriptionService.class);
+        bindDelegate(ResourceDescriptionCacheHolder.class);
+        bindDelegate(ResourceDescriptionService.class);
+        bindDelegate(DescriptionPropertiesProvider.class);
+        bindDelegate(DescriptionRenderer.class);
         bindDelegate(ThumbnailServiceRegistry.class);
         bindDelegate(ThumbnailService.class);
         bindDelegate(QueryTemplateCache.class);

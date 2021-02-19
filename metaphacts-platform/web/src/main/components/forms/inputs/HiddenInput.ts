@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +38,6 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import { createElement } from 'react';
-import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 
 import { ErrorNotification } from 'platform/components/ui/notification';
@@ -48,6 +47,7 @@ import { createDefaultValue } from '../FormModel';
 import { FieldDefinition } from '../FieldDefinition';
 import {
   MultipleValuesInput,
+  MultipleValuesConfig,
   MultipleValuesProps,
   MultipleValuesHandler,
   ValuesWithErrors,
@@ -60,7 +60,32 @@ export type Mode = 'replace' | 'append';
 
 export type HiddenValue = string | number | boolean;
 
-export interface HiddenInputProps extends MultipleValuesProps {
+/**
+ * Represents a hidden field, which will not be visible to the user and which
+ * will be automatically saved as soon as the form is saved.
+ *
+ * **Example**:
+ * ```
+ * <semantic-form-hidden-input for='...'
+ *   default-value='https://www.wikidata.org/wiki/Q2337004'>
+ * </semantic-form-hidden-input>
+ *
+ * <semantic-form-hidden-input for='...'
+ *   default-values='["Emmett Brown", "Marty McFly"]'>
+ * </semantic-form-hidden-input>
+ *
+ * <semantic-form-hidden-input for='{field-id}'
+ *     append-value='[[singleValueFromSelect "SELECT ?user WHERE {
+ *       BIND(?__useruri__ as ?user) }" ]]'>
+ * </semantic-form-hidden-input>
+ *
+ * <semantic-form-hidden-input for='{field-id}'
+ *   replace-value='[[singleValueFromSelect "SELECT ?date WHERE {
+ *     BIND(NOW() as ?date) }" ]]'>
+ * </semantic-form-hidden-input>
+ * ```
+ */
+interface SemanticFormHiddenInputConfig extends MultipleValuesConfig {
   /**
    * Value which user can push to the object dataset
    */
@@ -68,7 +93,7 @@ export interface HiddenInputProps extends MultipleValuesProps {
   /**
    * Values which user can push to the object dataset
    */
-  appendValues?: HiddenValue[];
+  appendValues?: ReadonlyArray<HiddenValue>;
   /**
    * Value which user can change to the object dataset
    */
@@ -76,35 +101,14 @@ export interface HiddenInputProps extends MultipleValuesProps {
   /**
    * Values which user can change to the object dataset
    */
-  replaceValues?: HiddenValue[];
+  replaceValues?: ReadonlyArray<HiddenValue>;
 }
 
-/**
- * Represents a hidden field, which will not be visible to the user and which
- * will be automatically saved as soon as the form is saved.
- *
- * @example
- * <semantic-form-hidden-input for='...' default-value='https://www.wikidata.org/wiki/Q2337004'>
- * </semantic-form-hidden-input>
- *
- * <semantic-form-hidden-input for='...' default-values='["Emmett Brown", "Marty McFly"]'>
- * </semantic-form-hidden-input>
- *
- * <semantic-form-hidden-input for='{field-id}'
- *     append-value='
- *     [[singleValueFromSelect "SELECT ?user WHERE {
- *       BIND(?__useruri__ as ?user) }" ]]'>
- * </semantic-form-hidden-input>
- *
- * <semantic-form-hidden-input for='{field-id}'
- *   replace-value='
- *   [[singleValueFromSelect "SELECT ?date WHERE {
- *       BIND(NOW() as ?date) }" ]]'>
- * </semantic-form-hidden-input>
- *
- */
+export interface HiddenInputProps
+  extends SemanticFormHiddenInputConfig, MultipleValuesProps {}
+
 export class HiddenInput extends MultipleValuesInput<HiddenInputProps, {}> {
-  static defaultProps: Partial<HiddenInputProps> = {
+  static defaultProps: Required<Pick<HiddenInputProps, 'renderHeader'>> = {
     renderHeader: false,
   };
 
@@ -178,7 +182,7 @@ class HiddenInputHandler implements MultipleValuesHandler {
 
 }
 
-function normalizeValues(values: (HiddenValue)[] | undefined): string[] | undefined {
+function normalizeValues(values: ReadonlyArray<HiddenValue> | undefined): string[] | undefined {
   if (values === undefined) {
     return undefined;
   } else {

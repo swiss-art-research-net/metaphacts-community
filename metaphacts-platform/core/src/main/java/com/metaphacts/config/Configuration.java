@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,6 +77,11 @@ public class Configuration {
      */
     // TODO: should be private but still used in tests to set temporary runtime directory
     public static final String SYSTEM_PROPERTY_RUNTIME_DIRECTORY = "runtimeDirectory";
+
+    /**
+     * The key of the system property to look-up
+     */
+    private static final String SYSTEM_PROPERTY_STORAGE_DIRECTORY = "storageDirectory";
 
     /**
      * The key of the system property to look-up {@link #getConfigBasePath()} property.
@@ -145,6 +150,23 @@ public class Configuration {
         }
         return value;
     }
+
+    /**
+     * Return the location of the storage directory (i.e where new dynamic storages
+     * are allowed to be added).
+     * 
+     * @return the location of the storage directory
+     */
+    public static String getStorageDirectory() {
+        String value = System.getProperty(SYSTEM_PROPERTY_STORAGE_DIRECTORY);
+        if (StringUtils.isEmpty(value)) {
+            logger.warn("using current directory as storage directory as system property "
+                    + SYSTEM_PROPERTY_STORAGE_DIRECTORY + " is not set!");
+            return "./";
+        }
+        return value;
+    }
+
 
     /**
      * Base config location (relative to working dir); may be overridden by system property

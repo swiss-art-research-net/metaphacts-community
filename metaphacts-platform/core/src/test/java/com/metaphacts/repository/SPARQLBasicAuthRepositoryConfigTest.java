@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,13 +48,14 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
+import org.eclipse.rdf4j.model.util.Values;
 import org.eclipse.rdf4j.repository.config.RepositoryConfig;
 import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
+import com.metaphacts.junit.MpAssert;
 import com.metaphacts.junit.TestUtils;
 import com.metaphacts.repository.sparql.SPARQLBasicAuthRepositoryConfig;
 
@@ -70,25 +71,26 @@ public class SPARQLBasicAuthRepositoryConfigTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
     
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
     private String sparqlRepositoryUrl = "http://wikidata.metaphacts.com/sparql";
     private String sparqlRepositoryUpdateUrl = "http://wikidata.metaphacts.com/sparql/update";
     
     @Test
-    public void testNoUser() throws Exception{
-       RepositoryConfig config = createSparqlBasicAuthConfig(null, null);
-       exception.expect(RepositoryConfigException.class);
-       exception.expectMessage("No username specified for SPARQL authenticating repository.");
-       config.validate();
+    public void testNoUser() throws Exception {
+        RepositoryConfig config = createSparqlBasicAuthConfig(null, null);
+
+        MpAssert.assertThrows("No username specified for SPARQL authenticating repository.",
+                RepositoryConfigException.class, () -> {
+                    config.validate();
+                });
     }
 
     @Test
     public void testNoPassword() throws Exception{
         RepositoryConfig config = createSparqlBasicAuthConfig("testuser", null);
-        exception.expect(RepositoryConfigException.class);
-        exception.expectMessage("No password specified for SPARQL authenticating repository.");
-        config.validate();
+        MpAssert.assertThrows("No password specified for SPARQL authenticating repository.",
+                RepositoryConfigException.class, () -> {
+                    config.validate();
+                });
     }
 
     @Test
@@ -119,7 +121,7 @@ public class SPARQLBasicAuthRepositoryConfigTest {
         RepositoryConfig config = createSparqlBasicAuthConfig("testuser", "testpassword");
         
         Model model = new LinkedHashModel();
-        config.export(model);
+        config.export(model, Values.bnode());
         assertTrue(Models.isomorphic(fileModel, model));
     }
     

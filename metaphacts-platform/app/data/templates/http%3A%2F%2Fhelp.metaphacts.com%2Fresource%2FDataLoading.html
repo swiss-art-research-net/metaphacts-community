@@ -76,7 +76,7 @@ INTO GRAPH <file:///datasets/bio2rdf/drugbank/bio2rdf-drugbank.nq>
       <b>SPARQL 1.1 Update operations are synchronous</b> (c.f. <a href="https://github.com/w3c/sparql-12/issues/7">SPARQL 1.2 discussion</a>), which means that you may run into different kind of timeouts:
     </p>
     <ul>
-      <li>HTTP connection timeouts - All HTTP proxies in-front of the platform and in-front of the database must be configured to allow long lasting conenctions.
+      <li>HTTP connection timeouts - All HTTP proxies in-front of the platform and in-front of the database must be configured to allow long lasting connections.
       </li>
       <li>
         Database query timeouts - Different databases support different modes of global query timeouts. Thus the database may terminate your update operation.

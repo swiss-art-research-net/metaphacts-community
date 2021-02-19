@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,10 +41,15 @@ import { has } from 'lodash';
 
 export interface Stylesheet {
   /**
-   * The selector concept is similar to the CSS selector, but it provides mechanism to match on Rdf Graphs.
-   * The most significant difference to the CSS selector is that, the specificity rules are completely ignored in stylesheets. For a given style property for a given element, the last matching selector wins.
+   * The selector concept is similar to the CSS selector, but it provides
+   * mechanism to match on Rdf Graphs.
    *
-   * The selector semantics is based on <a target='_blank' href='http://js.cytoscape.org/#selectors'>Cytoscape's Selectors</a> with additional RDF specific matchers like:
+   * The most significant difference to the CSS selector is that, the specificity
+   * rules are completely ignored in stylesheets.
+   * For a given style property for a given element, the last matching selector wins.
+   *
+   * The selector semantics is based on [Cytoscape's Selectors](http://js.cytoscape.org/#selectors)
+   * with additional RDF specific matchers like:
    *
    * 1) Matching on nodes/edges:
    *   * **node** - `node` selector is used to match on all nodes
@@ -68,18 +73,26 @@ export interface Stylesheet {
    *   * **target** - to match on all edges which are pointing to some specific resource one can use `edge[target = iri(<...>)]` syntax
    *
    * Selectors can be combined together (logical AND) or joined together (logical OR) with commas.
-   * For example to match on nodes that have both `example:Alice` **AND** `example:Bob` as `foaf:knows` values one can use the following selector - `node[property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Alice>)][property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Bob>)`.
-   * And to match on nodes that `foaf:knows` has value `example:Alice` **OR** `example:Bob` on can use the following selector `node[property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Alice>)], node[property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Bob>)`.
+   * For example to match on nodes that have both `example:Alice` **AND**
+   * `example:Bob` as `foaf:knows` values one can use the following selector -
+   * `node[property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Alice>)][property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Bob>)`.
+   *
+   * And to match on nodes that `foaf:knows` has value `example:Alice` **OR** `example:Bob` one
+   * can use the following selector -
+   * `node[property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Alice>)], node[property(<http://xmlns.com/foaf/0.1/knows>) *= iri(<http://example.com/person/Bob>)`.
    *
    * Some cytoscape extensions can define their own useful matchers.
    */
-  selector: string
+  selector: string;
 
   /**
    * Graph styles definition in JSON format.
-   * In additional to built-in [Cytoscape.js Styles](http://js.cytoscape.org/#style) one can also use some features which are specific to RDF graphs.
+   * In additional to built-in [Cytoscape.js Styles](http://js.cytoscape.org/#style)
+   * one can also use some features which are specific to RDF graphs.
    *
-   * It is possible to use handlebars templates to access values of outgoing edges in style attributes. E.g. to use `rdfs:label` value as label for the node one can use the following style:
+   * It is possible to use handlebars templates to access values of outgoing edges
+   * in style attributes. E.g. to use `rdfs:label` value as label for the node one
+   * can use the following style:
    * ```
    * 'style': {
    *   'content': '{{[<http://www.w3.org/2000/01/rdf-schema#label>].[0].value}}',
@@ -87,7 +100,8 @@ export interface Stylesheet {
    * ```
    * The assumption here is that a property can have multiple values.
    *
-   * Also it is possible to use resource preferred label or preferred thumbnail with the help of `data` function.
+   * Also it is possible to use resource preferred label or preferred thumbnail
+   * with the help of `data` function.
    * For example to use preferred label for as node content one can use the following snippet:
    * ```
    * 'style': {
@@ -102,12 +116,14 @@ export interface Stylesheet {
    * ```
    *
    */
-  style: Cy.Css.ElementCss
+  style: Cy.Css.ElementCss;
 }
 export type Stylesheets = Array<Stylesheet>;
 
 /**
- * The most simple graph configuration option which require only SPARQL CONSTRUCT query. Visualize all statements from the resulted graph, including literal nodes.
+ * The most simple graph configuration option which require only SPARQL CONSTRUCT query.
+ *
+ * Visualize all statements from the resulted graph, including literal nodes.
  */
 export interface BaseSemanticGraphConfig {
   /**
@@ -116,17 +132,29 @@ export interface BaseSemanticGraphConfig {
   query: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results
+   * Template which is applied when query returns no results.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   noResultTemplate?: string;
 
   /**
-   * Graph styles definitions. There are some default styles defined for `edge`, `node`, `node[?isLiteral]`, `edge.meta`, etc. So be careful when overriding these generic selectors, because then you will lose all defaults.
+   * Graph styles definitions.
+   *
+   * There are some default styles defined for `edge`, `node`, `node[?isLiteral]`,
+   * `edge.meta`, etc. So be careful when overriding these generic selectors,
+   * because then you will lose all defaults.
    */
   graphStyle?: Stylesheets;
 
   /**
-   * It is possible to group nodes according to some predicate (discriminator) value to display containment relation. Accepts full IRI of the property that should be used as a discriminator.
+   * It is possible to group nodes according to some predicate (discriminator) value
+   * to display containment relation.
+   *
+   * Accepts full IRI of the property that should be used as a discriminator.
    */
   groupBy?: string;
 
@@ -164,19 +192,24 @@ export interface BaseSemanticGraphConfig {
 export interface SemanticGraphConfigShow extends BaseSemanticGraphConfig {
 
   /**
-   * White-list edges that should be visualized in graph. If some node is used only with non-visible predicates it will not be shown. Accepts only full IRIs in angle brackets, e.g `<http://example.com/something>`
+   * White-list edges that should be visualized in graph.
+   * If some node is used only with non-visible predicates it will not be shown.
+   * Accepts only full IRIs in angle brackets, e.g `<http://example.com/something>`.
    */
   showPredicates: string[];
 }
 
 /**
  * With the default configuration, all triples which are present in the graph are always visualized.
- * But it is possible to hide triples using `hidePredicates` option. For example most of the time it can be convenient to hide predicates with literal values.
+ * But it is possible to hide triples using `hidePredicates` option.
+ * For example most of the time it can be convenient to hide predicates with literal values.
  */
 export interface SemanticGraphConfigHide extends BaseSemanticGraphConfig {
 
   /**
-   * Blacklist-list edges that should not be visualized in graph. If some node is used only with black-listed predicates it will not be shown. Accepts only full IRIs in angle brackets, e.g `<http://example.com/something>`.
+   * Blacklist-list edges that should not be visualized in graph.
+   * If some node is used only with black-listed predicates it will not be shown.
+   * Accepts only full IRIs in angle brackets, e.g `<http://example.com/something>`.
    */
   hidePredicates: string[];
 }

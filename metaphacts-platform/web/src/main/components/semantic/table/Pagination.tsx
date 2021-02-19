@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -104,16 +104,16 @@ export class Pagination extends React.Component<PaginationProps, {}> {
   render() {
     if (this.props.maxPage > 1) {
       const previous = (
-        <li className={this.props.currentPage === 0 ? 'disabled' : ''}>
-          <a onClick={this.props.previous}>
+        <li className={'page-item ' + (this.props.currentPage === 0 ? 'disabled' : '')}>
+          <a className='page-link' onClick={this.props.previous}>
             <span>{'\xAB'}</span>
           </a>
         </li>
       );
 
       const next = (
-        <li className={this.props.currentPage === (this.props.maxPage - 1) ? 'disabled' : ''}>
-          <a onClick={this.props.next}>
+        <li className={'page-item ' + (this.props.currentPage === (this.props.maxPage - 1) ? 'disabled' : '')}>
+          <a className='page-link' onClick={this.props.next}>
             <span>{'\xBB'}</span>
           </a>
         </li>
@@ -130,8 +130,8 @@ export class Pagination extends React.Component<PaginationProps, {}> {
       for (let i = startIndex; i < endIndex ; i++) {
         const selected = this.props.currentPage === i ? 'active' : '';
         options.push(
-          <li key={i} className={selected}>
-            <a data-value={i} onClick={this.onPageButtonClick}>{i + 1}</a>
+          <li key={i} className={'page-item ' + selected}>
+            <a className='page-link' data-value={i} onClick={this.onPageButtonClick}>{i + 1}</a>
           </li>
         );
       }

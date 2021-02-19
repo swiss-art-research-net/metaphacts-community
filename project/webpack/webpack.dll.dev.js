@@ -23,7 +23,7 @@ const defaults = require('./defaults');
  * @param {{ [key: string]: string }} env
  */
 module.exports = function (env) {
-  var config = require('./webpack.dll.js')(defaults());
+  var config = require('./webpack.dll.js')(defaults(), {buildMode: 'dev'});
   config.mode = 'development';
 
   config.output.publicPath = 'http://localhost:3000/assets/no_auth/';

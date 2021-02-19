@@ -58,6 +58,11 @@
                     "description": "Query variable to pivot on.",
                     "type": "string"
                 },
+                "defaultValue": {
+                    "default": 0,
+                    "description": "Default value if there's no data point. Can also be `null`.",
+                    "type": "number"
+                },
                 "value": {
                     "description": "Same as y for two-dimensional data.",
                     "type": "string"
@@ -84,6 +89,7 @@
                 "z",
                 "category",
                 "value",
+                "defaultValue",
                 "color"
             ],
             "type": "object"
@@ -127,7 +133,11 @@
             "description": "Data sets specified through pivoting on variable in query and mapping between data points properties and other query variables. (Mutually exclusive with `data-sets.`)"
         },
         "noResultTemplate": {
-            "description": "<semantic-link iri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.",
+            "description": "Template which is applied when query returns no results.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
         },
         "provider": {
@@ -153,7 +163,11 @@
             "type": "array"
         },
         "tooltipTemplate": {
-            "description": "<semantic-link iri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied to render tooltip for chart points; the following properies are provided:\n<mp-documentation type=\"ChartTooltipData\"></mp-documentation>",
+            "description": "Template which is applied to render tooltip for chart points.\n\nThe following properties are provided:\n<mp-documentation type=\"ChartTooltipData\"></mp-documentation>",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
         },
         "type": {

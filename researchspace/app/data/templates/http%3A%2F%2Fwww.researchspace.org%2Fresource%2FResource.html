@@ -19,7 +19,7 @@
     <bs-tab-container id="tab-container" class="page__body-navtabs--borderless" default-active-key="summary">
       [[/if]]
       <div>
-        <bs-nav bs-style="tabs">
+        <bs-nav variant="tabs">
           <bs-nav-item event-key="summary">Summary</bs-nav-item>
           <bs-nav-item event-key="annotations">
             Annotations <semantic-context repository='assets'><semantic-query query="SELECT (COUNT(DISTINCT ?s) AS ?count) WHERE {

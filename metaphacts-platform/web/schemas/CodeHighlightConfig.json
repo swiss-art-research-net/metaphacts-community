@@ -1,0 +1,16 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Component for code highlight. In templates it is exposed as a `<code>` tag.\n\nFor inline code highlight with default `html` mode one can just use `<code>` tag:\n**Example**:\n```\n<p>Some text <code><a>Hello World</a></code> </p>\n```",
+    "properties": {
+        "mode": {
+            "default": "text/html",
+            "description": "Supported modes:\n   - `text/html` - HTML\n   - `text/x-java` - Java\n   - `text/typescript` - TypeScript\n   - `text/javascript` - JavaScript\n   - `application/json` - JSON\n   - `application/ld+json` - JSON-LD\n   - `application/sparql-query` - SPARQL\n   - `text/turtle` - Turtle\n   - `application/n-triples` - N-Triples\n   - `application/n-quads` - N-Quads\n   - `text/x-sh` - Shell/Bash\n   - `application/xml` - XML",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "mode"
+    ],
+    "type": "object"
+}
+

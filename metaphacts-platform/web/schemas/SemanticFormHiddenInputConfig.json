@@ -1,0 +1,77 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Represents a hidden field, which will not be visible to the user and which\nwill be automatically saved as soon as the form is saved.\n\n**Example**:\n```\n<semantic-form-hidden-input for='...'\n   default-value='https://www.wikidata.org/wiki/Q2337004'>\n</semantic-form-hidden-input>\n\n<semantic-form-hidden-input for='...'\n   default-values='[\"Emmett Brown\", \"Marty McFly\"]'>\n</semantic-form-hidden-input>\n\n<semantic-form-hidden-input for='{field-id}'\n     append-value='[[singleValueFromSelect \"SELECT ?user WHERE {\n       BIND(?__useruri__ as ?user) }\" ]]'>\n</semantic-form-hidden-input>\n\n<semantic-form-hidden-input for='{field-id}'\n   replace-value='[[singleValueFromSelect \"SELECT ?date WHERE {\n     BIND(NOW() as ?date) }\" ]]'>\n</semantic-form-hidden-input>\n```",
+    "properties": {
+        "appendValue": {
+            "description": "Value which user can push to the object dataset",
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "appendValues": {
+            "description": "Values which user can push to the object dataset",
+            "items": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                ]
+            },
+            "type": "array"
+        },
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        },
+        "replaceValue": {
+            "description": "Value which user can change to the object dataset",
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "replaceValues": {
+            "description": "Values which user can change to the object dataset",
+            "items": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                ]
+            },
+            "type": "array"
+        }
+    },
+    "propertyOrder": [
+        "appendValue",
+        "appendValues",
+        "replaceValue",
+        "replaceValues",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "type": "object"
+}
+

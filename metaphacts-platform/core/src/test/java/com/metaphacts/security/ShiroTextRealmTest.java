@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,6 +48,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.credential.SimpleCredentialsMatcher;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -128,7 +129,7 @@ public class ShiroTextRealmTest extends AbstractIntegrationTest {
                 .toString(platformStorageRule.getObjectStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY)
                         .getObject(path, null).get().getLocation().readContent(), "UTF-8");
 
-        Assert.assertThat(content, Matchers.containsString("test=test,admin,runtime-admin"));
+        MatcherAssert.assertThat(content, Matchers.containsString("test=test,admin,runtime-admin"));
 
     }
 }

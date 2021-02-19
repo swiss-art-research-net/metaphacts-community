@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "This component takes inner html and makes it automatically draggable.\nChild element could be any HTML-element (not text node).\n\n**Example**:\n```\n<mp-draggable iri=\"http://collection.britishmuseum.org/id/object/PDB7385\">\n   <div>Content</div>\n</mp-draggable>\n```",
+    "properties": {
+        "dragStyles": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Styles that are added to the component, if it dragged."
+        },
+        "iri": {
+            "description": "Resource identifier",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "iri",
+        "dragStyles"
+    ],
+    "required": [
+        "iri"
+    ],
+    "type": "object"
+}
+

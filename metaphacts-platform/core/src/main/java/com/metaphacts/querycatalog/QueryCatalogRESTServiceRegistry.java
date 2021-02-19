@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -69,6 +70,7 @@ import org.eclipse.rdf4j.model.IRI;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.metaphacts.api.rest.client.QueryTemplateCatalogAPIClient;
 import com.metaphacts.cache.CacheManager;
 import com.metaphacts.cache.PlatformCache;
@@ -76,6 +78,7 @@ import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.config.ConfigurationUtil;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.data.rdf.container.LDPApiInternal;
+import com.metaphacts.di.SubsystemLifecycle;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.Permissions;
 import com.metaphacts.services.storage.api.ObjectKind;
@@ -97,7 +100,8 @@ import com.metaphacts.services.storage.api.StoragePath;
  * @author Andriy Nikolov an@metaphacts.com
  */
 @Singleton
-public class QueryCatalogRESTServiceRegistry {
+public class QueryCatalogRESTServiceRegistry implements SubsystemLifecycle {
+
     protected static final StoragePath SERVICE_CONFIG_OBJECT_PREFIX =
         ObjectKind.CONFIG.resolve("qaas");
     
@@ -119,7 +123,9 @@ public class QueryCatalogRESTServiceRegistry {
     /**
      * Executor to sync service files asynchronously.
      */
-    protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
+    // TODO switch to common shared thread pool for background execution
+    protected ExecutorService asyncExecutor = Executors
+            .newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("querycatalog-registry-%d").build());
     
     protected Map<String, ServiceEntry> registry = Maps.newHashMap();
     
@@ -401,6 +407,20 @@ public class QueryCatalogRESTServiceRegistry {
 
         if (reloadedConfig.isPresent()) {
             createOrUpdateServiceFromPropertiesFile(reloadedConfig.get());
+        }
+    }
+
+    /**
+     * Shutdown lifecycle of the query catalog registry
+     */
+    @Override
+    public void shutdown() {
+        asyncExecutor.shutdownNow();
+        try {
+            asyncExecutor.awaitTermination(1000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            logger.warn("Failed to shutdown thread pool: " + e.getMessage());
+            logger.debug("Details:", e);
         }
     }
 

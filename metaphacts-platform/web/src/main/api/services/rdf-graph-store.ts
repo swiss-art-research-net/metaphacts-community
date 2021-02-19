@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,105 +41,100 @@ import * as request from 'platform/api/http';
 import * as Kefir from 'kefir';
 import * as fileSaver from 'file-saver';
 
+import { requestAsProperty } from 'platform/api/async';
 import { Rdf, turtle } from 'platform/api/rdf';
 import { SparqlUtil } from 'platform/api/sparql';
 
-export const GRAPH_STORE_SERVICEURL = '/rdf-graph-store';
+export const GRAPH_STORE_SERVICE_URL = '/rdf-graph-store';
 
 class GraphStoreService {
-    public createGraph(
-      {targetGraph, graphData, repository}: {
-        targetGraph: Rdf.Iri;
-        graphData: Rdf.Graph;
-        repository?: string;
-      }
-    ): Kefir.Property<Rdf.Iri> {
-        return turtle.serialize.serializeGraph(graphData).flatMap(
-          (turtleString: string) =>
-            this.createGraphRequest({targetGraph, turtleString, repository})
-        ).map(location => Rdf.iri(<string>location)).toProperty();
+  createGraph(
+    {targetGraph, graphData, repository}: {
+      targetGraph: Rdf.Iri;
+      graphData: Rdf.Graph;
+      repository?: string;
     }
+  ): Kefir.Property<Rdf.Iri> {
+    return turtle.serialize.serializeGraph(graphData)
+      .flatMap(turtleString => this.createGraphRequest({targetGraph, turtleString, repository}))
+      .map(location => Rdf.iri(location))
+      .toProperty();
+  }
 
-    private createGraphRequest(
-      {targetGraph, turtleString, repository}: {
-        targetGraph: Rdf.Iri;
-        turtleString: string;
-        repository?: string;
-      }
-    ): Kefir.Property<string> {
-      const req = request
-          .post(GRAPH_STORE_SERVICEURL)
-          .query({graph: targetGraph.value, repository: repository})
-          .send(turtleString)
-          .type('text/turtle');
-
-      return Kefir.fromNodeCallback<string>(
-        (cb) => req.end((err, res) => cb(err, res ? res.header['location'] : null))
-      ).toProperty();
+  private createGraphRequest(
+    {targetGraph, turtleString, repository}: {
+      targetGraph: Rdf.Iri;
+      turtleString: string;
+      repository?: string;
     }
+  ): Kefir.Property<string> {
+    const req = request
+      .post(GRAPH_STORE_SERVICE_URL)
+      .query({graph: targetGraph.value, repository: repository})
+      .send(turtleString)
+      .type('text/turtle');
 
-    public updateGraph(
-      {targetGraph, graphData, repository}: {
-        targetGraph: Rdf.Iri;
-        graphData: Rdf.Graph;
-        repository?: string;
-      }
-    ): Kefir.Property<Rdf.Iri> {
-        return turtle.serialize.serializeGraph(graphData).flatMap(
-            (turtleString: string) =>
-              this.createGraphRequest({targetGraph, turtleString, repository})
-        ).map(location => Rdf.iri(<string>location)).toProperty();
+    return requestAsProperty(req)
+      .map(res => res.header['location']);
+  }
+
+  updateGraph(
+    {targetGraph, graphData, repository}: {
+      targetGraph: Rdf.Iri;
+      graphData: Rdf.Graph;
+      repository?: string;
     }
+  ): Kefir.Property<Rdf.Iri> {
+    return turtle.serialize.serializeGraph(graphData)
+      .flatMap(turtleString => this.updateGraphRequest({targetGraph, turtleString, repository}))
+      .map(location => Rdf.iri(location))
+      .toProperty();
+  }
 
-    public updateGraphRequest(
-      {targetGraph, turtleString, repository}: {
-        targetGraph: Rdf.Iri;
-        turtleString: string;
-        repository?: string;
-      }
-    ): Kefir.Property<string> {
-      const req = request
-          .put(GRAPH_STORE_SERVICEURL)
-          .query({uri: targetGraph.value, repository: repository})
-          .send(turtleString)
-          .type('text/turtle');
-
-      return Kefir.fromNodeCallback<string>(
-        (cb) => req.end((err, res) => cb(err, res ? res.header['location'] : null))
-      ).toProperty();
+  updateGraphRequest(
+    {targetGraph, turtleString, repository}: {
+      targetGraph: Rdf.Iri;
+      turtleString: string;
+      repository?: string;
     }
+  ): Kefir.Property<string> {
+    const req = request
+      .put(GRAPH_STORE_SERVICE_URL)
+      .query({graph: targetGraph.value, repository: repository})
+      .send(turtleString)
+      .type('text/turtle');
 
-    public createGraphFromFile(
-      {targetGraph, keepSourceGraphs, file, contentType, onProgress, repository}: {
-        targetGraph: Rdf.Iri;
-        keepSourceGraphs: boolean;
-        file: File;
-        contentType: string;
-        onProgress: (percent: number) => void;
-        repository?: string;
-      }
-    ): Kefir.Property<boolean> {
+    return requestAsProperty(req)
+      .map(res => res.header['location']);
+  }
 
-        const req = request.post(GRAPH_STORE_SERVICEURL)
-            .query({
-              graph: targetGraph.value,
-              keepSourceGraphs: keepSourceGraphs,
-              repository: repository,
-            })
-            .type(contentType)
-            .send(file)
-            .on('progress',
-              (e: { percent: number }) => onProgress(e.percent)
-            );
-
-        return Kefir.fromNodeCallback<boolean>(
-            (cb) => req.end((err, res: request.Response) => {
-                cb(err, res.ok ? true : null);
-            })
-        ).toProperty();
+  createGraphFromFile(
+    {targetGraph, keepSourceGraphs, file, contentType, onProgress, repository}: {
+      targetGraph: Rdf.Iri;
+      keepSourceGraphs: boolean;
+      file: File;
+      contentType: string;
+      onProgress: (percent: number) => void;
+      repository?: string;
     }
+  ): Kefir.Property<boolean> {
+    const req = request.post(GRAPH_STORE_SERVICE_URL)
+      .query({
+        graph: targetGraph.value,
+        keepSourceGraphs: keepSourceGraphs,
+        repository: repository,
+      })
+      .type(contentType)
+      .send(file)
+      .on('progress',
+        (e: {percent: number}) => onProgress(e.percent)
+      );
 
-  public updateGraphFromFile(
+    return requestAsProperty(req)
+      .map(() => true);
+  }
+
+  updateGraphFromFile(
     {targetGraph, file, contentType, onProgress, repository}: {
       targetGraph: Rdf.Iri;
       file: File;
@@ -148,20 +143,16 @@ class GraphStoreService {
       repository?: string;
     }
   ): Kefir.Property<boolean> {
+    const req = request.put(GRAPH_STORE_SERVICE_URL)
+      .query({graph: targetGraph.value, repository: repository})
+      .type(contentType)
+      .send(file)
+      .on('progress',
+        (e: { percent: number }) => onProgress(e.percent)
+      );
 
-    const req = request.put(GRAPH_STORE_SERVICEURL)
-        .query({graph: targetGraph.value, repository: repository})
-        .type(contentType)
-        .send(file)
-        .on('progress',
-          (e: { percent: number }) => onProgress(e.percent)
-        );
-
-      return Kefir.fromNodeCallback<boolean>(
-        (cb) => req.end((err, res: request.Response) => {
-          cb(err, res.ok ? true : null);
-        })
-      ).toProperty();
+    return requestAsProperty(req)
+      .map(() => true);
   }
 
   getGraph(
@@ -171,34 +162,44 @@ class GraphStoreService {
     }
   ): Kefir.Property<Rdf.Graph> {
     const req = request
-        .get(GRAPH_STORE_SERVICEURL)
+      .get(GRAPH_STORE_SERVICE_URL)
+      .query({graph: targetGraph.value, repository: repository})
+      .accept('text/turtle');
+
+    return requestAsProperty(req)
+      .flatMap(res => turtle.deserialize.turtleToGraph(res.text))
+      .toProperty();
+  }
+
+  getRawGraph(
+    {targetGraph, repository}: {
+      targetGraph: Rdf.Iri;
+      repository?: string;
+    }
+  ): Kefir.Property<string> {
+    const req = request
+        .get(GRAPH_STORE_SERVICE_URL)
         .query({graph: targetGraph.value, repository: repository})
         .accept('text/turtle');
 
-    return Kefir.fromNodeCallback<Rdf.Graph>(
-      (cb) => req.end((err, res: request.Response) => {
-        cb(this.errorToString(err), res.ok ? turtle.deserialize.turtleToGraph(res.text) : null);
-      })
-    ).toProperty();
+    return requestAsProperty(req)
+      .map(res => res.ok ? res.text : null);
   }
 
-  public deleteGraph(
+  deleteGraph(
     {targetGraph, repository}: {
       targetGraph: Rdf.Iri;
       repository?: string;
     }
   ): Kefir.Property<boolean> {
-    const req = request.del(GRAPH_STORE_SERVICEURL)
-        .query({graph: targetGraph.value, repository: repository});
+    const req = request.del(GRAPH_STORE_SERVICE_URL)
+      .query({graph: targetGraph.value, repository: repository});
 
-    return Kefir.fromNodeCallback<boolean>(
-      (cb) => req.end((err, res: request.Response) => {
-        cb(this.errorToString(err), res.ok ? true : null);
-      })
-    ).toProperty();
+    return requestAsProperty(req)
+      .map(() => true);
   }
 
-  public downloadGraph(
+  downloadGraph(
     {targetGraph, acceptHeader, fileName, repository}: {
       targetGraph: Rdf.Iri;
       acceptHeader: SparqlUtil.ResultFormat;
@@ -207,18 +208,13 @@ class GraphStoreService {
     }
   ): Kefir.Property<boolean> {
      const req = request
-        .get(GRAPH_STORE_SERVICEURL)
+        .get(GRAPH_STORE_SERVICE_URL)
         .query({graph: targetGraph.value, repository: repository})
         .accept(acceptHeader);
 
-    return Kefir.fromNodeCallback<boolean>(
-      (cb) => req.end((err, res: request.Response) => {
-        cb(
-          this.errorToString(err),
-          res.ok ? this.download(res.text, acceptHeader, fileName) : false
-          );
-      })
-    ).toProperty();
+    return requestAsProperty(req)
+      .mapErrors(err => this.mapGraphStoreError(err))
+      .map(res => this.download(res.text, acceptHeader, fileName));
   }
 
   private download(response: string, header: SparqlUtil.ResultFormat, filename: string): boolean {
@@ -227,21 +223,19 @@ class GraphStoreService {
     return true;
   }
 
-  private errorToString(err: any): string {
-
-    if (err !== null) {
-       const status = err['status'];
-      if (413 === status) {
-         return 'File too large. Please contact your administrator.';
+  private mapGraphStoreError(err: any): string {
+    if (err && typeof err === 'object') {
+      const status = err['status'];
+      if (status === 413) {
+        return 'File too large. Please contact your administrator.';
+      } else if (typeof err.response?.text === 'string') {
+        return err.response?.text;
       } else {
-         return err.response.text;
+        return err;
       }
-   }
-
-   return null;
-
+    }
+    return null;
   }
-
 }
 
 export const RDFGraphStoreService = new GraphStoreService();

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,6 +60,12 @@ export interface NavigatorConfig {
     height?: number;
     scalePadding?: number;
     expanded?: boolean;
+    backgroundColor?: string;
+    viewportBackgroundColor?: string;
+    viewportBorderColor?: string;
+    viewportBorderWidth?: number;
+    viewportOutsideBorderColor?: string;
+    viewportOutsideBorderWidth?: number;
 }
 
 export type NavigatorProps = PaperWidgetProps & NavigatorConfig;
@@ -77,13 +83,13 @@ interface State {
     expanded?: boolean;
 }
 
-type RequiredProps = NavigatorProps & Required<PaperWidgetProps> &
-    Required<Pick<NavigatorProps,
-        'id' | 'dock' | 'margin' | 'width' | 'height' | 'scalePadding' | 'expanded'
-    >>;
+type RequiredProps = NavigatorProps & Required<PaperWidgetProps> & DefaultProps;
+type DefaultProps = Required<Pick<NavigatorProps,
+    'id' | 'dock' | 'margin' | 'width' | 'height' | 'scalePadding' | 'expanded'
+>>;
 
 export class Navigator extends React.Component<NavigatorProps, State> {
-    static defaultProps: Partial<NavigatorProps> = {
+    static defaultProps: DefaultProps = {
         id: 'navigator',
         dock: 'se',
         margin: 25,
@@ -133,7 +139,7 @@ export class Navigator extends React.Component<NavigatorProps, State> {
     }
 
     private draw = () => {
-        const {paperTransform: pt, width, height} = this.props as RequiredProps;
+        const {paperTransform: pt, width, height, backgroundColor} = this.props as RequiredProps;
 
         this.calculateTransform();
 
@@ -151,11 +157,12 @@ export class Navigator extends React.Component<NavigatorProps, State> {
 
         const start = canvasFromPaneCoords(paneStart, pt, this.transform);
         const end = canvasFromPaneCoords(paneEnd, pt, this.transform);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = backgroundColor ?? 'white';
         ctx.fillRect(start.x, start.y, end.x - start.x, end.y - start.y);
 
         ctx.save();
 
+        this.drawViewportBackground(ctx);
         this.drawElements(ctx);
         this.drawViewport(ctx);
 
@@ -185,15 +192,33 @@ export class Navigator extends React.Component<NavigatorProps, State> {
         if (isBlurred) {
             return 'lightgray';
         }
-        const {color: {h, c, l}} = view.getTypeStyle(element.data.types);
+        const {color: {h, c, l}} = view.getElementStyle(element.data);
         return hcl(h, c, l).toString();
     }
 
-    private drawViewport(ctx: CanvasRenderingContext2D) {
-        const {paperArea, paperTransform: pt, width, height} = this.props as RequiredProps;
+    private drawViewportBackground(ctx: CanvasRenderingContext2D) {
+        const {paperArea, paperTransform: pt, viewportBackgroundColor} = this.props as RequiredProps;
+        if (!viewportBackgroundColor) { return; }
 
-        ctx.strokeStyle = '#337ab7';
-        ctx.lineWidth = 2;
+        const {clientWidth, clientHeight} = paperArea.getAreaMetrics();
+        const viewportStart = paperArea.clientToScrollablePaneCoords(0, 0);
+        const viewportEnd = paperArea.clientToScrollablePaneCoords(clientWidth, clientHeight);
+
+        const {x: x1, y: y1} = canvasFromPaneCoords(viewportStart, pt, this.transform);
+        const {x: x2, y: y2} = canvasFromPaneCoords(viewportEnd, pt, this.transform);
+
+        ctx.fillStyle = viewportBackgroundColor;
+        ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+    }
+
+    private drawViewport(ctx: CanvasRenderingContext2D) {
+        const {
+            paperArea, paperTransform: pt, width, height,
+            viewportBorderColor, viewportBorderWidth, viewportOutsideBorderColor, viewportOutsideBorderWidth
+        } = this.props as RequiredProps;
+
+        ctx.strokeStyle = viewportBorderColor ?? '#337ab7';
+        ctx.lineWidth = viewportBorderWidth ?? 2;
 
         const {clientWidth, clientHeight} = paperArea.getAreaMetrics();
         const viewportStart = paperArea.clientToScrollablePaneCoords(0, 0);
@@ -224,8 +249,8 @@ export class Navigator extends React.Component<NavigatorProps, State> {
             ctx.lineTo(x2, height);
         }
 
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#a0d2ff';
+        ctx.strokeStyle = viewportOutsideBorderColor ?? '#a0d2ff';
+        ctx.lineWidth = viewportOutsideBorderWidth ?? 4;
         ctx.setLineDash([5, 5]);
         ctx.stroke();
     }

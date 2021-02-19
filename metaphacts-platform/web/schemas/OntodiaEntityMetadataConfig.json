@@ -1,0 +1,59 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "**Example**:\n```\n<!-- entity with auto-generated form -->\n<ontodia-entity-metadata\n   entity-type-iri='http://example.com/Person'\n   fields='[\"field-iri-1\", \"field-iri-2\", ...]'\n   label-iri='http://www.example.com/fields/personName'\n   new-subject-template='http://www.example.com/person/{{UUID}}'>\n</ontodia-entity-metadata>\n```\n\n**Example**:\n```\n<ontodia-entity-metadata\n   entity-type-iri='http://example.com/Company'\n   fields='[\"field-iri-1\", \"field-iri-2\", ...]'\n   label-iri='http://www.example.com/fields/companyName'\n   image-iri='http://www.example.com/fields/hasType'\n   new-subject-template='http://www.example.com/company/{{UUID}}'\n   force-iris='[\"datatype-field-1\", ...]'>\n\n   <semantic-form-text-input for='http://www.example.com/fields/companyName'>\n   </semantic-form-text-input>\n\n   <semantic-form-composite-input\n     for='http://www.example.com/fields/companyAddress'\n     fields='...'>\n     <!-- inputs for addressCountry, addressCity, etc) -->\n   </semantic-form-composite-input>\n\n   <semantic-form-errors></semantic-form-errors>\n   <button name=\"submit\" class=\"btn btn-secondary\">Save</button>\n   <button name=\"reset\" class=\"btn btn-secondary\">Reset</button>\n</ontodia-entity-metadata>\n```",
+    "properties": {
+        "children": {
+            "description": "Semantic form override. If developer wants to override auto-generated form,\nit should be placed inside `<ontodia-entity-metadata>`.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "editableWhen": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "description": "Entity properties required for the entity to be editable",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "entityTypeIri": {
+            "description": "Iri of the type to be configured. For example, 'http://xmlns.com/foaf/0.1/person'",
+            "type": "string"
+        },
+        "fields": {
+            "description": "Ordered list of fields to be used for this entity. Automatically generated forms will honor\nthe order of the fields specified here.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "imageIri": {
+            "description": "Field Iri for entity image override",
+            "type": "string"
+        },
+        "labelIri": {
+            "description": "Field Iri for entity label override",
+            "type": "string"
+        },
+        "newSubjectTemplate": {
+            "description": "Subject template override for generating IRIs for new entities of this type.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "entityTypeIri",
+        "fields",
+        "labelIri",
+        "imageIri",
+        "newSubjectTemplate",
+        "editableWhen",
+        "children"
+    ],
+    "required": [
+        "entityTypeIri",
+        "fields"
+    ],
+    "type": "object"
+}
+

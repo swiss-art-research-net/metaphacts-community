@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,7 +45,7 @@ import { SparqlUtil } from 'platform/api/sparql';
 import { ResourceLinkAction } from 'platform/components/navigation';
 import * as Kefir from 'kefir';
 import {
-  FormControl, FormGroup, InputGroup, Button, Form, HelpBlock,
+  FormControl, FormGroup, InputGroup, Button, Form,
 } from 'react-bootstrap';
 import { Rdf } from 'platform/api/rdf';
 import { navigateToResource } from 'platform/api/navigation';
@@ -61,7 +61,7 @@ export interface CreateNewPageProps {
 export interface IriDetails {
   fullIri?: string;
   abbreviatedIri?: string;
-  isValid?: Boolean;
+  isValid?: boolean;
 }
 
 interface State {
@@ -150,56 +150,61 @@ export class CreateNewPage extends Component<CreateNewPageProps, State> {
     };
   }
 
-  static defaultProps: Partial<CreateNewPageProps> = {
-    placeholder: 'Enter an abbreviated IRI e.g Admin:Security or enter a full IRI e.g http://help.metaphacts.com/resource/Start',
+  static defaultProps: Required<Pick<CreateNewPageProps, 'placeholder' | 'buttonCaption'>> = {
+    placeholder:
+      'Enter an abbreviated IRI e.g Admin:Security or enter a full IRI ' +
+      'e.g http://help.metaphacts.com/resource/Start',
     buttonCaption: 'Create Page'
   };
 
   render() {
     return (
-      <Form horizontal onSubmit={this.onClick}>
-        <FormGroup validationState={
-          this.state.iriDetails.isValid === null ?
-            null : this.state.iriDetails.isValid ? 'success' : 'error'
-        }>
+      <Form onSubmit={this.onClick}>
+        <FormGroup>
           <InputGroup>
             <FormControl
               type='text' placeholder={this.props.placeholder}
-              value={this.state.value} onChange={this.onValueChange} />
-            <InputGroup.Button>
+              value={this.state.value} onChange={this.onValueChange}
+              isValid={this.state.iriDetails.isValid}
+              isInvalid={this.state.iriDetails.isValid === null ? null :
+                !this.state.iriDetails.isValid}
+              />
+            <InputGroup.Append>
               <Button
-                bsStyle='primary'
+                variant='primary'
                 onClick={this.onClick}
               >Validate</Button>
               <Button
-                bsStyle='primary'
+                variant='primary'
                 disabled={this.isCreateDisabled()}
                 onClick={() => this.createNewPage()}
               >{this.props.buttonCaption}</Button>
-            </InputGroup.Button>
-          </InputGroup>
-          {
-            this.state.iriDetails.isValid === null ? '' :
-              this.state.iriDetails.isValid ?
-                <div className={styles.topPadding}>
-                  <span className={styles.valid}>Valid IRI. </span>
-                  <span
-                    className={styles.leftPadding}>
-                    Fully Qualified IRI: <span className={styles.underline}>
-                      {this.state.iriDetails.fullIri}</span>
-                  </span>
-                  {
-                    this.state.iriDetails.abbreviatedIri !== '' ?
+            </InputGroup.Append>
+            {
+              this.state.iriDetails.isValid === null ? '' :
+                this.state.iriDetails.isValid ?
+                  <FormControl.Feedback type='valid'>
+                    <div className={styles.topPadding}>
+                      <span className={styles.valid}>Valid IRI. </span>
                       <span
                         className={styles.leftPadding}>
-                        Abbreviated IRI: <span className={styles.underline}>
-                          {this.state.iriDetails.abbreviatedIri}</span>
-                      </span> :
-                      ''
-                  }
-                </div> :
-                <HelpBlock>The value is not a valid IRI.</HelpBlock>
-          }
+                        Fully Qualified IRI: <span className={styles.underline}>
+                          {this.state.iriDetails.fullIri}</span>
+                      </span>
+                      {
+                        this.state.iriDetails.abbreviatedIri !== '' ?
+                          <span
+                            className={styles.leftPadding}>
+                            Abbreviated IRI: <span className={styles.underline}>
+                              {this.state.iriDetails.abbreviatedIri}</span>
+                          </span> :
+                          ''
+                      }
+                    </div>
+                  </FormControl.Feedback> :
+                  <FormControl.Feedback type='invalid'>The value is not a valid IRI.</FormControl.Feedback>
+            }
+          </InputGroup>
         </FormGroup>
       </Form>
     );

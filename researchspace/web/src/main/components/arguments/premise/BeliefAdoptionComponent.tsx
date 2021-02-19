@@ -19,7 +19,7 @@ import * as React from 'react';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
 import {
-  FormControl, FormGroup, ControlLabel, Form, Button, ButtonGroup, Row, Col,
+  FormControl, FormGroup, FormLabel, Form, Button, ButtonGroup, Row, Col,
 } from 'react-bootstrap';
 
 import { Rdf } from 'platform/api/rdf';
@@ -64,14 +64,14 @@ export class BeliefAdoptionComponent extends React.Component<BeliefAdoptionCompo
     const canSave = title && belief;
     return <Form>
       <FormGroup>
-        <ControlLabel>Title*</ControlLabel>
+        <FormLabel>Title*</FormLabel>
         <FormControl
           type='text' placeholder='Premise title...'
           value={title} onChange={this.onTitleChange} />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Description</ControlLabel>
-        <FormControl componentClass='textarea'
+        <FormLabel>Description</FormLabel>
+        <FormControl as='textarea'
           placeholder='Premise description...'
           value={note} onChange={this.onNoteChange} />
       </FormGroup>
@@ -89,11 +89,11 @@ export class BeliefAdoptionComponent extends React.Component<BeliefAdoptionCompo
 
       <FormGroup>
         <ButtonGroup className='pull-right'>
-          <Button bsStyle='default'
+          <Button variant='secondary'
             onClick={onCancel}>
             Cancel
           </Button>
-          <Button bsStyle='primary'
+          <Button variant='primary'
             style={{marginLeft:'12px'}}
             onClick={() => this.onSelectBelief(belief)}
             disabled={!canSave}>

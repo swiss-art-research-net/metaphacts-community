@@ -1,4 +1,4 @@
-ARG  JETTY_VERSION=9.4.31-jre8
+ARG  JETTY_VERSION=9.4.35-jre11
 FROM jetty:${JETTY_VERSION}
 MAINTAINER metaphacts support@metaphacts.com
 
@@ -67,6 +67,14 @@ RUN echo "setting up platform, apps, and runtime folders" \
 	&& chown -R 100:0 "/runtime-data" \
 	&& chmod -R g=u "/runtime-data" \
 	&& chmod -R g+ws "/runtime-data" \
+	&& mkdir /storage \
+	&& chown -R 100:0 "/storage" \
+	&& chmod -R g=u "/storage" \
+	&& chmod -R g+ws "/storage" \
+	&& mkdir -p /home/jetty \
+	&& chown -R 100:0 "/home/jetty" \
+	&& chmod -R g=u "/home/jetty" \
+	&& chmod -R g+ws "/home/jetty" \
 	&& mkdir /var/lib/jetty/logs \
 	&& chown -R 100:0 "/var/lib/jetty/logs" \
 	&& chmod -R g=u "/var/lib/jetty/logs" \
@@ -103,11 +111,12 @@ RUN java -jar "$JETTY_HOME/start.jar" --approve-all-licenses --add-to-start="htt
 
 ENV PLATFORM_OPTS=
 ENV PLATFORM_JETTY_OPTS=
-ENV RUNTIME_OPTS "-DruntimeDirectory=/runtime-data -Dcom.metaphacts.config.baselocation=/runtime-data/config -DappsDirectory=/apps -Dconfig.environment.shiroConfig=/runtime-data/config/shiro.ini -Dlog4j.configurationFile=file:///var/lib/jetty/webapps/etc/log4j2.xml -Dorg.eclipse.jetty.server.Request.maxFormContentSize=104857600"
+ENV RUNTIME_OPTS "-DruntimeDirectory=/runtime-data -DstorageDirectory=/storage -Dcom.metaphacts.config.baselocation=/runtime-data/config -DappsDirectory=/apps -Dconfig.environment.shiroConfig=/runtime-data/config/shiro.ini -Dlog4j.configurationFile=file:///var/lib/jetty/webapps/etc/log4j2.xml -Dorg.eclipse.jetty.server.Request.maxFormContentSize=104857600"
 
 
 ENTRYPOINT ["/entrypoint.sh"]
 
 
 VOLUME /runtime-data
+VOLUME /storage
 # note: if /apps is also required as volume, it can be mounted as such from the docker-compose file

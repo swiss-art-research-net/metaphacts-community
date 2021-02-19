@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,7 +52,29 @@ import { getThumbnail } from 'platform/api/services/resource-thumbnail';
 
 import { NoResourceThumbnail } from './NoResourceThumbnail';
 
-export interface Props {
+/**
+ * Queries for and displays thumbnail image for specified resource IRI
+ * with fallback image when no thumbnail for a resource found.
+ *
+ * **Example**:
+ * ```
+ * <mp-resource-thumbnail iri='http://example.com'
+ *   no-image-uri='//no-image/available.png'
+ *   style='max-width: 400px; max-height: 100px;'>
+ * </mp-resource-thumbnail>
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <mp-resource-thumbnail iri='http://example.com'
+ *   style='max-width: 400px; max-height: 100px;'>
+ *   <mp-resource-thumbnail-fallback>
+ *     <span>Image not found!</span>
+ *   </mp-resource-thumbnail-fallback>
+ * </mp-resource-thumbnail>
+ * ```
+ */
+interface ResourceThumbnailConfig {
   /** IRI of resource to fetch thumbnail for. */
   iri: string;
   /** URI of image to display when resource has no thumbnail. */
@@ -65,33 +87,17 @@ export interface Props {
   title?: string;
 }
 
+export type ResourceThumbnailProps = ResourceThumbnailConfig;
+
 interface State {
   imageUri?: string | null;
   error?: any;
 }
 
-/**
- * Queries for and displays thumbnail image for specified by {@Rdf.Iri} resource
- * with fallback image when no thumbnail for a resource found.
- *
- * @example
- * <mp-resource-thumbnail iri='http://example.com'
- *   no-image-uri='//no-image/available.png'
- *   style="max-width: 400px; max-height: 100px;" />
- *
- * @example
- * <mp-resource-thumbnail iri='http://example.com'
- *   style="max-width: 400px; max-height: 100px;"
- * >
- *   <mp-resource-thumbnail-fallback>
- *     <span>Image not found!</span>
- *   </mp-resource-thumbnail-fallback>
- * </mp-resource-thumbnail>
- */
-export class ResourceThumbnail extends Component<Props, State> {
+export class ResourceThumbnail extends Component<ResourceThumbnailProps, State> {
   private subscription: Kefir.Subscription;
 
-  constructor(props: Props, context: any) {
+  constructor(props: ResourceThumbnailProps, context: any) {
     super(props, context);
     this.state = {};
   }
@@ -100,9 +106,10 @@ export class ResourceThumbnail extends Component<Props, State> {
     this.fetchThumbnailUrl(Rdf.iri(this.props.iri));
   }
 
-  componentWillReceiveProps(nextProps: Props) {
+  componentWillReceiveProps(nextProps: ResourceThumbnailProps) {
     const {iri} = this.props;
     if (nextProps.iri !== iri) {
+      this.setState({imageUri: undefined});
       this.subscription.unsubscribe();
       this.fetchThumbnailUrl(Rdf.iri(nextProps.iri));
     }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,11 +39,10 @@
  */
 package com.metaphacts.plugin;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -59,6 +58,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -189,9 +189,9 @@ public class PlatformPluginManagerTest {
         List<PluginWrapper> resolvedPlugins = pluginManager.getResolvedPlugins();
         List<PluginWrapper> unresolvedPlugins = pluginManager.getUnresolvedPlugins();
         
-        assertThat("there should be three apps in total", allPlugins.size(), is(3));
-        assertThat("there should be no resolved apps", resolvedPlugins.size(), is(0));
-        assertThat("there should be three unresolved apps", unresolvedPlugins.size(), is(3));
+        assertThat("there should be three apps in total", allPlugins.size(), Matchers.equalTo(3));
+        assertThat("there should be no resolved apps", resolvedPlugins.size(), Matchers.equalTo(0));
+        assertThat("there should be three unresolved apps", unresolvedPlugins.size(), Matchers.equalTo(3));
     }
     
     @Test
@@ -216,26 +216,26 @@ public class PlatformPluginManagerTest {
         List<PluginWrapper> resolvedPlugins = pluginManager.getResolvedPlugins();
         List<PluginWrapper> unresolvedPlugins = pluginManager.getUnresolvedPlugins();
         
-        assertThat("there should be three apps in total", allPlugins.size(), is(3));
-        assertThat("there should be two resolved apps", resolvedPlugins.size(), is(0));
-        assertThat("there should be one unresolved app", unresolvedPlugins.size(), is(3));
+        assertThat("there should be three apps in total", allPlugins.size(), Matchers.equalTo(3));
+        assertThat("there should be two resolved apps", resolvedPlugins.size(), Matchers.equalTo(0));
+        assertThat("there should be one unresolved app", unresolvedPlugins.size(), Matchers.equalTo(3));
         
         PluginWrapper plugin1 = pluginManager.getPlugin(app1.getAppId());
         PluginWrapper plugin2 = pluginManager.getPlugin(app2.getAppId());
         PluginWrapper plugin3 = pluginManager.getPlugin(app3.getAppId());
         PluginWrapper plugin4 = pluginManager.getPlugin(app4.getAppId());
         
-        assertThat("app1 should be created", plugin1.getPluginState(), is(PluginState.CREATED));
-        assertThat("app2 should be created", plugin2.getPluginState(), is(PluginState.CREATED));
-        assertThat("app3 should be created", plugin3.getPluginState(), is(PluginState.CREATED));
+        assertThat("app1 should be created", plugin1.getPluginState(), Matchers.equalTo(PluginState.CREATED));
+        assertThat("app2 should be created", plugin2.getPluginState(), Matchers.equalTo(PluginState.CREATED));
+        assertThat("app3 should be created", plugin3.getPluginState(), Matchers.equalTo(PluginState.CREATED));
         assertThat("app4 should not exist", plugin4, nullValue());
         
         // start plugins
         pluginManager.startPlugins();
         
-        assertThat("app1 should be created", plugin1.getPluginState(), is(PluginState.CREATED));
-        assertThat("app2 should be created", plugin2.getPluginState(), is(PluginState.CREATED));
-        assertThat("app3 should be created", plugin3.getPluginState(), is(PluginState.CREATED));
+        assertThat("app1 should be created", plugin1.getPluginState(), Matchers.equalTo(PluginState.CREATED));
+        assertThat("app2 should be created", plugin2.getPluginState(), Matchers.equalTo(PluginState.CREATED));
+        assertThat("app3 should be created", plugin3.getPluginState(), Matchers.equalTo(PluginState.CREATED));
     }
     
     @Test
@@ -258,24 +258,24 @@ public class PlatformPluginManagerTest {
         List<PluginWrapper> resolvedPlugins = pluginManager.getResolvedPlugins();
         List<PluginWrapper> unresolvedPlugins = pluginManager.getUnresolvedPlugins();
         
-        assertThat("there should be three apps in total", allPlugins.size(), is(3));
-        assertThat("there should be two resolved apps", resolvedPlugins.size(), is(3));
-        assertThat("there should be one unresolved app", unresolvedPlugins.size(), is(0));
+        assertThat("there should be three apps in total", allPlugins.size(), Matchers.equalTo(3));
+        assertThat("there should be two resolved apps", resolvedPlugins.size(), Matchers.equalTo(3));
+        assertThat("there should be one unresolved app", unresolvedPlugins.size(), Matchers.equalTo(0));
         
         PluginWrapper plugin1 = pluginManager.getPlugin(app1.getAppId());
         PluginWrapper plugin2 = pluginManager.getPlugin(app2.getAppId());
         PluginWrapper plugin3 = pluginManager.getPlugin(app3.getAppId());
         
-        assertThat("app1 should be resolved", plugin1.getPluginState(), is(PluginState.RESOLVED));
-        assertThat("app2 should be resolved", plugin2.getPluginState(), is(PluginState.RESOLVED));
-        assertThat("app3 should be resolved", plugin3.getPluginState(), is(PluginState.RESOLVED));
+        assertThat("app1 should be resolved", plugin1.getPluginState(), Matchers.equalTo(PluginState.RESOLVED));
+        assertThat("app2 should be resolved", plugin2.getPluginState(), Matchers.equalTo(PluginState.RESOLVED));
+        assertThat("app3 should be resolved", plugin3.getPluginState(), Matchers.equalTo(PluginState.RESOLVED));
         
         // start plugins
         pluginManager.startPlugins();
         
-        assertThat("app1 should be started", plugin1.getPluginState(), is(PluginState.STARTED));
-        assertThat("app2 should be started", plugin2.getPluginState(), is(PluginState.STARTED));
-        assertThat("app3 should be disstartedabled", plugin3.getPluginState(), is(PluginState.STARTED));
+        assertThat("app1 should be started", plugin1.getPluginState(), Matchers.equalTo(PluginState.STARTED));
+        assertThat("app2 should be started", plugin2.getPluginState(), Matchers.equalTo(PluginState.STARTED));
+        assertThat("app3 should be disstartedabled", plugin3.getPluginState(), Matchers.equalTo(PluginState.STARTED));
         
         // check order
         List<String> pluginIds = resolvedPlugins.stream().map(p -> p.getPluginId()).collect(Collectors.toList());

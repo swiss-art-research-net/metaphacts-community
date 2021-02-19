@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Component which can be used to create interactive HTML snippets.\nWith code highlight and copy to clipboard option.\n\n**Example**:\n```\n<mp-code-example>\n<semantic-table>...</semantic-table>\n</mp-code-example>\n```",
+    "properties": {
+        "showCodeByDefault": {
+            "type": "boolean"
+        },
+        "showCopyButton": {
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "showCodeByDefault",
+        "showCopyButton"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,18 +69,30 @@ interface FilePath {
   name: string;
 }
 
-export interface DirectFileUploaderState {
-  alertState?: AlertConfig;
-  progress?: number;
-  progressText?: string;
-
-  storages?: ConfigStorageStatus[];
-  storageId?: string;
-  path?: FilePath;
-  file?: File;
-}
-
-export interface DirectFileUploaderProps {
+/**
+ * Component which is used for uploading files directly into a storage.
+ * Supports any kind of storage type (file/system/app).
+ *
+ * You can redefine inner body by passing custom element as a child component.
+ *
+ * To have ability to upload files into storage you have to have permissions on this action.
+ * Permission should be defined this way in `shiro.ini`:
+ * ```
+ * storage:{write}:{storage-id}
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <mp-direct-file-uploader
+ *   placeholder='Test placeholder'
+ *   accept-pattern='application/*'
+ *   default-storage-id='runtime'
+ *   default-object-kind='file'
+ *   default-folder='/'>
+ * </mp-direct-file-uploader>
+ * ```
+ */
+export interface DirectFileUploaderConfig {
   /**
    * Allow specific types of files. See https://github.com/okonet/attr-accept for more information
    */
@@ -93,7 +105,7 @@ export interface DirectFileUploaderProps {
 
   /**
    * Object storage id. Used to detect upload folder based on object sotrages which are
-   * defined in '/runtime-data/config/data-storage.prop.
+   * defined in `/runtime-data/config/data-storage.prop`.
    */
   defaultStorageId?: string;
 
@@ -108,25 +120,20 @@ export interface DirectFileUploaderProps {
   defaultObjectKind?: string;
 }
 
-/**
- * Component which is used only for uploading files into storages. Can uses file/system/app storages.
- * @example:
- * <mp-direct-file-uploader
- *     placeholder="Test placeholder"
- *     accept-pattern="application/*"
- *     default-storage-id="runtime"
- *     default-object-kind="file"
- *     default-folder="/">
- * </mp-direct-file-uploader>
- *
- * To have ability to upload files into storage you have to have permissions on this action.
- * Permission should be defined this way:
- * storage:{write}:{storage-id}
- * You can define it in shiro.ini
- *
- * You can redefine inner body by passing custom body as a child component
- */
-export class DirectFileUploader extends Component<DirectFileUploaderProps, DirectFileUploaderState> {
+export type DirectFileUploaderProps = DirectFileUploaderConfig;
+
+interface State {
+  alertState?: AlertConfig;
+  progress?: number;
+  progressText?: string;
+
+  storages?: ConfigStorageStatus[];
+  storageId?: string;
+  path?: FilePath;
+  file?: File;
+}
+
+export class DirectFileUploader extends Component<DirectFileUploaderProps, State> {
   private readonly cancellation = new Cancellation();
 
   constructor(props: DirectFileUploaderProps, context: any) {
@@ -242,7 +249,7 @@ export class DirectFileUploader extends Component<DirectFileUploaderProps, Direc
   }
 
   onDropRejected = (fileRejections: FileRejection[], event: DropEvent) => {
-    const msg = fileRejections.map(r => 
+    const msg = fileRejections.map(r =>
         `Incompatible file type: expected ${this.props.acceptPattern}, got ${r.file.type}`
     ).join('\n');
     this.setState({
@@ -303,7 +310,7 @@ export class DirectFileUploader extends Component<DirectFileUploaderProps, Direc
       <div className={styles.row}>
         <div className={styles.FileUploader}>
           {this.state.progress ? <ReactBootstrap.ProgressBar
-            active={true}
+            animated
             min={0}
             max={100}
             now={this.state.progress}

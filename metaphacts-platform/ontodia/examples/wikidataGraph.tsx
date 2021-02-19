@@ -1,19 +1,21 @@
 import * as React from 'react';
 
 import {
-    Workspace, EventSource, CanvasCommands, SparqlDataProvider, SparqlGraphBuilder, WikidataSettings
+    Workspace, EventSource, SparqlDataProvider, SparqlGraphBuilder, WikidataSettings,
 } from '../src/ontodia/index';
 
 import { renderExample } from './resources/common';
-import { ExampleWorkspaceLayout } from './resources/exampleWorkspaceLayout';
+import {
+    ExampleWorkspaceLayout, ExampleWorkspaceLayoutCommands,
+} from './resources/exampleWorkspaceLayout';
 
 class WikidataGraphExample extends React.Component {
-    private commands = new EventSource<CanvasCommands>();
+    private commands = new EventSource<ExampleWorkspaceLayoutCommands>();
 
     render() {
         return (
             <Workspace ref={this.onWorkspaceMount}>
-                <ExampleWorkspaceLayout canvasCommands={this.commands} />
+                <ExampleWorkspaceLayout commands={this.commands} />
             </Workspace>
         );
     }

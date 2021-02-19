@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,6 +51,7 @@ import { Element, Link, LinkType } from './elements';
 import { Rect, Size, SizeProvider, isPolylineEqual } from './geometry';
 import { DefaultLinkRouter } from './linkRouter';
 import { DiagramModel } from './model';
+import { DiagramView } from './view';
 
 export interface RenderingStateOptions {
     readonly model: DiagramModel;
@@ -94,6 +95,7 @@ export class RenderingState implements SizeProvider {
     private linkLabelBounds = new WeakMap<Link, Rect | undefined>();
     private routings: RoutedLinks = new Map<string, RoutedLink>();
     private linkTemplates = new Map<LinkTypeIri, FilledLinkTemplate>();
+    private nextLinkTemplateIndex = 0;
 
     constructor(options: RenderingStateOptions) {
         this.model = options.model;
@@ -185,8 +187,11 @@ export class RenderingState implements SizeProvider {
             return existingTemplate;
         }
 
+        const index = this.nextLinkTemplateIndex;
+        this.nextLinkTemplateIndex++;
+
         const result = this.resolveLinkTemplate(linkType.id) || {};
-        const template = fillLinkTemplateDefaults(result);
+        const template = fillLinkTemplateDefaults(result, index);
 
         this.linkTemplates.set(linkType.id, template);
         this.source.trigger('changeLinkTemplates', {});
@@ -207,13 +212,16 @@ function sameRoutedLink(a: RoutedLink, b: RoutedLink) {
 }
 
 export interface FilledLinkTemplate {
-    markerSource: LinkMarkerStyle | undefined | null;
-    markerTarget: LinkMarkerStyle | undefined | null;
-    renderLink: (link: Link, model: DiagramModel) => LinkStyle;
+    readonly index: number;
+    readonly markerSource: LinkMarkerStyle | undefined | null;
+    readonly markerSourceId: string;
+    readonly markerTarget: LinkMarkerStyle | undefined | null;
+    readonly markerTargetId: string;
+    renderLink: (link: Link, view: DiagramView) => LinkStyle;
     setLinkLabel: ((link: Link, label: string) => void) | undefined | null;
 }
 
-function fillLinkTemplateDefaults(template: LinkTemplate): FilledLinkTemplate {
+function fillLinkTemplateDefaults(template: LinkTemplate, index: number): FilledLinkTemplate {
     const {
         markerSource,
         markerTarget = {},
@@ -221,13 +229,17 @@ function fillLinkTemplateDefaults(template: LinkTemplate): FilledLinkTemplate {
         setLinkLabel,
     } = template;
     return {
+        index,
         markerSource,
+        markerSourceId: `ontodia-mstart-${index}`,
         markerTarget: markerTarget ? {
+            ...markerTarget,
             d: markerTarget.d ?? 'M0,0 L0,8 L9,4 z',
             width: markerTarget.width ?? 9,
             height: markerTarget.height ?? 8,
             fill: markerTarget.fill ?? 'black',
         } : null,
+        markerTargetId: `ontodia-mend-${index}`,
         renderLink,
         setLinkLabel,
     };

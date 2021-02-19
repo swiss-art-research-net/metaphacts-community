@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,15 +40,11 @@
 package com.metaphacts.dataquality;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.rdf4j.common.iteration.Iterations;
 import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
@@ -58,24 +54,17 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.impl.TreeModel;
 import org.eclipse.rdf4j.model.util.Models;
-import org.eclipse.rdf4j.model.vocabulary.SP;
 import org.eclipse.rdf4j.model.vocabulary.SPIN;
-import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
 
 import com.google.common.base.Preconditions;
-import com.google.common.cache.Cache;
 import com.google.common.collect.Lists;
 import com.metaphacts.api.dto.querytemplate.QueryTemplate;
 import com.metaphacts.api.rest.client.QueryCatalogAPIClientImpl;
 import com.metaphacts.api.rest.client.QueryTemplateCatalogAPIClientImpl;
-import com.metaphacts.config.NamespaceRegistry;
-import com.metaphacts.data.rdf.container.LDPApiInternal;
 import com.metaphacts.data.rdf.container.LocalLDPAPIClient;
-import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.vocabulary.MPQA;
-import com.metaphacts.vocabulary.SHACL;
 
 public class ShaclUtils {
     
@@ -85,38 +74,7 @@ public class ShaclUtils {
     
     private ShaclUtils() {
     }
-    
-    public static void expandShapesFromQueryTemplates(RepositoryConnection conn,
-            Repository assetsRepository) {
 
-        List<Statement> stmts = Iterations
-                .asList(conn.getStatements(null, MPQA.hasSPINQueryTemplate, null));
-
-        List<Statement> toAdd = Lists.newArrayList();
-
-        try (RepositoryConnection assetsConnection = assetsRepository.getConnection()) {
-            stmts.stream().forEach(stmt -> {
-                Resource queryIRI = (Resource) stmt.getObject();
-
-                List<Statement> queryBodyStmts = Iterations.asList(
-                        assetsConnection.getStatements(queryIRI, SPIN.BODY_PROPERTY, null));
-                if (queryBodyStmts.isEmpty()) {
-                    throw new IllegalStateException("Referenced query template " + queryIRI.stringValue() + " does not have a body");
-                }
-                
-                queryBodyStmts.stream().findFirst().ifPresent(stmtQueryBody -> {
-                    Iterations
-                            .asList(assetsConnection.getStatements((Resource) stmtQueryBody.getObject(),
-                                    SP.TEXT_PROPERTY, null))
-                            .stream().findFirst().ifPresent(stmtQueryText -> {
-                                toAdd.add(VF.createStatement(stmt.getSubject(), SHACL.select,
-                                        stmtQueryText.getObject()));
-                            });
-                });
-            });
-        }
-        conn.add(toAdd);
-    }
     
     public static Model extractSubTreeBySubject(RepositoryConnection conn, IRI patternIRI) {
         Model model = new TreeModel();

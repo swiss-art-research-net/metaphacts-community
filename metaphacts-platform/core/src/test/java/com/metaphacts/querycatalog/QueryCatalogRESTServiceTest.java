@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,11 +44,9 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.FOAF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.metaphacts.api.dto.querytemplate.QueryArgument;
 
@@ -57,8 +55,6 @@ public class QueryCatalogRESTServiceTest {
     private static ValueFactory VF = SimpleValueFactory.getInstance();
     private static final String TEST_NS = "http://example.org";
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
     
     public QueryCatalogRESTServiceTest() {
         
@@ -70,19 +66,21 @@ public class QueryCatalogRESTServiceTest {
         Value val = QueryCatalogRESTService
                 .interpretInputParameter(
                         new QueryArgument(
-                                VF.createIRI(TEST_NS + "arg1"), "x", "", "x", XMLSchema.ANYURI), 
+                                VF.createIRI(TEST_NS + "arg1"), "x", "", "x", XSD.ANYURI), 
                         FOAF.PERSON.stringValue());
         Assert.assertEquals(FOAF.PERSON, val);
     }
     
     @Test
     public void testCastAnyURIFail() {
-        expectedException.expect(IllegalArgumentException.class);
-        QueryCatalogRESTService
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+
+            QueryCatalogRESTService
                 .interpretInputParameter(
                         new QueryArgument(
-                                VF.createIRI(TEST_NS + "arg1"), "x", "", "x", XMLSchema.ANYURI), 
+                                VF.createIRI(TEST_NS + "arg1"), "x", "", "x", XSD.ANYURI), 
                         "Some string");
+        });
     }
     
     @Test
@@ -100,15 +98,16 @@ public class QueryCatalogRESTServiceTest {
         Value val = QueryCatalogRESTService
                 .interpretInputParameter(
                         new QueryArgument(
-                                VF.createIRI(TEST_NS + "arg1"), "z", "", "z", XMLSchema.INT), 
+                                VF.createIRI(TEST_NS + "arg1"), "z", "", "z", XSD.INT), 
                         "11");
         Assert.assertEquals(VF.createLiteral(11), val);
     }
     
     @Test
     public void testAddNonExistingArgument() {
-        expectedException.expect(IllegalArgumentException.class);
-        QueryCatalogRESTService.interpretInputParameter(null, FOAF.PERSON.stringValue());
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            QueryCatalogRESTService.interpretInputParameter(null, FOAF.PERSON.stringValue());
+        });
     }
 
 }

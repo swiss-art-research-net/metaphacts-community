@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,9 @@
  */
 import * as React from 'react';
 
+import {
+    ConnectionsMenu, ConnectionsMenuProps, ConnectionsMenuCommands,
+} from '../widgets/connectionsMenu';
 import { ClassTree } from '../widgets/classTree';
 import { InstancesSearch, InstancesSearchCommands } from '../widgets/instancesSearch';
 import { LinkTypesToolbox } from '../widgets/linksToolbox';
@@ -53,25 +56,25 @@ import { WorkspaceColumn, WorkspaceItem, WorkspaceLayout, WorkspaceRow } from '.
 import { Canvas, CanvasCommands, CanvasProps } from './canvas';
 import { DefaultToolbar, DefaultToolbarProps } from './defaultToolbar';
 
+export type DefaultWorkspaceLayoutCommands =
+    CanvasCommands & ConnectionsMenuCommands & InstancesSearchCommands;
+
 export interface DefaultWorkspaceLayoutProps {
-    canvasCommands?: Events<CanvasCommands> & EventTrigger<CanvasCommands>;
-    instancesSearchCommands?: Events<InstancesSearchCommands> & EventTrigger<InstancesSearchCommands>;
+    commands?: Events<DefaultWorkspaceLayoutCommands>
+        & EventTrigger<DefaultWorkspaceLayoutCommands>;
     canvasProps?: Partial<CanvasProps>;
     toolbarProps?: Partial<DefaultToolbarProps>;
+    connectionsMenuProps?: Partial<ConnectionsMenuProps>;
 }
 
 export class DefaultWorkspaceLayout extends React.Component<DefaultWorkspaceLayoutProps> {
-    private readonly canvasCommands:
-        Events<CanvasCommands> & EventTrigger<CanvasCommands>;
-    private readonly instancesSearchCommands:
-        Events<InstancesSearchCommands> & EventTrigger<InstancesSearchCommands>;
+    private readonly commands: Events<DefaultWorkspaceLayoutCommands>
+        & EventTrigger<DefaultWorkspaceLayoutCommands>;
 
     constructor(props: DefaultWorkspaceLayoutProps) {
         super(props);
-        this.canvasCommands = this.props.canvasCommands
-            ?? new EventSource<CanvasCommands>();
-        this.instancesSearchCommands = this.props.instancesSearchCommands
-            ?? new EventSource<InstancesSearchCommands>();
+        this.commands = this.props.commands
+            ?? new EventSource<DefaultWorkspaceLayoutCommands>();
     }
 
     render() {
@@ -80,19 +83,22 @@ export class DefaultWorkspaceLayout extends React.Component<DefaultWorkspaceLayo
                 <WorkspaceRow>
                     <WorkspaceColumn defaultSize={275}>
                         <WorkspaceItem id='classes' heading='Classes'>
-                            <ClassTree canvasCommands={this.canvasCommands}
-                                instancesSearchCommands={this.instancesSearchCommands} />
+                            <ClassTree canvasCommands={this.commands}
+                                instancesSearchCommands={this.commands} />
                         </WorkspaceItem>
                         <WorkspaceItem id='instances' heading='Instances'>
-                            <InstancesSearch commands={this.instancesSearchCommands} />
+                            <InstancesSearch commands={this.commands} />
                         </WorkspaceItem>
                     </WorkspaceColumn>
                     <WorkspaceItem id='paper'>
-                        <Canvas commands={this.canvasCommands} {...this.props.canvasProps}>
-                            <DefaultToolbar canvasCommands={this.canvasCommands}
+                        <Canvas commands={this.commands} {...this.props.canvasProps}>
+                            <DefaultToolbar canvasCommands={this.commands}
                                 {...this.props.toolbarProps}
                             />
-                            <Halo />
+                            <ConnectionsMenu commands={this.commands}
+                                {...this.props.connectionsMenuProps}
+                            />
+                            <Halo commands={this.commands} />
                             <HaloLink />
                             <Navigator />
                         </Canvas>
@@ -102,7 +108,7 @@ export class DefaultWorkspaceLayout extends React.Component<DefaultWorkspaceLayo
                             <LinkTypesToolbox />
                         </WorkspaceItem>
                         <WorkspaceItem id='search' heading='Search in diagram'>
-                            <ElementSearch canvasCommands={this.canvasCommands} />
+                            <ElementSearch canvasCommands={this.commands} />
                         </WorkspaceItem>
                     </WorkspaceColumn>
                 </WorkspaceRow>

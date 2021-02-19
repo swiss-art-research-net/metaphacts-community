@@ -1,0 +1,50 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "This component finds print sections in pages and renders them into a iframe.\nIframe content is exported to PDF by the browsers print functionality.\n\nComponent can be used together with semantic-context, to specify the repository\nthat should be used for evaluation of `pages`.\n\n**Example**:\n```\n<mp-print-section id=\"1\" label=\"First Section\">\n     Section 1\n</mp-print-section>\n<mp-print-section id=\"1\" label=\"Second Section\">\n     Section 2<br>\n     This will be merged for printing with section one.\n</mp-print-section>\n<mp-print-section id=\"3\" label=\"Third Section\">\n     Section 3\n</mp-print-section>\n\n<mp-overlay-dialog title=\"Print Preview\" type=\"lightbox\">\n     <mp-overlay-dialog-trigger>\n         <button>Print Page</button>\n     </mp-overlay-dialog-trigger>\n     <mp-overlay-dialog-content>\n         <mp-print pages='[\"[[this]]\"]'></mp-print>\n     </mp-overlay-dialog-content>\n</mp-overlay-dialog>\n```",
+    "patternProperties": {
+        "^urlqueryparam": {
+            "type": "string"
+        }
+    },
+    "properties": {
+        "className": {
+            "description": "Custom class name",
+            "type": "string"
+        },
+        "htmlToPdf": {
+            "additionalProperties": true,
+            "description": "Options for client-side pdf generation.\nOnly if set, the export button will be displayed.\nExample:\n```\nhtml-to-pdf='{\n    \"filename\":\"test-[[this.label]].pdf\",\n   \"margin\": 0,\n   \"image\": {\"type\": \"jpeg\", \"quality\": 0.98},\n   \"html2canvas\": {\"dpi\": 192, \"letterRendering\": true},\n   \"jsPDF\": {\"unit\": \"in\", \"format\": \"letter\", \"orientation\": \"portrait\"}\n}'\n```",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "pages": {
+            "description": "Array of page IRIs",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Custom styles"
+        }
+    },
+    "propertyOrder": [
+        "pages",
+        "className",
+        "style",
+        "htmlToPdf"
+    ],
+    "required": [
+        "htmlToPdf",
+        "pages"
+    ],
+    "type": "object"
+}
+

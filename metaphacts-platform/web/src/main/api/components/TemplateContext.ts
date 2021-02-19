@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,7 +45,19 @@ import * as TemplateService from 'platform/api/services/template';
  * @author Alexey Morozov
  */
 export interface TemplateContext {
+  /**
+   * Local template scope available inside a component.
+   *
+   * This context property be used only for propagation;
+   * use `Component.appliedTemplateScope` for access inside the component itself.
+   */
   readonly templateScope: TemplateService.TemplateScope;
+  /**
+   * Data context for templates rendered inside a component.
+   *
+   * This context property be used only for propagation;
+   * use `Component.appliedDataContext` for access inside the component itself.
+   */
   readonly templateDataContext?: TemplateService.DataContext;
 }
 

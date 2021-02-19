@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -67,6 +67,7 @@ public class PageViewConfig {
     private String knowledgeGraphBarTemplateIri;
     private String breadcrumbsTemplateIri;
     private String knowledgePanelTemplateIri;
+    private String descriptionTemplateIri;
     private boolean showKnowledgeGraphBar;
     private boolean showKnowledgeGraphBarToggle;
     private boolean editable;
@@ -115,6 +116,18 @@ public class PageViewConfig {
 
     public void setGraphViewTemplateIri(String graphViewTemplateIri) {
         this.graphViewTemplateIri = graphViewTemplateIri;
+    }
+
+    /**
+     * 
+     * @return the resolved template IRI used to render a description
+     */
+    public String getDescriptionTemplateIri() {
+        return descriptionTemplateIri;
+    }
+
+    public void setDescriptionTemplateIri(String descriptionTemplateIri) {
+        this.descriptionTemplateIri = descriptionTemplateIri;
     }
 
     /**

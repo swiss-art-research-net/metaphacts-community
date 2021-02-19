@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,9 +60,7 @@ import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.rdfxml.RDFXMLWriter;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -73,8 +71,7 @@ import com.metaphacts.api.sparql.SparqlUtil.SparqlOperation;
  * @author Johannes Trame <jt@metaphacts.com>
  */
 public class SparqlUtilTest {
-    @Rule
-    public ExpectedException exception= ExpectedException.none();
+
     
     @Test
     public void testSelect() throws MalformedQueryException{

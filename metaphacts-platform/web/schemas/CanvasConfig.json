@@ -4,168 +4,7 @@
         "CSSProperties": {
             "type": "string"
         },
-        "EdgeStyle": {
-            "properties": {
-                "editable": {
-                    "type": "boolean"
-                },
-                "linkStyle": {
-                    "$ref": "#/definitions/LinkStyle"
-                },
-                "markerSource": {
-                    "$ref": "#/definitions/LinkMarkerStyle"
-                },
-                "markerTarget": {
-                    "$ref": "#/definitions/Partial<LinkMarkerStyle>"
-                }
-            },
-            "propertyOrder": [
-                "markerSource",
-                "markerTarget",
-                "linkStyle",
-                "editable"
-            ],
-            "type": "object"
-        },
-        "JSX.Element": {
-            "type": "object"
-        },
-        "LinkLabel": {
-            "properties": {
-                "attrs": {
-                    "properties": {
-                        "rect": {
-                            "properties": {
-                                "fill": {
-                                    "type": "string"
-                                },
-                                "stroke": {
-                                    "type": "string"
-                                },
-                                "stroke-width": {
-                                    "type": "number"
-                                }
-                            },
-                            "propertyOrder": [
-                                "fill",
-                                "stroke",
-                                "stroke-width"
-                            ],
-                            "type": "object"
-                        },
-                        "text": {
-                            "properties": {
-                                "fill": {
-                                    "type": "string"
-                                },
-                                "font-family": {
-                                    "type": "string"
-                                },
-                                "font-size": {
-                                    "type": [
-                                        "string",
-                                        "number"
-                                    ]
-                                },
-                                "font-weight": {
-                                    "anyOf": [
-                                        {
-                                            "enum": [
-                                                "bold",
-                                                "bolder",
-                                                "lighter",
-                                                "normal"
-                                            ],
-                                            "type": "string"
-                                        },
-                                        {
-                                            "type": "number"
-                                        }
-                                    ]
-                                },
-                                "stroke": {
-                                    "type": "string"
-                                },
-                                "stroke-width": {
-                                    "type": "number"
-                                },
-                                "text": {
-                                    "items": {
-                                        "$ref": "#/definitions/Literal"
-                                    },
-                                    "type": "array"
-                                }
-                            },
-                            "propertyOrder": [
-                                "fill",
-                                "stroke",
-                                "stroke-width",
-                                "font-family",
-                                "font-size",
-                                "font-weight",
-                                "text"
-                            ],
-                            "type": "object"
-                        }
-                    },
-                    "propertyOrder": [
-                        "rect",
-                        "text"
-                    ],
-                    "type": "object"
-                },
-                "position": {
-                    "type": "number"
-                },
-                "title": {
-                    "type": "string"
-                }
-            },
-            "propertyOrder": [
-                "position",
-                "title",
-                "attrs"
-            ],
-            "type": "object"
-        },
-        "LinkMarkerStyle": {
-            "properties": {
-                "d": {
-                    "type": "string"
-                },
-                "fill": {
-                    "type": "string"
-                },
-                "height": {
-                    "type": "number"
-                },
-                "stroke": {
-                    "type": "string"
-                },
-                "strokeWidth": {
-                    "type": "string"
-                },
-                "width": {
-                    "type": "number"
-                }
-            },
-            "propertyOrder": [
-                "fill",
-                "stroke",
-                "strokeWidth",
-                "d",
-                "width",
-                "height"
-            ],
-            "required": [
-                "d",
-                "fill",
-                "height",
-                "width"
-            ],
-            "type": "object"
-        },
-        "LinkStyle": {
+        "EdgeConnectionStyle": {
             "properties": {
                 "connection": {
                     "properties": {
@@ -190,29 +29,12 @@
                     ],
                     "type": "object"
                 },
-                "connector": {
-                    "properties": {
-                        "args": {
-                            "properties": {
-                            },
-                            "type": "object"
-                        },
-                        "name": {
-                            "type": "string"
-                        }
-                    },
-                    "propertyOrder": [
-                        "name",
-                        "args"
-                    ],
-                    "type": "object"
-                },
                 "label": {
-                    "$ref": "#/definitions/LinkLabel"
+                    "$ref": "#/definitions/EdgePropertyStyle"
                 },
                 "properties": {
                     "items": {
-                        "$ref": "#/definitions/LinkLabel"
+                        "$ref": "#/definitions/EdgePropertyStyle"
                     },
                     "type": "array"
                 }
@@ -220,78 +42,177 @@
             "propertyOrder": [
                 "connection",
                 "label",
-                "properties",
-                "connector"
+                "properties"
             ],
             "type": "object"
         },
-        "Literal": {
+        "EdgePropertyGroup": {
             "properties": {
-                "datatype": {
-                    "$ref": "#/definitions/NamedNode<string>",
-                    "description": "A NamedNode whose IRI represents the datatype of the literal."
+                "edgeTypes": {
+                    "description": "A set of edge types to apply this group if possible.\n\nIf empty then the group will not be matched against any edge types.\nIf undefined then the group will be matched against all edge types.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
                 },
-                "hashCode": {
-                    "description": "Only for compatibility with external hash-based collections (e.g. Immutable.js);\nuse Rdf.hashTerm() instead.",
+                "properties": {
+                    "description": "An ordered list of edge property type IRIs to group values from.\n\nThe group becomes applicable only if there is a matched or default value\nfor each property on the edge.",
+                    "items": {
+                        "$ref": "#/definitions/EdgePropertyGroupItem"
+                    },
+                    "type": "array"
+                },
+                "style": {
+                    "$ref": "#/definitions/EdgePropertyStyle",
+                    "description": "Style override for edge property group."
+                },
+                "template": {
+                    "description": "Template for rendering edge property group.\n\nNote: edge properties are currently rendered in the SVG context thus\nonly SVG-compatible components are supported inside directly.\n\n**Default**:\n```\n{{#each properties}}\n   {{#if @first}}{{label}}:{{/if}}\n   {{#each (lookup ../values typeIri)}}\n     {{label}}{{#unless @last}};{{/unless}}\n   {{/each}}\n   {{#unless @last}};{{/unless}}\n{{/each}}\n```",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "edgeTypes",
+                "properties",
+                "style",
+                "template"
+            ],
+            "required": [
+                "properties"
+            ],
+            "type": "object"
+        },
+        "EdgePropertyGroupItem": {
+            "properties": {
+                "default": {
+                    "description": "Default value for edge property.\n\nUndefined value means there is no default for corresponding property\nand the value is required to match this group.\n\nIf present, value will be converted to RDF literal\nwith `xsd:string` datatype.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Edge property type IRI to group values from.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "default"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
+        "EdgePropertyStyle": {
+            "properties": {
+                "content": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "position": {
+                    "type": "number"
+                },
+                "rectStyle": {
+                    "additionalProperties": {
+                    },
                     "propertyOrder": [
                     ],
                     "type": "object"
                 },
-                "language": {
-                    "description": "the language as lowercase BCP47 string (examples: en, en-gb)\nor an empty string if the literal has no language.",
-                    "type": "string"
-                },
-                "termType": {
-                    "description": "Contains the constant \"Literal\".",
-                    "enum": [
-                        "Literal"
+                "textStyle": {
+                    "additionalProperties": {
+                    },
+                    "propertyOrder": [
                     ],
-                    "type": "string"
+                    "type": "object"
                 },
-                "value": {
-                    "description": "The text value, unescaped, without language or type (example: Brad Pitt).",
+                "title": {
                     "type": "string"
                 }
             },
             "propertyOrder": [
-                "termType",
-                "value",
-                "language",
-                "datatype",
-                "equals",
-                "hashCode"
-            ],
-            "required": [
-                "datatype",
-                "language",
-                "termType",
-                "value"
+                "position",
+                "title",
+                "content",
+                "rectStyle",
+                "textStyle"
             ],
             "type": "object"
         },
-        "NamedNode<string>": {
-            "description": "Contains an IRI.",
+        "EdgeStyle": {
             "properties": {
-                "termType": {
-                    "description": "Contains the constant \"NamedNode\".",
-                    "enum": [
-                        "NamedNode"
-                    ],
-                    "type": "string"
+                "editable": {
+                    "type": "boolean"
                 },
-                "value": {
-                    "description": "The IRI of the named node (example: `http://example.org/resource`)",
-                    "type": "string"
+                "linkStyle": {
+                    "$ref": "#/definitions/EdgeConnectionStyle"
+                },
+                "markerSource": {
+                    "$ref": "#/definitions/LinkMarkerStyle"
+                },
+                "markerTarget": {
+                    "$ref": "#/definitions/Partial<LinkMarkerStyle>"
                 }
             },
             "propertyOrder": [
-                "termType",
-                "value",
-                "equals"
+                "markerSource",
+                "markerTarget",
+                "linkStyle",
+                "editable"
+            ],
+            "type": "object"
+        },
+        "LinkMarkerStyle": {
+            "properties": {
+                "d": {
+                    "default": "M0,0 L0,8 L9,4 z",
+                    "type": "string"
+                },
+                "fill": {
+                    "default": "black",
+                    "type": "string"
+                },
+                "fillOpacity": {
+                    "default": 1,
+                    "type": "number"
+                },
+                "height": {
+                    "default": 8,
+                    "type": "number"
+                },
+                "stroke": {
+                    "default": "none",
+                    "type": "string"
+                },
+                "strokeOpacity": {
+                    "default": 1,
+                    "type": "number"
+                },
+                "strokeWidth": {
+                    "default": 1,
+                    "type": "number"
+                },
+                "width": {
+                    "default": 9,
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "d",
+                "width",
+                "height",
+                "fill",
+                "fillOpacity",
+                "stroke",
+                "strokeWidth",
+                "strokeOpacity"
             ],
             "required": [
-                "termType",
-                "value"
+                "d",
+                "fill",
+                "height",
+                "width"
             ],
             "type": "object"
         },
@@ -299,31 +220,47 @@
             "description": "Make all properties in T optional",
             "properties": {
                 "d": {
+                    "default": "M0,0 L0,8 L9,4 z",
                     "type": "string"
                 },
                 "fill": {
+                    "default": "black",
                     "type": "string"
                 },
+                "fillOpacity": {
+                    "default": 1,
+                    "type": "number"
+                },
                 "height": {
+                    "default": 8,
                     "type": "number"
                 },
                 "stroke": {
+                    "default": "none",
                     "type": "string"
+                },
+                "strokeOpacity": {
+                    "default": 1,
+                    "type": "number"
                 },
                 "strokeWidth": {
-                    "type": "string"
+                    "default": 1,
+                    "type": "number"
                 },
                 "width": {
+                    "default": 9,
                     "type": "number"
                 }
             },
             "propertyOrder": [
-                "fill",
-                "stroke",
-                "strokeWidth",
                 "d",
                 "width",
-                "height"
+                "height",
+                "fill",
+                "fillOpacity",
+                "stroke",
+                "strokeWidth",
+                "strokeOpacity"
             ],
             "type": "object"
         },
@@ -365,33 +302,38 @@
             "description": "If true zoomToFit to call on each addElements event.",
             "type": "boolean"
         },
-        "children": {
-            "anyOf": [
-                {
-                    "$ref": "#/definitions/JSX.Element"
-                },
-                {
-                    "items": {
-                        "$ref": "#/definitions/JSX.Element"
-                    },
-                    "type": "array"
-                }
-            ],
-            "description": "Canvas widgets."
+        "defaultEdgePropertyStyle": {
+            "$ref": "#/definitions/EdgePropertyStyle",
+            "description": "Default custom style for the edge properties."
+        },
+        "defaultEdgePropertyTemplate": {
+            "description": "Default template to use when rendering edge property groups and single properties.\n\nNote: edge properties are currently rendered in the SVG context thus\nonly SVG-compatible components are supported inside directly.\n\n**Default**:\n```\n{{#each properties}}\n   {{#if @first}}{{label}}:{{/if}}\n   {{#each (lookup ../values typeIri)}}\n     {{label}}{{#unless @last}};{{/unless}}\n   {{/each}}\n   {{#unless @last}};{{/unless}}\n{{/each}}\n```",
+            "type": "string"
         },
         "defaultEdgeStyle": {
             "$ref": "#/definitions/EdgeStyle",
-            "description": "Default custom style of the links."
+            "description": "Default custom style for the edges."
         },
         "defaultNodeTemplate": {
             "description": "Default custom template of the elements.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
+        },
+        "edgePropertyGroups": {
+            "description": "Custom styles for the edge properties and how to combine them into groups.",
+            "items": {
+                "$ref": "#/definitions/EdgePropertyGroup"
+            },
+            "type": "array"
         },
         "edgeStyles": {
             "additionalProperties": {
                 "$ref": "#/definitions/EdgeStyle"
             },
-            "description": "Custom styles of the links.",
+            "description": "Custom styles for the edges.",
             "propertyOrder": [
             ],
             "type": "object"
@@ -405,21 +347,39 @@
                 "type": "string"
             },
             "description": "Custom templates of the elements.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "propertyOrder": [
             ],
             "type": "object"
+        },
+        "onlyGroupedEdgeProperties": {
+            "default": false,
+            "description": "Specifies to only show edge properties which are part of a defined property group.",
+            "type": "boolean"
         },
         "style": {
             "$ref": "#/definitions/CSSProperties",
             "description": "CSS classes for ontodia Canvas."
         },
+        "useDefaultNavigationMenu": {
+            "default": true,
+            "description": "Allows to disable rendering default `<ontodia-navigation-menu>` if none\nfound in the canvas children.\n\nThis setting also controls whether \"open navigation menu\" button will be\nshown inside the node when using default template.",
+            "type": "boolean"
+        },
         "useKnowledgePanel": {
-            "description": "Defines whether the info icon (to open the resource's knowledge panel)\nis shown inside the node. Note that this setting only applies to\ndefault templates.",
+            "default": false,
+            "description": "Defines whether \"open knowledge panel\" button will be\nshown inside the node when using default template.",
             "type": "boolean"
         },
         "zoomOptions": {
             "$ref": "#/definitions/ZoomOptions",
-            "default": "{min: 0.002, maxFit: 1}",
+            "default": {
+                "maxFit": 1,
+                "min": 0.002
+            },
             "description": "Zoom options."
         }
     },
@@ -432,7 +392,11 @@
         "defaultNodeTemplate",
         "edgeStyles",
         "defaultEdgeStyle",
-        "children",
+        "edgePropertyGroups",
+        "onlyGroupedEdgeProperties",
+        "defaultEdgePropertyTemplate",
+        "defaultEdgePropertyStyle",
+        "useDefaultNavigationMenu",
         "useKnowledgePanel"
     ],
     "type": "object"

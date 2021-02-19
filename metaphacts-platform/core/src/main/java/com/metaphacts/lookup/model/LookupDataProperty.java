@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,11 @@ package com.metaphacts.lookup.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import javax.validation.constraints.NotNull;
+import java.util.Objects;
+
 public class LookupDataProperty implements LookupProperty<String> {
+    @NotNull
     private String pid;
     @JsonProperty("v")
     private String value;
@@ -49,7 +53,7 @@ public class LookupDataProperty implements LookupProperty<String> {
     public LookupDataProperty() {
     }
 
-    public LookupDataProperty(String pid, String value) {
+    public LookupDataProperty(@NotNull String pid, String value) {
         this.pid = pid;
         this.value = value;
     }
@@ -60,7 +64,7 @@ public class LookupDataProperty implements LookupProperty<String> {
     }
 
     @Override
-    public void setPid(String pid) {
+    public void setPid(@NotNull String pid) {
         this.pid = pid;
     }
 
@@ -72,5 +76,20 @@ public class LookupDataProperty implements LookupProperty<String> {
     @Override
     public void setValue(String value) {
         this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        LookupDataProperty property = (LookupDataProperty) o;
+        return Objects.equals(pid, property.pid) && Objects.equals(value, property.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pid, value, "DP");
     }
 }

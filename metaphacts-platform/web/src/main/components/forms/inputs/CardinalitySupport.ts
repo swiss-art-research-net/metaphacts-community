@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -132,7 +132,7 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
     const canAddValue = canEdit && size < definition.maxOccurs;
     const canRemoveValue = canEdit && size > definition.minOccurs && size > 0;
     const fieldLabel = (getPreferredLabel(definition.label) || 'value').toLowerCase();
-    const children = this.renderChildren(canRemoveValue);
+    const children = this.renderChildren(canRemoveValue, fieldLabel);
 
     return D.div(
       {className: COMPONENT_NAME},
@@ -153,7 +153,8 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
             [`${COMPONENT_NAME}__add-value--another`]: size > 0,
           }),
           onClick: this.addNewValue,
-        }, `+ Add ${fieldLabel}`)
+          href: '#',
+        }, `Add ${fieldLabel}`)
       ) : null
     );
   }
@@ -165,7 +166,7 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
     });
   }
 
-  private renderChildren(canRemoveValue: boolean) {
+  private renderChildren(canRemoveValue: boolean, fieldLabel: string) {
     this.ensureValueKeys(this.props.values.length);
 
     const childIsInputGroup = isInputGroup(this.props.children);
@@ -194,12 +195,32 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
           refs[inputIndex] = input;
         }
       ),
-      canRemoveValue
-        ? createElement(Button, {
-            className: COMPONENT_NAME + '__remove-value',
-            onClick: () => this.removeValue(index),
-          }, D.span({className: 'fa fa-times'}))
-        : undefined));
+      this.renderRemoveValueButton(index, canRemoveValue, childIsInputGroup, fieldLabel)
+    ));
+  }
+
+  private renderRemoveValueButton(
+    index: number,
+    canRemove: boolean,
+    isGroup: boolean,
+    fieldLabel: string
+  ) {
+    if (!canRemove) {
+      return null;
+    }
+    if (isGroup) {
+      return createElement('a', {
+        className: COMPONENT_NAME + '__remove-value',
+        onClick: e => this.removeValue(e, index),
+        href: '#',
+      }, `Remove ${fieldLabel}`);
+    } else {
+      return createElement(Button, {
+        className: COMPONENT_NAME + '__remove-value',
+        variant: 'secondary',
+        onClick: e => this.removeValue(e, index),
+      }, D.span({className: 'fa fa-trash'}));
+    }
   }
 
   private ensureValueKeys(valueCount: number) {
@@ -208,13 +229,20 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
     }
   }
 
-  private addNewValue = () => {
+  private addNewValue = (e: React.MouseEvent) => {
+    e.preventDefault();
     this.onValuesChanged(() => [...this.props.values, FieldValue.empty]);
   }
 
-  private removeValue = (valueIndex: number) => {
+  private removeValue = (e: React.MouseEvent, valueIndex: number) => {
+    e.preventDefault();
     this.valueKeys.splice(valueIndex, 1);
-    this.onValuesChanged(() => FieldState.deleteValueAtIndex(this.props.values, valueIndex));
+    this.onValuesChanged(() => {
+      const handler = this.getHandler();
+      const removedValue = this.props.values[valueIndex];
+      handler.discardSingle(removedValue);
+      return FieldState.deleteValueAtIndex(this.props.values, valueIndex);
+    });
   }
 
   private onValuesChanged(
@@ -339,8 +367,9 @@ class CardinalitySupportHandler implements MultipleValuesHandler {
   }
 
   private validateThoughChildInputs = (value: FieldValue) => {
-    if (FieldValue.isEmpty(value)) { return value; }
-    const cleanValue = FieldValue.setErrors(value, FieldError.noErrors);
+    const otherErrors = FieldValue.getErrors(value).filter(e => e.kind !== ErrorKind.Input);
+    const cleanValue = FieldValue.setErrors(value, otherErrors);
+    if (FieldValue.isEmpty(cleanValue)) { return cleanValue; }
     // combine errors from every child input
     let validated: FieldValue = cleanValue;
     for (const handler of this.handlers) {
@@ -360,6 +389,24 @@ class CardinalitySupportHandler implements MultipleValuesHandler {
       }
     }
     return checkCardinalityAndDuplicates(preparedValues, this.definition);
+  }
+
+  discard({values, errors}: ValuesWithErrors): void {
+    for (const value of values) {
+      this.discardSingle(value);
+    }
+  }
+
+  discardSingle(value: FieldValue): void {
+    for (const handler of this.handlers) {
+      handler.discard?.(value);
+    }
+  }
+
+  beforeFinalize(): void {
+    for (const handler of this.handlers) {
+      handler.beforeFinalize?.();
+    }
   }
 
   finalize(

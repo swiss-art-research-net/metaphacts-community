@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,8 +41,11 @@ package com.metaphacts.security;
 
 import java.io.*;
 import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -77,6 +80,7 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
+import org.pac4j.core.profile.CommonProfile;
 
 /**
  * @author Denis Ostapenko
@@ -181,5 +185,37 @@ public class SecurityService {
             userName = "unknown";
         }
         return userName;
+    }
+
+    /**
+     * Return additional user attributes. 
+     * 
+     * <p>
+     * User attributes may be any additional information, e.g. first and 
+     * last name, email address, etc.
+     * </p>
+     * <p>
+     * The actually provided information depends on the underlying authentication system. 
+     * </p>
+     * 
+     * @return map of user attributes. May be empty if there is no additional data.
+     */
+    public static Map<String, Object> getUserAttributes() {
+        Map<String, Object> attributes = Collections.emptyMap();
+        Object principal = SecurityUtils.getSubject().getPrincipal();
+        if (principal instanceof Pac4jPrincipal) {
+            // SSO systems supported by Pac4j typically provide additional
+            // information in the corresponding user profile
+            Pac4jPrincipal pac4jPrincipal = (Pac4jPrincipal) principal;
+            CommonProfile profile = pac4jPrincipal.getProfile();
+            Map<String, Object> attributeMap = profile.getAttributes();
+            if (attributeMap != null && !attributeMap.isEmpty()) {
+                // clone attribute map
+                attributes = new HashMap<>(attributeMap);
+            }
+        }
+        // open: handle LDAP and local accounts
+        
+        return attributes;
     }
 }

@@ -1,0 +1,56 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "Automatically truncates long text snippets.\n\n**Example**:\n```\n<mp-text-truncate>Text</mp-text-truncate>\n```\n\n**Example**:\n```\n<mp-text-truncate lines='2' expand='{{> expand}}' collapse='{{> collapse}}'>\n   <template id='expand'><button>Expand</button></template>\n   <template id='collapse'><button>Collapse</button></template>\n   Text\n</mp-text-truncate>\n```\n\n**Example**:\n```\n<mp-text-truncate truncate='... <a href=\"#\">Read more</a>'>\n   Text\n</mp-text-truncate>\n```",
+    "properties": {
+        "className": {
+            "type": "string"
+        },
+        "collapse": {
+            "description": "Template for an element that is used to collapse text.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
+            "type": "string"
+        },
+        "expand": {
+            "description": "Template for an element that is used to expand text.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
+            "type": "string"
+        },
+        "lines": {
+            "default": 1,
+            "description": "Specifies how many lines of text should be preserved until it gets truncated.",
+            "type": "number"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties"
+        },
+        "truncate": {
+            "description": "Template for content that is added to the end of the text in case it is truncated.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "lines",
+        "truncate",
+        "expand",
+        "collapse",
+        "className",
+        "style"
+    ],
+    "type": "object"
+}
+

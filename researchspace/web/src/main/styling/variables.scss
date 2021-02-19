@@ -46,7 +46,7 @@ $brand-danger: #E74C3C;
 // react-select
 $select-menu-max-height: 240px;
 
-$navbar-default-bg: $brand-primary;
+$navbar-default-bg: $primary;
 
 /* override react-joyride styling */
 $joyride-color: $brand-danger;
@@ -58,18 +58,18 @@ $brand-info: #d9edf7;
 $btn-success-color: #FFF;
 $link-color: #3498DB;
 $link-hover-color: darken($link-color, 10%);
-$btn-default-color: $gray-darker;
-$btn-default-bg: #FFF;
+$btn-secondary-color: $gray-darker;
+$btn-secondary-bg: #FFF;
 $btn-primary-color: #FFF;
 $btn-danger-color: #FFF;
-$btn-default-border: #CCC;
+$btn-secondary-border: #CCC;
 $navbar-default-link-hover-color: #FFF;
 $navbar-default-link-hover-bg: darken($navbar-default-bg, 10%);
 
 $table-border-color: $rs-color-lightgrey;
 $nav-tabs-border-color: $table-border-color;
 $panel-default-border: $table-border-color;
-$input-border-focus: darken($btn-default-border, 20%);
+$input-border-focus: darken($btn-secondary-border, 20%);
 
 $pagination-color:                     $link-color;
 $pagination-bg:                        transparent;
@@ -80,7 +80,7 @@ $pagination-hover-bg:                  $gray-lighter;
 $pagination-hover-border:              transparent;
 
 $pagination-active-color:              #FFF;
-$pagination-active-bg:                 $brand-primary;
+$pagination-active-bg:                 $primary;
 $pagination-active-border:             transparent;
 
 $pagination-disabled-color:            $gray-light;
@@ -88,7 +88,7 @@ $pagination-disabled-bg:               #FFF;
 $pagination-disabled-border:           transparent;
 
 /** bootstrap overrides**/
-$btn-default-bg: white;
+$btn-secondary-bg: white;
 $dropdown-bg: white;
 
 /** page dimension overrides **/

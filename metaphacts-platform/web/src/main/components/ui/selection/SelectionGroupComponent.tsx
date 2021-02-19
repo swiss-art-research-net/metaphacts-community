@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,31 @@ import * as PropTypes from 'prop-types';
 
 import { Component, ComponentChildContext } from 'platform/api/components';
 
+/**
+ * Stores all selected items, so the `<mp-selection-toggle>` component will be able
+ * to restore its state when it gets re-rendered.
+ *
+ * **Example**:
+ * ```
+ * <mp-selection-group>
+ *   <div>
+ *     <mp-selection-action-choice id='Action' title='With selected ...' selection='example'>
+ *       <!-- actions -->
+ *     </mp-selection-action-choice>
+ *
+ *     <mp-selection-toggle selection='example' tag='http://example.com/resource1'>
+ *     </mp-selection-toggle>
+ *
+ *     <mp-selection-toggle selection='example' tag='http://example.com/resource2'>
+ *     </mp-selection-toggle>
+ *   </div>
+ * </mp-selection-group>
+ * ```
+ */
+interface SelectionGroupConfig {}
+
+export type SelectionGroupProps = SelectionGroupConfig;
+
 export interface SelectionGroupContext {
   getSelectionValue(tag: string): boolean;
   onChange(values: { [tag: string]: boolean }): void;
@@ -52,26 +77,7 @@ export const SelectionGroupContextTypes = {
   onChange: PropTypes.any.isRequired,
 };
 
-/**
- * Stores all selected items, so the <mp-selection-toggle> component will be able to restore
- * its state when it gets re-rendered
- *
- * @example
- * <mp-selection-group>
- *     <div>
- *        <mp-selection-action-choice id='Action' title='With selected ...' selection='example'>
- *            [[!-- Actions --]]
- *        </mp-selection-action-choice>
- *
- *        <mp-selection-toggle selection='example' tag='http://example.com/resource1'>
- *        </mp-selection-toggle>
- *
- *        <mp-selection-toggle selection='example' tag='http://example.com/resource2'>
- *        </mp-selection-toggle>
- *     </div>
- * </mp-selection-group>
- */
-export class SelectionGroupComponent extends Component<{}, {}> {
+export class SelectionGroup extends Component<SelectionGroupProps, {}> {
 
   static readonly childContextTypes = {
     ...Component.childContextTypes,
@@ -93,4 +99,4 @@ export class SelectionGroupComponent extends Component<{}, {}> {
   }
 }
 
-export default SelectionGroupComponent;
+export default SelectionGroup;

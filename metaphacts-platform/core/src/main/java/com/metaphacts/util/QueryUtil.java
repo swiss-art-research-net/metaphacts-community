@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,7 @@ package com.metaphacts.util;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.query.algebra.TupleExpr;
 import org.eclipse.rdf4j.query.parser.ParsedOperation;
+import org.eclipse.rdf4j.repository.sparql.query.QueryStringUtil;
 
 import com.metaphacts.sparql.renderer.MpSparqlQueryRenderer;
 
@@ -77,9 +78,11 @@ public class QueryUtil {
      * render the supplied {@link Value} as a SPARQL string.
      *
      * @param value the value to render
-     * @return a SPARQL string representation of the supplied value (e.g. &lt;http://example.org/&gt; in case of an IRI)
+     * @return a SPARQL string representation of the supplied value (e.g.
+     *         &lt;http://example.org/&gt; in case of an IRI)
+     * @throws IllegalArgumentException if Value is a BNode
      */
     public static String toSPARQL(Value value) {
-        return new MpSparqlQueryRenderer().renderValue(value);
+        return QueryStringUtil.valueToString(value);
     }
 }

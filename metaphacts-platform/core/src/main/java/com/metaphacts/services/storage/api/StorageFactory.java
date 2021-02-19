@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,7 +45,7 @@ import org.apache.commons.configuration2.Configuration;
  * @author Johannes Trame <jt@metaphacts.com>
  *
  */
-public interface StorageFactory {
+public interface StorageFactory<T extends StorageConfig> {
     /**
      * Unique key to identify the type of a storage, which can be instantiated via the factory. The
      * service loader will populate the {@link StorageRegistry} with all types and respective
@@ -66,10 +66,7 @@ public interface StorageFactory {
      * Instantiates a storage with the respective {@link StorageConfig} and
      * {@link StorageCreationParams}.
      */
-    default ObjectStorage makeStorage(
-        StorageConfig config,
+    ObjectStorage createStorage(T config,
         StorageCreationParams creationParams
-    ) throws StorageException {
-        return config.createStorage(creationParams);
-    }
+    ) throws StorageException;
 }

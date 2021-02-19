@@ -9,7 +9,7 @@
             }
           } 
       } LIMIT 1000'
-    template='{{#each bindings}}{{#ifCond number.value ">=" 1000}}<bs-alert bs-style="warning"> The following table is limited to show only <strong>1000</strong> named graphs.</bs-alert> {{else}} <bs-alert bs-style="info"> The repository contains <strong>{{number.value}}</strong> distinct named graphs.</bs-alert> {{/ifCond}}{{/each}}'>
+    template='{{#each bindings}}{{#ifCond number.value ">=" 1000}}<bs-alert variant="warning"> The following table is limited to show only <strong>1000</strong> named graphs.</bs-alert> {{else}} <bs-alert variant="info"> The repository contains <strong>{{number.value}}</strong> distinct named graphs.</bs-alert> {{/ifCond}}{{/each}}'>
 </semantic-query>
 
 <semantic-table prefetch-labels=false query='
@@ -53,7 +53,7 @@
           '></semantic-query>
     </template>
     <template id='export'>
-        <bs-dropdown-button id="download" bs-size="xsmall" title="" class="mp-rdf-graph-action__download-dropdown"
+        <bs-dropdown-button id="download" size="xsmall" title="" class="mp-rdf-graph-action__download-dropdown"
             no-caret="true">
             <bs-menu-item event-key=1>
                 <mp-graph-store-action title="Download" action="GET" graphuri="{{graph.value}}" file-ending="trig"

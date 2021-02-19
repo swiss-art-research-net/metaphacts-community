@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,7 +77,7 @@ public class FederatedLookupService extends AbstractLookupService<FederatedLooku
     @Override
     protected String getDefaultLookupCacheConfig() {
         // do not perform caching by default, rely on caches from related services
-        return AbstractLookupService.CACHESPEC_NOCACHE;
+        return AbstractLookupService.CACHE_SPEC_NOCACHE;
     }
 
     /**
@@ -86,34 +86,59 @@ public class FederatedLookupService extends AbstractLookupService<FederatedLooku
     @Override
     protected LookupResponse doLookup(LookupRequest request) throws LookupProcessingException {
         List<Throwable> errors = Lists.newCopyOnWriteArrayList();
-        Collection<LookupService> lookupServices = getLookupServices().values();
-        if (lookupServices == null || lookupServices.isEmpty()) {
+        Collection<Map.Entry<LookupServiceMember, LookupService>> lookupEntries = getLookupServices().entrySet();
+        if (lookupEntries == null || lookupEntries.isEmpty()) {
             // no services, return empty result
             return new LookupResponse(request.getQueryId(), Collections.emptyList());
         }
-        if (lookupServices.size() == 1) {
+        if (lookupEntries.size() == 1) {
             // only one service, simply pass through
-            LookupService singleLookupService = lookupServices.iterator().next();
-            return singleLookupService.lookup(request);
+            Map.Entry<LookupServiceMember, LookupService> entry = lookupEntries.iterator().next();
+            LookupServiceMember member = entry.getKey();
+            LookupService singleLookupService = entry.getValue();
+            LookupResponse memberResponse = singleLookupService.lookup(request);
+            return this.adjustScoresForSpecificService(memberResponse, member);
         }
         // process all lookup requests in parallel using system ForkJoin pool (parallel stream)
-        List<LookupResponse> results = lookupServices.parallelStream()
-                        // skip any federated services to avoid cycles
-                        .filter(service -> !(service instanceof FederatedLookupService))
-                        .map(service -> {
-                            try {
-                                return service.lookup(request);
-                            } catch (LookupProcessingException e) {
-                                logger.warn("Failed to lookup data from service {}: {}", service, e.getMessage());
-                                logger.debug("Details:",  e);
-                                errors.add(e);
-                                // null will be filtered below and ignored
-                                return null;
-                            }
-                        })
-                        .filter(result -> result != null)
-                        .collect(Collectors.toList());
+        List<LookupResponse> results = lookupEntries.parallelStream()
+            // skip any federated services to avoid cycles
+            .filter(entry -> !(entry.getValue() instanceof FederatedLookupService))
+            .map(entry -> {
+                LookupService service = entry.getValue();
+
+                try {
+                    return this.adjustScoresForSpecificService(service.lookup(request), entry.getKey());
+                } catch (LookupProcessingException e) {
+                    logger.warn("Failed to lookup data from service {}: {}", service, e.getMessage());
+                    logger.debug("Details:",  e);
+                    errors.add(e);
+                    // null will be filtered below and ignored
+                    return null;
+                }
+            })
+            .filter(result -> result != null)
+            .collect(Collectors.toList());
         return combineResults(request, results, errors);
+    }
+
+    /**
+     * Adjust scores per member.
+     * <p>
+     * NOTE: any local score adjustments on the merged scores are done in addition to the per-member score adjustment!
+     * </p>
+     * 
+     * @param response response to adjust
+     * @param serviceMember member the results of which to adjust
+     * @return adjusted response
+     * @throws LookupProcessingException
+     */
+    protected LookupResponse adjustScoresForSpecificService(LookupResponse response, LookupServiceMember serviceMember) throws LookupProcessingException {
+        LookupScoreOptions localScoreOptions = serviceMember.getLookupScoreOptions();
+        if (localScoreOptions == null) {
+            return response;
+        } else {
+            return adjustResponseScores(response, localScoreOptions);
+        }
     }
 
     protected LookupResponse combineResults(LookupRequest request, List<LookupResponse> results, List<Throwable> errors) {
@@ -130,16 +155,17 @@ public class FederatedLookupService extends AbstractLookupService<FederatedLooku
         return new LookupResponse(request.getQueryId(), allCandidates);
     }
 
-    protected Map<String, LookupService> getLookupServices() {
-        List<String> serviceMembers = config.getServiceMembers();
+    protected Map<LookupServiceMember, LookupService> getLookupServices() {
+        List<LookupServiceMember> serviceMembers = config.getServiceMembers();
         if (serviceMembers != null && !serviceMembers.isEmpty()) {
             // collect explicitly configured service members
             return serviceMembers.stream()
-                    .collect(Collectors.<String, String, LookupService>toMap(member -> member, 
-                                               member -> lookupServiceManager.getLookupServiceByName(member)
-                                                       .orElseThrow(() -> new LookupServiceConfigException("No such LookupService: " + member))));
+                .collect(Collectors.toMap(member -> member,
+                    member -> lookupServiceManager.getLookupServiceByName(member.getName())
+                        .orElseThrow(() -> new LookupServiceConfigException("No such LookupService: " + member.getName()))));
         }
         // use all lookup services
-        return lookupServiceManager.getLookupServices();
+        return lookupServiceManager.getLookupServices().entrySet().stream()
+            .collect(Collectors.toMap(entry -> new LookupServiceMember(entry.getKey()), entry -> entry.getValue()));
     }
 }

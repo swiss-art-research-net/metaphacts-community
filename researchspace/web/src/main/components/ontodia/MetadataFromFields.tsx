@@ -128,7 +128,7 @@ export class MetadataFromFields extends React.Component<MetadataFromFieldsProps,
     const typeClosure = await observableToCancellablePromise(typeRequest.query(), ct);
 
     for (const entityType of entityTypes) {
-      if (context.collectedMetadata.has(entityType)) {
+      if (context.collectedEntities.has(entityType)) {
         continue;
       }
 
@@ -150,7 +150,8 @@ export class MetadataFromFields extends React.Component<MetadataFromFieldsProps,
 
       const entityFields = [...headFields, ...otherFields];
 
-      context.collectedMetadata.set(entityType, {
+      context.collectedEntities.set(entityType, {
+        type: 'entity',
         entityType,
         fields: entityFields,
         fieldByIri: Immutable.Map(

@@ -53,7 +53,7 @@ export class OntodiaPanel extends Component<OntodiaProps, {}> {
   }
 
   private highlightItems(iris: Array<string> | undefined) {
-    const view = this.ontodia.workspace.getDiagram();
+    const {view} = this.ontodia.workspace.getContext();
     let highlighter: Highlighter;
     if (iris) {
       const highlightedElements = new Set<string>();
@@ -74,13 +74,13 @@ export class OntodiaPanel extends Component<OntodiaProps, {}> {
 
   private centerToElement(iri: string) {
     const workspace = this.ontodia.workspace;
-    const model = workspace.getModel();
+    const {model, editor} = workspace.getContext();
     const selectedElement = model.elements.find(element => element.iri === iri);
     if (selectedElement) {
       workspace.forEachCanvas(canvas => {
         canvas.getCommands().trigger('zoomToContent', {elements: [selectedElement], links: []});
       });
-      workspace.getEditor().setSelection([selectedElement]);
+      editor.setSelection([selectedElement]);
     }
   }
 

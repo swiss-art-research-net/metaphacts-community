@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,9 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import {
-  ReactElement, Children, Props as ReactProps, cloneElement, createFactory, createElement,
-} from 'react';
+import { ReactElement, Children, cloneElement, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import * as maybe from 'data.maybe';
 import * as Kefir from 'kefir';
@@ -50,29 +48,38 @@ import { LdpService } from 'platform/api/services/ldp';
 import { getOverlaySystem } from 'platform/components/ui/overlay';
 import { CreateResourceDialog } from './CreateResourceDialog';
 
-
 const {graph, iri, triple, literal} = Rdf;
 const {rdfs, rdf} = vocabularies;
 
 import './create-ldp-resource.scss';
 
-export interface CreateNewResourceProps  extends ReactProps<CreateNewResourceComponent> {
-  // initial title for created object
+/**
+ * Creates new LDP resource.
+ *
+ * Currently uses hard-coded `rdfs:label` property to represent object title.
+ */
+interface LdpCreateNewResourceActionConfig {
+  /**
+   * Initial title for created object.
+   */
   title?: string;
-  // prompt to enter title
+  /**
+   * Prompt to enter title.
+   */
   placeholder?: string;
-  // IRI of LDP container to create resource within
+  /**
+   * IRI of LDP container to create resource within.
+   */
   container: string;
-  // IRI of resource type
+  /**
+   * IRI of resource type.
+   */
   type: string;
 }
 
-/**
- * Creates new LDP resource. Currently hard-coded usage of rdfs:label to represent object title.
- * Next improvements are to allow placing a semantic form for definition of resource fields and probably sparql construct
- * parametrized with entered values to actually persist them.
- */
-class CreateNewResourceComponent extends Component<CreateNewResourceProps, {}>  {
+export interface CreateNewResourceProps extends LdpCreateNewResourceActionConfig {}
+
+export class CreateNewResource extends Component<CreateNewResourceProps, {}>  {
   public render() {
     const child = Children.only(this.props.children) as ReactElement<any>;
     const props = {
@@ -128,7 +135,4 @@ class CreateNewResourceComponent extends Component<CreateNewResourceProps, {}>  
     }
 }
 
-export type component = CreateNewResourceComponent;
-export const component = CreateNewResourceComponent;
-export const factory = createFactory(component);
-export default component;
+export default CreateNewResource;

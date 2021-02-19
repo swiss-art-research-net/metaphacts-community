@@ -45,8 +45,15 @@
     </div>
     <div style="clear:both;"></div>
 
-    <h2>Configuration </h2>
+    <h2>Configuration</h2>
     <mp-documentation type="SemanticQueryConfig"></mp-documentation>
+
+    <h3>Template Data Context</h3>
+    When using <code>template</code> attribute the following properties are available in the template:
+    <mp-documentation type='SemanticQueryTemplateData'
+      disable-transform-attributes=true
+      hide-required-label=true>
+    </mp-documentation>
 
     <h2>Examples </h2>
     <h3>No (Default) Template</h3>
@@ -55,8 +62,7 @@
         If no <code>template</code> is defined, all tuples for the <b>first projection variable</b> will we rendered as a comma-separated list.
       </div>
       <div class="documentation__example__demo" id='demo2'>
-        <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <semantic-query 
   query='
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -69,10 +75,9 @@
         (person:mike "Mike")
       }
     }
-  '
-></semantic-query>
-]]>       
-        </mp-code-example>
+  '>
+</semantic-query>
+</mp-code-example>
       </div>
     </div>
 
@@ -83,7 +88,6 @@
       </div>
       <div class="documentation__example__demo" id='demo3'>
         <mp-code-example>
-<![CDATA[
 <semantic-query 
   query='
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -97,8 +101,7 @@
       }
     }
   ' 
-  template='{{> template}}'
->
+  template='{{> template}}'>
   <template id='template'>
     <b>My List:</b>
     <ul>
@@ -113,8 +116,7 @@
     </ul>
   </template>
 </semantic-query>
-]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
 
@@ -127,8 +129,7 @@
         In addition, the template will be rendered as inline element by passing the style string <code>style="display: inline;"</code> down to the template item.
       </div>
       <div class="documentation__example__demo" id='demo4'>
-        <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <semantic-query 
   query='
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -143,15 +144,13 @@
     }
   ' 
   template='{{> template}}'
-  style='display: inline;'
->
+  style='display: inline;'>
   <template id='template'>
     {{#each bindings}}{{#if @first}}{{else}}{{#if @last}} and {{else}}, {{/if}} {{/if}}
       <semantic-link title="{{name.value}}" uri="{{person.value}}">{{name.value}}</semantic-link>{{/each}} are persons on my list.
   </template>
 </semantic-query>
-]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
   </div>

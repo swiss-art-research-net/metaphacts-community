@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -70,6 +70,8 @@ export interface SemanticEntitySearchConfig extends SemanticSearchKeywordConfig 
             SELECT ?resource WHERE {
               SERVICE Repository:lookup {
                 ?resource lookup:token ?__token__ .
+                ?resource lookup:name ?name .
+                ?resoure lookup:score ?score .
               }
               BIND(STRLEN(?name) as ?length)
             } ORDER BY DESC(?score) ?length`
@@ -97,7 +99,12 @@ export interface SemanticEntitySearchConfig extends SemanticSearchKeywordConfig 
     resourceBindingName?: string;
 
     /**
-     * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for suggestion item.
+     * Template for suggestion item.
+     *
+     * @mpSeeResource {
+     *   "name": "Client-side templating",
+     *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+     * }
      */
     template?: string;
 }
@@ -149,6 +156,8 @@ class EntitySearchInner extends React.Component<InnerProps, {}> {
           SELECT ?resource WHERE {
             SERVICE Repository:lookup {
               ?resource lookup:token ?__token__ .
+              ?resource lookup:name ?name .
+              ?resource lookup:score ?score .
             }
             BIND(STRLEN(?name) as ?length)
           } ORDER BY DESC(?score) ?length`,

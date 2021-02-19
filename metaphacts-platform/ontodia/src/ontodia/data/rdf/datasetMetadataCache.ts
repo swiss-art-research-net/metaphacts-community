@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,6 +47,7 @@ export interface DatasetMetadataCacheOptions {
     labelPredicates: ReadonlyArray<string> | undefined;
     guessLabelPredicate: boolean;
     imagePredicates: ReadonlyArray<string> | undefined;
+    datatypePredicates: ReadonlyArray<string> | undefined;
 }
 
 export class DatasetMetadataCache {
@@ -55,6 +56,7 @@ export class DatasetMetadataCache {
 
     private labelPredicates = new Map<string, Rdf.NamedNode>();
     private imagePredicates = new Map<string, Rdf.NamedNode>();
+    private datatypePredicates = new Map<string, Rdf.NamedNode>();
     private knownResources = new Set<string>();
 
     constructor(options: DatasetMetadataCacheOptions) {
@@ -75,6 +77,12 @@ export class DatasetMetadataCache {
         if (options.imagePredicates) {
             for (const predicate of options.imagePredicates) {
                 this.imagePredicates.set(predicate, options.factory.namedNode(predicate));
+            }
+        }
+
+        if (options.datatypePredicates) {
+            for (const predicate of options.datatypePredicates) {
+                this.datatypePredicates.set(predicate, options.factory.namedNode(predicate));
             }
         }
 
@@ -140,5 +148,17 @@ export class DatasetMetadataCache {
 
     isImagePredicate(predicate: Rdf.NamedNode): boolean {
         return this.imagePredicates.has(predicate.value);
+    }
+
+    isDatatypePredicate(predicate: Rdf.NamedNode): boolean {
+        return this.datatypePredicates.has(predicate.value);
+    }
+
+    isDatatypeProperty(predicate: Rdf.NamedNode, value: Rdf.Term): boolean {
+        if (value.termType === 'Literal') {
+            return true;
+        }
+        return this.datatypePredicates.has(predicate.value) &&
+            (value.termType === 'NamedNode' || value.termType === 'BlankNode');
     }
 }

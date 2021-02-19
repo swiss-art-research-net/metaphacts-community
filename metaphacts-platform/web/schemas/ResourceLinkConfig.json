@@ -1,0 +1,73 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "Component which can be used in a template to generate a routed\nlink for the resource.\n\nIf no children are given (elements or text), the\ncomponent will automatically try to fetch a label and render a sensible and\nhuman readable default link (unless `getlabel=true`).\n\n`urlqueryparam-{paramName}` attributes specify additional URL query parameters\nwhere `{paramName}` corresponds to the query parameter name.\nE.g. `urlqueryparam-example=\"test\"` attribute will result\ninto `?example=test` query parameter.\n\n**Example**:\n```\n<semantic-link iri='http://researchspace.org/SearchDemo'\n   title='Execute' urlqueryparam-query='{{ID.value}}'>\n   <i class=\"fa fa-play-circle\"></i>\n</semantic-link>\n```\n\n**Example**:\n```\n<!-- fetching label automatically -->\n<semantic-link iri='http://xmlns.com/foaf/0.1/Person'>\n</semantic-link>\n```\n\n**Example**:\n```\n<!-- fetching no label, will render plain link -->\n<semantic-link iri='http://xmlns.com/foaf/0.1/Person'\n   getlabel=false>\n</semantic-link>\n```",
+    "patternProperties": {
+        "^urlqueryparam": {
+            "type": "string"
+        }
+    },
+    "properties": {
+        "className": {
+            "type": "string"
+        },
+        "draggable": {
+            "default": true,
+            "description": "Specify if link should be draggable, e.g. into sets.",
+            "type": "boolean"
+        },
+        "fragment": {
+            "description": "Fragment identifier",
+            "type": "string"
+        },
+        "getlabel": {
+            "default": true,
+            "description": "Whether label for the given resource should be fetched automatically.",
+            "type": "boolean"
+        },
+        "guessRepository": {
+            "type": "boolean"
+        },
+        "iri": {
+            "description": "Specifies destination resource IRI.",
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties"
+        },
+        "target": {
+            "default": "_self",
+            "description": "Equivalent to the `target` attribute of the `<a>` DOM element.\nCan be set to `_blank` to open the link in a new tab/window.",
+            "enum": [
+                "_blank",
+                "_self"
+            ],
+            "type": "string"
+        },
+        "title": {
+            "type": "string"
+        },
+        "uri": {
+            "description": "**Deprecated**: use `iri` property instead.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "iri",
+        "uri",
+        "getlabel",
+        "className",
+        "style",
+        "title",
+        "draggable",
+        "guessRepository",
+        "target",
+        "fragment"
+    ],
+    "type": "object"
+}
+

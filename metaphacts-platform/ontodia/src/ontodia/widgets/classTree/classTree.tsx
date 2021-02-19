@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -160,12 +160,12 @@ export class ClassTree extends React.Component<ClassTreeProps, State> {
     }
 
     componentDidMount() {
-        const {view, editor} = this.context.ontodiaWorkspace;
+        const {model, view} = this.context.ontodiaWorkspace;
         this.listener.listen(view.events, 'changeLanguage', () => this.refreshClassTree());
-        this.listener.listen(editor.model.events, 'loadingStart', () => {
+        this.listener.listen(model.events, 'loadingStart', () => {
             this.initClassTree();
         });
-        this.listener.listen(editor.model.events, 'classEvent', ({data}) => {
+        this.listener.listen(model.events, 'classEvent', ({data}) => {
             if (data.changeLabel || data.changeCount) {
                 this.delayedClassUpdate.call(this.refreshClassTree);
             }
@@ -183,8 +183,9 @@ export class ClassTree extends React.Component<ClassTreeProps, State> {
     }
 
     private async initClassTree() {
-        if (this.dataProvider !== this.context.ontodiaWorkspace.editor.model.dataProvider) {
-            this.dataProvider = this.context.ontodiaWorkspace.editor.model.dataProvider;
+        const {model} = this.context.ontodiaWorkspace;
+        if (this.dataProvider !== model.dataProvider) {
+            this.dataProvider = model.dataProvider;
             this.classTree = undefined;
 
             const cancellation = new Cancellation();
@@ -246,10 +247,10 @@ export class ClassTree extends React.Component<ClassTreeProps, State> {
     }
 
     private handleCreateInstance = async (classId: ElementTypeIri, position?: Vector) => {
-        const {editor} = this.context.ontodiaWorkspace;
+        const {model, editor, overlayController} = this.context.ontodiaWorkspace;
         const {canvasCommands} = this.props;
         await forceNonReactExecutionContext();
-        const batch = editor.model.history.startBatch();
+        const batch = model.history.startBatch();
 
         const types = [classId];
         const signal = this.cancellation.signal;
@@ -264,7 +265,7 @@ export class ClassTree extends React.Component<ClassTreeProps, State> {
 
         batch.store();
         editor.setSelection([element]);
-        editor.showEditEntityForm(element);
+        overlayController.showEditEntityForm(element, {afterCreate: true});
     }
 
     private onDragEnd = () => {
@@ -302,7 +303,7 @@ export class ClassTree extends React.Component<ClassTreeProps, State> {
     }
 
     private setClassTree(roots: ClassModel[]) {
-        const diagramModel = this.context.ontodiaWorkspace.editor.model;
+        const {model: diagramModel} = this.context.ontodiaWorkspace;
         const visiting = new Set<ElementTypeIri>();
         const reduceNonCycle = (acc: ClassModel[], model: ClassModel) => {
             if (!visiting.has(model.id)) {

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,8 +40,6 @@
 import {
   createFactory,
   createElement,
-  MouseEvent,
-  FormEvent,
   ChangeEvent,
 } from 'react';
 import * as D from 'react-dom-factories';
@@ -90,7 +88,7 @@ const FIELD_DEF_INSTANCE_BASE = 'http://www.metaphacts.com/fieldDefinition/';
 const CLASS_NAME = 'field-editor';
 const block = bem(CLASS_NAME);
 
-interface Props {
+interface FieldEditorConfig {
   /**
    * IRI of the field definition to be edited.
    */
@@ -110,6 +108,8 @@ interface Props {
   navigateTo?: string;
 }
 
+export type FieldEditorProps = FieldEditorConfig;
+
 /* Default queries to be set on the SPARQL input elements as placeholders */
 const DEFAULT_INSERT = 'INSERT { $subject ?predicate $value} WHERE {}';
 const DEFAULT_SELECT = `SELECT ?value ?label WHERE {
@@ -127,6 +127,7 @@ const DEFAULT_AUTOSUGGESTION =
 SELECT ?value ?label WHERE {
   SERVICE Repository:lookup {
     ?value lookup:token ?__token__ .
+    ?value lookup:name ?label .
     # ?value lookup:type :MyType
   }
 }`;
@@ -149,14 +150,16 @@ const DATATYPE_VALUES: Array<{ value: string; label: string; disabled?: boolean 
   {value: xsd.decimal.value, label: 'xsd:decimal'},
 ];
 
-class FieldEditorComponent extends Component<Props, State> {
-  static readonly defaultProps: Partial<Props> = {
+type DefaultProps = Required<Pick<FieldEditorProps, 'categoryScheme' | 'navigateTo'>>;
+
+class FieldEditorComponent extends Component<FieldEditorProps, State> {
+  static readonly defaultProps: DefaultProps = {
     categoryScheme: '<http://www.metaphacts.com/ontologies/platform/FieldCategories>',
     navigateTo: 'http://www.metaphacts.com/resource/assets/Fields',
   };
   private readonly languages: ReadonlyArray<string>;
 
-  constructor(props: Props, context: any) {
+  constructor(props: FieldEditorProps, context: any) {
     super(props, context);
     const [categoryScheme] = SparqlUtil.resolveIris([this.props.categoryScheme]);
     const categoryQueries = createDefaultTreeQueries({scheme: categoryScheme.value});
@@ -202,7 +205,7 @@ class FieldEditorComponent extends Component<Props, State> {
     }
   }
 
-  componentDidUpdate(prevProps: Props, prevState: State) {
+  componentDidUpdate(prevProps: FieldEditorProps, prevState: State) {
     if (prevState.isLoading && !this.state.isLoading) {
       this.updateValues({xsdDatatype: this.state.xsdDatatype}, Validation.validateDatatype);
     }
@@ -275,13 +278,15 @@ class FieldEditorComponent extends Component<Props, State> {
             className: block('iri-input').toString(),
             type: 'text',
             placeholder: 'Any IRI to be used as unique identifier for the field definition.',
-            onChange: e => this.updateValues({id: getFormValue(e)}, Validation.validateIri),
+            onChange: (e: ChangeEvent<HTMLInputElement>) =>
+              this.updateValues({ id: getFormValue(e) }, Validation.validateIri),
             value: this.state.id.isJust ? this.state.id.get().value : undefined,
             disabled: this.isEditMode(),
-          }),
+          } as ReactBootstrap.FormControlProps),
           D.div({className: 'input-group-btn'}, (
             this.isEditMode() ? this.renderCopyToClipboardButton() : btn({
               title: 'Generate IRI',
+              variant: 'secondary',
               onClick: e => this.generateIRI(),
             }, D.i({className: 'fa fa-refresh'}))
           )),
@@ -390,9 +395,10 @@ class FieldEditorComponent extends Component<Props, State> {
           min: 0,
           step: 1,
           placeholder: 'Any positive number from 0 to n. \"0\" for not required.',
-          onChange: e => this.updateValues({min: getFormValue(e)}, Validation.validateMin),
+          onChange: (e: ChangeEvent<HTMLInputElement>) =>
+            this.updateValues({ min: getFormValue(e) }, Validation.validateMin),
           value: this.state.min.map(v => v.value).getOrElse(undefined),
-        }),
+        } as ReactBootstrap.FormControlProps),
       }),
       row({
         label: 'Max. Cardinality',
@@ -408,13 +414,13 @@ class FieldEditorComponent extends Component<Props, State> {
           className: block('max-input').toString(),
           type: 'text',
           placeholder: 'Any positive number from 1 to n. \"unbound\" for unlimited.',
-          onChange: e => this.updateState({
+          onChange: (e: ChangeEvent<HTMLInputElement>) => this.updateState({
             max: Just(
-              Validation.validateMax((e.target as HTMLInputElement).value, orderedWithValue)
+              Validation.validateMax(e.target.value, orderedWithValue)
             ),
           }),
           value: this.state.max.map(v => v.value).getOrElse(undefined),
-        }),
+        } as ReactBootstrap.FormControlProps),
       }),
       row({
         label: 'Order',
@@ -429,9 +435,10 @@ class FieldEditorComponent extends Component<Props, State> {
           className: block('order-input').toString(),
           type: 'text',
           placeholder: 'Any positive number greater than 0.',
-          onChange: e => this.updateValues({order: getFormValue(e)}, Validation.validateOrder),
+          onChange: (e: ChangeEvent<HTMLInputElement>) =>
+            this.updateValues({ order: getFormValue(e) }, Validation.validateOrder),
           value: this.state.order.map(v => v.value).getOrElse(undefined),
-        }),
+        } as ReactBootstrap.FormControlProps),
       }),
       this.renderMultipleValuesInput({
         values: this.defaultsUpToMax(),
@@ -465,9 +472,10 @@ class FieldEditorComponent extends Component<Props, State> {
           className: block('label-input').toString(),
           type: 'text',
           placeholder: `IRI of any entity to be used for testing the patterns of the field.`,
-          onChange: e => this.updateValues({testSubject: getFormValue(e)}, Validation.validateIri),
+          onChange: (e: ChangeEvent<HTMLInputElement>) =>
+            this.updateValues({ testSubject: getFormValue(e) }, Validation.validateIri),
           value: this.state.testSubject.isJust ? this.state.testSubject.get().value : undefined,
-        }),
+        } as ReactBootstrap.FormControlProps),
       }),
       row({
         label: 'Insert Pattern*',
@@ -619,7 +627,7 @@ class FieldEditorComponent extends Component<Props, State> {
         bscol({md: 9},
           btn({
               disabled: !this.state.isValid,
-              bsSize: 'small',
+              size: 'sm',
               onClick: () => this.onSaveOrUpdate(),
               style: { marginLeft: '-15px' },
             },
@@ -627,7 +635,7 @@ class FieldEditorComponent extends Component<Props, State> {
           ),
           btn({
               disabled: !this.state.isValid,
-              bsSize: 'small',
+              size: 'sm',
               onClick: () => this.onSaveOrUpdate(this.props.navigateTo),
               style: {marginLeft: 10},
             },
@@ -686,7 +694,7 @@ class FieldEditorComponent extends Component<Props, State> {
 
   private renderCopyToClipboardButton = () => {
     const value = this.state.id.isJust ? this.state.id.get().value : '';
-    const button = btn({title: 'Copy to clipboard'}, D.i({className: 'fa fa-copy'}));
+    const button = btn({title: 'Copy to clipboard', variant: 'secondary'}, D.i({className: 'fa fa-copy'}));
     return createElement(CopyToClipboardComponent, {text: value}, button);
   }
 
@@ -713,9 +721,9 @@ class FieldEditorComponent extends Component<Props, State> {
               className: block('default-input').toString(),
               type: 'text',
               placeholder,
-              onChange: e => onChange((e.target as HTMLInputElement).value, index),
+              onChange: (e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value, index),
               value,
-            }),
+            } as ReactBootstrap.FormControlProps),
             btn({
               className: block('delete-default').toString(),
               onClick: () => onDelete(index),
@@ -842,7 +850,7 @@ class FieldEditorComponent extends Component<Props, State> {
  * a Kefir observable.
  */
 function getFormValue(
-  e: FormEvent<ReactBootstrap.FormControl> | ChangeEvent<HTMLTextAreaElement>,
+  e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>,
 ): Data.Maybe<Value> {
   const text = (e.target as HTMLInputElement).value;
   return Just({value: text});
@@ -860,7 +868,4 @@ function tryCreateFinalGraph(state: State): Data.Maybe<Rdf.Graph> {
   return Just(graph);
 }
 
-export type component = FieldEditorComponent;
-export const component = FieldEditorComponent;
-export const factory = createFactory(component);
-export default component;
+export default FieldEditorComponent;

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,7 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.repository.Repository;
 
-public interface ShaclEngine {
+public interface ShaclEngine extends AutoCloseable {
     /**
      * Takes a list of SHACL rules and executes them over repository.
      * Returns SHACL Validation Report in the end.

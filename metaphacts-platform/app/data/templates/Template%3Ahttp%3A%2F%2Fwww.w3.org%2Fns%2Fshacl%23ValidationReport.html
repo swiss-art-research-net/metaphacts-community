@@ -2,7 +2,7 @@
   <li>
     <mp-link title="Home" url="/">Home</mp-link>
   </li>
-  
+
   <li>
     <semantic-link title="System Settings" data-uri="http://www.metaphacts.com/resource/admin/">System Settings</semantic-link>
   </li>
@@ -20,7 +20,7 @@
       <h2>Validation Report</h2>
     </div>
   </div>
-  <div class='page__body'>   
+  <div class='page__body'>
     <mp-panel>
       <mp-panel-header>
         <span>Summary</span>
@@ -44,7 +44,7 @@
         </semantic-chart>
       </mp-panel-body>
     </mp-panel>
-    
+
     <mp-panel>
       <mp-panel-header>
         <span>Results</span>
@@ -52,16 +52,16 @@
       <mp-panel-body>
         <div>
 
-          <semantic-table id='table' 
+          <semantic-table id='table'
                           query='
                             PREFIX sh: <http://www.w3.org/ns/shacl#>
                             SELECT DISTINCT ?subject (COUNT(DISTINCT ?result) AS ?count) WHERE {
                               ?? sh:result ?result .
-                              ?result sh:message ?subject .
+                              ?result sh:resultMessage ?subject .
                             } GROUP BY ?subject ORDER BY ASC(?count)
                           '
                           column-configuration='[
-                            {"displayName": "Check", "cellTemplate": "{{> check}}"}, 
+                            {"displayName": "Check", "cellTemplate": "{{> check}}"},
                             {"displayName": "Count", "variableName": "count"}
                           ]'
           >
@@ -70,10 +70,10 @@
                 {{subject.value}}
               </semantic-link>
             </template>
-          </semantic-table> 
+          </semantic-table>
         </div>
       </mp-panel-body>
-    </mp-panel>    
-    
+    </mp-panel>
+
   </div>
 <div>

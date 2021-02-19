@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@
 import * as React from 'react';
 import { isEmpty, trim } from 'lodash';
 import {
-  FormControl, FormGroup, InputGroup, Button, Form, HelpBlock,
+  FormControl, FormGroup, InputGroup, Button, Form,
 } from 'react-bootstrap';
 
 import { Rdf } from 'platform/api/rdf';
@@ -75,21 +75,25 @@ export class NavigateToIRI extends React.Component<NavigateToIRIProps, State> {
 
   render() {
     return (
-      <Form horizontal onSubmit={this.onClick}>
-        <FormGroup validationState={this.state.error ? 'error' : null}>
+      <Form onSubmit={this.onClick}>
+        <FormGroup>
           <InputGroup>
             <FormControl
               type='text' placeholder={this.props.placeholder}
-              value={this.state.value} onChange={this.onValueChange} />
-            <InputGroup.Button>
+              value={this.state.value} onChange={this.onValueChange}
+              isInvalid={this.state.error}
+              />
+            <InputGroup.Append>
               <Button
-                bsStyle='success'
+                variant='success'
                 disabled={this.isExploreDisabled()}
                 onClick={this.onClick}
               >{this.props.buttonCaption}</Button>
-            </InputGroup.Button>
+            </InputGroup.Append>
+            <FormControl.Feedback type='invalid'>
+              Can't navigate to the resource. The value is not a valid IRI.
+            </FormControl.Feedback>
           </InputGroup>
-          {this.state.error ? <HelpBlock>Can't navigate to the resource. The value is not a valid IRI.</HelpBlock> : null}
         </FormGroup>
       </Form>
     );

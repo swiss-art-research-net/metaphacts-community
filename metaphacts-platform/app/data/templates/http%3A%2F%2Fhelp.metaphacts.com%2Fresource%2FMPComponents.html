@@ -8,294 +8,247 @@
     All components provided directly or indirectly (e.g. by small wrappers) through the metaphacts platform are being prefixed with <code>mp-*</code>.
 
     <h2>Semantic Link </h2>
-    <p><code><semantic-link></semantic-link></code> special component resolves links for navigation purpose within the platform i.e. even though a IRI might be different then the physical location of the metaphacts platform installation, the link component will route all navigation requests to stay within the platform.</p>
+    <p><code>&lt;semantic-link&gt;</code> special component resolves links for navigation purpose within the platform i.e. even though a IRI might be different then the physical location of the metaphacts platform installation, the link component will route all navigation requests to stay within the platform.</p>
+
     <h3>Example: Default</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <semantic-link iri="http://help.metaphacts.com/resource/Start">Help Start</semantic-link>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h3>Example: Automatic Label Fetching</h3>
     If the semantic-link does not have any child node, the component will try to fetch a label for the specified IRI automatically using the central label service.
-    <mp-code-example>
-<![CDATA[
-<semantic-link title="foaf:Person" iri="http://xmlns.com/foaf/0.1/Person"> </semantic-link>
-]]>
-    </mp-code-example>
+<mp-code-example>
+<semantic-link title="foaf:Person" iri="http://xmlns.com/foaf/0.1/Person"></semantic-link>
+</mp-code-example>
     Same if the child is equal to IRI as specified:
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <semantic-link iri="http://xmlns.com/foaf/0.1/Person">http://xmlns.com/foaf/0.1/Person</semantic-link>
-]]>
-    </mp-code-example>
+</mp-code-example>
     Unless setting <code>getlabel</code> to <code>getlabel=false</code>.
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <semantic-link iri="http://xmlns.com/foaf/0.1/Person" getlabel=false>http://xmlns.com/foaf/0.1/Person</semantic-link>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h3>Example: Open in a new window</h3>
-    <mp-code-example>
-      <semantic-link iri="http://xmlns.com/foaf/0.1/Person" target='_blank'></semantic-link>
-    </mp-code-example>
+<mp-code-example>
+<semantic-link iri="http://xmlns.com/foaf/0.1/Person" target='_blank'></semantic-link>
+</mp-code-example>
     
     <h3>Example: Pass query parameters</h3>
     <p>To pass query parameters with a link, one can use <code>urlqueryparam-*</code> attributes.</p>
-    <mp-code-example>
-      <semantic-link iri="http://xmlns.com/foaf/0.1/Person" urlqueryparam-some-param='param'></semantic-link>
-    </mp-code-example>
+<mp-code-example>
+<semantic-link iri="http://xmlns.com/foaf/0.1/Person" urlqueryparam-some-param='param'></semantic-link>
+</mp-code-example>
 
     <h2>Semantic Link Container</h2>
     <p>
-      <code><semantic-link-container></semantic-link-container></code> component is very similar to the <code><semantic-link /></code>, but it can be used to make any HTML element as a trigger for the navigation action. For example a <code><button /></code> or an <code><img /></code> or any <code><div /></code>.
+      <code>&lt;semantic-link-container&gt;</code> component is very similar to the <code>&lt;semantic-link&gt;</code>, but it can be used to make any HTML element as a trigger for the navigation action. For example a <code>&lt;button&gt;</code> or an <code>&lt;img&gt;</code> or any <code>&lt;div&gt;</code>.
     </p>
     <h3>Example: Default</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <semantic-link-container iri="http://help.metaphacts.com/resource/Start">
-  <button class='btn btn-default'>Help Start</button>
+  <button class='btn btn-secondary'>Help Start</button>
 </semantic-link-container>
-]]>
-   </mp-code-example>
+</mp-code-example>
 
     <h3>Example: Open in a new window</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <semantic-link-container iri="http://help.metaphacts.com/resource/Start" target='_blank'>
-  <button class='btn btn-default'>Help Start</button>
+  <button class='btn btn-secondary'>Help Start</button>
 </semantic-link-container>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h2>Label</h2>
-    <p>The <code><mp-label></mp-label></code> component displays the label of the specified resource. It uses the global label resolution, which can be configured using the UI configuration property preferredLabels (see <semantic-link title="Documentation" iri="Help:BasicSystemConfiguration">basic system configuration</semantic-link>).</p>
+    <p>The <code>&lt;mp-label&gt;</code> component displays the label of the specified resource. It uses the global label resolution, which can be configured using the UI configuration property preferredLabels (see <semantic-link title="Documentation" iri="Help:BasicSystemConfiguration">basic system configuration</semantic-link>).</p>
     <h3>Example</h3>
-    <mp-code-example>
-<![CDATA[
-<mp-label iri='http://example.com/person/alice' style="font-size: 1.3em;" />
-]]>
-    </mp-code-example>
+<mp-code-example>
+<mp-label iri='http://example.com/person/alice' style="font-size: 1.3em;"></mp-label>
+</mp-code-example>
 
     <h2>Description</h2>
-    <p>The <code><mp-description></mp-description></code> component displays the description of the specified resource. It uses the global description resolution, which can be configured using the UI configuration property <b>preferredDescriptions</b> (see <semantic-link title="Documentation" iri="Help:BasicSystemConfiguration">basic system configuration</semantic-link>). If there is no description for the specified resource the description component is hidden. It's possible allow inline html by providing <code>inline-html=true</code> parameter.</p>
+    <p>The <code>&lt;mp-description&gt;</code> component displays the description of the specified resource. It uses the global description resolution, which can be configured using the UI configuration property <b>preferredDescriptions</b> (see <semantic-link title="Documentation" iri="Help:BasicSystemConfiguration">basic system configuration</semantic-link>). If there is no description for the specified resource the description component is hidden. It's possible allow inline html by providing <code>inline-html=true</code> parameter.</p>
     <h3>Example</h3>
-    <mp-code-block mode='text/html'>
-    <![CDATA[
-<div style="
- max-width: 500px;
- text-overflow: ellipsis;
- white-space: nowrap;
- overflow: hidden;
-">
-  <mp-description iri="http://example.com/person/alice" inline-html=true/>
+<mp-code-block mode='text/html'>
+<div style='
+  max-width: 500px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+'>
+  <mp-description iri="http://example.com/person/alice" inline-html=true></mp-description>
 </div>
-]]>
-    </mp-code-block>
-    
+</mp-code-block>
+
         <h3>Example: Custom Template</h3>
     
-    <mp-code-block mode='text/html'>
-<![CDATA[
+<mp-code-block mode='text/html'>
 <mp-description iri="http://example.com/person/alice" template="{{> tpl}}">
   <template id="tpl">
     <span><b>Description:</b> {{description}}</span>
   </template>
 </mp-description>
-]]>
-    </mp-code-block>
+</mp-code-block>
 
     <h2>Resource Thumbnail</h2>
-    <p>The <code><mp-resource-thumbnail></mp-resource-thumbnail></code> component queries and displays a thumbnail image for a specified resource. The component uses the global ThumbnailService, which can be configured using the UI configuration preferredThumbnails property (see <semantic-link title="Documentation" iri="Help:BasicSystemConfiguration">basic system configuration</semantic-link>).</p>
+    <p>The <code>&lt;mp-resource-thumbnail&gt;</code> component queries and displays a thumbnail image for a specified resource. The component uses the global ThumbnailService, which can be configured using the UI configuration preferredThumbnails property (see <semantic-link title="Documentation" iri="Help:BasicSystemConfiguration">basic system configuration</semantic-link>).</p>
     <h3>Example: Fallback Image</h3>
     <p>The <code>noImageUri</code> property defines an image that the component will display if the resource does not have any thumbnail.</p>
-    <mp-code-example>
-<![CDATA[
-<mp-resource-thumbnail iri='http://example.com/person/alice' no-image-uri='/images/help/thenounproject/noun_1113333.svg' style="max-width: 100px;" />
-]]>
-    </mp-code-example>
+<mp-code-example>
+<mp-resource-thumbnail iri='http://example.com/person/alice' no-image-uri='/images/help/thenounproject/noun_1113333.svg' style="max-width: 100px;"></mp-resource-thumbnail>
+</mp-code-example>
     <h3>Example: Fallback Component</h3>
-    <p>The <code><mp-resource-thumbnail-fallback></mp-resource-thumbnail-fallback></code> component has the same purpose as the <code>noImageUri</code> property, but it defines a fallback HTML-element.</p>
-    <mp-code-example>
-<![CDATA[
+    <p>The <code>&lt;mp-resource-thumbnail-fallback&gt;</code> component has the same purpose as the <code>noImageUri</code> property, but it defines a fallback HTML-element.</p>
+<mp-code-example>
 <mp-resource-thumbnail iri='http://example.com/person/alice'>
   <mp-resource-thumbnail-fallback>
     <span>Image not found!</span>
   </mp-resource-thumbnail-fallback>
 </mp-resource-thumbnail>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h2>Modal Dialog / Overlay</h2>
-    The <code><mp-overlay-dialog></mp-overlay-dialog></code> to open some content in a modal dialog or overlay. A dialog is just a variant of an overlay. By default the attribute <code>type</code> is set to <code>type=modal</code>. Setting it to <code>type=lightbox</code> will create an lightbox overlay instead of modal dialog. Arbitrary elements can be wrapped into <code><mp-overlay-dialog-trigger></mp-overlay-dialog-trigger></code> element to open (trigger) the dialog/overlay showing any elements specified within <code><mp-overlay-dialog-content></mp-overlay-dialog-content></code> element.
+    The <code>&lt;mp-overlay-dialog&gt;</code> to open some content in a modal dialog or overlay. A dialog is just a variant of an overlay. By default the attribute <code>type</code> is set to <code>type=modal</code>. Setting it to <code>type=lightbox</code> will create an lightbox overlay instead of modal dialog. Arbitrary elements can be wrapped into <code>&lt;mp-overlay-dialog-trigger&gt;</code> element to open (trigger) the dialog/overlay showing any elements specified within <code>&lt;mp-overlay-dialog-content&gt;</code> element.
     <h3>Example: Modal with Link as Trigger</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-overlay-dialog title="My Dialog">
   <mp-overlay-dialog-trigger><a>Show in Dialog</a></mp-overlay-dialog-trigger>
   <mp-overlay-dialog-content>
     Content of the Dialog
   </mp-overlay-dialog-content>
 </mp-overlay-dialog>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h3>Example: Large Modal with Button as Trigger</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-overlay-dialog title="My Dialog" type="modal" bs-size="large">
   <mp-overlay-dialog-trigger><button>Show in Dialog</button></mp-overlay-dialog-trigger>
   <mp-overlay-dialog-content>
  	  Content of the Dialog
   </mp-overlay-dialog-content>
 </mp-overlay-dialog>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h3>Example: Overlay with Button as Trigger</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-overlay-dialog title="My Dialog" type="lightbox">
   <mp-overlay-dialog-trigger><button>Show in Overlay</button></mp-overlay-dialog-trigger>
   <mp-overlay-dialog-content>
   	Content of the Overlay
   </mp-overlay-dialog-content>
 </mp-overlay-dialog>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h2>Page Loader</h2>
-    The <code><mp-page-loader></mp-page-loader></code> component behaves similar to a server-side page include with the difference that the loading and rendering is done asynchronously on client side. The requested page is compiled in backend with the context of the current resource (same as an include).
+    The <code>&lt;mp-page-loader&gt;</code> component behaves similar to a server-side page include with the difference that the loading and rendering is done asynchronously on client side. The requested page is compiled in backend with the context of the current resource (same as an include).
     <h3>Example: Loading a page asynchronously in a modal dialog</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-overlay-dialog title="Documentation" type="modal" bs-size="large">
   <mp-overlay-dialog-trigger><a>Show documentation overview in Dialog</a></mp-overlay-dialog-trigger>
   <mp-overlay-dialog-content>
     <div width="800px"><mp-page-loader iri="http://help.metaphacts.com/resource/Start"></mp-page-loader></div>
   </mp-overlay-dialog-content>
 </mp-overlay-dialog>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
 
     <h2>Text Truncate Component</h2>
     To automatically truncate long text snippets.
     <h3>Example: Static Truncate</h3>
     By default truncates to the size of the outer element, whereas the truncate element (e.g. ellipsis) can be defined:
-    <mp-code-example>
-<![CDATA[
-<div style="width:200px;">
-  <mp-text-truncate truncate="...">
+<mp-code-example>
+<div style='width:200px;'>
+  <mp-text-truncate truncate='...'>
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
     Morbi vel mauris sollicitudin, i vel mauris sollicitudin, tristique mauris quis, tempor risus.
     Maecenas id turpis eget nibh aliquet venenatis.
   </mp-text-truncate>
 </div>
-]]>
-    </mp-code-example>
+</mp-code-example>
     <h3>Example: Truncate with option to expand or collapse</h3>
     Another example is to define the maximum number of lines and to define elements, which allow the user to dynamically expand or collapse the (truncated) text.
-    <mp-code-example>
-<![CDATA[
-<mp-text-truncate lines=3 expand='<span>...<a>read more</a></span>' collapse='<span>(<a>show less</a>)</span>'>
+<mp-code-example>
+<mp-text-truncate lines='3' expand='{{> expand}}' collapse='{{> collapse}}'>
+  <template id='expand'><span style='color: gray;'>...<a>read more</a></span></template>
+  <template id='collapse'><span style='color: gray;'>(<a>show less</a>)</span></template>
 	Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi vel mauris sollicitudin, tristique mauris quis, tempor risus. Maecenas id turpis eget nibh aliquet venenatis. Duis in feugiat sapien, quis placerat enim. Pellentesque ac auctor risus. Sed placerat iaculis turpis in tristique. Proin dolor ex, malesuada nec purus a, viverra efficitur ex. Donec at augue ac urna fermentum cursus. Suspendisse quis feugiat nunc. Morbi ultrices, tellus vitae hendrerit dignissim, nisi leo efficitur ipsum, non varius sapien felis quis nunc. In eu risus aliquam, pellentesque purus in, imperdiet libero. Suspendisse sollicitudin ex a interdum interdum. Aenean nulla odio, pharetra et ligula quis, venenatis finibus mi. Quisque sit amet nisl nec lorem laoreet facilisis sed sed augue. Pellentesque varius consectetur gravida.
 </mp-text-truncate>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
      <h2>SPARQL Result Download</h2>
     Offers results of SPARQL queries as download in different serialization formats.
     <h3>Example: Download tuple result as CSV</h3>
     ... using a link.
-    <mp-code-example>
+<mp-code-example>
 <![CDATA[
 <mp-sparql-download
   query="SELECT * WHERE {?a ?b ?c} LIMIT 10"
   header="text/csv"
-  filename="mytupleresult.csv"
->
+  filename="mytupleresult.csv">
   <a href="#">Download CSV</a>
 </mp-sparql-download>
-]]>
-    </mp-code-example>
+</mp-code-example>
     <h3>Example: Download graph result as JSON-LD</h3>
     ... using a button.
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-sparql-download
   query="CONSTRUCT {?a ?b ?c} WHERE {?a ?b ?c} LIMIT 10"
   header="application/ld+json"
   filename="mygraphresult.json">
   <button>Download JSON-LD</button>
 </mp-sparql-download>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h2>Copy To Clipboard Component</h2>
-    The <code><mp-copy-to-clipboard></mp-copy-to-clipboard></code> component copies text to clipboard
+    The <code>&lt;mp-copy-to-clipboard&gt;</code> component copies text to clipboard
     <h3>Example: Default</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-copy-to-clipboard text='text'>
-  <button class='btn btn-default'><i class='fa fa-copy'></i></button>
+  <button class='btn btn-secondary'><i class='fa fa-copy'></i></button>
 </mp-copy-to-clipboard>
-]]>
-    </mp-code-example>
+</mp-code-example>
     <h3>Example: Custom notification message</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-copy-to-clipboard text='text' message='Custom message'>
-  <button class='btn btn-default'><i class='fa fa-copy'></i></button>
+  <button class='btn btn-secondary'><i class='fa fa-copy'></i></button>
 </mp-copy-to-clipboard>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
-    
-   <h2>Highlight component</h2>
-    The <code><mp-highlight></mp-highlight></code> visually highlights all occurrences of a term in a given text.
+
+    <h2>Highlight component</h2>
+    The <code>&lt;mp-highlight&gt;</code> visually highlights all occurrences of a term in a given text.
     <h3>Example:</h3>
-    <mp-code-example>
-<![CDATA[
+<mp-code-example>
 <mp-highlight highlight="Walldorf">Walldorf is a city close to Heidelberg.</mp-highlight>
-]]>
-    </mp-code-example>
-   
-    
-    
+</mp-code-example>
+
+
+
     <h2>Has Permission Component</h2>
-    The <code><mp-has-permission></mp-has-permission></code> component displays child component if user has the required permission, otherwise displays nothing.
-    <mp-code-example>
-<![CDATA[
+    The <code>&lt;mp-has-permission&gt;</code> component displays child component if user has the required permission, otherwise displays nothing.
+<mp-code-example>
 <mp-has-permission permission='sparql:update'>
   <div>This will be rendered if the currently logged-in user has the permission "sparql:update"</div>
 </mp-has-permission>
-]]>
-    </mp-code-example>
+</mp-code-example>
 
     <h2><semantic-link iri="http://help.metaphacts.com/resource/MPSplitPaneComponent">Split Pane Component</semantic-link></h2>
 
     <h2>Anchor Link</h2>
-    <p>The <code><mp-anchor /></code> component scrolls the page to the target element with smooth animation.</p>
+    <p>The <code>&lt;mp-anchor&gt;</code> component scrolls the page to the target element with smooth animation.</p>
     <h3>Example: Default</h3>
-    <mp-code-block mode='text/html'>
-<![CDATA[
+<mp-code-block mode='text/html'>
 <mp-anchor to='#target1'>anchor link</mp-anchor>
 <div id='target1'>target element</div>
-]]>
-  </mp-code-block>
+</mp-code-block>
     <h3>Example: Custom offset and duration</h3>
-    <mp-code-block mode='text/html'>
-<![CDATA[
+<mp-code-block mode='text/html'>
 <mp-anchor to='#target2' animate='{"offset": -104, "duration": 100}'>anchor link</mp-anchor>
 <div id='target2'>target element</div>
-]]>
-  </mp-code-block>
+</mp-code-block>
     
     <h2>Semantic Update Component</h2>
 
-    <p>The <code>semantic-update</code> component allows the execution of SPARQL UPDATE queries. See <semantic-link iri='[[resolvePrefix "Help:SemanticUpdate"]]'>Semantic Update</semantic-link> for details.</p>
+    <p>The <code>&lt;semantic-update&gt;</code> component allows the execution of SPARQL UPDATE queries. See <semantic-link iri='[[resolvePrefix "Help:SemanticUpdate"]]'>Semantic Update</semantic-link> for details.</p>
     
   </div>
 </div>

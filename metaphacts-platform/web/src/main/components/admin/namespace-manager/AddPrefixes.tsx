@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -136,7 +136,7 @@ export class AddPrefixes extends Component<AddPrefixesProps, {}> {
 
       render() {
         return (
-          <Button bsSize='xs' onClick={this.onAddClick}>
+          <Button size='sm' onClick={this.onAddClick} variant='secondary'>
             <span className='fa fa-plus-square-o' />&nbsp;Add
           </Button>
         );

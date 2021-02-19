@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@
 
 import * as React from 'react';
 import { Component } from 'react';
-import { MenuItem } from 'react-bootstrap';
+import { Dropdown } from 'react-bootstrap';
 import { MenuProps, ActionProps, TitleProps } from './SelectionActionProps';
 
 type Props = MenuProps & ActionProps & TitleProps;
@@ -53,13 +53,13 @@ type Props = MenuProps & ActionProps & TitleProps;
  */
 export class SelectionActionComponent extends Component<Props, {}> {
   render() {
-    return <MenuItem
-      eventKey={1}
+    return <Dropdown.Item
+      eventKey='1'
       onSelect={this.onSelect}
       disabled={this.props.disabled}
     >
       {this.props.title}
-    </MenuItem>;
+    </Dropdown.Item>;
   }
 
   private onSelect = () => {

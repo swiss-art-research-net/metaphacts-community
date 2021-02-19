@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,12 +39,11 @@
  */
 package com.metaphacts.junit;
 
-import static org.junit.Assert.assertThat;
+import static com.metaphacts.junit.MpMatchers.hasItemsInOrder;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
 
 import java.util.List;
-
-import static com.metaphacts.junit.MpMatchers.hasItemsInOrder;
-import static org.hamcrest.Matchers.not;
 
 import org.junit.Test;
 

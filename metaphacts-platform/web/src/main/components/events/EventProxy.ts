@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,11 +42,24 @@ import { Component, ReactNode } from 'react';
 import { Cancellation } from 'platform/api/async';
 import { Event, listen, trigger } from 'platform/api/events';
 
+/**
+ * Components that listen to specified event, and when it happens triggers some other event.
+ *
+ * **Example**: Refresh some area on events from `<mp-set-management>` component:
+ * ```
+ * <mp-event-proxy on-event-source='some-set-management'
+ *   proxy-event-type='Component.Refresh'
+ *   proxy-targets='["some-element"]'>
+ * </mp-event-proxy>
+ * ```
+ * When there is any event from component with ID `some-set-management`,
+ * `<mp-event-proxy>` will send `Component.Refresh` event to component with ID `some-element`.
+ */
 interface EventProxyConfig {
   /**
-   * Used as a source id for re-triggered event
+   * Used as a source ID for re-triggered event.
    */
-  id: string;
+  id?: string;
 
   /**
    * Type of event to listen to.
@@ -69,42 +82,32 @@ interface EventProxyConfig {
   /**
    * Ids of targets for triggered event.
    */
-  proxyTargets?: string[];
+  proxyTargets?: ReadonlyArray<string>;
+
   /**
-   * Data that will be sent to all targets instead of the original event's data
+   * Data that will be sent to all targets instead of data from the original event.
    */
   data?: object;
 }
-type EventProxyProps = EventProxyConfig;
 
-/**
- * Components that listen to specified event, and when it happens triggers some other event.
- *
- * For example one can refresh some area on events from <mp-set-management> component.
- * @example
- *
- * <mp-event-proxy id='some-refresh' on-event-source='set-management-component-id'
- *                   proxy-event-type='Component.Refresh' proxy-targets='["some-element"]'
- * ></mp-event-proxy>
- *
- * So when there is any event from component with id 'set-management-component-id',
- * <mp-event-proxy> will send Component.Refresh event to component with id 'some-element'.
- */
-export class EventProxy extends Component<EventProxyProps, void> {
+export type EventProxyProps = EventProxyConfig;
 
-  private cancelation = new Cancellation();
+export class EventProxy extends Component<EventProxyProps> {
+  private cancellation = new Cancellation();
 
   componentDidMount() {
-    this.cancelation.map(
+    this.cancellation.map(
       listen({
         eventType: this.props.onEventType,
         source: this.props.onEventSource,
       })
-    ).onValue(this.onEvent);
+    ).observe({
+      value: this.onEvent,
+    });
   }
 
   componentWillUnmount() {
-    this.cancelation.cancelAll();
+    this.cancellation.cancelAll();
   }
 
   private onEvent = (event: Event<any>) => {
@@ -120,4 +123,5 @@ export class EventProxy extends Component<EventProxyProps, void> {
     return null;
   }
 }
+
 export default EventProxy;

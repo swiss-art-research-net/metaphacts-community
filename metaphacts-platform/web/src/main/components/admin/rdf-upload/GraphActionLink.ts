@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,12 +60,41 @@ import './GraphActionLink.scss';
 
 const CLASS = 'mp-rdf-graph-action';
 
-export interface Props extends ReactProps<GraphActionLink> {
+/**
+ * Allows to download or delete graph by specified IRI.
+ *
+ * For `GET` action the generated file name is determined by:
+ *   - `file-name` given in props + extension
+ *   - `file:///` graph IRI: filename without timestamp + extension
+ *   - `urn:asset:` graph IRI: local name after last slash
+ *   - ends with `/graph` (e.g. ontology graphs): local name before `/graph` + extension
+ *   - fallback: `graph-export-TIMESTAMP` + extension
+ */
+interface GraphStoreActionConfig {
+  /**
+   * IRI of the named graph on which to perform the action
+   */
   graphuri: string;
+  /**
+   * The action to perform on the given grap
+   *
+   * - `GET` to download the contents of the named graph
+   * - `DELETE` to delete the contents of the named graph from the database
+   */
   action: string;
+  /**
+   * Optional base file name (without extension) of the downloaded file.
+   */
+  fileName?: string;
+  /**
+   * File ending to determine the RDF format for the dowloaded file, e.g. `ttl`
+   * for the turtle format.
+   */
   fileEnding?: string;
   className?: string;
 }
+
+export type Props = GraphStoreActionConfig;
 
 export interface State {
   isInProcess?: boolean;
@@ -112,9 +141,9 @@ export class GraphActionLink extends Component<Props, State> {
           children: D.div({style: {textAlign: 'center'}},
             D.p({}, `Are you sure that you want to delete the named graph "${this.props.graphuri}"?`),
             D.p({}, `Please note that for larger named graphs (> 1 million statements), the deletion may typically take a few seconds (or even minutes) to be finally processed by the database.`),
-            ButtonToolbar({style: {display: 'inline-block'}},
-              Button({bsStyle: 'success', onClick: onSubmit}, 'Yes'),
-              Button({bsStyle: 'danger', onClick: onHide}, 'No')
+            ButtonToolbar({style: {display: 'inline-block'}} as ReactBootstrap.ButtonToolbarProps,
+              Button({variant: 'success', onClick: onSubmit}, 'Yes'),
+              Button({variant: 'danger', onClick: onHide}, 'No')
             )
           ),
         })
@@ -122,19 +151,75 @@ export class GraphActionLink extends Component<Props, State> {
     } else if (this.props.action === 'GET') {
       const {repository} = this.context.semanticContext;
       const acceptHeader = SparqlUtil.getMimeType(this.props.fileEnding);
-      const ending = this.props.fileEnding && endsWith(this.props.graphuri, this.props.fileEnding )
-        ? ''
-        : this.props.fileEnding;
-      const fileName = startsWith(this.props.graphuri, 'file:///' )
-        ? this.props.graphuri.replace('file:///', '') + ending
-        : 'graph-export-' + moment().format('YYYY-MM-DDTHH-mm-ss') + '.' + ending;
+      const fileName = this.determineFileName();
+
       RDFGraphStoreService.downloadGraph({
         targetGraph: Rdf.iri(this.props.graphuri),
         acceptHeader,
         fileName,
         repository,
-      }).onValue( v => {});
+      }).onValue( v => { /* void */ });
     }
+  }
+
+  /**
+   * Determine the file name
+   *
+   * a) fileName given in props + extension
+   * b) file:/// graph IRI: filename without timestamp + extension
+   * c) urn:asset: graph IRI: local name after last slash
+   * d) ends with /graph (e.g. ontology graphs): local name before /graph
+   * e) fallback: graph-export-TIMESTAMP + extension
+   *
+   */
+  private determineFileName() {
+    const ending = this.props.fileEnding ? '.' + this.props.fileEnding : '.rdf';
+    let fileName;
+    if (this.props.fileName) {
+      fileName = this.props.fileName + ending;
+    } else if (startsWith(this.props.graphuri, 'file:///' )) {
+      // use the filename from the graph IRI without timestamp
+      // example: file:///foaf.rdf-11-12-2020-09-11-36
+      fileName = this.props.graphuri.replace('file:///', '');
+      if (/.*-\d\d-\d\d-\d\d\d\d-\d\d-\d\d-\d\d/.test(fileName)) {
+        fileName = fileName.substring(0, fileName.length - 20);
+      }
+
+    } else if (startsWith(this.props.graphuri, 'file:/')) {
+      // use the local name of the file URL
+      let _fileIri  = this.props.graphuri;
+      fileName = _fileIri.substr(_fileIri.lastIndexOf('/') + 1);
+
+    } else if (startsWith(this.props.graphuri, 'urn:asset' )) {
+      // example: urn:asset:ontologies/nobel-prize/nobel-prize-schema.ttl
+      fileName = this.props.graphuri.replace('urn:asset', '');
+      if (fileName.indexOf('/') !== -1) {
+        fileName = fileName.substr(fileName.lastIndexOf('/') + 1);
+      }
+
+    } else if (endsWith(this.props.graphuri, '/graph')) {
+      // example: http://ontologies.metaphacts.com/myontology/graph
+      // use local name of last path element
+      try {
+        let _tmpFileName = this.props.graphuri;
+        // remove trailing '/graph'
+        _tmpFileName = _tmpFileName.substring(0,  _tmpFileName.length - 6);
+        if (_tmpFileName.lastIndexOf('/') !== -1) {
+          fileName = _tmpFileName.substr(_tmpFileName.lastIndexOf('/') + 1);
+        }
+      } catch { /* do nothing, use fallback */ }
+    }
+
+    if (!fileName) {
+      fileName =  'graph-export-' + moment().format('YYYY-MM-DDTHH-mm-ss') + ending;
+    }
+
+    // make sure we have the correct ending
+    if (!fileName.endsWith(ending)) {
+      fileName += ending;
+    }
+
+    return fileName;
   }
 
   private deleteGraph() {

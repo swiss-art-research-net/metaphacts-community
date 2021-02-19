@@ -2,13 +2,14 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
         "FieldDefinitionConfig": {
+            "additionalProperties": false,
             "properties": {
                 "askPattern": {
                     "description": "Single constraint (SPARQL ASK query) to to validate values entered by\nthe user against the database.\n\nQuery bindings:\n   * `?value` - validated field value;\n\nIf both `askPattern` and `constraints` are specified then all of them will\nbe evaluated for each validated value.",
                     "type": "string"
                 },
                 "autosuggestionPattern": {
-                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     # ?value lookup:type :MyType\n   }\n}\n```",
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     ?value lookup:name ?label .\n     # ?value lookup:type :MyType\n   }\n}\n```",
                     "type": "string"
                 },
                 "categories": {
@@ -82,8 +83,8 @@
                             "type": "number"
                         }
                     ],
-                    "default": "'unbound'",
-                    "description": "XSD schema max cardinality (inclusive) or `'unbound'` (i.e. infinite)."
+                    "default": "unbound",
+                    "description": "XSD schema max cardinality (inclusive) or `\"unbound\"` (i.e. infinite)."
                 },
                 "minOccurs": {
                     "anyOf": [
@@ -97,8 +98,8 @@
                             "type": "number"
                         }
                     ],
-                    "default": "'unbound'",
-                    "description": "XSD schema min cardinality (inclusive) or `'unbound'` (i.e. 0)."
+                    "default": "unbound",
+                    "description": "XSD schema min cardinality (inclusive) or `\"unbound\"` (i.e. 0)."
                 },
                 "order": {
                     "description": "Number used for ordering field definitions.",
@@ -172,9 +173,6 @@
                 "treePatterns",
                 "testSubject",
                 "orderedWith"
-            ],
-            "required": [
-                "id"
             ],
             "type": "object"
         },
@@ -250,6 +248,12 @@
         },
         "OntologyPersistenceProps": {
             "properties": {
+                "debug": {
+                    "type": "boolean"
+                },
+                "ontology": {
+                    "type": "string"
+                },
                 "repository": {
                     "type": "string"
                 },
@@ -258,7 +262,8 @@
                 },
                 "type": {
                     "enum": [
-                        "ontology"
+                        "ontology",
+                        "ontology-legacy"
                     ],
                     "type": "string"
                 },
@@ -269,10 +274,13 @@
             "propertyOrder": [
                 "type",
                 "targetGraphIri",
+                "ontology",
                 "repository",
-                "typePattern"
+                "typePattern",
+                "debug"
             ],
             "required": [
+                "ontology",
                 "repository",
                 "targetGraphIri",
                 "type"
@@ -312,6 +320,7 @@
             "type": "object"
         },
         "SingleFieldConstraint": {
+            "additionalProperties": false,
             "properties": {
                 "message": {
                     "description": "Error message to display if constraint is violated.",
@@ -340,12 +349,12 @@
             "type": "boolean"
         },
         "authoringMode": {
-            "description": "Switches Ontodia to authoring mode.\n\nAuthoring mode requires entity metadata to be specified (using semantic forms as children)\nin order to work.",
+            "default": false,
+            "description": "Switches Ontodia to authoring mode.\n\nAuthoring mode requires entity metadata to be specified in order to work.",
             "type": "boolean"
         },
         "children": {
-            "additionalProperties": true,
-            "description": "Children can be either ontodia-entity-metadata or ontodia-field-input-override",
+            "description": "Children can be any number of:\n   - `<ontodia-entity-metadata>`\n   - `<ontodia-link-metadata>`\n   - `<ontodia-field-input-override>`",
             "properties": {
             },
             "type": "object"
@@ -356,30 +365,48 @@
             "type": "boolean"
         },
         "defaultImageIri": {
-            "description": "Default field to be used for entity image",
+            "description": "Default field to be used for entity image.",
             "type": "string"
         },
         "defaultLabelIri": {
-            "description": "Default field to be used for entity label",
+            "description": "Default field to be used for entity label.",
             "type": "string"
         },
         "defaultSubjectTemplate": {
             "description": "Default template to create Iri for new entities.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/SemanticForm",
+                "name": "Semantic Form - new-subject-template"
+            },
             "type": "string"
+        },
+        "enableValidation": {
+            "default": true,
+            "description": "Enables field-based validation in authoring mode.",
+            "type": "boolean"
         },
         "fields": {
             "description": "Fields to be used in Ontodia instance. Could be populated inline or with backend helper.",
             "items": {
                 "$ref": "#/definitions/FieldDefinitionConfig"
             },
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/SemanticForm",
+                "name": "Semantic Form - Reading Field Definitions from the Database"
+            },
             "type": "array"
         },
         "forceDatatypeFields": {
-            "description": "Forces certain fields of xsd:anyUri datatype to be treated as entity properties\nto be modified inside entity form instead of object properties treated and modified\nas an edge in the graph, like entity image Iri, or some vocabulary reference.",
+            "description": "Forces certain fields of `xsd:anyUri` datatype to be treated as entity properties\nto be modified inside entity form instead of object properties treated and modified\nas an edge in the graph, like entity image IRI, or some vocabulary reference.",
             "items": {
                 "type": "string"
             },
             "type": "array"
+        },
+        "generatePlaceholderLabel": {
+            "default": true,
+            "description": "Allows to disable default label generation for entities and keep it empty.",
+            "type": "boolean"
         },
         "persistence": {
             "anyOf": [
@@ -390,11 +417,13 @@
                     "$ref": "#/definitions/FormBasedPersistenceProps"
                 }
             ],
-            "default": "{type: \"form\"}",
+            "default": {
+                "type": "form"
+            },
             "description": "Defines persistence mode to use in authoring mode."
         },
         "typeIri": {
-            "description": "Field that is used for entity type. In most cases field should use rdf:type as a property.",
+            "description": "Field that is used for entity type. In most cases field should use `rdf:type` as a property.",
             "type": "string"
         }
     },
@@ -402,6 +431,7 @@
         "fields",
         "children",
         "authoringMode",
+        "enableValidation",
         "persistence",
         "allowRequestFields",
         "typeIri",
@@ -409,6 +439,7 @@
         "defaultImageIri",
         "defaultSubjectTemplate",
         "forceDatatypeFields",
+        "generatePlaceholderLabel",
         "debug"
     ],
     "required": [

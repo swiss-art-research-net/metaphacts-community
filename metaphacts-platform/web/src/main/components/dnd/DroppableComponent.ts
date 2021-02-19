@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,9 +44,12 @@ import {
   cloneElement,
   createFactory,
   CSSProperties,
+  createElement,
+  FunctionComponent
 } from 'react';
 import { findDOMNode } from 'react-dom';
 import * as ReactBootstrap from 'react-bootstrap';
+import { OverlayChildren } from 'react-bootstrap/esm/Overlay';
 import * as classNames from 'classnames';
 import * as maybe from 'data.maybe';
 import * as _ from 'lodash';
@@ -60,13 +63,12 @@ import {
   DRAG_AND_DROP_FORMAT_IE,
 } from './DragAndDropApi';
 
-const OverlayTrigger = createFactory(ReactBootstrap.OverlayTrigger);
 const Popover = createFactory(ReactBootstrap.Popover);
 
 // We should use OverlayTrigger as root in render return value
 // OverlayTrigger documentation doesn't describe methods to show/hide it
 // so we need to call it manually in shouldComponentUpdate through custom interface
-interface OverlayTriggerOverride extends ReactBootstrap.OverlayTrigger {
+interface OverlayTriggerOverride {
   show: () => void
   hide: () => void
 }
@@ -129,7 +131,6 @@ interface State {
  */
 export class Droppable extends Component<DroppableProps, State> {
   private target: Element;
-  public refs: {trigger: OverlayTriggerOverride};
 
   constructor(props: DroppableProps) {
     super(props);
@@ -291,20 +292,6 @@ export class Droppable extends Component<DroppableProps, State> {
     });
   }
 
-  private showDisabledHover = (state: State) =>
-    state.isDropEnabledKnown && !state.isDropEnabled && state.isHover
-
-  public shouldComponentUpdate(nextProps: DroppableProps, nextState: State) {
-    if (this.props.dropComponents && this.props.dropComponents.disabledHover) {
-      if (!this.showDisabledHover(this.state) && this.showDisabledHover(nextState)) {
-        this.refs.trigger.show();
-      } else if (this.showDisabledHover(this.state) && !this.showDisabledHover(nextState)) {
-        this.refs.trigger.hide();
-      }
-    }
-    return true;
-  }
-
   public render() {
     const child = Children.only(this.props.children) as ReactElement<any>;
     const {dropStyles} = this.props;
@@ -336,17 +323,18 @@ export class Droppable extends Component<DroppableProps, State> {
       child, {ref: this.setHandlers, key: 'wrapped-component', className: className, style: style}
     );
     if (this.props.dropComponents && this.props.dropComponents.disabledHover) {
-      return OverlayTrigger(
+      const Trigger = ReactBootstrap.OverlayTrigger as
+        FunctionComponent<ReactBootstrap.OverlayTriggerProps>;
+      return createElement(Trigger,
         {
-          trigger: [],
-          ref: 'trigger',
+          trigger: ['hover', 'focus'],
           placement: 'top',
           overlay: Popover({id: 'help'},
             cloneElement(this.props.dropComponents.disabledHover)
-          ),
-          defaultOverlayShown: false,
-        },
-        result
+          ) as unknown as OverlayChildren,
+          defaultShow: false,
+          children: result
+        }
       );
     } else {
       return result;

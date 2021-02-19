@@ -15,11 +15,15 @@
             "type": "string"
         }
     },
-    "description": "Birds-eye view component, helps to navigate through the diagram.\n**Can be used only inside `ontodia-canvas`.**",
+    "description": "Birds-eye view component, helps to navigate through the diagram.\n\n**Can be used only inside `ontodia-canvas`.**",
     "properties": {
+        "backgroundColor": {
+            "description": "Background color.",
+            "type": "string"
+        },
         "dock": {
             "$ref": "#/definitions/WidgetDock",
-            "default": "'se'",
+            "default": "se",
             "description": "Position on the canvas."
         },
         "expanded": {
@@ -46,6 +50,26 @@
             "description": "Scale padding.",
             "type": "number"
         },
+        "viewportBackgroundColor": {
+            "description": "Background color of the viewport rectangle.",
+            "type": "string"
+        },
+        "viewportBorderColor": {
+            "description": "Border color of the viewport rectangle.",
+            "type": "string"
+        },
+        "viewportBorderWidth": {
+            "description": "Viewport rectangle border width.",
+            "type": "number"
+        },
+        "viewportOutsideBorderColor": {
+            "description": "Border color of the viewport rectangle when it crosses the border of the widget.",
+            "type": "string"
+        },
+        "viewportOutsideBorderWidth": {
+            "description": "Viewport rectangle border width when it crosses the border of the widget.",
+            "type": "number"
+        },
         "width": {
             "default": 300,
             "description": "Width.",
@@ -59,7 +83,13 @@
         "width",
         "height",
         "scalePadding",
-        "expanded"
+        "expanded",
+        "backgroundColor",
+        "viewportBackgroundColor",
+        "viewportBorderColor",
+        "viewportBorderWidth",
+        "viewportOutsideBorderColor",
+        "viewportOutsideBorderWidth"
     ],
     "type": "object"
 }

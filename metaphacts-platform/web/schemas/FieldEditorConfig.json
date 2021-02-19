@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "categoryScheme": {
+            "description": "Full IRI enclosed in <> or prefixed IRI",
+            "type": "string"
+        },
+        "fieldInstanceBaseIri": {
+            "description": "Optional string to make the base IRI being used\nfor creating new field definitions configurable",
+            "type": "string"
+        },
+        "fieldIri": {
+            "description": "IRI of the field definition to be edited.",
+            "type": "string"
+        },
+        "navigateTo": {
+            "description": "URI to navigate after saving/updating a field.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "fieldIri",
+        "fieldInstanceBaseIri",
+        "categoryScheme",
+        "navigateTo"
+    ],
+    "type": "object"
+}
+

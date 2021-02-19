@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,9 +39,9 @@
  */
 package com.metaphacts.junit;
 
-import java.util.List;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -81,6 +81,7 @@ public class MpMatchers {
             
             String cause = "";
 
+            @SuppressWarnings("unchecked")
             @Override
             public boolean matches(Object item) {
                 List<? extends Object> main = (List<? extends Object>)item;

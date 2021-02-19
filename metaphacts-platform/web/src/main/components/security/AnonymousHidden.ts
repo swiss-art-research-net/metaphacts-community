@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,9 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import {
-  createFactory, createElement, Props as ReactProps, Children,
-} from 'react';
+import { createElement, Children } from 'react';
 
 import * as _ from 'lodash';
 
@@ -47,20 +45,28 @@ import { Component } from 'platform/api/components';
 import { TemplateItem } from 'platform/components/ui/template';
 import { Util as Security } from 'platform/api/services/security';
 
-interface Props extends ReactProps<AnonymousHiddenComponentClass> {
-  alt?: string;
-}
-
 /**
- * Usage example:
+ * **Example**:
+ * ```
  * <mp-anonymous-hidden><b>Text not to be shown to anonymous user</b></mp-anonymous-hidden>
  * <mp-anonymous-hidden alt="No permission.">
  *    <b>Text not to be shown to anonymous user</b>
  * </mp-anonymous-hidden>
+ * ```
  */
-export class AnonymousHiddenComponentClass extends Component<Props, {isAnonymous: boolean}> {
+interface AnonymousHiddenConfig {
+  alt?: string;
+}
 
-  constructor(props: Props, context: any) {
+export type AnonymousHiddenProps = AnonymousHiddenConfig;
+
+interface State {
+  isAnonymous: boolean;
+}
+
+export class AnonymousHidden extends Component<AnonymousHiddenProps, State> {
+
+  constructor(props: AnonymousHiddenProps, context: any) {
     super(props, context);
     this.state = {
       isAnonymous: null,
@@ -86,7 +92,4 @@ export class AnonymousHiddenComponentClass extends Component<Props, {isAnonymous
 
 }
 
-export type component = AnonymousHiddenComponentClass;
-export const component = AnonymousHiddenComponentClass;
-export const factory = createFactory(component);
-export default component;
+export default AnonymousHidden;

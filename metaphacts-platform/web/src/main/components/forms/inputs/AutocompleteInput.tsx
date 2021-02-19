@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,15 +48,20 @@ import { DataQuery } from 'platform/api/dataClient/dataClient';
 import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import { FieldValue, AtomicValue, EmptyValue } from '../FieldValues';
 import { NestedModalForm, tryExtractNestedForm } from './NestedModalForm';
-import { SingleValueInput, AtomicValueInput, AtomicValueInputProps } from './SingleValueInput';
+import {
+  SingleValueInput, SingleValueInputConfig, AtomicValueInput, AtomicValueInputProps,
+} from './SingleValueInput';
 import { ValidationMessages } from './Decorations';
 
-export interface AutocompleteInputProps extends AtomicValueInputProps {
+interface SemanticFormAutocompleteInputConfig extends SingleValueInputConfig {
   template?: string;
   placeholder?: string;
   lookupQuery?: DataQuery;
   valueBindingName?: string;
 }
+
+export interface AutocompleteInputProps
+  extends SemanticFormAutocompleteInputConfig, AtomicValueInputProps {}
 
 interface State {
   readonly nestedFormOpen?: boolean;
@@ -135,7 +140,7 @@ export class AutocompleteInput extends AtomicValueInput<AutocompleteInputProps, 
         {showCreateNewButton && value === undefined ? (
           <Button
             className={`${CLASS_NAME}__create-button`}
-            bsStyle='default'
+            variant='secondary'
             onClick={this.toggleNestedForm}>
             <span className='fa fa-plus' />
             {' Create new'}

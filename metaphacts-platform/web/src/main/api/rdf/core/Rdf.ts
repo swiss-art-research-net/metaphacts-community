@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -791,4 +791,44 @@ export function getLocalName(uri: string): string | undefined {
     return undefined;
   }
   return uri.substring(index + 1);
+}
+
+export function compareTerms(a: Term, b: Term): number {
+  let result = (
+    a.termType < b.termType ? -1 :
+    a.termType > b.termType ? 1 :
+    0
+  );
+  if (result !== 0) { return result; }
+  switch (a.termType) {
+    case 'Literal':
+      const bLiteral = b as Literal;
+      result = (
+        a.value < bLiteral.value ? -1 :
+        a.value > bLiteral.value ? 1 :
+        0
+      );
+      if (result !== 0) { return result; }
+      result = compareTerms(a.datatype, bLiteral.datatype);
+      if (result !== 0) { return result; }
+      return (
+        a.language < bLiteral.language ? -1 :
+        a.language > bLiteral.language ? 1 :
+        0
+      );
+    case 'Quad':
+      const bQuad = b as Quad;
+      result = compareTerms(a.graph, bQuad.graph);
+      if (result !== 0) { return result; }
+      result = compareTerms(a.subject, bQuad.subject);
+      if (result !== 0) { return result; }
+      result = compareTerms(a.predicate, bQuad.predicate);
+      if (result !== 0) { return result; }
+      return compareTerms(a.object, bQuad.object);
+  }
+  return (
+    a.value < b.value ? -1 :
+    a.value > b.value ? 1 :
+    0
+  );
 }

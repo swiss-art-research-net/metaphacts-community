@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,13 +45,14 @@ import java.util.List;
 
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.hamcrest.core.IsInstanceOf;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.metaphacts.config.ConfigurationUtil;
 import com.metaphacts.config.UnknownConfigurationException;
 import com.metaphacts.junit.AbstractRepositoryBackedIntegrationTest;
+import com.metaphacts.junit.MpAssert;
 import com.metaphacts.junit.TestPlatformStorage;
 
 /**
@@ -104,13 +105,14 @@ public class ConfigurationTest extends AbstractRepositoryBackedIntegrationTest {
     @Test
     public void testPreferredLabelsHookException() throws UnknownConfigurationException, ConfigurationException {
         String dummyPreferredLabel = "Dummy unparsable preferred label!";
-        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
-        exception.expectMessage("The \"preferredLabels\" that you have entered is invalid. Please add a valid value");
-        
-        config.getUiConfig().setParameter("preferredLabels",
-            Collections.singletonList(dummyPreferredLabel),
-            TestPlatformStorage.STORAGE_ID
-        );
+        MpAssert.assertThrows(
+                Matchers.containsString(
+                        "The \"preferredLabels\" that you have entered is invalid. Please add a valid value"),
+                RuntimeException.class, () -> {
+
+                    config.getUiConfig().setParameter("preferredLabels", Collections.singletonList(dummyPreferredLabel),
+                            TestPlatformStorage.STORAGE_ID);
+                });
     }
     
     @Test
@@ -128,26 +130,30 @@ public class ConfigurationTest extends AbstractRepositoryBackedIntegrationTest {
     public void testTemplateIncludeHookException() throws UnknownConfigurationException, ConfigurationException {
         String dummyQuery = "SELECT * WHERE { ? ?p ?o }";
         
-        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
-        exception.expectMessage("The query that you have entered is invalid. Please add a valid query");
-        config.getUiConfig().setParameter(
-            "templateIncludeQuery",
-            Collections.singletonList(dummyQuery),
-            TestPlatformStorage.STORAGE_ID
-        );
+        MpAssert.assertThrows(
+                Matchers.containsString("The query that you have entered is invalid. Please add a valid query"),
+                RuntimeException.class, () -> {
+
+                    config.getUiConfig().setParameter(
+                        "templateIncludeQuery",
+                        Collections.singletonList(dummyQuery),
+                        TestPlatformStorage.STORAGE_ID
+                    );
+                });
     }
     
     @Test
     public void testTempalteInculdeHookBindingException() throws UnknownConfigurationException, ConfigurationException {
         String dummyQuery = "SELECT * WHERE { ?s ?p ?o }";
         
-        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
-        exception.expectMessage("Query as specified in \"templateIncludeQuery\" config for extracting the wiki include types must return a binding with name \"type\"");
-        config.getUiConfig().setParameter(
-            "templateIncludeQuery",
-            Collections.singletonList(dummyQuery),
-            TestPlatformStorage.STORAGE_ID
-        );
+        MpAssert.assertThrows(
+                Matchers.containsString(
+                        "Query as specified in \"templateIncludeQuery\" config for extracting the wiki include types must return a binding with name \"type\""),
+                RuntimeException.class, () -> {
+
+                    config.getUiConfig().setParameter("templateIncludeQuery", Collections.singletonList(dummyQuery),
+                            TestPlatformStorage.STORAGE_ID);
+                });
     }
     
     @Test
@@ -170,12 +176,15 @@ public class ConfigurationTest extends AbstractRepositoryBackedIntegrationTest {
     @Test
     public void testPreferredThumbnailsHookException() throws UnknownConfigurationException, ConfigurationException {
         String dummyPreferredThumbnails = "Dummy unparsable preferred thumbnails!";
-        exception.expectCause(IsInstanceOf.<RuntimeException>instanceOf(ConfigurationException.class));
-        exception.expectMessage("The \"preferredThumbnails\" that you have entered is invalid. Please add a valid value");
-        config.getUiConfig().setParameter("preferredThumbnails",
-            Collections.singletonList(dummyPreferredThumbnails),
-            TestPlatformStorage.STORAGE_ID
-        );
+        
+        MpAssert.assertThrows(
+                Matchers.containsString(
+                        "The \"preferredThumbnails\" that you have entered is invalid. Please add a valid value"),
+                RuntimeException.class, () -> {
+
+                    config.getUiConfig().setParameter("preferredThumbnails",
+                            Collections.singletonList(dummyPreferredThumbnails), TestPlatformStorage.STORAGE_ID);
+                });
     }
     
     @Test

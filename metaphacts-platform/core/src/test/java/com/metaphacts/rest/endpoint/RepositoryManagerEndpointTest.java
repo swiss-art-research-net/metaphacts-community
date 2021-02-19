@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,6 +57,7 @@ import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
@@ -201,9 +202,9 @@ public class RepositoryManagerEndpointTest extends MetaphactsJerseyTest {
 
         Response res = target("/repositories/").request().get();
         String resultString = res.readEntity(String.class);
-        Assert.assertThat(resultString, Matchers.containsString("default"));
-        Assert.assertThat(resultString, Matchers.containsString("assets"));
-        Assert.assertThat(resultString, Matchers.not(Matchers.containsString("tests")));
+        MatcherAssert.assertThat(resultString, Matchers.containsString("default"));
+        MatcherAssert.assertThat(resultString, Matchers.containsString("assets"));
+        MatcherAssert.assertThat(resultString, Matchers.not(Matchers.containsString("tests")));
     }
 
 }

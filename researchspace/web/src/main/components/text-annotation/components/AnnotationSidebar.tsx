@@ -17,7 +17,7 @@
  */
 import * as classnames from 'classnames';
 import * as React from 'react';
-import { Badge, Nav, NavItem, Tab } from 'react-bootstrap';
+import { Badge, Nav, NavItem, NavLink, Tab } from 'react-bootstrap';
 
 import { Component, ComponentProps } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
@@ -76,22 +76,23 @@ export class AnnotationSidebar extends Component<AnnotationSidebarProps, State> 
           activeKey={selectedTab}
           // type cast as workaround to wrong React Bootstrap typings
           onSelect={this.onSelectTab as (e: any) => void}>
-          <Nav bsStyle='tabs'>
-            <NavItem eventKey={ALL_TYPES_TAB} title='All annotations'>all</NavItem>
+          <Nav variant='tabs'>
+            <NavItem title='All annotations'>
+              <NavLink eventKey={ALL_TYPES_TAB}>all</NavLink>
+            </NavItem>
             {Array.from(annotationTypes.values(), type => {
               const count = countAnnotationForTab(annotations, type.iri.value);
               return (
-                <NavItem key={type.iri.value}
-                  eventKey={type.iri.value}
-                  disabled={count === 0}
-                  title={type.label}>
-                  <div className={styles.tabHeader}>
-                    {type.iconUrl ? (
-                      <img className={styles.tabIcon} src={type.iconUrl} />
-                    ) : (
-                      <span>{type.label}</span>
-                    )}
-                  </div>
+                <NavItem key={type.iri.value} title={type.label}>
+                  <NavLink eventKey={type.iri.value} disabled={count === 0}>
+                    <div className={styles.tabHeader}>
+                      {type.iconUrl ? (
+                        <img className={styles.tabIcon} src={type.iconUrl} />
+                      ) : (
+                        <span>{type.label}</span>
+                      )}
+                    </div>
+                  </NavLink>
                 </NavItem>
               );
             })}

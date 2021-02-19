@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,9 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { has } from 'lodash';
-
-export interface BaseConfig<T> {
+export interface BaseSplitPaneConfig<T> {
   /**
    * Width of closed sidebar
    */
@@ -60,7 +58,7 @@ export interface BaseConfig<T> {
   /**
    * SplitPane custom style
    */
-  style?: T;
+  style?: React.CSSProperties;
   /**
    * Resizer custom style, accepts JSON object with camelCased properties
    */
@@ -92,6 +90,12 @@ export interface BaseConfig<T> {
    */
   dock?: boolean;
   /**
+   * Height of page elements above sidebar; used to set height of sidebar.
+   *
+   * Applicable only when `dock` is set to `true`.
+   */
+  navHeight?: number;
+  /**
    * Threshold which used for switch the state of the sidebar
    */
   snapThreshold?: number;
@@ -106,25 +110,52 @@ export interface BaseConfig<T> {
   primary?: 'first' | 'second';
 }
 
-export interface ConfigWithDock<T> extends BaseConfig<T> {
-  /**
-   * Dock mode
-   */
-  dock: boolean;
-  /**
-   * Height of page elements above sidebar. Used to set height of sidebar
-   */
-  navHeight?: number
-}
-
-export interface BaseSplitPaneConfig extends BaseConfig<any> {}
-
-export interface SplitPaneConfigWithDock extends ConfigWithDock<any> {}
-
-export type SplitPaneConfig = BaseSplitPaneConfig | SplitPaneConfigWithDock;
-
-export function configHasDock(
-  config: SplitPaneConfig
-): config is SplitPaneConfigWithDock {
-  return has(config, 'dock') && config.dock === true;
-}
+/**
+ * **Example**:
+ * ```
+ * <mp-splitpane min-size=5 default-size=100>
+ *   <div>
+ *     <mp-splitpane-toggle-on>
+ *       <button></button>
+ *     </mp-splitpane-toggle-on>
+ *     <mp-splitpane-toggle-off>
+ *       <button></button>
+ *     </mp-splitpane-toggle-off>
+ *     <mp-splitpane-sidebar-open>
+ *       <!-- sidebar content -->
+ *     </mp-splitpane-sidebar-open>
+ *   </div>
+ *   <div><!-- main component --></div>
+ * </mp-splitpane>
+ * ```
+ *
+ * **Example**:
+ * Using the split-pane as left-side sidebar menu by utilizing
+ * the pre-defined `split-pane__leftsidebar-*` CSS classes:
+ * ```
+ * <mp-splitpane min-size=30 nav-height=103 footer-height=180 dock=true default-size=300
+ *   id="my-panel" persist-resize=true style="margin-top:-60px;" snap-threshold=50>
+ *   <div class="split-pane__leftsidebar">
+ *     <mp-splitpane-toggle-on>
+ *       <div class="split-pane__leftsidebar-caption">SIDEBAR TITLE</div>
+ *     </mp-splitpane-toggle-on>
+ *     <mp-splitpane-sidebar-open>
+ *       <h1> Sidebar </h1>
+ * 			<!--side bar content here -->
+ *     </mp-splitpane-sidebar-open>
+ *     <div class="split-pane__leftsidebar-footer">
+ *       <mp-splitpane-toggle-on>
+ *         <div class="split-pane__leftsidebar-toggle">&raquo;</div>
+ *       </mp-splitpane-toggle-on>
+ *       <mp-splitpane-toggle-off>
+ *         <div class="split-pane__leftsidebar-toggle" >&laquo;</div>
+ *       </mp-splitpane-toggle-off>
+ *     </div>
+ *   </div>
+ *   <div>
+ *     <!-- main content here -->
+ *   </div>
+ * </mp-splitpane>
+ * ```
+ */
+export type SplitPaneConfig = BaseSplitPaneConfig<any>;

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,10 +40,11 @@
 import * as React from 'react';
 import * as PropTypes from 'prop-types';
 
-import { Component } from 'platform/api/components';
+import { Component, ComponentPropTypes } from 'platform/api/components';
 import { Cancellation } from 'platform/api/async/Cancellation';
 import { listen } from 'platform/api/events';
 import { TemplateItem } from 'platform/components/ui/template';
+import { ControlledPropsHandler } from 'platform/components/utils/ControlledProps';
 
 import * as KnowledgePanelEvents from './KnowledgePanelEvents';
 
@@ -118,8 +119,8 @@ interface State {
 }
 
 export class KnowledgePanelFrame extends Component<Props, State> {
-  static propTypes: Partial<Record<keyof Props, any>> = {
-    ...Component.propTypes,
+  static propTypes: Partial<Record<keyof (Props & ControlledPropsHandler<any>), any>> = {
+    ...ComponentPropTypes,
     onControlledPropChange: PropTypes.func,
   };
 

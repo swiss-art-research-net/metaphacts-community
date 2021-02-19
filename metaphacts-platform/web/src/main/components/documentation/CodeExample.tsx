@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,30 +47,38 @@ import { Spinner } from 'platform/components/ui/spinner';
 import { CodeBlock } from './CodeBlock';
 import * as styles from './CodeExample.scss';
 
-interface Props {
-  codeText: string;
+/**
+ * Component which can be used to create interactive HTML snippets.
+ * With code highlight and copy to clipboard option.
+ *
+ * **Example**:
+ * ```
+ * <mp-code-example>
+ * <semantic-table>...</semantic-table>
+ * </mp-code-example>
+ * ```
+ */
+interface CodeExampleConfig {
   showCodeByDefault?: boolean;
   showCopyButton?: boolean;
+}
+
+export interface CodeExampleProps extends CodeExampleConfig {
+  // provided by template markup parser, see Registry.ts
+  codeText: string;
 }
 
 interface State {
   renderedCode?: Data.Maybe<React.ReactNode>;
 }
 
-/**
- * Component which can be used to create interactive html snippets.
- * With code highlight and copy to clipboard option.
- *
- * @example
- *    <mp-code-example><semantic-table>...</semantic-table></mp-code-example>
- */
-export class CodeExample extends React.Component<Props, State> {
+export class CodeExample extends React.Component<CodeExampleProps, State> {
   static defaultProps = {
     showCodeByDefault: false,
     showCopyButton: true,
   };
 
-  constructor(props: Props) {
+  constructor(props: CodeExampleProps) {
     super(props);
 
     this.state = {
@@ -82,7 +90,7 @@ export class CodeExample extends React.Component<Props, State> {
     this.loadCode(this.props.codeText);
   }
 
-  componentWillReceiveProps(props: Props) {
+  componentWillReceiveProps(props: CodeExampleProps) {
     if (props.codeText !== this.props.codeText) {
       this.loadCode(props.codeText);
     }
@@ -98,10 +106,10 @@ export class CodeExample extends React.Component<Props, State> {
     const { codeText, showCopyButton } = this.props;
     return <div className={styles.holder}>
       <Tabs defaultActiveKey={this.props.showCodeByDefault ? 1 : 2} unmountOnExit={true}>
-        <Tab eventKey={1} title='Code'>
+        <Tab eventKey='1' title='Code'>
           <CodeBlock codeText={codeText} showCopyButton={showCopyButton}/>
         </Tab>
-        <Tab eventKey={2} title='Result'>
+        <Tab eventKey='2' title='Result'>
           {this.state.renderedCode.getOrElse(<Spinner/>)}
         </Tab>
       </Tabs>

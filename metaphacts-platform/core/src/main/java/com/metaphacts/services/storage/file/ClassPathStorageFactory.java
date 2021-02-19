@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,14 +39,21 @@
  */
 package com.metaphacts.services.storage.file;
 
-import com.metaphacts.services.storage.api.*;
 import org.apache.commons.configuration2.Configuration;
+
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.StorageConfig;
+import com.metaphacts.services.storage.api.StorageConfigException;
+import com.metaphacts.services.storage.api.StorageCreationParams;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StorageFactory;
+import com.metaphacts.services.storage.file.ClassPathStorage.Config;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
  *
  */
-public class ClassPathStorageFactory implements StorageFactory {
+public class ClassPathStorageFactory implements StorageFactory<ClassPathStorage.Config> {
     @Override
     public String getStorageType() {
         return ClassPathStorage.STORAGE_TYPE;
@@ -63,5 +70,10 @@ public class ClassPathStorageFactory implements StorageFactory {
             config.setClasspathLocation(properties.getString("classpathLocation"));
         }
         return config;
+    }
+
+    @Override
+    public ObjectStorage createStorage(Config config, StorageCreationParams params) throws StorageException {
+        return new ClassPathStorage(params.getPathMapping(), params.getClassLoader(), config);
     }
 }

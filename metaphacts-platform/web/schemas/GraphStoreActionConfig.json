@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Allows to download or delete graph by specified IRI.\n\nFor `GET` action the generated file name is determined by:\n   - `file-name` given in props + extension\n   - `file:///` graph IRI: filename without timestamp + extension\n   - `urn:asset:` graph IRI: local name after last slash\n   - ends with `/graph` (e.g. ontology graphs): local name before `/graph` + extension\n   - fallback: `graph-export-TIMESTAMP` + extension",
+    "properties": {
+        "action": {
+            "description": "The action to perform on the given grap\n\n- `GET` to download the contents of the named graph\n- `DELETE` to delete the contents of the named graph from the database",
+            "type": "string"
+        },
+        "className": {
+            "type": "string"
+        },
+        "fileEnding": {
+            "description": "File ending to determine the RDF format for the dowloaded file, e.g. `ttl`\nfor the turtle format.",
+            "type": "string"
+        },
+        "fileName": {
+            "description": "Optional base file name (without extension) of the downloaded file.",
+            "type": "string"
+        },
+        "graphuri": {
+            "description": "IRI of the named graph on which to perform the action",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "graphuri",
+        "action",
+        "fileName",
+        "fileEnding",
+        "className"
+    ],
+    "required": [
+        "action",
+        "graphuri"
+    ],
+    "type": "object"
+}
+

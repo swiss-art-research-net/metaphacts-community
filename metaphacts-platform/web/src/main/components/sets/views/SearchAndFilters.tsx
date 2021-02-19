@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -99,7 +99,7 @@ export class SearchAndFilters extends React.Component<Props, {}> {
       />
       <button className={classnames({
           [`${baseClass}__show-filters`]: true,
-          'btn btn-default': true,
+          'btn btn-secondary': true,
           'active': this.showAdditionalFilters(),
         })}
         aria-pressed={this.showAdditionalFilters()}

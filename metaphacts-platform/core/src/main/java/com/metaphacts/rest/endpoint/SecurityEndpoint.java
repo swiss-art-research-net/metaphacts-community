@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -138,7 +138,6 @@ public class SecurityEndpoint {
         public String userURI = ns.getUserIRI().stringValue();
         public boolean isAuthenticated = SecurityUtils.getSubject().isAuthenticated();
         public boolean isAnonymous = SecurityUtils.getSubject().getPrincipal().toString().equals(AnonymousUserFilter.ANONYMOUS_PRINCIPAL);
-
     }
 
     @SuppressWarnings("unused")
@@ -420,7 +419,23 @@ public class SecurityEndpoint {
     public Collection<String> getPersonalRoles() {
         return getCurrentUserRoles();
     }
-
+    
+    /**
+     * Returns additional attributes for the current user (thread context) Does not have /
+     * require any further permission checks, i.e. every user can view/list his
+     * own roles.
+     * 
+     * @return attribute map (string-object pairs)
+     */
+    @GET()
+    @NoCache
+    @Path("getPersonalUserAttributes")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RequiresAuthentication
+    public Map<String, Object> getPersonalUserAttributes() {
+        return SecurityService.getUserAttributes();
+    }
+    
     @GET()
     @NoCache
     @Path("getAllAccounts")

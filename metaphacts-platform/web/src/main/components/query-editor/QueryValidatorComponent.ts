@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { createFactory, createElement, FormEvent } from 'react';
+import { createFactory, createElement, FormEvent, ChangeEvent, FunctionComponent } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
 import {Just, Nothing} from 'data.maybe';
@@ -54,8 +54,8 @@ import './query-validator.scss';
 
 const FormGroup = createFactory(ReactBootstrap.FormGroup);
 const FormControl = createFactory(ReactBootstrap.FormControl);
-const ControlLabel = createFactory(ReactBootstrap.ControlLabel);
-const HelpBlock = createFactory(ReactBootstrap.HelpBlock);
+const FormLabel = createFactory(ReactBootstrap.FormLabel as FunctionComponent);
+const FormText = createFactory(ReactBootstrap.FormText);
 
 export interface Value {
   value: string | QueryValue;
@@ -234,8 +234,8 @@ export class QueryValidatorComponent extends Component<Props, State> {
     }).toProperty();
   }
 
-  private getFormValue = (e: FormEvent<ReactBootstrap.FormControl>): Kefir.Property<any> => {
-    return Kefir.constant((e.target as any).value);
+  private getFormValue = (e: ChangeEvent<HTMLInputElement>): Kefir.Property<any> => {
+    return Kefir.constant(e.target.value);
   }
 
   private getVariables = (query: SparqlJs.SparqlQuery): string[] => {
@@ -268,10 +268,8 @@ export class QueryValidatorComponent extends Component<Props, State> {
     };
   }
 
-  private getValidationState = (value: Data.Maybe<Value>): 'success' | 'warning' | 'error' => {
-    if (value.isJust && value.get().error) {
-      return 'error';
-    }
+  private isInvalid = (value: Data.Maybe<Value>): boolean => {
+    return Boolean(value.isJust && value.get().error);
   }
 
   render() {
@@ -282,20 +280,21 @@ export class QueryValidatorComponent extends Component<Props, State> {
     const queryValue = query.isJust ? (query.get().value as QueryValue).query : '';
 
     return D.div({className: 'mp-query-validator'},
-      FormGroup({validationState: this.getValidationState(label)},
-        ControlLabel({}, 'Short Description*'),
+      FormGroup({},
+        FormLabel({}, 'Short Description*'),
         FormControl({
           type: 'text',
           value: label.isJust ? label.get().value as string : '',
-          onChange: e => this.label.plug(this.getFormValue(e)),
+          onChange: (e: ChangeEvent<HTMLInputElement>) => this.label.plug(this.getFormValue(e)),
           disabled: viewOnly,
+          isInvalid: this.isInvalid(label)
         }),
-        this.getValidationState(label) === 'error'
-          ? HelpBlock({}, label.get().error.message)
+        this.isInvalid(label)
+          ? FormText({muted: true}, label.get().error.message)
           : null
       ),
       FormGroup({},
-        ControlLabel({}, 'Query Type'),
+        FormLabel({}, 'Query Type'),
         FormControl({
           type: 'text',
           value: query.isJust ? (query.get().value as QueryValue).queryType : '',
@@ -309,11 +308,10 @@ export class QueryValidatorComponent extends Component<Props, State> {
           syntaxErrorCheck: false,
           onChange: e => this.query.plug(Kefir.constant(e.value)),
         }),
-      FormGroup({validationState: this.getValidationState(query), style: {marginBottom: 0}},
-        this.getValidationState(query) === 'error'
-          ? HelpBlock({style: {marginBottom: 0}}, query.get().error.message)
+        this.isInvalid(query)
+          ? FormText({muted: true, style: {marginBottom: 0}} as ReactBootstrap.FormTextProps,
+            query.get().error.message)
           : null
-      )
     );
   }
 }

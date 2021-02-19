@@ -65,8 +65,8 @@ export class Belief extends React.Component<BeliefProps, State> {
     const {belief} = this.state;
     const id = `belief-selection-${belief.targetValue}`;
     return (
-      <ButtonGroup bsSize='xs'>
-        <label className={`btn btn-default ${styles.radioButton} ${styles.agree}`}>
+      <ButtonGroup size='sm'>
+        <label className={`btn btn-secondary ${styles.radioButton} ${styles.agree}`}>
           <input type='radio'
             name={id}
             value={SimpleBeliefValue.Agree}
@@ -74,7 +74,7 @@ export class Belief extends React.Component<BeliefProps, State> {
             onChange={this.onBeliefChange} />
           <span>YES</span>
         </label>
-        <label className={`btn btn-default ${styles.radioButton} ${styles.disagree}`}>
+        <label className={`btn btn-secondary ${styles.radioButton} ${styles.disagree}`}>
           <input type='radio'
             name={id}
             value={SimpleBeliefValue.Disagree}

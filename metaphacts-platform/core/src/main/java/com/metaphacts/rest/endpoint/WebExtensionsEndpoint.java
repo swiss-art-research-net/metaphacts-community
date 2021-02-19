@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,6 @@
  */
 package com.metaphacts.rest.endpoint;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -67,7 +66,7 @@ import com.metaphacts.services.storage.api.StoragePath;
 
 /**
  * Endpoint for reading registered web extensions.
- * 
+ *
  * @author Stefan Schmitt <stefan.schmitt@metaphacts.com>
  *
  */
@@ -107,7 +106,8 @@ public class WebExtensionsEndpoint {
 
         ObjectMapper mapper = new ObjectMapper();
 
-        List<String> extensions = new ArrayList<>();
+        WebExtensions combinedExtensions = new WebExtensions();
+        combinedExtensions.normalize();
         try {
             List<FindResult> resources = platformStorage.findOverrides(configPath);
             for (FindResult findResult : resources) {
@@ -115,9 +115,7 @@ public class WebExtensionsEndpoint {
                 try {
                     String resourceContent = StorageUtils.readTextContent(findResult.getRecord());
                     WebExtensions storageExtensions = mapper.readValue(resourceContent, WebExtensions.class);
-                    if (storageExtensions.extensions != null) {
-                        extensions.addAll(storageExtensions.extensions);
-                    }
+                    combinedExtensions.mergeFrom(storageExtensions);
                 } catch (Exception e) {
                     logger.warn("failed to load {} from app {}: {}", configPath, appId, e.getMessage());
                     logger.debug("Details: ", e);
@@ -128,7 +126,7 @@ public class WebExtensionsEndpoint {
             logger.debug("Details: ", e);
         }
 
-        return new WebExtensions(extensions);
+        return combinedExtensions;
     }
 
     protected class WebExtensionsCache implements PlatformCache {

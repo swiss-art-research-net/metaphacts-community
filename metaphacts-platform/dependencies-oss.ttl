@@ -208,11 +208,11 @@
 		doap:programming-language "Java" ;
 		doap:release [
 			a doap:Version ;
-			doap:created "2020-09-25"^^xsd:date ;
+			doap:created "2020-12-09"^^xsd:date ;
 			doap:name "RDF4J" ;
-			doap:revision "3.4.2"
+			doap:revision "3.5.0"
 		] ;
-		doap:download-page <https://mvnrepository.com/artifact/org.eclipse.rdf4j/rdf4j-storage/3.4.2>
+		doap:download-page <https://mvnrepository.com/artifact/org.eclipse.rdf4j/rdf4j-storage/3.5.0>
 	] ;
 	spdx-ext:useOfOSS "embedded" ;
 	spdx-ext:planToDistribute "binary" ;

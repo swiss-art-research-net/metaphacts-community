@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,7 +42,6 @@ import {
   LinkModel, LinkError, ValidationEvent, Element, DiagramModel, AuthoringState, DataProvider
 } from 'ontodia';
 
-import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
 
 import { Rdf } from 'platform/api/rdf';
@@ -55,7 +54,7 @@ import { validateModelConstraints } from 'platform/components/forms/FormValidati
 
 import { observableToCancellablePromise } from '../AsyncAdapters';
 import { BaseTypeClosureRequest, hasCompatibleType } from './FieldBasedMetadataApi';
-import { EntityMetadata, isObjectProperty } from './FieldConfigurationCommon';
+import { EntityMetadata, LinkMetadata, isObjectProperty } from './FieldConfigurationCommon';
 import {
   fetchInitialModel, getEntityMetadata, applyEventsToCompositeValue
 } from './OntodiaPersistenceCommon';
@@ -64,7 +63,8 @@ export class FieldBasedValidationApi implements ValidationApi {
   private dataProvider: DataProvider | undefined;
 
   constructor(
-    private entityMetadata: Map<ElementTypeIri, EntityMetadata>
+    private entityMetadata: ReadonlyMap<ElementTypeIri, EntityMetadata>,
+    private linkMetadata: ReadonlyMap<LinkTypeIri, LinkMetadata>
   ) {}
 
   setDataProvider(dataProvider: DataProvider) {

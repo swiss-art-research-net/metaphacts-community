@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,10 @@ import { SemanticDataTable } from 'platform/components/semantic/data-table';
 import { SEMANTIC_SEARCH_VARIABLES } from '../config/SearchConfig';
 import { SemanticSearchContext, ResultContext, GraphScopeContext } from './SemanticSearchApi';
 
-export class SemanticSearchTableResult extends React.Component {
+interface SemanticSearchTableResultConfig {}
+export type SemanticSearchTableResultProps = SemanticSearchTableResultConfig;
+
+export class SemanticSearchTableResult extends React.Component<SemanticSearchTableResultProps> {
   render() {
     return (
       <SemanticSearchContext.Consumer>

@@ -1,0 +1,39 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Component to select one or many values from a hierarchy represented by a tree selector.\n\n**Example**:\n```\n<semantic-form-tree-picker-input for='place'>\n</semantic-form-tree-picker-input>\n```",
+    "properties": {
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "placeholder": {
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "placeholder",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "type": "object"
+}
+

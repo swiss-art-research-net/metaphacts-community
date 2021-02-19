@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,7 +77,7 @@ export class ValidationMessages extends Component<ValidationMessagesProps, {}> {
 const DECORATOR_CLASS = 'semantic-form-input-decorator';
 
 export class InputDecorator extends Component<MultipleValuesProps, {}> {
-  static defaultProps: Partial<MultipleValuesProps> = {
+  static defaultProps: Required<Pick<MultipleValuesProps, 'renderHeader'>> = {
     renderHeader: true,
   };
 
@@ -114,7 +114,7 @@ export class InputDecorator extends Component<MultipleValuesProps, {}> {
           <OverlayTrigger trigger={['hover', 'focus']} overlay={
               <Popover id='tooltip'>{definition.description}</Popover>
             }>
-              <sup className={`${DECORATOR_CLASS}__description-icon`} />
+              <span className={`${DECORATOR_CLASS}__description-icon`} />
           </OverlayTrigger>
         ) : null}
         {isReady ? null : (

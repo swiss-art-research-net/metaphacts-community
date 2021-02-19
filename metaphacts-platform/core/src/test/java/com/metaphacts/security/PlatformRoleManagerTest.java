@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.Permission;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -222,7 +223,7 @@ public class PlatformRoleManagerTest extends AbstractIntegrationTest {
             roleManager.updateRoles(newRoleDefinition, Collections.emptySet());
             Assert.fail("Expected illegal argument exception");
         } catch (Exception e) {
-            Assert.assertThat(e.getMessage(), Matchers.containsString("Role admin is immutable"));
+            MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Role admin is immutable"));
         }
         
         Assert.assertEquals("[my:permission:*]", roleManager.resolvePermissionsInRole("admin").toString());
@@ -267,7 +268,7 @@ public class PlatformRoleManagerTest extends AbstractIntegrationTest {
                 .toString(platformStorageRule.getObjectStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY)
                         .getObject(path, null).get().getLocation().readContent(), "UTF-8");
 
-        Assert.assertThat(content, Matchers.containsString("myapp-admin = updated:permission:*"));
+        MatcherAssert.assertThat(content, Matchers.containsString("myapp-admin = updated:permission:*"));
     }
 
     @Test
@@ -294,7 +295,8 @@ public class PlatformRoleManagerTest extends AbstractIntegrationTest {
                 .toString(platformStorageRule.getObjectStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY)
                         .getObject(path, null).get().getLocation().readContent(), "UTF-8");
 
-        Assert.assertThat(content, Matchers.containsString("runtime-admin = my:runtime:admin, updated:permission:*"));
+        MatcherAssert.assertThat(content,
+                Matchers.containsString("runtime-admin = my:runtime:admin, updated:permission:*"));
     }
 
     @Test
@@ -310,7 +312,7 @@ public class PlatformRoleManagerTest extends AbstractIntegrationTest {
             roleManager.updateRoles(Maps.newHashMap(), deleteRoles);
             Assert.fail("Expected illegal argument exception");
         } catch (Exception e) {
-            Assert.assertThat(e.getMessage(), Matchers.containsString("Role admin is immutable"));
+            MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Role admin is immutable"));
         }
 
         Assert.assertEquals("[my:permission:*]", roleManager.resolvePermissionsInRole("admin").toString());
@@ -330,7 +332,7 @@ public class PlatformRoleManagerTest extends AbstractIntegrationTest {
             roleManager.updateRoles(Maps.newHashMap(), deleteRoles);
             Assert.fail("Expected illegal argument exception");
         } catch (Exception e) {
-            Assert.assertThat(e.getMessage(), Matchers.containsString("Role non-existing does not exist"));
+            MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Role non-existing does not exist"));
         }
 
     }
@@ -348,7 +350,7 @@ public class PlatformRoleManagerTest extends AbstractIntegrationTest {
             roleManager.updateRoles(Maps.newHashMap(), deleteRoles);
             Assert.fail("Expected illegal argument exception");
         } catch (Exception e) {
-            Assert.assertThat(e.getMessage(),
+            MatcherAssert.assertThat(e.getMessage(),
                     Matchers.containsString("Role myapp-admin is not defined in runtime storage"));
         }
 
@@ -377,7 +379,7 @@ public class PlatformRoleManagerTest extends AbstractIntegrationTest {
                 .toString(platformStorageRule.getObjectStorage(PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY)
                         .getObject(path, null).get().getLocation().readContent(), "UTF-8");
 
-        Assert.assertThat(content,
+        MatcherAssert.assertThat(content,
                 Matchers.not(Matchers.containsString("runtime-admin = my:runtime:admin, updated:permission:*")));
 
     }

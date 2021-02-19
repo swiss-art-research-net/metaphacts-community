@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,14 +39,14 @@
  */
 package com.metaphacts.util;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 import com.metaphacts.sparql.renderer.MpSparqlQueryRendererTest;
@@ -66,11 +66,17 @@ public class QueryUtilTest {
     @Test
     public void toSPARQLOnStringLiteral() throws Exception {
         Literal fooBar = vf.createLiteral("foo bar");
-        assertThat(QueryUtil.toSPARQL(fooBar), is("\"foo bar\"^^<" + XMLSchema.STRING + ">"));
+        assertThat(QueryUtil.toSPARQL(fooBar), CoreMatchers.equalTo("\"foo bar\""));
+    }
+
+    @Test
+    public void toSPARQLOnIntegerLiteral() throws Exception {
+        Literal fooBar = vf.createLiteral(42);
+        assertThat(QueryUtil.toSPARQL(fooBar), CoreMatchers.equalTo("\"42\"^^<" + XSD.INT + ">"));
     }
 
     @Test
     public void toSPARQLOnIRI() throws Exception {
-        assertThat(QueryUtil.toSPARQL(RDF.TYPE), is("<" + RDF.TYPE + ">"));
+        assertThat(QueryUtil.toSPARQL(RDF.TYPE), CoreMatchers.equalTo("<" + RDF.TYPE + ">"));
     }
 }

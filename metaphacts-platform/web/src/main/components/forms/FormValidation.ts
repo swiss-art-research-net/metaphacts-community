@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,9 @@ import {
   FieldConstraint, SingleFieldConstraint, MultipleFieldConstraint, hasBindingNameForField,
 } from './FieldDefinition';
 import { CompositeChange, formatError } from './FormModel';
-import { FieldValue, ErrorKind, CompositeValue, FieldState, AtomicValue } from './FieldValues';
+import {
+  FieldValue, FieldError, ErrorKind, CompositeValue, FieldState, AtomicValue,
+} from './FieldValues';
 import { tryMakeBindings } from './QueryValues';
 
 export interface ValidationResult {
@@ -97,7 +99,6 @@ export function clearConstraintErrors(
       }
       if (hasError) {
         const newValues = fieldState.values.map(v => {
-          if (FieldValue.isEmpty(v)) { return v; }
           return FieldValue.setErrors(v, v.errors.filter(e => e.source !== constraint));
         });
         fields = fields.set(fieldId, FieldState.set(fieldState, {values: newValues}));
@@ -335,4 +336,78 @@ function updateSubValue(
       });
     })
   });
+}
+
+const SUBJECT_VALIDATION_SOURCE = Symbol('SemanticForm.subjectValidation');
+
+export function clearSubjectErrors(model: CompositeValue): CompositeValue {
+  const errors = model.errors.filter(err => err.source !== SUBJECT_VALIDATION_SOURCE);
+  if (errors.length === model.errors.length) {
+    return model;
+  }
+  return CompositeValue.set(model, {errors});
+}
+
+export function setSubjectError(model: CompositeValue, message: string): CompositeValue {
+  const addedError: FieldError = {
+    kind: ErrorKind.Validation,
+    source: SUBJECT_VALIDATION_SOURCE,
+    message,
+  };
+  const clearedModel = clearSubjectErrors(model);
+  return CompositeValue.set(clearedModel, {
+    errors: [...clearedModel.errors, addedError],
+  });
+}
+
+/**
+ * Checks subject IRI with ASK query to determine if it is unique in the database.
+ *
+ * Query bindings:
+ *   * `?subject` - current entity to be created/edited;
+ */
+export function validateSubjectByQuery(
+  subject: Rdf.Iri,
+  askQuery: string
+): Kefir.Property<CompositeChange> {
+  return checkSubjectByQuery(subject, askQuery)
+    .map(({valid, error}) => {
+      const change: CompositeChange = model => {
+        if (valid || model.subject.value !== subject.value) {
+          return model;
+        }
+        const message = error ?? `Entity with the same IRI does already exist`;
+        return setSubjectError(model, message);
+      };
+      return change;
+    });
+}
+
+function checkSubjectByQuery(
+  subject: Rdf.Iri,
+  askQuery: string
+): Kefir.Property<{ valid: boolean; error?: string }> {
+  let parsedQuery: SparqlJs.SparqlQuery;
+  try {
+    parsedQuery = SparqlUtil.parseQuery(askQuery);
+  } catch (err) {
+    return Kefir.constant({
+      valid: false,
+      error: `Failed to parse query to validate subject IRI: ${formatError(err)}`,
+    });
+  }
+  if (!(parsedQuery.type === 'query' && parsedQuery.queryType === 'ASK')) {
+    return Kefir.constant({
+      valid: false,
+      error: `Expected ASK query to validate subject IRI`,
+    });
+  }
+  const boundQuery = SparqlClient.setBindings(parsedQuery, {subject});
+  return SparqlClient.ask(boundQuery)
+    .map(valid => ({valid}))
+    .flatMapErrors(err => Kefir.constant({
+      valid: false,
+      error: `Failed to validate due to unexpected error: ${formatError(err)}`,
+    }))
+    .toProperty();
 }

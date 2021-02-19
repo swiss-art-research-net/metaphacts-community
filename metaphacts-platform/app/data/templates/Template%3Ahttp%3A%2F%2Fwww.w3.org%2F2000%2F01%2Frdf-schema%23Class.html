@@ -3,7 +3,7 @@
     [[> Platform:DefaultResourceHeader]]
   </div>
   <bs-tabs id="tabs" class='page__body-navtabs' unmount-on-exit=true>
-    <bs-tab event-key='2' title="Taxonomy">
+    <bs-tab event-key='2' title="Class Hierarchy">
       <bs-row>
         <bs-col md=6>
           <mp-collapsible-div>
@@ -64,35 +64,111 @@
         </bs-col>
       </bs-row>
     </bs-tab>
-    <bs-tab event-key="3" title="Properties">
+    <bs-tab event-key="3" title="Relations">
       <mp-collapsible-div>
         <mp-collapsible-div-trigger>
-          <b>Properties with this domain</b>
+          <b>Relations with <mp-label iri="[[this]]"></mp-label> as domain</b>
         </mp-collapsible-div-trigger>
         <mp-collapsible-div-content>
-          <semantic-table query='SELECT ?property WHERE { ?property rdfs:domain ??. FILTER(ISIRI(?property))}'
+          <semantic-table query='SELECT ?property WHERE { ?property rdfs:domain ?? ; a owl:ObjectProperty . FILTER(ISIRI(?property))}'
           	options='{"showTableHeading":false, "filterPlaceholderText":"Filter Properties"}'
-            no-result-template='<i>No properties with domain "<mp-label iri="[[this]]"></mp-label>".</i>'>
+            no-result-template='<i>No relations with domain "<mp-label iri="[[this]]"></mp-label>".</i>'>
           </semantic-table>
         </mp-collapsible-div-content>
       </mp-collapsible-div>
 
       <mp-collapsible-div>
         <mp-collapsible-div-trigger>
-          <b>Properties with this range</b>
+          <b>Relations with <mp-label iri="[[this]]"></mp-label> as range</b>
         </mp-collapsible-div-trigger>
         <mp-collapsible-div-content>
-          <semantic-table query='SELECT ?property WHERE { ?property rdfs:range ??. FILTER(ISIRI(?property))}'
+          <semantic-table query='SELECT ?property WHERE { ?property rdfs:range ?? ; a owl:ObjectProperty . FILTER(ISIRI(?property))}'
           	options='{"showTableHeading":false, "filterPlaceholderText":"Filter Properties"}'
-            no-result-template='<i>No properties with range "<mp-label iri="[[this]]"></mp-label>".</i>'>
+            no-result-template='<i>No relations with range "<mp-label iri="[[this]]"></mp-label>".</i>'>
           </semantic-table>
         </mp-collapsible-div-content>
       </mp-collapsible-div>
+
+      <mp-collapsible-div>
+        <mp-collapsible-div-trigger>
+          <b>Relations with <mp-label iri="[[this]]"></mp-label> as source</b>
+        </mp-collapsible-div-trigger>
+        <mp-collapsible-div-content>
+          <semantic-table query='SELECT ?property WHERE { {
+                                  ?nodeShape <http://www.w3.org/ns/shacl#targetClass> ?? .
+                                  ?nodeShape <http://www.w3.org/ns/shacl#property> ?sh .
+                                } UNION {
+                                  ?? <http://www.w3.org/ns/shacl#property> ?sh .
+                                }
+                                ?sh <http://www.w3.org/ns/shacl#path> ?property .
+                                ?property a owl:ObjectProperty.  
+                                FILTER(ISIRI(?property))
+                              }'
+          	options='{"showTableHeading":false, "filterPlaceholderText":"Filter Properties"}'
+            no-result-template='<i>No relations with source "<mp-label iri="[[this]]"></mp-label>".</i>'>
+          </semantic-table>
+        </mp-collapsible-div-content>
+      </mp-collapsible-div>
+
+      <mp-collapsible-div>
+        <mp-collapsible-div-trigger>
+          <b>Relations with <mp-label iri="[[this]]"></mp-label> as target</b>
+        </mp-collapsible-div-trigger>
+        <mp-collapsible-div-content>
+          <semantic-table query='SELECT ?property WHERE { 
+                                  ?sh <http://www.w3.org/ns/shacl#class> ?? .
+                                  ?sh <http://www.w3.org/ns/shacl#path> ?property .
+                                 ?property a owl:ObjectProperty.  
+                                 FILTER(ISIRI(?property))
+                              }'
+          	options='{"showTableHeading":false, "filterPlaceholderText":"Filter Properties"}'
+            no-result-template='<i>No relations with target "<mp-label iri="[[this]]"></mp-label>".</i>'>
+          </semantic-table>
+        </mp-collapsible-div-content>
+      </mp-collapsible-div>
+
     </bs-tab>
 
-    <bs-tab event-key="4" title="Individuals">
+     <bs-tab event-key="4" title="Attributes">
+      <mp-collapsible-div>
+        <mp-collapsible-div-trigger>
+          <b>Attributes with <mp-label iri="[[this]]"></mp-label> as domain</b>
+        </mp-collapsible-div-trigger>
+        <mp-collapsible-div-content>
+          <semantic-table query='SELECT ?property WHERE { ?property rdfs:domain ?? ; a owl:DatatypeProperty . FILTER(ISIRI(?property))}'
+          	options='{"showTableHeading":false, "filterPlaceholderText":"Filter Properties"}'
+            no-result-template='<i>No attributes with domain "<mp-label iri="[[this]]"></mp-label>".</i>'>
+          </semantic-table>
+        </mp-collapsible-div-content>
+      </mp-collapsible-div>
+
+      <mp-collapsible-div>
+        <mp-collapsible-div-trigger>
+          <b>Attributes with <mp-label iri="[[this]]"></mp-label> as source</b>
+        </mp-collapsible-div-trigger>
+        <mp-collapsible-div-content>
+          <semantic-table query='SELECT ?property WHERE { {
+                                  ?nodeShape <http://www.w3.org/ns/shacl#targetClass> ?? .
+                                  ?nodeShape <http://www.w3.org/ns/shacl#property> ?sh .
+                                } UNION {
+                                  ?? <http://www.w3.org/ns/shacl#property> ?sh .
+                                }
+                                ?sh <http://www.w3.org/ns/shacl#path> ?property .
+                                ?property a owl:DatatypeProperty.  
+                                FILTER(ISIRI(?property))
+                              }'
+          	options='{"showTableHeading":false, "filterPlaceholderText":"Filter Properties"}'
+            no-result-template='<i>No attributes with source "<mp-label iri="[[this]]"></mp-label>".</i>'>
+          </semantic-table>
+        </mp-collapsible-div-content>
+      </mp-collapsible-div>
+
+    
+    </bs-tab>
+
+    <bs-tab event-key="5" title="Individuals">
       <semantic-query query='SELECT (COUNT(*) as ?number) WHERE { {SELECT ?Instance WHERE{ {?Instance rdf:type ??.} UNION {?Instance rdf:type/rdfs:subClassOf+ ??.} FILTER(ISIRI(?Instance))}   LIMIT 1000 } }'
-      	template='{{#each bindings}}{{#ifCond number.value ">" 0}} {{#ifCond number.value ">=" 1000}}<bs-alert bs-style="warning"> The table below is limited to show only a preview of <strong>1000 individuals</strong>. However, the absolute number of individuals of type <strong>[[this.label]]</strong> seems to be larger. </bs-alert>{{else}} <bs-alert bs-style="info"> <strong>{{number.value}}</strong> individuals of type <strong>[[this.label]]</strong>. Blank nodes are not considered.</bs-alert> {{/ifCond}}{{/ifCond}}{{/each}} '>
+      	template='{{#each bindings}}{{#ifCond number.value ">" 0}} {{#ifCond number.value ">=" 1000}}<bs-alert variant="warning"> The table below is limited to show only a preview of <strong>1000 individuals</strong>. However, the absolute number of individuals of type <strong>[[this.label]]</strong> seems to be larger. </bs-alert>{{else}} <bs-alert variant="info"> <strong>{{number.value}}</strong> individuals of type <strong>[[this.label]]</strong>. Blank nodes are not considered.</bs-alert> {{/ifCond}}{{/ifCond}}{{/each}} '>
       </semantic-query>
       <semantic-table query='SELECT DISTINCT ?Instance ?Relation WHERE {
       		{

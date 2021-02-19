@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,7 +76,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.services.storage.api.ObjectKind;
@@ -137,7 +137,7 @@ public class TemplateIndexManager {
     private NamespaceRegistry ns;
 
     @Inject
-    private LabelCache labelCache;
+    private LabelService labelCache;
 
     @Inject
     private Injector injector;

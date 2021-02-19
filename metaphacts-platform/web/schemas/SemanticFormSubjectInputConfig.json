@@ -1,0 +1,8 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Allows to edit IRI of entity edited by a form or nested composite input.\n\n**Example**:\n```\n<semantic-form fields='[...]'\n   new-subject-template='http://example.com/{{label}}'\n   default-edit-subject=true\n   default-suggest-subject=true>\n   <semantic-form-text-input for='label'></semantic-form-text-input>\n   <semantic-form-subject-input></semantic-form-subject-input>\n</semantic-form>\n```",
+    "propertyOrder": [
+    ],
+    "type": "object"
+}
+

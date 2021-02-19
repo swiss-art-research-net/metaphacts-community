@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,20 +37,21 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { HTMLAttributes } from 'react';
-
 import { Component } from 'platform/api/components';
+import { Rdf } from 'platform/api/rdf';
 
 import { FieldDefinition } from '../FieldDefinition';
 import { FieldValue } from '../FieldValues';
 
-export interface StaticFieldProps extends HTMLAttributes<HTMLElement> {
+export interface StaticComponentProps {
   for?: string;
   definition?: FieldDefinition;
   model?: FieldValue;
+  setSuggestSubject?: (suggest: boolean) => void;
+  updateSubject?: (newSubject: Rdf.Iri) => void;
 }
 
-export abstract class StaticComponent<P extends StaticFieldProps, S> extends Component<P, S> {
+export abstract class StaticComponent<P extends StaticComponentProps, S> extends Component<P, S> {
   constructor(props: P, context: any) {
     super(props, context);
   }

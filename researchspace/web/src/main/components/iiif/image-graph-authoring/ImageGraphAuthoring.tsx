@@ -166,7 +166,7 @@ export interface State {
  *          <semantic-form-hidden-input for="boundingBox"></semantic-form-hidden-input>
  *
  *          <button name="submit" class="btn btn-sm btn-success">Save</button>
- *          <button name="reset" class="btn btn-sm btn-default">Reset</button>
+ *          <button name="reset" class="btn btn-sm btn-secondary">Reset</button>
  *          <button name="cancel" class="btn btn-sm btn-danger pull-right">Cancel</button>
  *        </semantic-form>
  *      </ontodia>

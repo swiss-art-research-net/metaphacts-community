@@ -1,0 +1,68 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ApplyOnState": {
+            "enum": [
+                "create",
+                "edit"
+            ],
+            "type": "string"
+        }
+    },
+    "properties": {
+        "allowEditExisting": {
+            "type": "boolean"
+        },
+        "allowSelectExisting": {
+            "type": "boolean"
+        },
+        "applyState": {
+            "$ref": "#/definitions/ApplyOnState"
+        },
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "deleteOnDiscard": {
+            "default": false,
+            "description": "Sets entity as deleted when removed from editing form.",
+            "type": "boolean"
+        },
+        "entityTypeIri": {
+            "type": "string"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "entityTypeIri",
+        "allowSelectExisting",
+        "allowEditExisting",
+        "deleteOnDiscard",
+        "applyState",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "required": [
+        "entityTypeIri"
+    ],
+    "type": "object"
+}
+

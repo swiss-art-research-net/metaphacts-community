@@ -1,36 +1,37 @@
 .ontodia-dialog {
-  background: #fff;
-  border: 1px solid #333;
-  box-shadow: 0 4px 15px 7px rgba(51, 51, 51, 0.05);
   position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: 0px 0px 14px 5px rgba(0, 0, 0, 0.15);
+
+  &--resized {/**/}
 
   &__caption {
     font-weight: bold;
-    position: absolute;
-    top: -11px;
-    left: 10px;
     background: white;
-    padding-left: 3px;
-    padding-right: 3px;
-    border-radius: 6px;
+    padding: 10px 10px;
+    border-bottom: 1px solid #e2e2e2;
   }
 
   &__close-button {
-    background: transparent url("../images/font-awesome/times-circle-regular.svg");
+    background: transparent url("../images/font-awesome/times-solid.svg");
     background-size: contain;
+    background-repeat: no-repeat;
     border: 0 none;
     cursor: pointer;
     display: block;
     outline: none;
     padding: 0;
     position: absolute;
-    top: -22px;
-    right: -22px;
-    height: 20px;
-    width: 20px;
+    top: 10px;
+    right: 10px;
+    height: 18px;
+    width: 14px;
+    z-index: 2;
 
     opacity: 0.5;
-    transition: 0.3s;
+    transition: opacity 0.3s;
 
     &:hover {
       opacity: 1;

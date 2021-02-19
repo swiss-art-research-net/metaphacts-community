@@ -1,0 +1,351 @@
+/*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2021, metaphacts GmbH
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, you can receive a copy
+ * of the GNU Lesser General Public License from http://www.gnu.org/
+ */
+.component {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.menuLoading,
+.menuError {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  color: #cbcbcb;
+  align-items: center;
+  justify-content: center;
+}
+
+.menuLoading {
+  font-size: x-large;
+}
+
+.menuError {
+  font-size: 16px;
+
+  &:before {
+    content: "";
+    background: url("../../../images/font-awesome/times-solid--red.svg") no-repeat;
+    background-size: contain;
+    flex: 0 0 13px;
+    height: 20px;
+    margin-right: 7px;
+    vertical-align: middle;
+    width: 13px;
+  }
+}
+
+.breadcrumbs {
+  padding: 10px;
+  padding-bottom: 0px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 27px;
+  min-height: 27px;
+  flex-grow: 0;
+}
+
+.breadcrumbsLink {
+  color: #337ab7;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.searchLine {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.searchLineInput {
+  flex: 1 1 100%;
+}
+
+.searchSortSwitches {
+  flex: 0 0 20px;
+  margin-left: 10px;
+}
+
+.searchSortSwitch {
+  display: none;
+}
+
+.searchSortSwitch:checked + .searchSortSwitchLabel {
+  color: #337ab7;
+  opacity: 1;
+}
+
+.searchSortSwitchLabel {
+  cursor: pointer;
+  display: block;
+  margin: 0;
+  opacity: 0.4;
+  text-align: center;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.linkTypes {
+  padding: 5px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-top: 1px solid #dbdbdb;
+  flex: 1 1 0;
+  margin: 0;
+}
+
+.linkTypesEmpty {
+  display: flex;
+  align-items: center;
+}
+
+.linkTypesEmptyLabel {
+  width: 100%;
+  position: relative;
+  font-size: x-large;
+  color: #cbcbcb;
+  text-align: center;
+}
+
+.linkTypesSeparatorLine {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border: 0;
+  border-top: 1px solid #eee;
+  height: 0;
+}
+
+.linkType {
+  display: flex;
+  overflow: hidden;
+  padding: 0 5px 0 0;
+  align-items: center;
+  margin-bottom: 4px;
+  background: #f7f7f7;
+
+  &:hover {
+    background-color: #e2e2e2;
+  }
+}
+
+.linkTypeDirection {
+  background: rgba(219, 219, 219, 0.35);
+  min-height: 30px;
+  padding: 5px 0px 5px 10px;
+  display: flex;
+  align-items: center;
+}
+
+.linkTypeDirectionIn {
+  background: url("../../../images/direction-in.png") 0 0 no-repeat;
+  flex-shrink: 0;
+  width: 22px;
+  height: 15px;
+  margin: 0 14px 0 0;
+  background-size: contain;
+  opacity: 0.5;
+}
+
+.linkTypeDirectionOut {
+  background: url("../../../images/direction-out.png") 0 0 no-repeat;
+  flex-shrink: 0;
+  width: 22px;
+  height: 15px;
+  margin: 0 8px 0 6px;
+  background-size: contain;
+  opacity: 0.5;
+}
+
+.linkTypeTitle {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 5px 0px 5px 5px;
+}
+
+.linkTypeCount {
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.linkTypeAddToFilter {
+  background-image: url("../../../images/add-to-filter.png");
+  background-size: 20px 20px;
+  width: 20px;
+  height: 20px;
+  opacity: 0.4;
+  margin-left: 10px;
+  &:hover { opacity: 1; }
+}
+
+.linkTypeNavigate {
+  float: right;
+  background-image: url("../../../images/expand-link.png");
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+  margin-left: 10px;
+  min-width: 16px;
+  background-size: cover;
+  &:hover { opacity: 1; }
+}
+
+.objectPanel {
+  flex: 1 1 auto;
+  padding: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0px;
+}
+
+.objectSelectAll {
+  white-space: nowrap;
+  margin-bottom: 5px;
+  display: flex;
+
+  input {
+    margin-right: 5px;
+    &:disabled { opacity: 0.3 }
+  }
+}
+
+.objectPanelWarning {
+  background: #fcf8e3;
+  color: #8a6d3b;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 5px 10px;
+
+  &:before {
+    content: "";
+    background: url("../../../images/font-awesome/exclamation-circle-solid.svg") no-repeat;
+    background-size: contain;
+    flex: 0 0 14px;
+    height: 14px;
+    margin-right: 5px;
+    vertical-align: middle;
+    width: 14px;
+  }
+}
+
+.objectList {
+  border: 1px solid #e2e2e2;
+  flex: 1 1 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  padding: 5px;
+  margin-bottom: 5px;
+}
+
+.objectLoadingLabel {
+  border: 1px solid #e2e2e2;
+  flex-grow: 1;
+  box-shadow: inset 0px 0px 23px -8px #e2e2e2;
+  background-color: whitesmoke;
+  position: relative;
+  font-size: x-large;
+  display: flex;
+  color: #cbcbcb;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+.objectListFooter {
+  height: 25px;
+  white-space: nowrap;
+  display: flex;
+  justify-content: space-between;
+}
+
+.objectListCounter {
+  height: 25px;
+  float: left;
+  padding: 0px 5px;
+  font-size: larger;
+  display: flex;
+  align-items: center;
+  max-width: 60%;
+}
+
+.objectListExtraElements {
+  color: gray;
+  cursor: help;
+}
+
+.objectListAddButton {
+  height: 25px;
+  padding-top: 1px;
+  padding-bottom: 2px;
+}
+
+.itemLinks {
+  /* empty */
+}
+
+.itemIncomingArrow {
+  margin-right: 5px;
+  &::before {
+    content: '\2190';
+  }
+}
+
+.itemOutgoingArrow {
+  margin-right: 5px;
+  &::before {
+    content: '\2192';
+  }
+}
+
+.itemLinkCount {
+  /* empty */
+}

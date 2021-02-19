@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "A trigger component to scroll to target element by ID or to the page top.\n\n**Example**:\n```\n<mp-anchor to=\"#section123\">Click to scroll</mp-anchor>\n<div style=\"padding-top:2000px;\">Lorem ipsum dolor sit amet</div>\n<section id=\"section123\"></section>\n```\n\n**Example**:\n```\n<mp-anchor to=\"#section456\"\n   animate='{\"offset\": 20, \"duration\": 6000}'>\n   Click to scroll\n</mp-anchor>\n<div style=\"padding-top:2000px;\">Lorem ipsum dolor sit amet</div>\n<section id=\"section456\"></section>\n```",
+    "properties": {
+        "animate": {
+            "default": {
+                "duration": 400,
+                "easing": "easeOutQuad",
+                "offset": 0
+            },
+            "description": "Options for smooth scrolling animation:",
+            "properties": {
+                "duration": {
+                    "type": "number"
+                },
+                "easing": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "number"
+                }
+            },
+            "propertyOrder": [
+                "offset",
+                "duration",
+                "easing"
+            ],
+            "type": "object"
+        },
+        "to": {
+            "description": "ID of the target node to scroll to (leading `#` can be omitted).\n\nSet to empty string (`to=''`) to scroll to the page top.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "to",
+        "animate"
+    ],
+    "required": [
+        "to"
+    ],
+    "type": "object"
+}
+

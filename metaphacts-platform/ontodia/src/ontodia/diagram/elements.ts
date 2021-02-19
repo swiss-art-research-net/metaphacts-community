@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,18 +45,16 @@ import { GenerateID } from '../data/schema';
 
 import { EventSource, Events, PropertyChange } from '../viewUtils/events';
 
-import { Vector, isPolylineEqual, Rect } from './geometry';
+import { Vector, isPolylineEqual } from './geometry';
 
 export type Cell = Element | Link | LinkVertex;
 
-export enum LinkDirection {
-    in = 'in',
-    out = 'out',
-}
-
 export enum ElementRedrawMode {
+    /** Update size, position, decorators without invalidating custom template component. */
     Render = 1,
+    /** Invalidate custom template component without recomputing its props. */
     RedrawTemplate,
+    /** Fully recompute custom template component props. */
     RecomputeTemplate,
 }
 
@@ -369,10 +367,6 @@ export interface LinkTemplateState {
     [propertyIri: string]: any;
 }
 
-export function linkMarkerKey(linkTypeIndex: number, startMarker: boolean) {
-    return `ontodia-${startMarker ? 'mstart' : 'mend'}-${linkTypeIndex}`;
-}
-
 export interface LinkTypeEvents {
     changeLabel: PropertyChange<LinkType, ReadonlyArray<Rdf.Literal>>;
     changeIsNew: PropertyChange<LinkType, boolean>;
@@ -388,8 +382,6 @@ export class LinkType {
 
     readonly id: LinkTypeIri;
 
-    private _index: number | undefined;
-
     private _label: ReadonlyArray<Rdf.Literal>;
     private _isNew = false;
 
@@ -398,21 +390,11 @@ export class LinkType {
 
     constructor(props: {
         id: LinkTypeIri;
-        index?: number;
         label?: ReadonlyArray<Rdf.Literal>;
     }) {
-        const {id, index, label = []} = props;
+        const {id, label = []} = props;
         this.id = id;
-        this._index = index;
         this._label = label;
-    }
-
-    get index() { return this._index; }
-    setIndex(value: number) {
-        if (typeof this._index === 'number') {
-            throw new Error('Cannot set index for link type more than once.');
-        }
-        this._index = value;
     }
 
     get label() { return this._label; }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,9 +39,7 @@
  */
 package com.metaphacts.data.rdf.container;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -53,9 +51,11 @@ import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.rio.RDFFormat;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import com.github.sdorra.shiro.SubjectAware;
+import com.metaphacts.junit.MpAssert;
 import com.metaphacts.junit.TestUtils;
 import com.metaphacts.vocabulary.LDP;
 import com.metaphacts.vocabulary.OA;
@@ -67,8 +67,7 @@ import com.metaphacts.vocabulary.OA;
  */
 public class AnnotationContainerTest extends AbstractLDPTest {
     private static final String ANNOTATION_RESOURCE_TTL="/com/metaphacts/data/rdf/container/annotationResource.ttl";
-    private static final String ANNOTATION_RESOURCE_UPDATED_TTL="/com/metaphacts/data/rdf/container/annotationResourceUpdated.ttl";
-    private static final String ANNOTATION_RESOURCE_WITHOUTBODY_TTL="/com/metaphacts/data/rdf/container/annotationResourceWithoutBody.ttl";
+    private static final String ANNOTATION_RESOURCE_WITHOUTBODY_TTL = "/com/metaphacts/data/rdf/container/annotationResourceWithoutBody.ttl";
     private static final String ANNOTATION_RESOURCE_WITHOUTTYPE_TTL="/com/metaphacts/data/rdf/container/annotationResourceWithoutType.ttl";
 
     private static final IRI annotationResource =  vf.createIRI("http://www.test.com/annotation1");
@@ -104,9 +103,13 @@ public class AnnotationContainerTest extends AbstractLDPTest {
             configuration = sparqlPermissionShiroFile //TODO
     )
     public void testAddAnnotationWithoutBody() throws Exception{
-        exception.expect(NullPointerException.class);
-        exception.expectMessage(containsString("Annotation must have a body"));
-        api.createLDPResource(Optional.of(annotationResource.stringValue()), new RDFStream(TestUtils.readPlainTextTurtleInput(ANNOTATION_RESOURCE_WITHOUTBODY_TTL), RDFFormat.TURTLE), AnnotationContainer.IRI, "http://www.metaphacts.com/testinstances/");
+        MpAssert.assertThrows("Annotation must have a body.", NullPointerException.class, () -> {
+
+            api.createLDPResource(Optional.of(annotationResource.stringValue()),
+                    new RDFStream(TestUtils.readPlainTextTurtleInput(ANNOTATION_RESOURCE_WITHOUTBODY_TTL),
+                            RDFFormat.TURTLE),
+                    AnnotationContainer.IRI, "http://www.metaphacts.com/testinstances/");
+        });
     }
 
     @Test
@@ -116,9 +119,12 @@ public class AnnotationContainerTest extends AbstractLDPTest {
             configuration = sparqlPermissionShiroFile //TODO
     )
     public void testAddAnnotationWithoutType() throws Exception{
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage(containsString("Resource to be added to the Annotation Container must be at least of rdf:type oa:Annotation."));
-        api.createLDPResource(Optional.of(annotationResource.stringValue()), new RDFStream(TestUtils.readPlainTextTurtleInput(ANNOTATION_RESOURCE_WITHOUTTYPE_TTL), RDFFormat.TURTLE), AnnotationContainer.IRI, "http://www.metaphacts.com/testinstances/");
+        MpAssert.assertThrows(
+                Matchers.containsString(
+                        "Resource to be added to the Annotation Container must be at least of rdf:type oa:Annotation."),
+                IllegalArgumentException.class, () -> {
+            api.createLDPResource(Optional.of(annotationResource.stringValue()), new RDFStream(TestUtils.readPlainTextTurtleInput(ANNOTATION_RESOURCE_WITHOUTTYPE_TTL), RDFFormat.TURTLE), AnnotationContainer.IRI, "http://www.metaphacts.com/testinstances/"); 
+        });
     }
 
 }

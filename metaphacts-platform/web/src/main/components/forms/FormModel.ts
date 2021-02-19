@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -102,8 +102,8 @@ export function generatePathFromTemplate(
   });
 }
 
-export function wasIriGeneratedByTemplate(
-  generatedIri: string,
+export function wasSubjectGeneratedByTemplate(
+  generatedSubject: string,
   template: string,
   ownerSubject: Rdf.Iri | undefined,
   composite: CompositeValue | undefined
@@ -124,7 +124,24 @@ export function wasIriGeneratedByTemplate(
     escapeRegExp(escapeTable.UUID),
     '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
   );
-  return new RegExp(regexpEscaped).test(generatedIri);
+  return new RegExp(`^${regexpEscaped}$`).test(generatedSubject);
+}
+
+export function computeIfSubjectWasSuggested(
+  composite: CompositeValue,
+  template: string
+): CompositeValue {
+  return CompositeValue.set(composite, {
+    editableSubject: true,
+    suggestSubject: wasSubjectGeneratedByTemplate(
+      composite.subject.value,
+      template,
+      undefined,
+      CompositeValue.set(composite, {
+        subject: CompositeValue.empty.subject
+      })
+    ),
+  });
 }
 
 export function makeDefaultSubjectReplacer(): SubjectReplacer {
@@ -136,8 +153,8 @@ export function makeDefaultSubjectReplacer(): SubjectReplacer {
       composite.definitions.has(placeholder.id)
     ) {
       const state = composite.fields.get(placeholder.id, FieldState.empty);
-      const first = FieldState.getFirst(state.values) || FieldValue.empty;
-      const valueContent = FieldValue.isAtomic(first) ? first.value.value : '';
+      const selected = FieldValue.getSingle(state.values);
+      const valueContent = FieldValue.isAtomic(selected) ? selected.value.value : '';
       return encodeIri(valueContent);
     } else {
       return '';

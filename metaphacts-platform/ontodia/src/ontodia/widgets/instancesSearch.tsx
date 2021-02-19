@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@
 import * as React from 'react';
 
 import {
-    ElementModel, ElementIri, Dictionary, LinkTypeIri, ElementTypeIri,
+    ElementModel, LinkedElement, ElementIri, LinkTypeIri, ElementTypeIri,
 } from '../data/model';
 import { Rdf } from '../data/rdf';
 import { FilterParams } from '../data/provider';
@@ -155,7 +155,7 @@ export class InstancesSearch extends React.Component<InstancesSearchProps, State
                             }
                         }} />
                     <span className='ontodia-input-group-btn'>
-                        <button className='ontodia-btn ontodia-btn-default' type='button' title='Search'
+                        <button className='ontodia-btn ontodia-btn-secondary' type='button' title='Search'
                             onClick={() => this.submitCriteriaUpdate()}>
                             <span className='fa fa-search' aria-hidden='true'/>
                         </button>
@@ -172,7 +172,7 @@ export class InstancesSearch extends React.Component<InstancesSearchProps, State
                 {error ? <div className={`${CLASS_NAME}__error`}>Data fetching failed.</div> : null}
                 <SearchResults
                     view={view}
-                    items={items || []}
+                    items={items ? items.map(model => ({model})) : []}
                     highlightText={criteria.text}
                     selection={this.state.selection}
                     onSelectionChanged={this.onSelectionChanged}
@@ -241,7 +241,7 @@ export class InstancesSearch extends React.Component<InstancesSearchProps, State
 
     private renderRemoveCriterionButtons(onClick: () => void) {
         return <div className={`${CLASS_NAME}__criterion-remove ontoidia-btn-group ontodia-btn-group-xs`}>
-            <button type='button' className='ontodia-btn ontodia-btn-default' title='Remove criteria'
+            <button type='button' className='ontodia-btn ontodia-btn-secondary' title='Remove criteria'
                 onClick={onClick}>
                 <span className='fa fa-times' aria-hidden='true'></span>
             </button>
@@ -364,7 +364,8 @@ export class InstancesSearch extends React.Component<InstancesSearchProps, State
             moreItemsAvailable: false,
         });
 
-        this.context.ontodiaWorkspace.editor.model.dataProvider.filter(request).then(elements => {
+        const {model} = this.context.ontodiaWorkspace;
+        model.dataProvider.filter(request).then(elements => {
             if (this.currentRequest !== request) { return; }
             this.processFilterData(elements);
             this.context.ontodiaWorkspace.triggerWorkspaceEvent(WorkspaceEventKey.searchQueryItem);
@@ -376,7 +377,7 @@ export class InstancesSearch extends React.Component<InstancesSearchProps, State
         });
     }
 
-    private processFilterData(elements: Dictionary<ElementModel>) {
+    private processFilterData(elements: ReadonlyArray<LinkedElement>) {
         const requestedAdditionalItems = this.currentRequest!.offset > 0;
 
         const existingIris: { [iri: string]: true } = {};
@@ -386,10 +387,9 @@ export class InstancesSearch extends React.Component<InstancesSearchProps, State
         }
 
         const items = requestedAdditionalItems ? [...this.state.items!] : [];
-        for (const iri in elements) {
-            if (!elements.hasOwnProperty(iri)) { continue; }
-            if (existingIris[iri]) { continue; }
-            items.push(elements[iri]!);
+        for (const {element} of elements) {
+            if (existingIris[element.id]) { continue; }
+            items.push(element);
         }
 
         const moreItemsAvailable = Object.keys(elements).length >= this.currentRequest!.limit;

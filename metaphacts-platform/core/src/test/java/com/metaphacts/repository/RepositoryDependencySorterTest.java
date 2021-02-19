@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,8 +40,8 @@
 package com.metaphacts.repository;
 
 import static com.metaphacts.junit.MpMatchers.hasItemsInOrder;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,9 +55,8 @@ import org.eclipse.rdf4j.repository.config.RepositoryImplConfig;
 import org.eclipse.rdf4j.repository.sail.config.SailRepositoryConfig;
 import org.eclipse.rdf4j.sail.config.AbstractSailImplConfig;
 import org.eclipse.rdf4j.sail.config.SailImplConfig;
-import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -107,14 +106,7 @@ public class RepositoryDependencySorterTest {
         }
         
     }
-    
-    @Rule
-    public ExpectedException exceptionGrabber = ExpectedException.none();
-    
 
-    public RepositoryDependencySorterTest() {
-        // TODO Auto-generated constructor stub
-    }
     
     private RepositoryConfig createTestRepoNoDepsConfig(String name) {
         RepositoryImplConfig impl = new DummyRepoNoDepsConfig();
@@ -198,8 +190,9 @@ public class RepositoryDependencySorterTest {
         addRepo(originals, "first", "second");
         addRepo(originals, "second", "first");
         
-        exceptionGrabber.expect(RepositoryConfigException.class);
-        RepositoryDependencySorter.sortConfigs(originals);
+        Assert.assertThrows(RepositoryConfigException.class, () -> {
+            RepositoryDependencySorter.sortConfigs(originals);
+        });
     }
     
     @Test
@@ -212,8 +205,9 @@ public class RepositoryDependencySorterTest {
         addRepo(originals, "second", "first");
         addRepo(originals, "third", "second");
         
-        exceptionGrabber.expect(RepositoryConfigException.class);
-        RepositoryDependencySorter.sortConfigs(originals);
+        Assert.assertThrows(RepositoryConfigException.class, () -> {
+            RepositoryDependencySorter.sortConfigs(originals);
+        });
     }
     
     @Test

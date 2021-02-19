@@ -26,7 +26,7 @@
   </div>
   <mp-anonymous-hidden>
     <div class='set-management__item-actions' style='margin-left: auto;'>
-      <bs-dropdown-button pull-right=true bs-style=link title='' id='set-item-actions-{{iri.value}}'>
+      <bs-dropdown-button drop='right' variant=link title='' id='set-item-actions-{{iri.value}}'>
         [[> @partial-block ]]
         <mp-copy-to-clipboard text='{{iri.value}}' message='Query Template IRI has been copied to clipboard!'>
           <bs-menu-item event-key=copy>
@@ -128,7 +128,7 @@
     flex-direction: column;
   } 
   
-  .open-sidebar__tabs .tab-pane {
+  .open-sidebar__tabs .tab-pane, .set-management--list-view {
     height: 100%;
   } 
   
@@ -164,7 +164,8 @@
               <div class="split-pane__leftsidebar-caption">Query Catalog</div>
             </mp-splitpane-toggle-on>
             <mp-splitpane-sidebar-open class="open-sidebar">
-              <bs-tabs default-active-key='[[#if (urlParam "tab")]] [[urlParam "tab"]][[else]]3[[/if]]'  id='queries' class='open-sidebar__tabs'>
+              <div class='open-sidebar__tabs'>
+              <bs-tabs default-active-key='[[#if (urlParam "tab")]] [[urlParam "tab"]][[else]]3[[/if]]'  id='queries'>
                 <bs-tab title="Global Queries" event-key='1'>
                   <semantic-context repository='assets'>
                     <mp-set-management style='flex: auto' accept-resource-query='ASK { FILTER(false) }'
@@ -339,6 +340,7 @@
                   <mp-recent-queries></mp-recent-queries>
                 </bs-tab>
               </bs-tabs>
+              </div>
             </mp-splitpane-sidebar-open>
             <div class="split-pane__leftsidebar-footer">
               <mp-splitpane-toggle-on>

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,8 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 package com.metaphacts.lookup.model;
+
+import java.util.Objects;
 
 /**
  * This class is a part of {@link LookupObjectProperty} class
@@ -59,5 +61,18 @@ public class LookupObjectPropertyLink {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    @Override public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        LookupObjectPropertyLink that = (LookupObjectPropertyLink) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override public int hashCode() {
+        return Objects.hash(id);
     }
 }

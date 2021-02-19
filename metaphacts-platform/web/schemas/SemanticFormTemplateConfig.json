@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "debounce": {
+            "default": 0,
+            "description": "Debounce interval to wait after form change before updating the component.\n\nIf equal to `0` the update will happen immediately.",
+            "type": "number"
+        },
+        "template": {
+            "description": "Template which accepts form state as data context.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "template",
+        "debounce"
+    ],
+    "required": [
+        "template"
+    ],
+    "type": "object"
+}
+

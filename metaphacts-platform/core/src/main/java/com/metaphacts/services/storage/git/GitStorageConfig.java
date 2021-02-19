@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,11 +39,31 @@
  */
 package com.metaphacts.services.storage.git;
 
-import com.metaphacts.services.storage.api.*;
-
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 
+import javax.annotation.Nullable;
+
+import com.metaphacts.services.storage.api.StorageConfig;
+import com.metaphacts.services.storage.api.StorageConfigException;
+
+/**
+ * Configuration for the {@link GitStorage}.
+ * 
+ * <p>
+ * The GitStorage supports the following authentication modes:
+ * </p>
+ * 
+ * <ul>
+ * <li>built-in: use openssh configuration (i.e. ~/.ssh) or user/password from
+ * connection URL</li>
+ * <li>custom private key for SSH connection as specified using
+ * {@link #getKeyPath()} or {@link #getKey()}</li>
+ * <li>username + password / token for HTTPS connection as specified using
+ * {@link #getUsername()} and {@link #getPassword()}</li>
+ * </ul>
+ * 
+ *
+ */
 public class GitStorageConfig extends StorageConfig {
 
     private Path localPath;
@@ -54,17 +74,27 @@ public class GitStorageConfig extends StorageConfig {
     @Nullable
     private String remoteUrl;
 
+    @Nullable
+    private String keyPath;
+
+    @Nullable
+    private String key;
+
+    @Nullable
+    private String username;
+
+    @Nullable
+    private String password;
+
     private int maxPushAttempts = 3;
+
+    private boolean verifyKnownHosts = true;
 
     @Override
     public String getStorageType() {
         return GitStorage.STORAGE_TYPE;
     }
 
-    @Override
-    public ObjectStorage createStorage(StorageCreationParams params) throws StorageException {
-        return new GitStorage(params.getPathMapping(), this);
-    }
 
     @Override
     protected void validate() throws StorageConfigException {
@@ -108,6 +138,63 @@ public class GitStorageConfig extends StorageConfig {
     }
 
     /**
+     * The location of the private key pointing to an existing location in the file
+     * system
+     * 
+     * @return
+     */
+    @Nullable
+    public String getKeyPath() {
+        return keyPath;
+    }
+
+    public void setKeyPath(String keyPath) {
+        this.keyPath = keyPath;
+    }
+
+    /**
+     * The private key as String
+     * 
+     * @return
+     */
+    @Nullable
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    /**
+     * The username used for HTTPS authentication
+     * 
+     * @return the username
+     */
+    @Nullable
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    /**
+     * The password or token used for HTTPS authentication
+     * 
+     * @return
+     */
+    @Nullable
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    /**
      * Maximum count of attempts to push changes before throwing an error.
      */
     public int getMaxPushAttempts() {
@@ -116,5 +203,40 @@ public class GitStorageConfig extends StorageConfig {
 
     public void setMaxPushAttempts(int maxPushAttempts) {
         this.maxPushAttempts = maxPushAttempts;
+    }
+
+    /**
+     * Whether to verify if the host is accepted as known host
+     * 
+     * @return
+     */
+    public boolean isVerifyKnownHosts() {
+        return verifyKnownHosts;
+    }
+
+    public void setVerifyKnownHosts(boolean verifyKnownHosts) {
+        this.verifyKnownHosts = verifyKnownHosts;
+    }
+
+    /**
+     * Whether custom authentication is enabled requiring specific transport
+     * configuration. This is if there is {@link #customSSHAuthentication()} or a
+     * username is defined
+     * 
+     * @return
+     */
+    public boolean customAuthenticationScheme() {
+        return customSSHAuthentication() || username != null;
+    }
+
+    /**
+     * Whether a customized SSH transport factory needs to be configured. This is if
+     * {@link #getKeyPath()} , {@link #getKey()} or if {@link #verifyKnownHosts} is
+     * deactivated.
+     * 
+     * @return
+     */
+    public boolean customSSHAuthentication() {
+        return keyPath != null || key != null || verifyKnownHosts == false;
     }
 }

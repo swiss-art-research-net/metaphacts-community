@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@
 import '../../scss/main.scss';
 
 import * as React from 'react';
-import { NavItem, MenuItem, NavDropdown } from 'react-bootstrap';
+import { NavItem, NavLink, NavDropdown, Dropdown } from 'react-bootstrap';
 import * as SecurityService from 'platform/api/services/security';
 import { ResourceLinkContainer } from 'platform/components/navigation';
 
@@ -72,18 +72,22 @@ export class NavAccountComponentClass extends React.Component<{}, UserAuthentica
   render() {
     const { user } = this.state;
     if (user.isAuthenticated && !user.isAnonymous) {
+      // Using Dropdown instead of NavDropdown, as the alignRight prop is not available there
       return (
-        <NavDropdown id='main-header-dropdown' title=''>
-          <ResourceLinkContainer iri='http://www.metaphacts.com/ontologies/platform#UserProfile'
-            propagateLink={true}>
-            <MenuItem title='User Profile'>{user.principal}</MenuItem>
-          </ResourceLinkContainer>
-          <MenuItem divider={true}></MenuItem>
-          <MenuItem title='logout' href='/logout'>Logout</MenuItem>
-        </NavDropdown>
+        <Dropdown alignRight as={NavItem}>
+          <Dropdown.Toggle id='main-header-dropdown' as={NavLink}></Dropdown.Toggle>
+          <Dropdown.Menu>
+            <ResourceLinkContainer iri='http://www.metaphacts.com/ontologies/platform#UserProfile'
+              propagateLink={true}>
+              <Dropdown.Item title='User Profile'>{user.principal}</Dropdown.Item>
+            </ResourceLinkContainer>
+            <Dropdown.Divider></Dropdown.Divider>
+            <Dropdown.Item title='logout' href='/logout'>Logout</Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
       );
     } else {
-      return <NavItem title='login' href='/login'>Login</NavItem>;
+      return <NavItem title='login'><NavLink href='/login'>Login</NavLink></NavItem>;
     }
   }
 

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,10 +42,11 @@ import * as PropTypes from 'prop-types';
 import * as _ from 'lodash';
 
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
-import { ComponentContext, Component } from 'platform/api/components';
+import { ComponentContext, Component, ComponentPropTypes } from 'platform/api/components';
 import { TableLayout, ColumnConfiguration } from '../table';
 import { Spinner } from 'platform/components/ui/spinner';
 import { ErrorNotification } from 'platform/components/ui/notification';
+import { ControlledPropsHandler } from 'platform/components/utils/ControlledProps';
 import { Cancellation } from 'platform/api/async';
 import { trigger, BuiltInEvents } from 'platform/api/events';
 import {
@@ -66,29 +67,43 @@ export type SemanticDataTableConfig = TableBaseConfig | TableColumnConfig | Tabl
 
 /**
  * The simplest table configuration can be used to show all SPARQL result set projection variables.
- * The SPARQL projection variable name is used as column header. IRIs will be rendered as resolvable links using the `<semantic-link>` component or as a simple string otherwise.
+ *
+ * The SPARQL projection variable name is used as column header.
+ * IRIs will be rendered as resolvable links using the `<semantic-link>`
+ * component or as a simple string otherwise.
  */
 export interface TableBaseConfig extends PreviousBaseConfig {
   options: SemanticDataTableOptions;
 }
 /**
- * More advanced configuration that can be used to restrict the set of columns to be visualized, to modify the column headings or to provide custom cell visualization templates
+ * More advanced configuration that can be used to restrict the set of columns to be visualized,
+ * to modify the column headings or to provide custom cell visualization templates.
  */
 export interface TableColumnConfig extends TableBaseConfig {
   /**
-   * List of columns to display. If specified table shows only columns explicitly specified in the configuration
+   * List of columns to display.
+   *
+   * If specified table shows only columns explicitly specified in the configuration.
    */
   columnConfiguration?: Array<SemanticColumnConfiguration>;
 }
 /**
- * The most advanced table configuration that provides the ability to customize the rendering of an entire table row via tuple templates.
+ * The most advanced table configuration that provides the ability to customize
+ * the rendering of an entire table row via tuple templates.
  */
 export interface TableRowConfig extends TableBaseConfig {
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the whole table row. Can be used to have visualizations different from the standard, e.g grid of thumbnails.
+   * Template for the whole table row.
+   *
+   * Can be used to have visualizations different from the standard, e.g grid of thumbnails.
    * The template has access to all projection variables for a single result tuple.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
-  tupleTemplate: string
+  tupleTemplate: string;
 }
 
 export type SemanticDataTableProps = SemanticTableProps & {
@@ -100,11 +115,12 @@ export interface SemanticDataTableOptions extends DataTableOptions { }
 export interface SemanticColumnConfiguration extends
   ColumnConfiguration, ColumnConfigurationExtensions { }
 
+type PotentialProps = SemanticDataTableProps & ControlledPropsHandler<any>;
 
 // wrapper component that converts the context to new API
 export class SemanticDataTableWithContext extends Component<SemanticDataTableProps, {}> {
-  static propTypes: Partial<Record<keyof SemanticDataTableProps, any>> = {
-    ...Component.propTypes,
+  static propTypes: Partial<Record<keyof PotentialProps, any>> = {
+    ...ComponentPropTypes,
     onControlledPropChange: PropTypes.func,
   };
 

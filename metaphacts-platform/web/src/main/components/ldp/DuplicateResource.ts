@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,31 +54,35 @@ import { CreateResourceDialog } from './CreateResourceDialog';
 
 import './create-ldp-resource.scss';
 
-export interface Props {
-  /** initial title for created object */
+/**
+ * Duplicates existing LDP resource.
+ *
+ * **Example**:
+ * ```
+ * <mp-ldp-duplicate-resource-action iri="http://example.com/resource">
+ *   <button class="btn btn-secondary">Duplicate resource</button>
+ * </mp-ldp-duplicate-resource-action>
+ * ```
+ */
+interface LdpDuplicateResourceActionConfig {
+  /** Initial title for created object. */
   title?: string;
-  /** prompt to enter title */
+  /** Prompt to enter title. */
   placeholder?: string;
-  /** IRI of container where original and copied resource resides */
+  /** IRI of container where original and copied resource resides. */
   container?: string;
-  /** IRI of resource to duplicate */
+  /** IRI of resource to duplicate. */
   iri: string;
-
   /**
-   * @default 'redirect'
+   * @default "redirect"
    */
   postAction?: 'redirect' | 'reload' | string;
 }
 
-/**
- * Duplicates existing LDP resource.
- * @example
- *  <mp-ldp-duplicate-resource-action iri="http://example.com/resource">
- *      <button class="btn btn-default">Duplicate resource</button>
- *  </mp-ldp-duplicate-resource-action>
- */
-class DuplicateResourceComponent extends Component<Props, {}>  {
-  public static defaultProps = {
+export interface DuplicateResourceProps extends LdpDuplicateResourceActionConfig {}
+
+class DuplicateResource extends Component<DuplicateResourceProps, {}>  {
+  public static defaultProps: Required<Pick<DuplicateResourceProps, 'postAction'>> = {
     postAction: 'redirect',
   };
 
@@ -121,7 +125,4 @@ class DuplicateResourceComponent extends Component<Props, {}>  {
   }
 }
 
-export type component = DuplicateResourceComponent;
-export const component = DuplicateResourceComponent;
-export const factory = createFactory(component);
-export default component;
+export default DuplicateResource;

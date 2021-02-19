@@ -23,7 +23,7 @@ import * as React from 'react';
 import ReactSelect, { ReactSelectProps, OnChangeHandler } from 'react-select';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
-import { FormGroup, ControlLabel } from 'react-bootstrap';
+import { FormGroup, FormLabel } from 'react-bootstrap';
 
 import { Rdf } from 'platform/api/rdf';
 import { TemplateItem } from 'platform/components/ui/template';
@@ -125,7 +125,7 @@ class SemanticSearchContextualizedResultInner extends React.Component<InnerProps
       <SemanticSearchContext.Provider value={context}>
         <div className={styles.holder}>
           <FormGroup className={styles.selectorGroup}>
-            <ControlLabel>Visualization Context</ControlLabel>
+            <FormLabel>Visualization Context</FormLabel>
             {this.props.context.searchProfileStore.map(this.contextSelector).getOrElse(<span />)}
           </FormGroup>
           {React.Children.only(this.props.children)}

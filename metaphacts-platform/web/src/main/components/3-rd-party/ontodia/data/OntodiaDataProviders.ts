@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, Children, cloneElement } from 'react';
+import { Component, Children, ReactElement, cloneElement } from 'react';
 import { DataProvider, CompositeDataProvider } from 'ontodia';
 import * as Kefir from 'kefir';
 
@@ -57,17 +57,19 @@ export interface DataProviderComponent {
 }
 
 /**
- * Consists data providers that `ontodia` will use to fetch data.
+ * Defines data providers that Ontodia will use to fetch data.
  * Requires at least one data provider.
  */
-export interface OntodiaDataProvidersConfig {
+interface OntodiaDataProvidersConfig {
   /**
-   * Data providers.
+   * Defined data providers to use.
    */
-  children: JSX.Element | ReadonlyArray<JSX.Element>;
+  children: {};
 }
 
-export type OntodiaDataProvidersProps = OntodiaDataProvidersConfig;
+export interface OntodiaDataProvidersProps {
+  children: ReactElement<any> | ReadonlyArray<ReactElement<any>>;
+}
 
 export class OntodiaDataProviders extends Component<OntodiaDataProvidersProps, {}> {
   private _dataProviders: Array<DataProviderComponent> = [];
@@ -91,7 +93,7 @@ export class OntodiaDataProviders extends Component<OntodiaDataProvidersProps, {
 
   private onDataProviderMounted = (dataProvider: DataProviderComponent | null) => {
     if (dataProvider && isDataProvider(dataProvider)) {
-      this._dataProviders.push(dataProvider)
+      this._dataProviders.push(dataProvider);
     }
   }
 }
@@ -107,16 +109,16 @@ export function createDataProvider(
   params: CreateDataProviderParams
 ): { dataProvider: DataProvider; initializeDataProvider: () => Kefir.Property<void> } {
   const dataProviders = dataProvidersComponents.map(dataProviderComponent => {
-    const dataProvider = dataProviderComponent.createDataProvider(params);
+    const createdProvider = dataProviderComponent.createDataProvider(params);
     return {
       name: dataProviderComponent.getName(),
-      dataProvider: dataProvider,
-      initializeDataProvider: () => dataProviderComponent.initializeDataProvider(dataProvider),
+      dataProvider: createdProvider,
+      initializeDataProvider: () => dataProviderComponent.initializeDataProvider(createdProvider),
     };
   });
   const initializeDataProvider = () => {
     return Kefir.zip(
-      dataProviders.map(dataProvider => dataProvider.initializeDataProvider())
+      dataProviders.map(provider => provider.initializeDataProvider())
     ).map(() => { /* nothing */ }).toProperty();
   };
   let dataProvider: DataProvider;

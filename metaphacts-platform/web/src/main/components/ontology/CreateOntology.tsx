@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,12 +38,10 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as React from 'react';
-import * as _ from 'lodash';
 import * as Immutable from 'immutable';
 import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
 
 import { Cancellation } from 'platform/api/async';
-import { getLabel } from 'platform/api/services/resource-label';
 import { Rdf, vocabularies } from 'platform/api/rdf';
 import { addNotification } from 'platform/components/ui/notification';
 import { refresh, navigateToResource } from 'platform/api/navigation';
@@ -54,19 +52,29 @@ const OWL_ONTOLOGY = Rdf.iri('http://www.w3.org/2002/07/owl#Ontology');
 
 interface CreateOntologyState {
   alertState?: AlertConfig;
+  namespace?: string;
   iri: string;
-  label: string;
-  labelIsEdited: boolean;
+  title: string;
+  previousTitle?: string;
 }
 
-interface CreateOntologyProps {
+interface CreateOntologyConfig {
   /**
    * Optional post-action to be performed after a new ontology have been created.
    * Can be either 'reload' or 'redirect' (redirects to the newly created resource)
    * or any IRI string to which the form will redirect.
    */
   postAction?: 'none' | 'reload' | 'redirect';
+
+  /**
+   * The base IRI for creating the ontology IRI
+   *
+   * @default http://ontologies.metaphacts.com/
+   */
+  baseIri?: string;
 }
+
+export type CreateOntologyProps = CreateOntologyConfig;
 
 /**
  * Component which allows users to create a new ontology
@@ -74,36 +82,83 @@ interface CreateOntologyProps {
  */
 export class CreateOntology extends React.Component<CreateOntologyProps, CreateOntologyState> {
   private readonly cancellation = new Cancellation();
+  static defaultProps: Required<Pick<CreateOntologyProps, 'baseIri'>> = {
+    baseIri: 'http://ontologies.metaphacts.com/'
+  };
 
   constructor(props: CreateOntologyProps, context: any) {
     super(props, context);
 
     this.state = {
       alertState: undefined,
-      iri: '',
-      label: '',
-      labelIsEdited: false,
+      iri: props.baseIri,
+      title: '',
+      namespace: props.baseIri
     };
-    this.updateLabel();
+
   }
 
-  updateLabel() {
-    const {iri: rawIri, labelIsEdited} = this.state;
-    const iri = normalizeIri(rawIri);
-    if (iri && !labelIsEdited) {
-      this.cancellation.map(
-        getLabel(Rdf.iri(iri))
-      ).observe({
-        value: label => {
-          this.setState({label});
-        },
-        error: () => {/* do nothging */}
-      });
+  updateIriFromTitle = () => {
+    const iri = normalizeIri(this.iriFromTitle(this.state.iri));
+    this.setState({ iri: iri });
+  }
+
+  updateNamespaceFromTitle = () => {
+    const {namespace} = this.state;
+    let iri = this.endsWithSlashOrHash(namespace) ? namespace.slice(0,-1) : namespace;
+    iri = normalizeIri(this.iriFromTitle(iri));
+    if (!this.endsWithSlashOrHash(iri)) {
+      iri = iri + '/';
     }
+    this.setState({ namespace: iri });
+  }
+
+  endsWithSlashOrHash = (str: string): boolean => {
+    return str.endsWith('/') || str.endsWith('#');
+  }
+
+  /**
+   * create the ontology IRI based on the title provided by the user.
+   *
+   * Pattern:
+   *
+   * %currentIri% + %ESCAPED_LOWER_CASE_TITLE%
+   */
+  iriFromTitle = (iri: string): string => {
+    if (!iri) { return ''; }
+    const { title, previousTitle } = this.state;
+    // decode URI component, replace space with _, and non-alphanumeric with ""
+    const titleDecoded = decodeURIComponent(title.toLowerCase()
+      .replace(/ /g, '_').replace(/\W/g, ''));
+    const hashFragment = iri.lastIndexOf('#') > 1 ? iri.substring(iri.lastIndexOf('#')) : '';
+    try {
+      const url = new URL(iri);
+      if (!url.pathname) { url.pathname = '/'; }
+      if (!previousTitle) {
+        url.pathname = url.pathname + titleDecoded;
+      } else {
+        const previousTitleDecoded = decodeURIComponent(previousTitle.toLowerCase()
+          .replace(/ /g, '_').replace(/\W/g, ''));
+        // replace the last occurrence of the previous title string
+        // this is to avoid that shorter tokens to not replace strings in high/manually
+        // entered path elements
+        let pos = url.pathname.lastIndexOf(previousTitleDecoded);
+        if (pos !== -1) {
+          const str = url.pathname.substring(0, pos) + titleDecoded
+            + url.pathname.substring(pos + previousTitleDecoded.length);
+          url.pathname = str;
+        }
+      }
+
+      return url.toString() + hashFragment;
+    } catch { /* do nothing */ }
+
+    return iri; // in the worst case do nothing
+
   }
 
   createOntology() {
-    const { iri, label } = this.state;
+    const { iri, title: label, namespace } = this.state;
     const normalizedIri = normalizeIri(iri);
     const targetGraph = Rdf.iri(`${normalizedIri}/graph`);
     const ontologyIri = Rdf.iri(normalizeIri(iri));
@@ -114,6 +169,16 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
         ontologyIri,
         rdf.type,
         OWL_ONTOLOGY
+      ),
+      Rdf.triple(
+        ontologyIri,
+        Rdf.iri('http://purl.org/dc/terms/title'),
+        Rdf.literal(label)
+      ),
+      Rdf.triple(
+        ontologyIri,
+        Rdf.iri('http://www.linkedmodel.org/1.2/schema/vaem#namespace'),
+        Rdf.iri(namespace)
       ),
       Rdf.triple(
         ontologyIri,
@@ -162,10 +227,10 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
   }
 
   render() {
-    const { alertState, iri, label } = this.state;
+    const { alertState, iri, title: label, namespace } = this.state;
     const alert = this.state.alertState ? <Alert {...alertState}></Alert> : null;
     const iriIsCorrect = !iri || checkIri(iri);
-    const caCreateOntology = iri && label && iriIsCorrect;
+    const caCreateOntology = iri && label && iriIsCorrect && !alert;
     const errorStyle = {
       borderColor: '#F04124',
       boxShadow: 'inset 0 1px 1px rgba(0, 0, 0, 0.075)',
@@ -175,32 +240,54 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
       flexDirection: 'column',
     }}>
       {alert}
+      <label>Ontology Title</label>
+      <input
+        value={label}
+        placeholder={'Enter the ontology title...'}
+        title={'New ontology title'}
+        onChange={event => {
+          this.setState({
+            previousTitle: this.state.title,
+            title: event.target.value,
+            alertState: null
+          }, () => {
+            this.updateIriFromTitle();
+            this.updateNamespaceFromTitle();
+          });
+        }}
+        className='form-control'/>
       <label>Ontology IRI</label>
       <input
         value={iri}
-        placeholder={'Input new ontology IRI...'}
+        placeholder={'Enter the new ontology IRI...'}
         title={'New ontology IRI'}
         onChange={event => {
-          this.setState({iri: event.target.value, alertState: null}, () => {
-            this.updateLabel();
-          });
-        }}
-        className='plain-text-field__text form-control'
-        style={!iriIsCorrect ? errorStyle : {}}
-      />
-      <label>Ontology label</label>
-      <input
-        value={label}
-        placeholder={'Input ontology label...'}
-        title={'New ontology label'}
-        onChange={event => {
           this.setState({
-            label: event.target.value,
-            labelIsEdited: true,
+            iri: event.target.value,
             alertState: null
           });
         }}
-        className='plain-text-field__text form-control'/>
+        className='form-control'
+        style={!iriIsCorrect ? errorStyle : {}}
+      />
+      <label>Base Element Namespace (IRI)</label>
+      <input
+        value={namespace}
+        placeholder={'Enter a namespace (IRI) for ontology elements...'}
+        title={'Namespace used as default for all ontology elements to be created within this ontology. Must end with / or #.'}
+        onChange={event => {
+          const v = event.target.value;
+          this.setState({
+            namespace: v,
+            alertState: this.endsWithSlashOrHash(v) ? null : {
+              alert: AlertType.DANGER, message: 'Base Element Namespace must end with / or #'
+            }
+          });
+        }}
+        className='form-control'
+        style={!iriIsCorrect ? errorStyle : {}}
+      />
+
       <div style={{marginTop: 10}}>
         <button
           disabled={!caCreateOntology}
@@ -222,7 +309,7 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
   }
 
   /**
-   * Performs either a reload (default) or an redirect after the form as been submited
+   * Performs either a reload (default) or an redirect after the form as been submitted
    * and the data been saved.
    */
   private performPostAction = (): void => {

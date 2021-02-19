@@ -91,7 +91,8 @@
     <p>The DataClient is available in these components:</p>
     <ul>
       <li><semantic-link title="Semantic Autocomplete Input" iri='[[resolvePrefix "Help:SemanticForm"]]'>semantic-form-autocomplete-input (in semantic-form)</semantic-link></li>
-      <li><semantic-link title="Keyword Search" iri='[[resolvePrefix "Help:SemanticSimpleSearch"]]'>semantic-simple-search</semantic-link></li>
+      <li><semantic-link title="Semantic Keyword Search with prefetch" iri='[[resolvePrefix "Help:KeywordPrefetchSearch"]]'>semantic-search-keyword-prefetch (semantic search)</semantic-link></li>
+      <li><semantic-link title="Simple Keyword Search" iri='[[resolvePrefix "Help:SemanticSimpleSearch"]]'>semantic-simple-search</semantic-link></li>
       <li><semantic-link title="Structured Search" iri='[[resolvePrefix "Help:SemanticSearch"]]'>resource-selector (structured search)</semantic-link></li>
     </ul>
 
@@ -112,6 +113,32 @@
           "limit": 5
         }'
       ></semantic-form-autocomplete-input>
+      ]]>
+    </mp-code-block>
+
+    <h3><code>semantic-search-keyword-prefetch</code></h3>
+    <p>
+      The configuration to use this component with DataClient is presented below.<br>
+    </p>
+    <mp-code-block mode='text/html'>
+      <![CDATA[
+<semantic-search id="demo-2">
+<semantic-search-keyword-prefetch
+  query='{
+    "type": "lookup",
+    "limit": 10
+  }'
+  placeholder='Type in "Alice"'
+  min-search-term-length = 3
+></semantic-search-keyword-prefetch>
+
+<semantic-search-result-holder>
+  <semantic-search-result>
+    <semantic-table id='table' query='SELECT ?subject ?label ?description ?type ?typeLabel ?dataset ?datasetLabel WHERE {
+    } ORDER BY DESC(?score)'></semantic-table>
+  </semantic-search-result>
+</semantic-search-result-holder>
+</semantic-search>
       ]]>
     </mp-code-block>
 
@@ -298,8 +325,8 @@
               "limit": 5
             }'
         ></semantic-form-autocomplete-input>
-        <button name="submit" class="btn btn-default">Save</button>
-        <button name="reset" class="btn btn-default">Reset</button>
+        <button name="submit" class="btn btn-secondary">Save</button>
+        <button name="reset" class="btn btn-secondary">Reset</button>
         </bs-panel>
     </semantic-form>
     ]]>
@@ -497,14 +524,14 @@
               <semantic-search-result-holder>
                   <div data-flex-self="md-full">
                       <semantic-search-result>
-                          <mp-sparql-result-counts id='query-count' query="SELECT DISTINCT * {}" template='{{#if hasLimit}} <bs-alert bs-style="warning">
+                          <mp-sparql-result-counts id='query-count' query="SELECT DISTINCT * {}" template='{{#if hasLimit}} <bs-alert variant="warning">
                                     Showing {{numberOfResults}} of {{totalNumberOfResults}} matches. <strong>Please, refine your search.</strong> </bs-alert>
                                     {{else}}<span> found {{numberOfResults}} matches </span>{{/if}}'>
                           </mp-sparql-result-counts>
                       </semantic-search-result>
                       <bs-tabs unmount-on-exit=true id='search-results' animation=false>
                           <bs-tab event-key="1" title="Grid">
-                              <bs-alert bs-style="info"> Only entities with image representation are shown in the Grid!
+                              <bs-alert variant="info"> Only entities with image representation are shown in the Grid!
                               </bs-alert>
                               <semantic-search-result>
                                   <semantic-table id='grid-result' query='
@@ -585,13 +612,13 @@
                           <semantic-search-result>
                               <mp-sparql-download id='csv-download' query="SELECT * WHERE { }" header="text/csv"
                                   filename="csv-result.csv">
-                                  <button class="btn btn-default">Download CSV</button>
+                                  <button class="btn btn-secondary">Download CSV</button>
                               </mp-sparql-download>
                           </semantic-search-result>
                           <semantic-search-result>
                               <mp-sparql-download id='json-download' query="SELECT * WHERE { }"
                                   header="application/sparql-results+json" filename="json-result.json">
-                                  <button class="btn btn-default">Download JSON</button>
+                                  <button class="btn btn-secondary">Download JSON</button>
                               </mp-sparql-download>
                           </semantic-search-result>
                       </bs-panel>

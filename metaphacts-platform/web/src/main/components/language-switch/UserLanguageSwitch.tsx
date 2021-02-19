@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import * as React from 'react';
 import { find, map } from 'lodash';
-import { NavDropdown, MenuItem } from 'react-bootstrap';
+import { NavDropdown, Dropdown } from 'react-bootstrap';
 
 import { Component } from 'platform/api/components';
 import { refresh } from 'platform/api/navigation';
@@ -48,32 +48,38 @@ import {
   getPreferredUserLanguage, setPreferredUserLanguage
 } from 'platform/api/services/language';
 
-interface UserLanguagePropsProps {
+/**
+ * Dropdown with language tags where the user can choose from.
+ * Selecting a language will set the user's preferred language
+ * in the browsers local store.
+ *
+ * **Example**:
+ * ```
+ * <!-- Use languages from platform-wide UI configuration -->
+ * <mp-user-language-switch></mp-user-language-switch>
+ *
+ * <!-- Use languages specified in the attribute -->
+ * <mp-user-language-switch languages='["de","en","en-gb"]'></mp-user-language-switch>
+ * ```
+ */
+interface UserLanguageSwitchConfig {
   /**
    * Language tags that the user is able to choose from
    */
   languages?: ReadonlyArray<string>;
 }
 
+export type UserLanguageSwitchProps = UserLanguageSwitchConfig;
+
 interface State {
   readonly language?: string;
 }
 
 /**
- * Dropdown with language tags where the user can choose from.
- * Selecting a language will set the user's preferred language
- * in the browsers local store.
- *
- * @example
- * <!-- Use languages from platform-wide UI configuration -->
- * <mp-user-language-switch></mp-user-language-switch>
- *
- * <mp-user-language-switch languages='["de","en","en-gb"]'></mp-user-language-switch>
- *
  * @author Johannes Trame <jt@metaphacts.com>
  */
-export class UserLanguageSwitch extends Component<UserLanguagePropsProps, State> {
-  constructor(props: UserLanguagePropsProps, context: any) {
+export class UserLanguageSwitch extends Component<UserLanguageSwitchProps, State> {
+  constructor(props: UserLanguageSwitchProps, context: any) {
     super(props, context);
     this.state = {language: getPreferredUserLanguage()};
   }
@@ -108,7 +114,7 @@ export class UserLanguageSwitch extends Component<UserLanguagePropsProps, State>
       <NavDropdown id='language-selection'
         title={selectedOption.label} onSelect={(e: unknown) => this.onLanguageChanged(e as string)}>
         {map(options, option => (
-          <MenuItem key={option.key} eventKey={option.key}>{option.label}</MenuItem>
+          <Dropdown.Item key={option.key} eventKey={option.key}>{option.label}</Dropdown.Item>
         ))}
       </NavDropdown>
     );

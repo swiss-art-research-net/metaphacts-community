@@ -1,21 +1,25 @@
-<bs-navbar data-fluid="true" class="metaphacts-header-navbar" data-fixed-top="true" data-role="navigation">
-    <bs-navbar-header>
-        <bs-navbar-brand>
-          <a href="/" style="line-height: 2;">
-            {{deploymentTitle}}
-          </a>
-        </bs-navbar-brand>
-        <bs-navbar-toggle/>
-    </bs-navbar-header>
+<bs-navbar class="metaphacts-header-navbar" data-fixed-top="true" data-role="navigation">
+    <bs-navbar-brand>
+      <a href="/" style="line-height: 2;">
+        {{deploymentTitle}}
+      </a>
+    </bs-navbar-brand>
+    <bs-navbar-toggle></bs-navbar-toggle>
 
     <bs-navbar-collapse>
-        <bs-nav data-pull-right="true">
+        <bs-nav>
             <mp-anonymous-hidden style="float:left;">
-              <bs-nav-item data-href="/sparql">Sparql</bs-nav-item>
+              <bs-nav-item>
+                <mp-link class="nav-link" url='/sparql' title='Sparql Endpoint'>SPARQL</mp-link>
+              </bs-nav-item>
             </mp-anonymous-hidden>
             <mp-nav-account></mp-nav-account>
             <mp-anonymous-hidden style="float:left;">
-              <bs-nav-item data-href="/resource/?uri=http://www.metaphacts.com/resource/admin/" title="System Settings"><i class="fa fa-cog"></i></bs-nav-item>
+              <bs-nav-item title="System Settings">
+                <bs-nav-link data-href="/resource/?uri=http://www.metaphacts.com/resource/admin/">
+                  <i class="fa fa-cog"></i>
+                </bs-nav-link>
+              </bs-nav-item>
             </mp-anonymous-hidden>
         </bs-nav>
     </bs-navbar-collapse>

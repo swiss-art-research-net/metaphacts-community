@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,7 @@ package com.metaphacts.repository.sparql;
 import org.eclipse.rdf4j.repository.RepositoryException;
 
 import com.google.inject.Inject;
+import com.metaphacts.repository.AuthMethod;
 import com.metaphacts.secrets.SecretResolver;
 import com.metaphacts.secrets.SecretsHelper;
 
@@ -59,9 +60,8 @@ import com.metaphacts.secrets.SecretsHelper;
  * @author Johannes Trame <jt@metaphacts.com>
  */
 public class SPARQLAuthenticatingRepository extends MpSPARQLRepository {
-    private enum AuthMethod { None, BasicAuth, DigestAuth};
 
-    private AuthMethod authenticationModus = AuthMethod.None;
+    private AuthMethod authenticationMethod = AuthMethod.None;
 
     // realm value for digest auth
     private String realm;
@@ -87,14 +87,14 @@ public class SPARQLAuthenticatingRepository extends MpSPARQLRepository {
     public void setBasicAuthCredentials(String username, String password){
         this.username = username;
         this.password = password;
-        this.authenticationModus = AuthMethod.BasicAuth;
+        this.authenticationMethod = AuthMethod.BasicAuth;
     }
 
     public void setDigestAuthCredentials(String username, String password, String realm){
         this.username = username;
         this.password = password;
         this.realm = realm;
-        this.authenticationModus = AuthMethod.DigestAuth;
+        this.authenticationMethod = AuthMethod.DigestAuth;
     }
 
     @Override
@@ -109,13 +109,13 @@ public class SPARQLAuthenticatingRepository extends MpSPARQLRepository {
 
     @Override
     protected MpSPARQLProtocolSession createHTTPClient() {
-        if(authenticationModus.equals(AuthMethod.BasicAuth)){
+        if(authenticationMethod.equals(AuthMethod.BasicAuth)){
             // when setting this on the super class
             // createHTTPClient will create a client with basic auth context
             super.setUsernameAndPassword(username, password);
         }
         MpSPARQLProtocolSession client = (MpSPARQLProtocolSession) super.createHTTPClient();
-        if(authenticationModus.equals(AuthMethod.DigestAuth)){
+        if(authenticationMethod.equals(AuthMethod.DigestAuth)){
             client.setDigestAuthCredentials(username, password, this.realm);
         }
 

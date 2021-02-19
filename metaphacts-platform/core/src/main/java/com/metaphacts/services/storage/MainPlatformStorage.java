@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,8 +61,8 @@ import org.apache.logging.log4j.Logger;
 import org.pf4j.PluginWrapper;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Injector;
 import com.metaphacts.config.Configuration;
+import com.metaphacts.di.SubsystemLifecycle;
 import com.metaphacts.plugin.PlatformPluginManager;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectMetadata;
@@ -80,13 +82,23 @@ import com.metaphacts.services.storage.file.NonVersionedFileStorage;
 /**
  * Main {@link PlatformStorage} implementation for the platform.
  */
-public class MainPlatformStorage implements PlatformStorage {
+public class MainPlatformStorage implements PlatformStorage, SubsystemLifecycle {
     private static final Logger logger = LogManager.getLogger(MainPlatformStorage.class);
 
+    /**
+     * Map of static storages (initialized at platform startup)
+     */
     private final Map<String, StorageDescription> storages = new LinkedHashMap<>();
+    /**
+     * Map of dynamic storages (initialized from config/storage.prop found in static
+     * storages). Refresh may happen at runtime
+     */
+    private final Map<String, StorageDescription> dynamicStorages = new LinkedHashMap<>();
     private final List<String> appSearchOrder = new ArrayList<>();
 
     private final PathMapping appPaths = new PathMapping.Default();
+
+    private final StorageRegistry storageRegistry;
 
     private static class StorageDescription {
         public final String storageId;
@@ -105,26 +117,27 @@ public class MainPlatformStorage implements PlatformStorage {
     }
 
     @Inject
-    public MainPlatformStorage(PlatformPluginManager pluginManager, StorageRegistry storageRegistry, Injector injector) {
+    public MainPlatformStorage(PlatformPluginManager pluginManager, StorageRegistry storageRegistry) {
         try {
-            initialize(pluginManager, storageRegistry, injector);
+            initialize(pluginManager, storageRegistry);
         } catch (StorageConfigException | StorageException ex) {
             logger.error("Failed to initialize platform storage system: " + ex.getMessage());
             logger.debug("Details: ", ex);
             throw new StorageConfigException("Failed to initialize platform storage system", ex);
         }
+        this.storageRegistry = storageRegistry;
     }
 
     private void initialize(
-        PlatformPluginManager pluginManager, StorageRegistry storageRegistry, Injector injector
+            PlatformPluginManager pluginManager, StorageRegistry storageRegistry
     ) throws StorageConfigException, StorageException {
-        StorageConfigLoader storageConfigLoader = new StorageConfigLoader(storageRegistry, injector);
+        StorageConfigLoader storageConfigLoader = new StorageConfigLoader(storageRegistry);
         LinkedHashMap<String, StorageConfig> internalConfigs = storageConfigLoader
             .readInternalStorageConfig(PlatformStorage.class.getClassLoader());
 
         for (Map.Entry<String, StorageConfig> entry : internalConfigs.entrySet()) {
             logger.info("Adding internal storage '{}':", entry.getKey());
-            addStorageFromConfig(storageRegistry, injector, entry.getKey(), entry.getValue());
+            addStorageFromConfig(storageRegistry, entry.getKey(), entry.getValue());
         }
 
         for (PluginWrapper pluginWrapper : pluginManager.getResolvedPlugins()) {
@@ -141,7 +154,7 @@ public class MainPlatformStorage implements PlatformStorage {
             if (storages.containsKey(entry.getKey())) {
                 logger.info("Overriding storage '" + entry.getKey() + "' by storage configuration:");
             }
-            addStorageFromConfig(storageRegistry, injector, entry.getKey(), entry.getValue());
+            addStorageFromConfig(storageRegistry, entry.getKey(), entry.getValue());
         }
 
         if (!storages.containsKey(DEVELOPMENT_RUNTIME_STORAGE_KEY)) {
@@ -153,6 +166,79 @@ public class MainPlatformStorage implements PlatformStorage {
             createFileStorageWithFallbacks(
                 DEVELOPMENT_RUNTIME_STORAGE_KEY, runtimeFolder, true);
         }
+
+        initializeDynamicStorages(storageRegistry);
+    }
+
+    /**
+     * Initialize dynamic storages.
+     * 
+     * <p>
+     * Dynamic storages are defined using <i>config/storage.prop</i> in static
+     * storages. The override order is defined as [runtime], [dynamicStorage 1-N],
+     * [other static storages], where all dynamic storages are stored
+     * alphabetically.
+     * </p>
+     * 
+     * <p>
+     * Note that a dynamic storage can never override or modify a static storage,
+     * i.e. if there exists a static storage with ID, it is not possible to define a
+     * dynamic storage with this ID.
+     * </p>
+     * 
+     * @param pluginManager
+     * @param storageRegistry
+     * @throws StorageConfigException
+     * @throws StorageException
+     */
+    private void initializeDynamicStorages(StorageRegistry storageRegistry)
+            throws StorageConfigException, StorageException {
+
+        StorageConfigLoader storageConfigLoader = new StorageConfigLoader(storageRegistry);
+
+        LinkedHashMap<String, StorageConfig> dynamicConfigs = storageConfigLoader.readDynamicStorageConfig(this,
+                dynamicStorages.keySet());
+
+        // storages are sorted in alphabetical order
+        List<String> dynamicStorageIds = Lists.newArrayList(dynamicConfigs.keySet());
+        Collections.sort(dynamicStorageIds);
+
+        // register storages
+        int i = 0;
+        for (String dynamicStorageId : dynamicStorageIds) {
+
+            if (storages.containsKey(dynamicStorageId)) {
+                logger.warn(
+                        "Cannot create dynamic storage {}, a storage with this ID is already statically registered.",
+                        dynamicStorageId);
+                continue;
+            }
+
+            StorageConfig storageConfig = dynamicConfigs.get(dynamicStorageId);
+
+            ObjectStorage storage = createStorageFromConfig(storageRegistry, dynamicStorageId,
+                    storageConfig);
+            dynamicStorages.put(dynamicStorageId, new StorageDescription(dynamicStorageId, storage));
+
+            // add to override order (=> add after "runtime", which has idx 1)
+            // note: we maintain alphabetical order for overrides
+            appSearchOrder.add(1 + i++, dynamicStorageId);
+        }
+
+        if (i > 0) {
+            logger.debug("Registered {} dynamic storages: {}", i, dynamicStorageIds);
+        }
+    }
+
+    @Override
+    public void refreshDynamicStorages() throws StorageConfigException, StorageException {
+
+        logger.info("Refreshing dynamic storages.");
+
+        shutdownStorages(dynamicStorages.values());
+        appSearchOrder.removeAll(dynamicStorages.keySet());
+        dynamicStorages.clear();
+        initializeDynamicStorages(storageRegistry);
     }
 
     @Override
@@ -219,8 +305,8 @@ public class MainPlatformStorage implements PlatformStorage {
         ));
     }
 
-    private void addStorageFromConfig(
-        StorageRegistry storageRegistry, Injector injector, String storageId, StorageConfig config
+    private ObjectStorage createStorageFromConfig(
+        StorageRegistry storageRegistry, String storageId, StorageConfig config
     ) throws StorageException {
         logger.info("Creating {} storage '{}' with config type {}",
             config.isMutable() ? "mutable" : "readonly", storageId, config.getClass().getName());
@@ -231,18 +317,22 @@ public class MainPlatformStorage implements PlatformStorage {
                 pathMapping, StoragePath.EMPTY, StoragePath.parse(config.getSubroot())
             );
         }
-        
-        // perform injection to StorageConfig
-        injector.injectMembers(config);
 
         StorageCreationParams params = new StorageCreationParams(
             pathMapping, PlatformStorage.class.getClassLoader());
+        @SuppressWarnings("unchecked")
         ObjectStorage storage = storageRegistry
                 .get(config.getStorageType())
                 .orElseThrow(() -> new StorageConfigException(
                     "No storage factory for storage type" + config.getStorageType()
                 ))
-                .makeStorage(config, params);
+                .createStorage(config, params);
+        return storage;
+    }
+
+    private void addStorageFromConfig(StorageRegistry storageRegistry, String storageId,
+            StorageConfig config) throws StorageException {
+        ObjectStorage storage = createStorageFromConfig(storageRegistry, storageId, config);
         addStorageAsFirstInSearchOrder(new StorageDescription(storageId, storage));
     }
 
@@ -261,7 +351,7 @@ public class MainPlatformStorage implements PlatformStorage {
     public Optional<FindResult> findObject(StoragePath path) throws StorageException {
         logger.trace("Searching for single object at: {}", path);
         for (String appId : appSearchOrder) {
-            StorageDescription description = storages.get(appId);
+            StorageDescription description = storageForId(appId);
             if (!description.storedKindPrefix.isPrefixOf(path)) {
                 continue;
             }
@@ -282,7 +372,7 @@ public class MainPlatformStorage implements PlatformStorage {
         logger.trace("Searching for all objects with prefix: {}", prefix);
         Map<StoragePath, FindResult> objectsById = new HashMap<>();
         for (String appId : Lists.reverse(appSearchOrder)) {
-            StorageDescription description = storages.get(appId);
+            StorageDescription description = storageForId(appId);
             if (!description.storedKindPrefix.isPrefixOf(prefix)) {
                 continue;
             }
@@ -314,7 +404,7 @@ public class MainPlatformStorage implements PlatformStorage {
         logger.trace("Searching for overrides of an object at: {}", path);
         List<FindResult> results = new ArrayList<>();
         for (String appId : Lists.reverse(appSearchOrder)) {
-            StorageDescription description = storages.get(appId);
+            StorageDescription description = storageForId(appId);
             if (!description.storedKindPrefix.isPrefixOf(path)) {
                 continue;
             }
@@ -334,7 +424,7 @@ public class MainPlatformStorage implements PlatformStorage {
     @NotNull
     @Override
     public ObjectStorage getStorage(String appId) {
-        StorageDescription description = storages.get(appId);
+        StorageDescription description = storageForId(appId);
         if (description == null) {
             throw new IllegalArgumentException(
                 "Cannot get storage for unknown appId = \"" + appId + "\"");
@@ -350,19 +440,40 @@ public class MainPlatformStorage implements PlatformStorage {
     @Override
     public List<StorageStatus> getStorageStatusFor(StoragePath prefix) {
         return Lists.reverse(appSearchOrder).stream()
-            .map(storageId -> storages.get(storageId))
+            .map(storageId -> storageForId(storageId))
             .filter(desc -> desc.storedKindPrefix.isPrefixOf(prefix))
             .map(desc -> new StorageStatus(desc.storageId, desc.storage.isMutable()))
             .collect(toList());
     }
 
     /**
+     * Return the {@link StorageDescription} for the given ID or <code>null</code>.
+     * This method first checks static storages, and then dynamic storages.
+     * 
+     * @param storageId
+     * @return the {@link StorageDescription} or <code>null</code>
+     */
+    private StorageDescription storageForId(String storageId) {
+        StorageDescription desc = storages.get(storageId);
+        if (desc != null) {
+            return desc;
+        }
+        return dynamicStorages.get(storageId);
+    }
+
+    /**
      * Shutdown the main platform storage
      */
+    @Override
     public void shutdown() {
 
         logger.info("Shutting main platform storage and managed child storages");
-        for (StorageDescription storageDesc : storages.values()) {
+        shutdownStorages(storages.values());
+        shutdownStorages(dynamicStorages.values());
+    }
+
+    private void shutdownStorages(Collection<StorageDescription> storages) {
+        for (StorageDescription storageDesc : storages) {
             try {
                 storageDesc.storage.close();
             } catch (Throwable t) {

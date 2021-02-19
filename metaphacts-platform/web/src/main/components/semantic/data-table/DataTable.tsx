@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -153,19 +153,37 @@ export interface DataTableOptions extends PreviousOptions {
   /**
    * Default sorting to apply.
    */
-  sorting: SortDefinition;
+  sorting?: SortDefinition;
 
   /**
-   * Whether or not to use a styled table header pre-defined color scheme (true | false). Can also specify the color to be used for the header, e.g. `gray` or `#DDDDDD`.
+   * Whether or not to use a styled table header pre-defined color scheme (true | false).
+   * Can also specify the color to be used for the header, e.g. `gray` or `#DDDDDD`.
    *
    * @default false
    */
   styleHeader?: boolean | string;
+
+  /**
+   * Template applied to (non-aggregated) cells, unless there's a specific template
+   * defined for the column.
+   * In addition to all projection variables of the result tuple, the variable `cellValue`
+   * contains the value of the respective column.
+   */
+  defaultCellTemplate?: string;
+
+  /**
+   * Whether or not to display column filters. Can also be configured in the individual
+   * column configurations.
+   *
+   * @default false
+   */
+  showColumnFilters?: boolean
 }
 
 export interface GroupingOptions {
   /**
-   * Groups rows by default by the provided column IDs. The ID of a column is its `variableName` by default.
+   * Groups rows by default by the provided column IDs.
+   * The ID of a column is its `variableName` by default.
    * Can also be used if interactive grouping is disabled.
    */
   groupedBy?: string[];
@@ -176,12 +194,20 @@ export interface GroupingOptions {
   defaultAggregation?: ColumnAggregateConfigurationType;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for aggregated values to use, if no template is specified for a column.
+   * Template for aggregated values to use, if no template is specified for a column.
+   *
    * This is only applied if the `defaultAggregation` is used.
-   * The aggregated value is available with the `value` variable. Its type depends on the type of aggregation.
+   * The aggregated value is available with the `value` variable.
+   * Its type depends on the type of aggregation.
+   *
    * The variable `rows` is an array containing the bindings of the aggregated rows.
    *
    * @default "aggregation specific default"
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   defaultAggregationCellTemplate?: string;
 
@@ -230,9 +256,17 @@ export interface ColumnConfigurationExtensions {
   aggregation?: ColumnAggregateConfigurationType;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for aggregated values.
-   * The aggregated value is available with the `value` variable. Its type depends on the type of aggregation.
+   * Template for aggregated values.
+   *
+   * The aggregated value is available with the `value` variable.
+   * Its type depends on the type of aggregation.
+   *
    * The variable `rows` is an array containing the bindings of the aggregated rows.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   aggregationCellTemplate?: string;
 
@@ -283,8 +317,8 @@ export function DataTable(props: DataTableProps) {
   // Prefer opts directly on props, also support legacy from layout
   const propOpts = props.options ?? (layout?.options as DataTableOptions);
   const enableGlobalFilter = propOpts?.showFilter ?? true;
-  const enableColumnFilters = props?.columnConfiguration?.some(
-    (col: DataTableColumnConfiguration) => col.showFilter) ?? false;
+  const enableColumnFilters = (propOpts?.showColumnFilters || props?.columnConfiguration?.some(
+    (col: DataTableColumnConfiguration) => col.showFilter));
   const enableSorting = propOpts?.enableSort ?? true;
   const enableInteractiveGrouping = propOpts?.enableGrouping ?? false;
   const groupingOptions = propOpts?.groupingOptions;
@@ -423,6 +457,12 @@ export function DataTable(props: DataTableProps) {
   const paginationState = state as UsePaginationState<object>;
 
   handleOnPageChangeCallback(paginationState, props.onPageChange);
+  React.useEffect(() => {
+    // make sure pagination is not on invalid page, if index is set from outside
+    if (props.currentPage !== undefined && paginationState.pageIndex > (instance.pageCount - 1)) {
+      instance.gotoPage(instance.pageCount - 1);
+    }
+  }, [props.currentPage, instance.pageCount, paginationState.pageIndex]);
 
   // grouping / expanding
   const { toggleAllRowsExpanded } = instance as
@@ -535,7 +575,7 @@ function Toolbar(props: ToolbarProps) {
     style={style}>
     {filter}
     {props.enableColumnFilters ?
-      <Button onClick={() => props.setSidebarShown(true)}>
+      <Button variant='secondary' onClick={() => props.setSidebarShown(true)}>
         <i className={'fa fa-filter ' + styles.buttonIconLeft}></i>
       Filter columns
       </Button> : null}
@@ -562,14 +602,14 @@ function renderGroupColumnsPopover(headerGroups: HeaderGroup<object>[]) {
           })}
         </div>
         <div className={styles.popoverFooter}>
-          <Button bsStyle='link'
+          <Button variant='link'
             disabled={!hasGroupedColumn(headerGroups)}
             onClick={() => clearColumnGrouping(headerGroups)}>
             Clear grouping
             </Button>
         </div>
       </Popover>}>
-    <Button>
+    <Button variant='secondary'>
       Group columns
       <i className={'fa fa-caret-down ' + styles.buttonIconRight}></i>
     </Button>
@@ -703,7 +743,7 @@ function renderFilterPopover(column: FilteredHeaderGroup) {
             {renderInlineFilter(column)}
           </div>
           <div className={styles.popoverFooter}>
-            <Button bsStyle='link'
+            <Button variant='link'
               disabled={column.filterValue == null}
               onClick={() => column.setFilter(undefined)}>
               Clear filter
@@ -720,6 +760,7 @@ function renderFilterPopover(column: FilteredHeaderGroup) {
 
 function renderTupleTemplate({ page, prepareRow }: PagedTableInstance, tupleTemplate: string) {
   const createTpl = (row: Row<object>) => <TemplateItem
+    key={row.id}
     template={{
       source: tupleTemplate,
       options: getTemplateParamsForRow(row)
@@ -825,21 +866,21 @@ function pagination({
   { pageIndex }: UsePaginationState<object>
 ) {
   return <ul className='pagination'>
-    <li className={canPreviousPage ? '' : 'disabled'}>
-      <a onClick={previousPage}>{'«'}</a>
+    <li className={'page-item ' + (canPreviousPage ? '' : 'disabled')}>
+      <a className='page-link' onClick={previousPage}>{'«'}</a>
     </li>
 
     {/* page number selectors around current page */}
     {Array.from({ length: Math.min(pageCount, 5) }, (obj, i) => {
       const dspIdx = Math.max(pageIndex - 2, 0) + i;
       return dspIdx < pageCount ?
-        <li key={dspIdx} className={dspIdx === pageIndex ? 'active' : ''}>
-          <a onClick={() => gotoPage(dspIdx)}>{dspIdx + 1}</a>
+        <li key={dspIdx} className={'page-item ' +  (dspIdx === pageIndex ? 'active' : '')}>
+          <a className='page-link' onClick={() => gotoPage(dspIdx)}>{dspIdx + 1}</a>
         </li> : null;
     })}
 
-    <li className={canNextPage ? '' : 'disabled'}>
-      <a onClick={nextPage}>{'»'}</a>
+    <li className={'page-item ' + (canNextPage ? '' : 'disabled')}>
+      <a className='page-link' onClick={nextPage}>{'»'}</a>
     </li>
   </ul>;
 }
@@ -933,7 +974,7 @@ function customColumnsMetadata(
     };
     if (renderingState.showColumnFilters) {
       const colOptions = col as UseFiltersColumnOptions<object>;
-      if (!columnConfig.showFilter) {
+      if (!(columnConfig.showFilter ?? config.options?.showColumnFilters)) {
         colOptions.disableFilters = true;
       }
       const colData = data.map(obj => obj[columnConfig.variableName]);
@@ -1029,12 +1070,16 @@ function makeCellTemplateComponent(
   renderingState: RenderingState
 ): Renderer<CellProps<object>> {
   const { showLiteralDatatype, linkParams, showCopyToClipboardButton } = props;
-  const templateSource = _.isString(template) ? String(template) : undefined;
+  const templateString = template ?? props.options?.defaultCellTemplate;
+  const templateSource = _.isString(templateString) ? String(templateString) : undefined;
   return (cell: CellProps<object>) => {
     if (_.isUndefined(templateSource) === false) {
       return <TemplateItem template={{
         source: templateSource,
-        options: getTemplateParamsForRow(cell.row)
+        options: {
+          ...getTemplateParamsForRow(cell.row),
+          cellValue: cell.value,
+        }
       }}></TemplateItem>;
     } else if (isPrimitiveDatatype(cell.value)) {
       return <span>{cell.value}</span>;

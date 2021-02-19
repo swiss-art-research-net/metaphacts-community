@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -74,16 +74,14 @@ class InvalidateCacheButton extends Component<{}, State>  {
       ]),
       Button({
           type: 'submit',
-          bsSize: 'small',
-          bsStyle: 'primary',
-          className: 'btn btn-default',
+          size: 'sm',
+          variant: 'primary',
           onClick: this.invalidateBackendCache,
         }, 'Invalidate Backend Caches'),
         Button({
           type: 'submit',
-          bsSize: 'small',
-          bsStyle: 'primary',
-          className: 'btn btn-default',
+          size: 'sm',
+          variant: 'primary',
           onClick: this.invalidateFrontendCache,
           style: {marginLeft: '11px'}
         }, 'Invalidate Frontend Caches'),

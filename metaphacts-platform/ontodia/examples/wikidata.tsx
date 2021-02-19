@@ -14,9 +14,12 @@ class WikidataExample extends React.Component {
 
     render() {
         return (
-            <Workspace ref={this.onWorkspaceMount}
-                suggestProperties={this.wikidataSuggestProperties}>
-                <ExampleWorkspaceLayout />
+            <Workspace ref={this.onWorkspaceMount}>
+                <ExampleWorkspaceLayout
+                    connectionsMenuProps={{
+                        suggestProperties: this.wikidataSuggestProperties
+                    }}
+                />
             </Workspace>
         );
     }
@@ -39,8 +42,7 @@ class WikidataExample extends React.Component {
     }
 
     private getElementLabel(id: string): string {
-        const model = this.workspace.getModel();
-        const view = this.workspace.getDiagram();
+        const {model, view} = this.workspace.getContext();
         const element = model.getElement(id);
         return element ? view.formatLabel(element.data.label.values, element.iri) : '';
     }

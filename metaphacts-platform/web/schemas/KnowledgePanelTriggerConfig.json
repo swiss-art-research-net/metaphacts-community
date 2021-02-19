@@ -3,15 +3,14 @@
     "definitions": {
         "CSSProperties": {
             "type": "string"
-        },
-        "JSX.Element": {
-            "type": "object"
         }
     },
     "properties": {
         "children": {
-            "$ref": "#/definitions/JSX.Element",
-            "description": "Inner markup that should be used instead of the default modes. Will override 'modes' parameter."
+            "description": "Inner markup that should be used instead of the default modes. Will override 'modes' parameter.",
+            "properties": {
+            },
+            "type": "object"
         },
         "className": {
             "description": "Custom CSS class.",
@@ -25,7 +24,7 @@
             "type": "object"
         },
         "id": {
-            "description": "Unique ID to be used in the event system. Default value is `undefined`.",
+            "description": "Unique ID to be used in the event system.",
             "type": "string"
         },
         "iri": {
@@ -46,7 +45,7 @@
             "description": "Custom CSS styles."
         },
         "target": {
-            "description": "Knowledge Panel Frame component ID. Default value is `undefined`.",
+            "description": "Knowledge Panel Frame component ID.",
             "type": "string"
         }
     },

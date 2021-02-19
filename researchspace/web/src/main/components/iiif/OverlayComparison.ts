@@ -132,7 +132,7 @@ export class OverlayComparison extends KefirComponentBase<Props, State, LoadedSt
         D.span({className: b('image-label').toString() }, 'Second image'),
         D.button({
           type: 'button',
-          className: classNames('btn', 'btn-default', b('submit').toString()),
+          className: classNames('btn', 'btn-secondary', b('submit').toString()),
           disabled: this.state.loading || this.state.creatingImage,
           onClick: () => {
             const dialogRef = 'create-overlay-image';

@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Overrides default or generated form for a given entity or link type.",
+    "properties": {
+        "applyOn": {
+            "description": "Restricts in which states to override target input.",
+            "items": {
+                "enum": [
+                    "create",
+                    "edit"
+                ],
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "children": {
+            "description": "Form markup to override with.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "forEntityType": {
+            "description": "Entity type IRI for which form have to be overridden.\n\nCannot be specified together with `for-link-type`.",
+            "type": "string"
+        },
+        "forLinkType": {
+            "description": "Link type IRI for which form have to be overridden.\n\nCannot be specified together with `for-entity-type`.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "forEntityType",
+        "forLinkType",
+        "applyOn",
+        "children"
+    ],
+    "required": [
+        "children"
+    ],
+    "type": "object"
+}
+

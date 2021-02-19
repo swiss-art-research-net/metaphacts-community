@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 
-import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Providers;
 import org.glassfish.jersey.internal.util.ReflectionHelper;
 import org.glassfish.jersey.internal.util.collection.ClassTypePair;
@@ -61,11 +61,11 @@ import org.glassfish.jersey.internal.util.collection.ClassTypePair;
 @Singleton
 public class OptionalParamProvider implements ParamConverterProvider {
 
-    private final ServiceLocator locator;
+    private final InjectionManager injectionManager;
 
     @Inject
-    public OptionalParamProvider(final ServiceLocator locator) {
-        this.locator = locator;
+    public OptionalParamProvider(final InjectionManager injectionManager) {
+        this.injectionManager = injectionManager;
     }
 
     @Override
@@ -74,7 +74,7 @@ public class OptionalParamProvider implements ParamConverterProvider {
         if (rawType == Optional.class) {
             final List<ClassTypePair> ctps = ReflectionHelper.getTypeArgumentAndClass(genericType);
             ClassTypePair ctp = (ctps.size() == 1) ? ctps.get(0) : null;
-            final Set<ParamConverterProvider> converterProviders = Providers.getProviders(locator,
+            final Set<ParamConverterProvider> converterProviders = Providers.getProviders(injectionManager,
                     ParamConverterProvider.class);
             for (ParamConverterProvider provider : converterProviders) {
                 final ParamConverter<?> converter = provider.getConverter(ctp.rawClass(),

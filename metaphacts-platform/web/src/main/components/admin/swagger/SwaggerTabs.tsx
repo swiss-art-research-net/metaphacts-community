@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -88,8 +88,9 @@ export class Swaggers extends React.Component<{}, State> {
 
     render() {
         return <Tabs id='swagger-tabs' unmountOnExit={true}>
-            {this.state.result.map((api, idx) => <Tab key={idx} eventKey={idx} title={api.name}>
-                <Swagger url={api.path}></Swagger>
+            {this.state.result.map((api, idx) =>
+                <Tab key={idx} eventKey={String(idx)} title={api.name}>
+                    <Swagger url={api.path}></Swagger>
             </Tab>)}
         </Tabs>;
     }

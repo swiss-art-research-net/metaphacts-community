@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "defaultOpenAll": {
+            "default": false,
+            "description": "Automatically switch to \"All\" results category when opened.",
+            "type": "boolean"
+        },
+        "id": {
+            "default": "ontodia-navigation-menu",
+            "description": "Unique ID to register as Ontodia canvas widget and send events.",
+            "type": "string"
+        },
+        "propertySuggestionQuery": {
+            "description": "SPARQL SELECT query to get suggested properties of elements.\n\nThe query is parametrized with a list of link IRIs using `VALUES (?property) {...}`\nblock and executed against `wikidata-property-suggester` repository.\n\nExpected output bindings:\n   - `propertyIri` - link IRI;\n   - `score` - floating point number with link rank;",
+            "type": "string"
+        },
+        "showReferenceLinks": {
+            "default": false,
+            "description": "Show link type and direction for each found element.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "propertySuggestionQuery",
+        "defaultOpenAll",
+        "showReferenceLinks"
+    ],
+    "type": "object"
+}
+

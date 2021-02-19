@@ -18,7 +18,7 @@
 import * as React from 'react';
 import { createElement } from 'react';
 import * as PropTypes from 'prop-types';
-import { Button, FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
+import { Button, FormGroup, FormControl, FormLabel } from 'react-bootstrap';
 import HTML5Backend from 'react-dnd-html5-backend';
 import * as _ from 'lodash';
 
@@ -355,7 +355,7 @@ export class SemanticNarrativeEditor extends Component<Props, State> {
       <div className={CLASS_NAME}>
         <div className='semantic-narrative-editor__title-and-toolbars'>
           <FormGroup className='form-inline'>
-            <ControlLabel style={{marginRight: 12, marginTop: 10, float: 'left'}}>Title</ControlLabel>
+            <FormLabel style={{marginRight: 12, marginTop: 10, float: 'left'}}>Title</FormLabel>
             <FormControl type='text' placeholder='Title'
               value={this.state.label ? this.state.label : ''}
               style={{width: 350}}
@@ -364,7 +364,7 @@ export class SemanticNarrativeEditor extends Component<Props, State> {
                 this.setState({label: newValue});
               }}
             />
-            <Button bsSize='small' bsStyle='success' className='pull-right' onClick={this.onSubmit}>
+            <Button size='sm' variant='success' className='pull-right' onClick={this.onSubmit}>
               {isSaving && <span>Saving... <i className="fa fa-refresh fa-spin fa-fw"></i></span>}
               {!isSaving && (this.isEditMode() ? 'Update Page' : 'Save Page')}
             </Button>

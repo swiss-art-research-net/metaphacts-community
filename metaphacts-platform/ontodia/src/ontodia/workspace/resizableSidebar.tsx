@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ import * as React from 'react';
 
 import { DraggableHandle } from './draggableHandle';
 
-export interface Props {
+export interface ResizableSidebarProps {
     className?: string;
     dockSide?: DockSide;
     defaultLength?: number;
@@ -67,10 +67,13 @@ export interface State {
 
 const CLASS_NAME = 'ontodia-drag-resizable-column';
 
-type RequiredProps = Props & Required<Pick<Props, 'dockSide' | 'minLength' | 'maxLength' | 'defaultLength' | 'isOpen'>>;
+type RequiredProps = ResizableSidebarProps & DefaultProps;
+type DefaultProps = Required<Pick<ResizableSidebarProps,
+    'dockSide' | 'minLength' | 'maxLength' | 'defaultLength' | 'isOpen'
+>>;
 
-export class ResizableSidebar extends React.Component<Props, State> {
-    static readonly defaultProps: Partial<Props> = {
+export class ResizableSidebar extends React.Component<ResizableSidebarProps, State> {
+    static readonly defaultProps: DefaultProps = {
         dockSide: DockSide.Left,
         minLength: 0,
         maxLength: 500,
@@ -80,7 +83,7 @@ export class ResizableSidebar extends React.Component<Props, State> {
 
     private originWidth!: number;
 
-    constructor(props: Props) {
+    constructor(props: ResizableSidebarProps) {
         super(props);
         const {isOpen} = this.props as RequiredProps;
         this.state = {
@@ -89,7 +92,7 @@ export class ResizableSidebar extends React.Component<Props, State> {
         };
     }
 
-    componentWillReceiveProps(nextProps: Props) {
+    componentWillReceiveProps(nextProps: ResizableSidebarProps) {
         if (this.state.open !== nextProps.isOpen) {
             this.toggle({open: (nextProps as RequiredProps).isOpen});
         }

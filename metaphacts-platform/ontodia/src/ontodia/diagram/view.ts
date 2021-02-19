@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ import { ReactNode } from 'react';
 import { hcl } from 'd3-color';
 import { ReactElement, MouseEvent } from 'react';
 
-import { TypeStyleResolver } from '../customization/props';
+import { ElementStyleResolver, TypeStyleResolver } from '../customization/props';
 import { DefaultTypeStyleBundle } from '../customization/defaultTypeStyles';
 
 import { ElementModel, ElementTypeIri, isEncodedBlank } from '../data/model';
@@ -74,6 +74,7 @@ export type LabelLanguageSelector =
 
 export interface ViewOptions {
     typeStyleResolver?: TypeStyleResolver;
+    elementStyleResolver?: ElementStyleResolver;
     selectLabelLanguage?: LabelLanguageSelector;
     onIriClick?: IriClickHandler;
 }
@@ -87,7 +88,6 @@ export interface DiagramViewEvents {
     changeLanguage: PropertyChange<DiagramView, string>;
     syncUpdateAll: {};
     updateWidget: UpdateWidgetEvent;
-    dispose: {};
     changeHighlight: PropertyChange<DiagramView, Highlighter>;
 }
 
@@ -123,11 +123,11 @@ export class DiagramView {
     private readonly source = new EventSource<DiagramViewEvents>();
     readonly events: Events<DiagramViewEvents> = this.source;
 
-    private disposed = false;
-
     private readonly colorSeed = 0x0BADBEEF;
 
     private readonly resolveTypeStyle: TypeStyleResolver;
+
+    private readonly resolveElementStyle?: ElementStyleResolver;
 
     private _language = 'en';
 
@@ -141,7 +141,12 @@ export class DiagramView {
         public readonly model: DiagramModel,
         public readonly options: ViewOptions = {},
     ) {
-        this.resolveTypeStyle = options.typeStyleResolver || DefaultTypeStyleBundle;
+        this.resolveTypeStyle  = options.typeStyleResolver || DefaultTypeStyleBundle;
+        this.resolveElementStyle = options.elementStyleResolver;
+    }
+
+    dispose() {
+        this.listener.stopListening();
     }
 
     getLanguage(): string { return this._language; }
@@ -215,6 +220,25 @@ export class DiagramView {
         }).sort().join(', ');
     }
 
+    public getElementStyle(element: ElementModel): TypeStyle {
+        if (this.resolveElementStyle) {
+            const customStyle = this.resolveElementStyle(element);
+            if (customStyle) {
+                let color: { h: number; c: number; l: number };
+                if (customStyle.color) {
+                    color = hcl(customStyle.color);
+                } else {
+                    color = getHclFromValues(element.types, this.colorSeed);
+                }
+                return {
+                    color,
+                    icon: customStyle.icon
+                };
+            }
+        }
+        return this.getTypeStyle(element.types);
+    }
+
     public getTypeStyle(types: ElementTypeIri[]): TypeStyle {
         types.sort();
 
@@ -225,8 +249,7 @@ export class DiagramView {
         if (customStyle && customStyle.color) {
             color = hcl(customStyle.color);
         } else {
-            const hue = getHueFromClasses(types, this.colorSeed);
-            color = {h: hue, c: 40, l: 75};
+            color = getHclFromValues(types, this.colorSeed);
         }
         return {icon, color};
     }
@@ -236,13 +259,6 @@ export class DiagramView {
             return '(blank node)';
         }
         return `<${iri}>`;
-    }
-
-    dispose() {
-        if (this.disposed) { return; }
-        this.source.trigger('dispose', {});
-        this.listener.stopListening();
-        this.disposed = true;
     }
 
     get highlighter() { return this._highlighter; }
@@ -262,7 +278,17 @@ export class DiagramView {
     }
 }
 
-function getHueFromClasses(classes: ReadonlyArray<ElementTypeIri>, seed?: number): number {
+export function getColorForValues(values: ReadonlyArray<string>, seed?: number) {
+    const { h, c, l } = getHclFromValues(values, seed);
+    return hcl(h, c, l).toString();
+}
+
+function getHclFromValues(values: ReadonlyArray<string>, seed?: number) {
+    const hue = getHueFromValues(values, seed);
+    return { h: hue, c: 40, l: 75 };
+}
+
+function getHueFromValues(classes: ReadonlyArray<string>, seed?: number): number {
     let hash = seed;
     for (const name of classes) {
         hash = hashFnv32a(name, hash);

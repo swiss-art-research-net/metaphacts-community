@@ -50,16 +50,14 @@ const Button = createFactory(ReactBootstrap.Button);
 const ButtonToolbar = createFactory(ReactBootstrap.ButtonToolbar);
 const ButtonGroup = createFactory(ReactBootstrap.ButtonGroup);
 const Popover = createFactory(ReactBootstrap.Popover);
-const Overlay = createFactory(ReactBootstrap.Overlay);
 
 const Modal = createFactory(ReactBootstrap.Modal);
-const ModalHeader = createFactory(ReactBootstrap.ModalHeader);
-const ModalTitle = createFactory(ReactBootstrap.ModalTitle);
-const ModalBody = createFactory(ReactBootstrap.ModalBody);
-const ModalFooter = createFactory(ReactBootstrap.ModalFooter);
-const Radio = createFactory(ReactBootstrap.Radio);
+const ModalHeader = createFactory(ReactBootstrap.Modal.Header);
+const ModalTitle = createFactory(ReactBootstrap.Modal.Title);
+const ModalBody = createFactory(ReactBootstrap.Modal.Body);
+const ModalFooter = createFactory(ReactBootstrap.Modal.Footer);
+const FormCheck = createFactory(ReactBootstrap.FormCheck);
 const FormGroup = createFactory(ReactBootstrap.FormGroup);
-const ControlLabel = createFactory(ReactBootstrap.ControlLabel);
 
 const Editor = createFactory(EditorComponent);
 
@@ -464,18 +462,18 @@ class AnnotationSemanticEditorComponent extends
       ModalBody({},
         'Display Entity as:',
         FormGroup({},
-          Radio({
-            name: 'semantic-template',
+          FormCheck({
+            type: 'radio',
             value: 'inline',
             checked: selectedTemplateIndex === 'inline',
             onChange: () => this.changeTemplate('inline'),
-          }, 'link'),
-          ...templates.map(({type, label}, index) => Radio({
-            name: 'semantic-template',
+          } as ReactBootstrap.FormCheckProps, 'link'),
+          ...templates.map(({type, label}, index) => FormCheck({
+            type: 'radio',
             value: index,
             checked: selectedTemplateIndex === index,
             onChange: () => this.changeTemplate(index),
-          }, label))
+          } as ReactBootstrap.FormCheckProps, label))
         ),
         'Semantic Relation:',
         FormGroup({},
@@ -851,14 +849,13 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
   }
 
   renderLinkEditor(show: boolean, buttonRef: string, onConfirmUrl: Function) {
-    return Overlay(
+    return ReactBootstrap.Overlay(
       {
         show: show,
         placement: 'bottom',
         container: document.body,
-        target: () => this.refs[buttonRef],
-      },
-      Popover({id: 'popover'},
+        target: () => this.refs[buttonRef] as HTMLElement,
+        children: Popover({id: 'popover'},
         D.div({className: 'input-group'},
           D.input({
             ref: 'url-input',
@@ -880,16 +877,17 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
           D.span({className: 'input-group-btn'},
             Button({
               disabled: this.state.urlValue === '',
-              bsSize: 'small',
+              size: 'sm',
               onClick: () => onConfirmUrl(),
             }, D.i({className: 'fa fa-check'})),
             Button({
-              bsSize: 'small',
+              size: 'sm',
               onClick: () => this.hideLinkEditor(),
             }, D.i({className: 'fa fa-close'}))
           )
         )
-      )
+      ) as React.ReactElement
+      }
     );
   }
 
@@ -914,14 +912,14 @@ class AnnotationTextEditorComponent extends Component<Props, State> {
         {},
         Button({
           ref: 'add-link-btn',
-          bsSize: 'small',
+          size: 'sm',
           title: shouldShowLinkButton ? 'Add link' : 'Add link (select text or place cursor into link)',
           disabled: !shouldShowLinkButton,
           onClick: () => this.showLinkEditor(currentUrl),
-        }, D.i({className: 'fa fa-link'})),
+        } as ReactBootstrap.ButtonProps, D.i({className: 'fa fa-link'})),
         this.renderLinkEditor(this.state.showURLInput, 'add-link-btn', () => this.confirmUrl()),
         Button({
-          bsSize: 'small',
+          size: 'sm',
           title: 'Remove link',
           disabled: !isCursorOnLink,
           onClick: () => this.removeLink(),
@@ -986,7 +984,7 @@ interface StyleButtonProps {
 }
 const StyleButtonComponent = (props: StyleButtonProps) => Button(
   {
-    bsSize: 'small',
+    size: 'sm',
     className: classnames({'annotation-text-editor-toolbar__toolbar__style-button': true, 'active': props.active}),
     title: props.title,
     onClick: () => {

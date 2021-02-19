@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,10 +39,12 @@
  */
 package com.metaphacts.services.storage.git;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -58,13 +60,24 @@ import javax.annotation.Nullable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jgit.api.CloneCommand;
+import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeCommand;
+import org.eclipse.jgit.api.PullCommand;
+import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.ResetCommand;
+import org.eclipse.jgit.api.TransportCommand;
+import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRemoteException;
+import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
+import org.eclipse.jgit.api.errors.RefNotFoundException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
 import org.eclipse.jgit.dircache.DirCacheEntry;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.InvalidObjectIdException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.CommitBuilder;
@@ -79,21 +92,34 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.RefUpdate;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.transport.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
+import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.SshTransport;
+import org.eclipse.jgit.transport.Transport;
 import org.eclipse.jgit.transport.URIish;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.AndTreeFilter;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
+import org.eclipse.jgit.util.FS;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import com.metaphacts.services.storage.StorageUtils;
 import com.metaphacts.services.storage.api.ObjectMetadata;
+import com.metaphacts.services.storage.api.ObjectMetadata.ObjectMetadataBuilder;
 import com.metaphacts.services.storage.api.ObjectRecord;
 import com.metaphacts.services.storage.api.ObjectStorage;
 import com.metaphacts.services.storage.api.PathMapping;
@@ -101,14 +127,27 @@ import com.metaphacts.services.storage.api.SizedStream;
 import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.services.storage.api.StorageLocation;
 import com.metaphacts.services.storage.api.StoragePath;
+import com.metaphacts.services.storage.api.Tag;
+import com.metaphacts.services.storage.api.VersionedObjectStorage;
 
 /**
  * An {@link ObjectStorage} implementation that makes use of a local GIT
  * repository, potentially synching changes to a configured remote.
  * 
  * <p>
- * The local GIT repository must exist and the configured branch must be
- * initialized with a commit. Configuration of a remote is optional.
+ * If the Git repository does not exist in the file system, the Git Storage
+ * attempts to clone the repository (if a remote is configured) or initialize an
+ * empty one with an initial commit. Configuration of a remote is optional. If a
+ * remote is configured, the configured branch must exist.
+ * </p>
+ * 
+ * <p>
+ * The GitStorage supports different authentication methods. By default (if no
+ * external authentication information is provided) it uses the built-in
+ * mechanism, i.e. the openssh configuration from the user's <i>~/.ssh</i>
+ * config or the credentials provided as part of the URL. In addition to the
+ * built-in mechanisms a private key (SSH connections) or credentials (HTTPS)
+ * can be configured with the {@link GitStorageConfig}.
  * </p>
  * 
  * <p>
@@ -136,7 +175,7 @@ import com.metaphacts.services.storage.api.StoragePath;
  * @author Andreas Schwarte
  *
  */
-public class GitStorage implements ObjectStorage {
+public class GitStorage implements VersionedObjectStorage {
     private static final Logger logger = LogManager.getLogger(GitStorage.class);
 
     public static final String STORAGE_TYPE = "git";
@@ -149,6 +188,11 @@ public class GitStorage implements ObjectStorage {
 
     private ExecutorService executor;
 
+    // ssh session factory with customized connection settings (if configured)
+    // otherwise use default built-in
+    private Optional<SshSessionFactory> sshSessionFactory = Optional.empty();
+
+
     public GitStorage(PathMapping paths, GitStorageConfig config) throws StorageException {
         this.paths = paths;
         this.config = config;
@@ -158,23 +202,34 @@ public class GitStorage implements ObjectStorage {
 
     private void initialize() throws StorageException {
 
-        if (!Files.isDirectory(config.getLocalPath())) {
-            throw new StorageException("Local path does not exists or not a directory: " + config.getLocalPath());
-        }
+        sshSessionFactory = initializeSshAuthenticationFactory();
 
         Path gitFolder = config.getLocalPath().resolve(".git");
         try {
             if (!Files.isDirectory(gitFolder)) {
-                if (config.getRemoteUrl() == null) {
-                    throw new StorageException(
-                        "Cannot clone repository without 'remoteUrl' specified");
+                // try to create local directory, if it is permitted
+                StorageUtils.mkdirs(config.getLocalPath());
+                if (config.getRemoteUrl() != null) {
+                    cloneRepository();
+                } else {
+                    createEmptyLocalRepository();
                 }
-                cloneRepository();
             }
             initializeExisting(gitFolder);
         } catch (IOException | GitAPIException e) {
+            String details = "";
+            if (e instanceof TransportException) {
+                details = "\nDetails: error while establishing connection, check the authentication method.";
+            }
+            else if (e instanceof RefNotFoundException) {
+                details = "\nDetails: " + e.getMessage();
+            } else if (e instanceof InvalidRemoteException) {
+                // this is the case if the user is authenticated, but does not see the requested
+                // repository (e.g no permissions to see a private github repo)
+                details = "\nDetails: not possible to access the remote, check the authentication method.";
+            }
             throw new StorageException(
-                "Failed to open Git repository at: " + config.getLocalPath(), e);
+                    "Failed to open Git repository at: " + config.getLocalPath() + details, e);
         }
 
         executor = Executors
@@ -182,13 +237,36 @@ public class GitStorage implements ObjectStorage {
     }
 
     private void cloneRepository() throws GitAPIException, IOException {
-        logger.info("Cloning remote repository <" +
-            config.getRemoteUrl() + "> at " + config.getLocalPath());
-        // TODO: this requires to provide Git credentials in some form
-        throw new StorageException(String.format(
-            "Automatic git clone is not supported: a '.git' repository must exist in %s",
-            config.getLocalPath()
-        ));
+        logger.info("Cloning remote repository <{}> at {}, Branch: {}", config.getRemoteUrl(), config.getLocalPath(),
+                config.getBranch());
+
+        // uses built-in authentication or configured one
+        CloneCommand cloneCommand = Git.cloneRepository()
+                .setURI(config.getRemoteUrl())
+                .setBranch(config.getBranch())
+                .setDirectory(config.getLocalPath().toFile());
+
+        configureTransport(cloneCommand);
+
+        cloneCommand.call();
+    }
+
+    private void createEmptyLocalRepository() throws GitAPIException, IOException {
+        logger.info("Creating empty local repository at " + config.getLocalPath());
+        
+        Git localGit = Git.init().setDirectory(config.getLocalPath().toFile()).call();
+
+        CommitCommand commit = localGit.commit();
+        commit.setMessage("initial commit").call();
+        
+        if (config.getBranch() != null) {
+            boolean branchExists = localGit.branchList().call().stream()
+                    .anyMatch(ref -> ref.getName().equals("refs/heads/" + config.getBranch()));
+            if (!branchExists) {
+                localGit.branchCreate().setName(config.getBranch()).call();
+            }
+        }
+
     }
 
     private void initializeExisting(Path gitFolder) throws GitAPIException, IOException {
@@ -222,6 +300,19 @@ public class GitStorage implements ObjectStorage {
         }
     }
 
+    @Override
+    public String getDescription() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Git: ");
+        if (config.getRemoteUrl() != null) {
+            sb.append(config.getRemoteUrl());
+        } else {
+            sb.append("local repository");
+        }
+        sb.append(" (Branch: ").append(Optional.of(config.getBranch()).orElse("n/a")).append(")");
+        
+        return sb.toString();
+    }
 
     @Override
     public synchronized void close() throws StorageException {
@@ -234,6 +325,10 @@ public class GitStorage implements ObjectStorage {
                 executor.shutdownNow();
             }
         }
+    }
+
+    public Path getLocation() {
+        return config.getLocalPath();
     }
 
     private final class GitStorageLocation implements StorageLocation {
@@ -411,7 +506,7 @@ public class GitStorage implements ObjectStorage {
         StoragePath objectPath = paths.mapForward(path).orElseThrow(() ->
             new StorageException(String.format("Cannot map object path: %s", path))
         );
-        String message = "Append: " + objectPath;
+        String message = metadata.getComment() != null ? metadata.getComment() : "Append: " + objectPath;
         PersonIdent author = createAuthorFromMetadata(metadata.withCurrentDate());
 
         RevCommit commit;
@@ -470,6 +565,100 @@ public class GitStorage implements ObjectStorage {
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Tag a given revision
+     * 
+     * <p>
+     * If there was no change in the tag, this method is a No-OP.
+     * </p>
+     * 
+     * <p>
+     * If a remote is configured this method pushes the tag to the upstream.
+     * </p>
+     * 
+     * @param revision the revision identifier
+     * @param tagName  the name of the tag
+     * @param metadata additional {@link ObjectMetadata}
+     * @throws StorageException if tag creation fails (e.g. if a tag with the
+     *                          provided name already exists)
+     */
+    @Override
+    public void tag(String revision, String tagName, ObjectMetadata metadata) throws StorageException {
+
+        try {
+            lock.writeLock().lock();
+
+            try (Git git = new Git(repository)) {
+                ObjectId id = repository.resolve(revision);
+                try (RevWalk walk = new RevWalk(repository)) {
+                    RevCommit commit = walk.parseCommit(id);
+                    String comment = Optional.ofNullable(metadata.getComment()).orElse(tagName);
+                    Ref tag = git.tag()
+                            .setObjectId(commit)
+                            .setName(tagName)
+                            .setAnnotated(true)
+                            .setMessage(comment)
+                            .setTagger(createAuthorFromMetadata(metadata.withCurrentDate()))
+                            .call();
+                    logger.debug("Created tag " + tag + ".");
+                    walk.dispose();
+
+                    if (config.getRemoteUrl() != null) {
+                        logger.debug("Pushing tags to remote repository...");
+                        PushCommand push = git.push().setPushTags();
+                        configureTransport(push);
+                        push.call();
+                    }
+                }
+            } catch (RefAlreadyExistsException e) {
+                throw new StorageException("Tag with name " + tagName + " already exists");
+            } catch (Exception e) {
+                // special handling if there was no change
+                // Note: unfortunately there is no specific exception type
+                if (e.getMessage().contains("NO_CHANGE")) {
+                    logger.debug("No change while creating tag: " + e.getMessage());
+                    return;
+                }
+
+                throw new StorageException(
+                        "Failed to create tag " + tagName + " on revision " + revision + ": " + e.getMessage(), e);
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public List<Tag> getTags() throws StorageException {
+
+        List<Tag> res = Lists.newArrayList();
+
+        try (Git git = new Git(repository)) {
+            try {
+                for (Ref tag : git.tagList().call()) {
+
+                    try (RevWalk revWalk = new RevWalk(repository)) {
+                        RevTag annotatedTag = revWalk.parseTag(tag.getObjectId());
+                        String commitId = annotatedTag.getObject().getId().getName();
+                        String tagName = annotatedTag.getTagName();
+
+                        res.add(new GitTag(tagName, commitId));
+                    } catch (IncorrectObjectTypeException ex) {
+                        logger.warn("Failed to resolve tag {}: {}", tag.getName(), ex.getMessage());
+                        logger.debug("Details:", ex);
+                    }
+                }
+
+            } catch (GitAPIException e) {
+                throw new StorageException(e);
+            } catch (IOException e) {
+                throw new StorageException(e);
+            }
+        }
+
+        return res;
     }
 
     @Nullable
@@ -557,8 +746,8 @@ public class GitStorage implements ObjectStorage {
             if (newBlobId != null) {
                 entry.setObjectId(newBlobId);
                 entry.setFileMode(FileMode.REGULAR_FILE);
-                long commitTime = author.getWhen().toInstant().toEpochMilli();
-                entry.setCreationTime(commitTime);
+                Instant commitTime = author.getWhen().toInstant();
+                entry.setCreationTime(commitTime.toEpochMilli());
                 entry.setLastModified(commitTime);
             }
 
@@ -651,11 +840,14 @@ public class GitStorage implements ObjectStorage {
     private RemoteRefUpdate.Status tryPushChanges(String branch) throws GitAPIException {
         try (Git git = new Git(repository)) {
             logger.debug("Pushing changes to remote repository...");
-            Iterable<PushResult> results = git.push()
+            PushCommand push = git.push()
                 .add(branch)
                 .setAtomic(true)
-                .setRemote("origin")
-                .call();
+                .setRemote("origin");
+
+            configureTransport(push);
+
+            Iterable<PushResult> results = push.call();
             for (PushResult result : results) {
                 String messages = result.getMessages();
                 if (!messages.isEmpty()) {
@@ -674,10 +866,13 @@ public class GitStorage implements ObjectStorage {
     @SuppressWarnings("unused")
     private void pullChangesInFastForwardMode() throws GitAPIException {
         try (Git git = new Git(repository)) {
-            git.pull()
+            PullCommand pull = git.pull()
                 .setRemote("origin")
-                .setFastForward(MergeCommand.FastForwardMode.FF_ONLY)
-                .call();
+                    .setFastForward(MergeCommand.FastForwardMode.FF_ONLY);
+
+            configureTransport(pull);
+
+            pull.call();
         }
     }
 
@@ -713,7 +908,12 @@ public class GitStorage implements ObjectStorage {
     private ObjectMetadata getMetadata(RevCommit commit) {
         String author = commit.getAuthorIdent().getName();
         Date when = commit.getAuthorIdent().getWhen();
-        return new ObjectMetadata(author, when.toInstant());
+        return ObjectMetadataBuilder.create().
+                withAuthor(author).
+                withCreationDate(when.toInstant()).
+                withTitle(commit.getShortMessage()).
+                withComment(commit.getFullMessage())
+                .build();
     }
 
     private void assertCleanWorkTree(Git git) throws GitAPIException, StorageException {
@@ -774,5 +974,94 @@ public class GitStorage implements ObjectStorage {
                 .setRef(rollbackTo.getName())
                 .call();
         }
+    }
+
+    private void configureTransport(TransportCommand<?,?> command) {
+        
+        // if present: configure custom SSH factory (e.g. a custom private key)
+        if (sshSessionFactory.isPresent()) {
+            
+            command.setTransportConfigCallback(new TransportConfigCallback() {
+                @Override
+                public void configure(Transport transport) {
+                    if (!(transport instanceof SshTransport)) {
+                        logger.warn("Invalid configuration supplied to GitStorage configuration. "
+                                + "It looks like an SSH configuration setting (e.g. key, keyPath, or "
+                                + "verifyKnownHosts) is defined for a HTTPS Git URL. Settings are ignored.");
+                        return;
+                    }
+                    SshTransport sshTransport = (SshTransport) transport;
+                    sshTransport.setSshSessionFactory(sshSessionFactory.get());
+                }
+            });
+        }
+
+        if (config.getUsername() != null) {
+
+            String password = config.getPassword();
+            if (password == null) {
+                throw new IllegalStateException("Username defined, but no password given.");
+            }
+
+            logger.debug("Configuring credentials for user {}", config.getUsername());
+            command.setCredentialsProvider(new UsernamePasswordCredentialsProvider(config.getUsername(), password));
+        }
+    }
+
+    private Optional<SshSessionFactory> initializeSshAuthenticationFactory() {
+        
+        // no custom authentication => use built-in
+        if (!config.customSSHAuthentication()) {
+            return Optional.empty();
+        }
+        logger.debug("Using custom authentication configuration for Git repesitory at {}", config.getLocalPath());
+   
+        SshSessionFactory sessionFactory = new JschConfigSessionFactory() {
+            @Override
+            protected void configure(Host host, Session session) {
+
+                if (!config.isVerifyKnownHosts()) {
+
+                    logger.trace("Known hosts verification is deactivated.");
+
+                    // deactivate known_hosts checking
+                    java.util.Properties config = new java.util.Properties();
+                    config.put("StrictHostKeyChecking", "no");
+                    session.setConfig(config);
+                }
+            }
+
+            @Override
+            protected JSch createDefaultJSch(FS fs) throws JSchException {
+
+                JSch jsch = super.createDefaultJSch(fs);
+
+                String keyPath = config.getKeyPath();
+                String key = config.getKey();
+
+                // built-in configuration
+                if (keyPath == null && key == null) {
+                    return jsch;
+                }
+
+                // if a textual key is set, use this as identity
+                if (key != null) {
+                    logger.debug("Adding identity from private key provided as string");
+                    byte[] private_key = key.getBytes();
+                    jsch.addIdentity(keyPath, private_key, null, null);
+                    return jsch;
+                }
+
+                // key points to an existing file
+                if (new File(keyPath).isFile()) {
+                    logger.debug("Adding identity from private key file at {}", keyPath);
+                    jsch.addIdentity(keyPath);
+                    return jsch;
+                }
+
+                throw new JSchException("Private key not found at " + keyPath);
+            }
+        };
+        return Optional.of(sessionFactory);
     }
 }

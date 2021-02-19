@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "container": {
+            "type": "string"
+        },
+        "iri": {
+            "type": "string"
+        },
+        "postAction": {
+            "default": "reload",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "container",
+        "iri",
+        "postAction"
+    ],
+    "required": [
+        "container",
+        "iri"
+    ],
+    "type": "object"
+}
+

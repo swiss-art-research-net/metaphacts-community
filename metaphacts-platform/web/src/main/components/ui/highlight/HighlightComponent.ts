@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,8 +42,13 @@ import * as D from 'react-dom-factories';
 import * as styles from './HighlightComponent.scss';
 import { escapeRegExp } from 'lodash';
 
-
-export interface Props {
+/**
+ * **Example**:
+ * ```
+ * <mp-highlight highlight="text">some text here</mp-highlight>
+ * ```
+ */
+interface HighlightConfig {
   /**
    * Additional class names for component root element
    */
@@ -59,8 +64,7 @@ export interface Props {
   /**
    * Props for highlighted substring span
    */
-  highlightProps?: HTMLProps<HTMLSpanElement>;
-
+  highlightProps?: {};
   /**
    * Whether to split the highlight term into individual tokens / words.
    * If active, highlighting is done on matched words.
@@ -68,11 +72,11 @@ export interface Props {
   splitToken?: boolean;
 }
 
-/**
- * @example
- * <mp-highlight highlight="text">some text here</mp-highlight>
- */
-export class HighlightComponent extends Component<Props, {}> {
+export interface HighlightProps extends HighlightConfig {
+  highlightProps?: HTMLProps<HTMLSpanElement>;
+}
+
+export class HighlightComponent extends Component<HighlightProps, {}> {
   render(): ReactElement<any> {
     if (typeof this.props.children !== 'string') {
       throw 'Children of HighlightComponent must be string';

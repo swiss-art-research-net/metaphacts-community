@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,7 +62,7 @@ public class DataQualityConfiguration extends ConfigurationGroupBase {
      * 
      * @default rdfunit
      */
-    @ConfigurationParameter(name = "shaclEngine", restartRequired = true, desc = "Type of SHACL engine to be used. Default: rdfunit.", visibilityLevel = VisibilityLevel.advanced)
+    @ConfigurationParameter(name = "shaclEngine", restartRequired = true, desc = "Type of SHACL engine to be used. Supported engines: rdfunit, stardog, graphdb. Default: rdfunit.", visibilityLevel = VisibilityLevel.advanced)
     public String getShaclEngine() {
         return getString("shaclEngine", "rdfunit");
     }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -68,7 +68,7 @@ import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
@@ -112,8 +112,6 @@ public class LDPAssetsLoader {
     @Inject
     private Configuration configuration;
     
-    @Inject
-    private LDPImplManager ldpImplManager;
 
     public LDPAssetsLoader() {
 
@@ -353,12 +351,12 @@ public class LDPAssetsLoader {
 
     /**
      * Returns true if the provided {@link Value} is a {@link Literal} 
-     * AND is not of datatype {@link XMLSchema#DATETIME} or {@link XMLSchema#DOUBLE}
+     * AND is not of datatype {@link XSD#DATETIME} or {@link XSD#DOUBLE}
      * @param value
      * @return
      */
     static boolean resourceIsNotDateTimeOrDouble(Value value) {
-        List<IRI> blacklist = Lists.newArrayList(XMLSchema.DATETIME, XMLSchema.DOUBLE);
+        List<IRI> blacklist = Lists.newArrayList(XSD.DATETIME, XSD.DOUBLE);
         if(value != null && value instanceof Literal) {
             Literal lit = (Literal)value;
             return !blacklist.contains(lit.getDatatype());

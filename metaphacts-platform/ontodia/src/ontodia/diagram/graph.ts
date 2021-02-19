@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,16 +37,16 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { ElementTypeIri, LinkTypeIri, PropertyTypeIri } from '../data/model';
+import { ElementTypeIri, LinkIri, LinkTypeIri, PropertyTypeIri } from '../data/model';
 import { OrderedMap } from '../viewUtils/collections';
 import { EventSource, Events, AnyEvent, AnyListener } from '../viewUtils/events';
 
 import {
-    Element as DiagramElement, ElementEvents,
-    Link as DiagramLink, LinkEvents,
+    Element, ElementEvents,
+    Link, LinkEvents,
     LinkType, LinkTypeEvents,
     RichClass, RichClassEvents,
-    RichProperty,
+    RichProperty, RichPropertyEvents,
 } from './elements';
 
 export interface GraphEvents {
@@ -55,58 +55,63 @@ export interface GraphEvents {
     linkEvent: AnyEvent<LinkEvents>;
     linkTypeEvent: AnyEvent<LinkTypeEvents>;
     classEvent: AnyEvent<RichClassEvents>;
+    propertyEvent: AnyEvent<RichPropertyEvents>;
 }
 
 export interface CellsChangedEvent {
     readonly updateAll: boolean;
-    readonly changedElement?: DiagramElement;
-    readonly changedLinks?: ReadonlyArray<DiagramLink>;
+    readonly changedElement?: Element;
+    readonly changedLinks?: ReadonlyArray<Link>;
 }
 
 export class Graph {
     private readonly source = new EventSource<GraphEvents>();
     readonly events: Events<GraphEvents> = this.source;
 
-    private elements = new OrderedMap<DiagramElement>();
-    private links = new OrderedMap<DiagramLink>();
+    private elements = new OrderedMap<Element>();
+    private links = new OrderedMap<Link>();
 
     private classesById = new Map<ElementTypeIri, RichClass>();
     private propertiesById = new Map<PropertyTypeIri, RichProperty>();
 
     private linkTypes = new Map<LinkTypeIri, LinkType>();
-    private static nextLinkTypeIndex = 0;
 
     getElements() { return this.elements.items; }
     getLinks() { return this.links.items; }
 
-    getLink(linkId: string): DiagramLink | undefined {
+    getLink(linkId: string): Link | undefined {
         return this.links.get(linkId);
     }
 
-    findLink(linkTypeId: LinkTypeIri, sourceId: string, targetId: string): DiagramLink | undefined {
+    findLink(
+        linkTypeId: LinkTypeIri,
+        sourceId: string,
+        targetId: string,
+        linkIri?: LinkIri
+    ): Link | undefined {
         const source = this.getElement(sourceId);
         if (!source) { return undefined; }
-        const index = findLinkIndex(source.links, linkTypeId, sourceId, targetId);
+        const index = findLinkIndex(source.links, linkTypeId, sourceId, targetId, linkIri);
         return index >= 0 ? source.links[index] : undefined;
     }
 
-    sourceOf(link: DiagramLink) {
+    sourceOf(link: Link) {
         return this.getElement(link.sourceId);
     }
 
-    targetOf(link: DiagramLink) {
+    targetOf(link: Link) {
         return this.getElement(link.targetId);
     }
 
-    reorderElements(compare: (a: DiagramElement, b: DiagramElement) => number) {
+    reorderElements(compare: (a: Element, b: Element) => number) {
         this.elements.reorder(compare);
     }
 
-    getElement(elementId: string): DiagramElement | undefined {
+    getElement(elementId: string): Element | undefined {
         return this.elements.get(elementId);
     }
 
-    addElement(element: DiagramElement): void {
+    addElement(element: Element): void {
         if (this.getElement(element.id)) {
             throw new Error(`Element '${element.id}' already exists.`);
         }
@@ -134,7 +139,7 @@ export class Graph {
         }
     }
 
-    addLink(link: DiagramLink): void {
+    addLink(link: Link): void {
         if (this.getLink(link.id)) {
             throw new Error(`Link '${link.id}' already exists.`);
         }
@@ -145,7 +150,7 @@ export class Graph {
         this.registerLink(link);
     }
 
-    private registerLink(link: DiagramLink) {
+    private registerLink(link: Link) {
         this.sourceOf(link)!.links.push(link);
         if (link.sourceId !== link.targetId) {
             this.targetOf(link)!.links.push(link);
@@ -163,23 +168,28 @@ export class Graph {
     removeLink(linkId: string, options?: { silent?: boolean }) {
         const link = this.links.delete(linkId);
         if (link) {
-            const {typeId, sourceId, targetId} = link;
+            const {typeId, sourceId, targetId, data} = link;
             link.events.offAny(this.onLinkEvent);
-            this.removeLinkReferences(typeId, sourceId, targetId);
+            this.removeLinkReferences(typeId, sourceId, targetId, data.linkIri);
             if (!(options && options.silent)) {
                 this.source.trigger('changeCells', {updateAll: false, changedLinks: [link]});
             }
         }
     }
 
-    private removeLinkReferences(linkTypeId: LinkTypeIri, sourceId: string, targetId: string) {
+    private removeLinkReferences(
+        linkTypeId: LinkTypeIri,
+        sourceId: string,
+        targetId: string,
+        linkIri: LinkIri | undefined
+    ) {
         const source = this.getElement(sourceId);
         if (source) {
-            removeLinkFrom(source.links, linkTypeId, sourceId, targetId);
+            removeLinkFrom(source.links, linkTypeId, sourceId, targetId, linkIri);
         }
         const target = this.getElement(targetId);
         if (target) {
-            removeLinkFrom(target.links, linkTypeId, sourceId, targetId);
+            removeLinkFrom(target.links, linkTypeId, sourceId, targetId, linkIri);
         }
     }
 
@@ -197,7 +207,6 @@ export class Graph {
         if (this.getLinkType(linkType.id)) {
             throw new Error(`Link type '${linkType.id}' already exists.`);
         }
-        linkType.setIndex(Graph.nextLinkTypeIndex++);
         linkType.events.onAny(this.onLinkTypeEvent);
         this.linkTypes.set(linkType.id, linkType);
     }
@@ -214,7 +223,12 @@ export class Graph {
         if (this.getProperty(property.id)) {
             throw new Error(`Property '${property.id}' already exists.`);
         }
+        property.events.onAny(this.onPropertyEvent);
         this.propertiesById.set(property.id, property);
+    }
+
+    private onPropertyEvent: AnyListener<RichPropertyEvents> = (data, key) => {
+        this.source.trigger('propertyEvent', {key, data});
     }
 
     getClass(classId: ElementTypeIri): RichClass | undefined {
@@ -240,21 +254,34 @@ export class Graph {
     }
 }
 
-function removeLinkFrom(links: DiagramLink[], linkTypeId: LinkTypeIri, sourceId: string, targetId: string) {
+function removeLinkFrom(
+    links: Link[],
+    linkTypeId: LinkTypeIri,
+    sourceId: string,
+    targetId: string,
+    linkIri: LinkIri | undefined
+) {
     if (!links) { return; }
     while (true) {
-        const index = findLinkIndex(links, linkTypeId, sourceId, targetId);
+        const index = findLinkIndex(links, linkTypeId, sourceId, targetId, linkIri);
         if (index < 0) { break; }
         links.splice(index, 1);
     }
 }
 
-function findLinkIndex(haystack: DiagramLink[], linkTypeId: LinkTypeIri, sourceId: string, targetId: string) {
+function findLinkIndex(
+    haystack: Link[],
+    linkTypeId: LinkTypeIri,
+    sourceId: string,
+    targetId: string,
+    linkIri: LinkIri | undefined
+) {
     for (let i = 0; i < haystack.length; i++) {
         const link = haystack[i];
         if (link.sourceId === sourceId &&
             link.targetId === targetId &&
-            link.typeId === linkTypeId
+            link.typeId === linkTypeId &&
+            link.data.linkIri === linkIri
         ) {
             return i;
         }

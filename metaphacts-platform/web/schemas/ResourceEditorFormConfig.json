@@ -2,13 +2,14 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
         "FieldDefinitionConfig": {
+            "additionalProperties": false,
             "properties": {
                 "askPattern": {
                     "description": "Single constraint (SPARQL ASK query) to to validate values entered by\nthe user against the database.\n\nQuery bindings:\n   * `?value` - validated field value;\n\nIf both `askPattern` and `constraints` are specified then all of them will\nbe evaluated for each validated value.",
                     "type": "string"
                 },
                 "autosuggestionPattern": {
-                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     # ?value lookup:type :MyType\n   }\n}\n```",
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search.\n\nQuery bindings:\n   * `?__token__` - text token the user is typing;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;\n\nExample:\n```\nPREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>\nSELECT ?value ?label WHERE {\n   SERVICE Repository:lookup {\n     ?value lookup:token ?__token__ .\n     ?value lookup:name ?label .\n     # ?value lookup:type :MyType\n   }\n}\n```",
                     "type": "string"
                 },
                 "categories": {
@@ -82,8 +83,8 @@
                             "type": "number"
                         }
                     ],
-                    "default": "'unbound'",
-                    "description": "XSD schema max cardinality (inclusive) or `'unbound'` (i.e. infinite)."
+                    "default": "unbound",
+                    "description": "XSD schema max cardinality (inclusive) or `\"unbound\"` (i.e. infinite)."
                 },
                 "minOccurs": {
                     "anyOf": [
@@ -97,8 +98,8 @@
                             "type": "number"
                         }
                     ],
-                    "default": "'unbound'",
-                    "description": "XSD schema min cardinality (inclusive) or `'unbound'` (i.e. 0)."
+                    "default": "unbound",
+                    "description": "XSD schema min cardinality (inclusive) or `\"unbound\"` (i.e. 0)."
                 },
                 "order": {
                     "description": "Number used for ordering field definitions.",
@@ -173,15 +174,13 @@
                 "testSubject",
                 "orderedWith"
             ],
-            "required": [
-                "id"
-            ],
             "type": "object"
         },
         "FieldDependency": {
+            "additionalProperties": false,
             "properties": {
                 "autosuggestionPattern": {
-                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependend field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
+                    "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependent field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
                     "type": "string"
                 },
                 "dependencies": {
@@ -263,7 +262,7 @@
             ],
             "type": "object"
         },
-        "Iri<string>_1": {
+        "Iri<string>": {
             "properties": {
                 "termType": {
                     "description": "Contains the constant \"NamedNode\".",
@@ -292,6 +291,7 @@
             "type": "object"
         },
         "MultipleFieldConstraint": {
+            "additionalProperties": false,
             "properties": {
                 "fields": {
                     "additionalProperties": {
@@ -356,6 +356,7 @@
             "type": "object"
         },
         "SingleFieldConstraint": {
+            "additionalProperties": false,
             "properties": {
                 "message": {
                     "description": "Error message to display if constraint is violated.",
@@ -375,6 +376,12 @@
                 "validatePattern"
             ],
             "type": "object"
+        }
+    },
+    "description": "Form component to create and edit resources represented by input fields.\n\nThe component supports submitting or reverting the form to the initial\nstate by specifying <button> element as child with the following name attribute:\n   - `reset` - revert form content to initial state;\n   - `submit` - persist form content as new or edited resource.\n\nThis functionality can be used to backup form data,\nto clone forms and to create multiple similar forms\nwithout read access to the repository:\n   - `load-state` - load file from disk;\n   - `save-state` - save file to disk.\n\n**Example**:\n```\n<semantic-form subject='http://exmaple.com/thing/foo' fields='{[...]}'>\n   <!-- all the children will be passed down to SemanticForm -->\n   <semantic-form-text-input for='person-name'></semantic-form-text-input>\n   <div style='color: blue;'>\n     <semantic-form-datetime-input for='event-date'>\n     </semantic-form-datetime-input>\n   </div>\n   <!-- Button's onClick handler binds by 'name' attribute -->\n   <semantic-form-errors></semantic-form-errors>\n   <button name='reset' type='button' class='btn btn-secondary'>Reset</button>\n   <button name='submit' type='button' class='btn btn-primary'>Submit</button>\n   <button name='load-state' type='button' class='btn btn-info'>Load to file</button>\n   <button name='save-state' type='button' class='btn btn-info'>Save to file</button>\n</semantic-form>\n```\n\n**Example**:\n```\n<!-- enable storing and recovering intermediate inputs from client persistence layer -->\n<semantic-form\n   subject='http://exmaple.com/thing/foo'\n   fields='{[...]}'\n   browser-persistence=true>\n   <semantic-form-recover-notification></semantic-form-recover-notification>\n   <!-- ... -->\n</semantic-form>\n```\n\n**Example**:\n```\n<!-- custom form identifier for client persistence when\n      using multiple forms on the same page -->\n<semantic-form\n   subject='http://exmaple.com/thing/foo'\n   fields='{[...]}'\n   browser-persistence=true\n   form-id='form123'>\n   <semantic-form-recover-notification></semantic-form-recover-notification>\n   <!-- ... -->\n</semantic-form>\n```",
+    "patternProperties": {
+        "^urlqueryparam": {
+            "type": "string"
         }
     },
     "properties": {
@@ -427,7 +434,7 @@
             "type": "string"
         },
         "persistence": {
-            "default": "'ldp'",
+            "default": "ldp",
             "description": "Persistence and operation mode to use for creating and modifying data.\nBoth modes require dedicated ACL permissions.\n\nIn `ldp` mode, all generated statements for a form subject are being stored into\na dedicated LDP container and as such can easily be updated or even reverted and\nhave provenance information attached.\nHowever, `ldp` requires to enable quads mode in the graph database.\n\nIn the `sparql` mode no provenance can be captured.",
             "enum": [
                 "client-side-sparql",
@@ -447,13 +454,13 @@
                     "type": "string"
                 }
             ],
-            "default": "'reload'",
-            "description": "Optional post-action to be performed after saving the form.\nCan be either `'none'`, `'reload'` or `'redirect'` (redirects to the subject of the form)\nor any IRI string to which the form will redirect."
+            "default": "reload",
+            "description": "Optional post-action to be performed after saving the form.\n\nThe following values are supported:\n   - `none`\n   - `reload`\n   - `event` to emit events. Note that this requires `id` to be set\n   - `redirect` to redirect to the subject of the form\n   - any IRI string to which the form will redirect."
         },
         "subject": {
             "anyOf": [
                 {
-                    "$ref": "#/definitions/Iri<string>_1"
+                    "$ref": "#/definitions/Iri<string>"
                 },
                 {
                     "type": "string"

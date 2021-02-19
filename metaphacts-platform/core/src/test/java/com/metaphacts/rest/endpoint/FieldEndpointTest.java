@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,8 +39,7 @@
  */
 package com.metaphacts.rest.endpoint;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
@@ -59,11 +58,12 @@ import org.eclipse.rdf4j.model.vocabulary.FOAF;
 import org.eclipse.rdf4j.model.vocabulary.LDP;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.util.Repositories;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsCollectionContaining;
 import org.hamcrest.core.StringContains;
@@ -112,52 +112,52 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
     @Test
     public void testRequestAllFieldDefinitions() throws Exception {
         Response response = target("fields/definitions").request().post(null);
-        assertThat(response.getStatusInfo(), is(Status.OK));
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
-        assertThat(fieldDefinitions.size(), is(2));
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(2));
     }
 
     @Test
     public void testRequestSomeFieldDefinitions() throws Exception {
         Response response = target("fields/definitions").request()
                 .post(Entity.json("{ \"fields\": [\"http://example.org/field1\"] }"));
-        assertThat(response.getStatusInfo(), is(Status.OK));
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
-        assertThat(fieldDefinitions.size(), is(1));
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(1));
 
         Map<String, Object> fieldDefinition = fieldDefinitions.get(0);
-        assertThat(fieldDefinition.get("iri"), is("http://example.org/field1"));
+        assertThat(fieldDefinition.get("iri"), Matchers.equalTo("http://example.org/field1"));
     }
 
     @Test
     public void testRequestMultipleFieldDefinitions() throws Exception {
         Response response = target("fields/definitions").request()
                 .post(Entity.json("{ \"fields\": [\"http://example.org/field1\", \"http://example.org/field2\"] }"));
-        assertThat(response.getStatusInfo(), is(Status.OK));
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
-        assertThat(fieldDefinitions.size(), is(2));
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(2));
 
         Map<String, Object> fieldDefinition1 = fieldDefinitions.get(0);
-        assertThat(fieldDefinition1.get("iri"), is("http://example.org/field1"));
+        assertThat(fieldDefinition1.get("iri"), Matchers.equalTo("http://example.org/field1"));
         Map<String, Object> fieldDefinition2 = fieldDefinitions.get(1);
-        assertThat(fieldDefinition2.get("iri"), is("http://example.org/field2"));
+        assertThat(fieldDefinition2.get("iri"), Matchers.equalTo("http://example.org/field2"));
     }
 
     @Test
     public void testRequestNonExistentFieldDefinitions() throws Exception {
         Response response = target("fields/definitions").request()
                 .post(Entity.json("{ \"fields\": [\"http://example.org/non-existent\"] }"));
-        assertThat(response.getStatusInfo(), is(Status.OK));
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
-        assertThat(fieldDefinitions.size(), is(0));
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(0));
     }
 
     @Test
@@ -171,11 +171,11 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
         requestBody.put("fields", Arrays.asList(knows, birthDate));
 
         Response response = target("fields/definitions").request().post(Entity.json(requestBody));
-        assertThat(response.getStatusInfo(), is(Status.OK));
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
-        assertThat(fieldDefinitions.size(), is(2));
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(2));
 
         for (Map<String, Object> fieldDefinition : fieldDefinitions) {
 
@@ -190,7 +190,7 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
                 assertThat(domain, IsCollectionContaining.hasItem(FOAF.AGENT.stringValue()));
             } else if (birthDate.equals(iri)) {
                 assertThat(domain, IsEmptyCollection.empty());
-                assertThat(fieldDefinition.get("xsdDatatype"), is(XMLSchema.DATE.stringValue()));
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.DATE.stringValue()));
             } else {
                 fail("unexpected iri: " + iri);
             }
@@ -202,7 +202,7 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
     public void testRequestInvalidFieldIRI() throws Exception {
         Response response = target("fields/definitions").request()
                 .post(Entity.json("{ \"fields\": [\"this is not a valid iri. \"] }"));
-        assertThat(response.getStatusInfo(), is(Status.BAD_REQUEST));
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.BAD_REQUEST));
     }
 
 }

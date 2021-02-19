@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "placeholder": {
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        },
+        "template": {
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "template",
+        "placeholder",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "type": "object"
+}
+

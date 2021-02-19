@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,12 +42,15 @@ package com.metaphacts.services.storage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 
+import com.metaphacts.config.Configuration;
 import com.metaphacts.security.SecurityService;
 import com.metaphacts.services.storage.api.ObjectRecord;
 import com.metaphacts.services.storage.api.StorageException;
@@ -83,4 +86,66 @@ public final class StorageUtils {
             throw new StorageException("Cannot write to read-only storage");
         }
     }
+
+    /**
+     * Create the folder in the given location.
+     * <p>
+     * The location must be a sub-directory of
+     * {@link Configuration#getStorageDirectory()}, otherwise a
+     * {@link StorageException} is thrown.
+     * </p>
+     * <p>
+     * This method is a no-op if location is pointing to an already existing
+     * directory.
+     * </p>
+     * 
+     * @param location the location
+     * @throws StorageException if the folder is not allowed to be created
+     */
+    public static void mkdirs(Path location) throws StorageException {
+
+        if (Files.isDirectory(location)) {
+            return;
+        }
+
+        if (!isInStorageDirectory(location)) {
+            throw new StorageException(
+                    "Cannot create folder at " + location + ": not a sub directory of "
+                            + Configuration.getStorageDirectory());
+        }
+        try {
+            Files.createDirectories(location);
+        } catch (IOException e) {
+            throw new StorageException("Cannot create folder at " + location + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Returns true if the given location is the same or a sub path of storage
+     * directory.
+     * 
+     * @param parent
+     * @param location
+     * @return
+     * @see #isSameOrSubpath(Path, Path)
+     */
+    public static boolean isInStorageDirectory(Path location) {
+        Path storageLocation = Path.of(Configuration.getStorageDirectory());
+        return isSameOrSubpath(storageLocation, location);
+    }
+
+    /**
+     * Returns true if the given location is the same or a sub path of the parent as
+     * defined by {@link Path#startsWith(Path)}.
+     * 
+     * @param parent
+     * @param location
+     * @return
+     */
+    public static boolean isSameOrSubpath(Path parent, Path location) {
+        Path normalizedLocation = location.normalize();
+        Path normalizedParent = parent.normalize();
+        return normalizedLocation.startsWith(normalizedParent);
+    }
+
 }

@@ -86,7 +86,7 @@ export class CategorySelectorComponent extends Component<
                   disabled: this.state.isDisabled[entity.iri.value] == true,
                   className: classnames({
                     'btn': true,
-                    'btn-default': true,
+                    'btn-secondary': true,
                     'category-item-holder': true,
                     'category-item-holder--active': isSelectedElement,
                   }),
@@ -137,7 +137,7 @@ export class CategorySelectorComponent extends Component<
             disabled: this.state.isDisabled[entity.iri.value] == true,
             className: classnames({
               'btn': true,
-              'btn-default': true,
+              'btn-secondary': true,
               'category-item-holder': true,
               'category-item-holder--active': isSelectedElement,
             }),

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,12 +42,6 @@ package com.metaphacts.rest.endpoint;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.apache.http.HttpRequest;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import org.eclipse.rdf4j.repository.RepositoryException;
-
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -55,8 +49,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.metaphacts.services.URLMinifierService;
+import org.apache.http.HttpRequest;
+import org.eclipse.rdf4j.repository.RepositoryException;
+
 import com.metaphacts.rest.feature.CacheControl.NoCache;
+import com.metaphacts.services.URLMinifierService;
 
 
 /**
@@ -66,7 +63,6 @@ import com.metaphacts.rest.feature.CacheControl.NoCache;
  */
 @Path("")
 public class URLMinifierRedirectEndpoint {
-    private static final Logger logger = LogManager.getLogger(URLMinifierRedirectEndpoint.class);
 
     @Context
     private UriInfo uri;

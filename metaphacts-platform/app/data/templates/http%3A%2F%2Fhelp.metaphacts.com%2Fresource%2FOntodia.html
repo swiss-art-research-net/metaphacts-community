@@ -22,17 +22,17 @@
           <ul style='list-style: none'>
             <li>
               <mp-anchor to='visual-appearance-node-width' animate='{"offset": -110, "duration": 500}'>
-                <h5>Changing node width</h5>
+                Changing node width
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='visual-appearance-colors-images' animate='{"offset": -110, "duration": 500}'>
-                <h5>Custom colors and images</h5>
+                Custom colors and images
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='visual-appearance-knowledge-panel' animate='{"offset": -110, "duration": 500}'>
-                <h5>Integrating the Knowledge Panel</h5>
+                Integrating the Knowledge Panel
               </mp-anchor>
             </li>
             <li>
@@ -49,22 +49,27 @@
           <ul style='list-style: none'>
             <li>
               <mp-anchor to='data-provider-custom-class-tree' animate='{"offset": -110, "duration": 500}'>
-                <h5>Custom Class Tree</h5>
+                Custom Class Tree
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='data-provider-non-owl' animate='{"offset": -110, "duration": 500}'>
-                <h5>Non-OWL/RDFS Ontology</h5>
+                Non-OWL/RDFS Ontology
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='data-provider-display-images' animate='{"offset": -110, "duration": 500}'>
-                <h5>Display Images</h5>
+                Display Images
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='data-provider-virtual-data' animate='{"offset": -110, "duration": 500}'>
-                <h5>Virtual Data</h5>
+                Virtual Data
+              </mp-anchor>
+            </li>
+            <li>
+              <mp-anchor to='data-provider-rdf-star' animate='{"offset": -110, "duration": 500}'>
+                RDF-star properties
               </mp-anchor>
             </li>
           </ul>
@@ -76,17 +81,17 @@
           <ul style='list-style: none'>
             <li>
               <mp-anchor to='interaction-ontodia-events' animate='{"offset": -110, "duration": 500}'>
-                <h5>Ontodia events</h5>
+                Ontodia events
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='interaction-canvas-events' animate='{"offset": -110, "duration": 500}'>
-                <h5>Canvas events</h5>
+                Canvas events
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='instances-search-events' animate='{"offset": -110, "duration": 500}'>
-                <h5>Instances search events</h5>
+                Instances search events
               </mp-anchor>
             </li>
           </ul>
@@ -98,17 +103,17 @@
           <ul style='list-style: none'>
             <li>
               <mp-anchor to='authoring-metadata' animate='{"offset": -110, "duration": 500}'>
-                <h5>Metadata configuration</h5>
+                Metadata configuration
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='authoring-entity-metadata' animate='{"offset": -110, "duration": 500}'>
-                <h5>Entity metadata configuration</h5>
+                Entity metadata configuration
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='authoring-input-override' animate='{"offset": -110, "duration": 500}'>
-                <h5>Input override configuration</h5>
+                Input override configuration
               </mp-anchor>
             </li>
           </ul>
@@ -120,27 +125,27 @@
           <ul style='list-style: none'>
             <li>
               <mp-anchor to='how-to-restrict-data' animate='{"offset": -110, "duration": 500}'>
-                <h5>Restrict the data to be queried</h5>
+                Restrict the data to be queried
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='how-to-custom-styles' animate='{"offset": -110, "duration": 500}'>
-                <h5>Provide global templates for visualization</h5>
+                Provide global templates for visualization
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='how-to-custom-workspace' animate='{"offset": -110, "duration": 500}'>
-                <h5>Add/remove panels or toolbar options</h5>
+                Add/remove panels or toolbar options
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='how-to-custom-use-case' animate='{"offset": -110, "duration": 500}'>
-                <h5>Configure Ontodia for a custom use cases</h5>
+                Configure Ontodia for a custom use cases
               </mp-anchor>
             </li>
             <li>
               <mp-anchor to='how-to-events' animate='{"offset": -110, "duration": 500}'>
-                <h5>Interact between Ontodia and other components on the page</h5>
+                Interact between Ontodia and other components on the page
               </mp-anchor>
             </li>
           </ul>
@@ -164,7 +169,9 @@
               <ontodia-rdf-provider provision-query='[[> exampleData]]'>
               </ontodia-rdf-provider>
             </ontodia-data-providers>
-            <ontodia-canvas id='canvas-demo1'></ontodia-canvas>
+            <ontodia-canvas id='canvas-demo1'
+              use-default-navigation-menu=false>
+            </ontodia-canvas>
           </ontodia>
         </div>
       </div>
@@ -621,32 +628,30 @@
                   <ontodia-canvas id='canvas-demo10'>
                     <ontodia-toolbar id='ontodia-toolbar1-demo10'>
                       [[> Help:OntodiaToolbarExampleUndoRedoInclude]]
-                      <div class='btn-group btn-group-sm'>
-                        <bs-dropdown bs-size='sm'>
-                          <bs-dropdown-toggle>Export</bs-dropdown-toggle>
-                          <bs-dropdown-menu>
-                            <bs-menu-item name='exportPng'>
-                              <i class='fa fa-picture-o'></i> Export PNG
-                            </bs-menu-item>
-                            <bs-menu-item name='exportSvg'>
-                              <i class='fa fa-picture-o'></i> Export SVG
-                            </bs-menu-item>
-                            <bs-menu-item name='print'>
-                              <i class='fa fa-print'></i> Print
-                            </bs-menu-item>
-                          </bs-dropdown-menu>
-                        </bs-dropdown>
-                      </div>
+                      <bs-dropdown size='sm' class='btn-group btn-group-sm'>
+                        <bs-dropdown-toggle variant='secondary'>Export</bs-dropdown-toggle>
+                        <bs-dropdown-menu>
+                          <bs-menu-item name='exportPng'>
+                            <i class='fa fa-picture-o'></i> Export PNG
+                          </bs-menu-item>
+                          <bs-menu-item name='exportSvg'>
+                            <i class='fa fa-picture-o'></i> Export SVG
+                          </bs-menu-item>
+                          <bs-menu-item name='print'>
+                            <i class='fa fa-print'></i> Print
+                          </bs-menu-item>
+                        </bs-dropdown-menu>
+                      </bs-dropdown>
                     </ontodia-toolbar>
                     <ontodia-toolbar id='ontodia-toolbar2-demo10' dock='sw'>
                       <div class='btn-group-vertical btn-group-sm'>
-                        <button name='zoomIn' class='btn btn-default' title='Zoom in'>
+                        <button name='zoomIn' class='btn btn-secondary' title='Zoom in'>
                           <i class='fa fa-search-plus'></i>
                         </button>
-                        <button name='zoomOut' class='btn btn-default' title='Zoom out'>
+                        <button name='zoomOut' class='btn btn-secondary' title='Zoom out'>
                           <i class='fa fa-search-minus'></i>
                         </button>
-                        <button name='zoomToFit' class='btn btn-default' title='Fit to screen'>
+                        <button name='zoomToFit' class='btn btn-secondary' title='Fit to screen'>
                           <i class='fa fa-arrows-alt'></i>
                         </button>
                       </div>
@@ -712,6 +717,88 @@
           <div class='documentation__example__description'>
             <p>Allows selecting a node and triggering of actions</p>
             <p><b>Can only be used inside <code>ontodia-canvas</code>.</b></p>
+            <p>
+              Halo as a component supports almost the same list of actions as
+              element and can use the same list of parameters as element
+              (See <mp-anchor to='visual-appearance-templates' animate='{"offset": -110, "duration": 500}'>Custom templates</mp-anchor>).
+              Appearance and the set of action buttons can be customized
+              using template system.
+            </p>
+            <pre>
+              <code>
+<ontodia-canvas id='ontodia-halo-demo'>
+  <ontodia-halo template="{{> halo-template}}">
+    <template id="halo-template">
+      <div style="pointer-events: none">
+        <button class="Halo--removeButton"
+          name="removeSelectedElements">
+          <i class="fa fa-times" aria-hidden="true"></i>
+        </button>
+        {{#if canLink}}
+          <button name="establishNewLink"
+            class="Halo--establishNewConnection">
+          </button>
+        {{else}}
+          <button
+            class="Halo--establishNewConnection"
+            disabled=true>
+          </button>
+        {{/if}}
+      </div>
+    </template>
+  </ontodia-halo>
+</ontodia-canvas>
+              </code>
+            </pre>
+            <p>Inside a custom template, the following properties are available:</p>
+            <mp-documentation disable-transform-attributes='true' type='OntodiaHaloTemplateData'></mp-documentation>
+
+            <p>
+              To make template be able to execute callbacks use following names for buttons:
+            </p>
+            <ul>
+              <li><code>openConnectionMenu</code> - button to open connections menu</li>
+              <li><code>showInfo</code> - button to open Knowledge Panel</li>
+              <li><code>addToFilter</code> - button to pass entity to InstancesSearch panel</li>
+              <li><code>removeSelectedElements</code> - button to remove selected element from diagram</li>
+              <li><code>followLink</code> - button to navigate to the resource</li>
+              <li><code>expand</code> - button to change the state on "expanded" (Default template doesn't support this state)</li>
+            </ul>
+
+            <p>
+              To make a template, that supports authoring, special buttons with the following names
+              are needed:
+            </p>
+            <ul>
+              <li><code>edit</code> - button to open properties editor panel</li>
+              <li><code>delete</code> - button to delete element from the data</li>
+            </ul>
+            <p>
+              Additionally Halo provides <b>establishNewLink</b> action which can be attached
+              to the button. To use this action use following button name: <code>establishNewLink</code>.
+              Button with this name can have the following additional attributes:
+              <ul>
+                <li><code>data-link-type</code>: to predefine type IRI of the link to establish using this action.</li>
+                <li><code>data-can-drop-on-canvas="false"</code>: to disallow dropping on the canvas.</li>
+              </ul>
+              In a couple with this action you can also use additional parameter which halo provides <b>canLink</b>
+              to check if <code>establishNewLink</code> action is available for the selected element.
+            </p>
+            <p>
+              <h5>Default halo template</h5>
+              <pre>
+                <code>
+<template id="halo-template">
+  <div style="pointer-events: none">
+    <button class="Halo--removeButton"
+      name="removeSelectedElements">
+      <i class="fa fa-times" aria-hidden="true"></i>
+    </button>
+  </div>
+</template>
+                </code>
+              </pre>
+            </p>
           </div>
           <div class='documentation__example__demo'>
             <mp-code-example>
@@ -1063,58 +1150,24 @@
             <pre>
               <code>
                 <ontodia-canvas
-  node-templates='{
-    "http://xmlns.com/foaf/0.1/Person": "{{> template}}"
-  }'
-  edge-styles='{
-    "http://xmlns.com/foaf/0.1/member": {
-      "linkStyle": {
-        "connection": {"stroke": "#F26144", "stroke-width": 2}},
-      }
-  }'
->
-  <template id='template'>
-    {{label}}
-  </template>
-</ontodia-canvas>
+                  node-templates='{
+                    "http://xmlns.com/foaf/0.1/Person": "{{> template}}"
+                  }'
+                  edge-styles='{
+                    "http://xmlns.com/foaf/0.1/member": {
+                      "linkStyle": {
+                        "connection": {"stroke": "#F26144", "stroke-width": 2}},
+                      }
+                  }'
+                >
+                  <template id='template'>
+                    {{label}}
+                  </template>
+                </ontodia-canvas>
               </code>
             </pre>
             <p>Inside a custom template, the following properties are available:</p>
-            <ul>
-              <li><code>elementId</code> - ID of an element</li>
-              <li><code>iri</code> - IRI of en element</li>
-              <li><code>types</code> - string of an element's types</li>
-              <li><code>label</code> - label of an element</li>
-              <li><code>onlySelected</code> -
-                <code>true</code> if an element is the only selected element on a diagram and
-                <code>false</code> otherwise
-              </li>
-              <li><code>color</code> - color generated by Ontodia</li>
-              <li>
-                <code>icon</code> - name of a CSS class which is used to style the icon of an
-                element
-              </li>
-              <li><code>imgUrl</code> - URL to an element's image</li>
-              <li>
-                <code>isExpanded</code> - <code>true</code> if an element is expanded and
-                <code>false</code> if collapsed
-              </li>
-              <li>
-                <code>props</code> and <code>propsAsList</code> - collections of an element's
-                properties
-              </li>
-              <li><code>data</code> - contains untransformed data of an element</li>
-            </ul>
-
-            <p>A custom edge style has the following properties:</p>
-            <ul>
-              <li>
-                <code>markerSource</code> and <code>markerTarget</code> - determines styles of the
-                source and target markers respectively
-              </li>
-              <li><code>linkStyle</code> - defines styles and labels of a link</li>
-              <li><code>editable</code> - enables link label editing</li>
-            </ul>
+            <mp-documentation disable-transform-attributes='true' type='OntodiaElementTemplateData'></mp-documentation>
 
             <p>
               To make template be able to execute callbacks use following names for buttons:
@@ -1136,6 +1189,15 @@
               <li><code>edit</code> - button to open properties editor panel</li>
               <li><code>delete</code> - button to delete element from the data</li>
             </ul>
+            <p>A custom edge style has the following properties:</p>
+              <ul>
+                <li>
+                  <code>markerSource</code> and <code>markerTarget</code> - determines styles of the
+                  source and target markers respectively
+                </li>
+                <li><code>linkStyle</code> - defines styles and labels of a link</li>
+                <li><code>editable</code> - enables link label editing</li>
+              </ul>
           </div>
           <div class='documentation__example__demo'>
             <mp-code-example>
@@ -1230,59 +1292,57 @@
               <mp-collapsible-div-trigger>
               <span>Show Tabby template</span>
               </mp-collapsible-div-trigger>
-            <mp-collapsible-div-content>
-            <mp-code-block mode='text/html'>
-              <![CDATA[
-              <template id="tabby-template">
-                <div class='{{#if onlySelected}}TabbyTemplate--selected{{/if}} TabbyTemplate--border'
-                  style='color: {{color}}'>
-                  <div class='TabbyTemplate--template'
-                    title='{{iri}}'
-                    style='border-right: 4px solid {{color}}; color: {{color}}'>
-                    <div class='TabbyTemplate--buttons'>
-                      <button type='button' name='showInfo' title='Show entity information'
-                        class='TabbyTemplate--buttonInformation'>
-                      </button>
-                      <button type='button' name='followLink' title='Navigate to resource'
-                        class='TabbyTemplate--buttonNavigateToResource'>
-                      </button>
-                      <button type='button' name='openConnectionMenu' title='Open connections menu'
-                        class='TabbyTemplate--buttonConnections'>
-                      </button>
-                    </div>
-                    <div class='TabbyTemplate--content'>
-                      {{#if imgUrl}}
-                        <div class='TabbyTemplate--image'>
-                          <img src='{{imgUrl}}'/>
+              <mp-collapsible-div-content>
+                <mp-code-block mode='text/html'>
+                  <template id="tabby-template">
+                    <div class='{{#if onlySelected}}TabbyTemplate--selected{{/if}} TabbyTemplate--border'
+                      style='color: {{color}}'>
+                      <div class='TabbyTemplate--template'
+                        title='{{iri}}'
+                        style='border-right: 4px solid {{color}}; color: {{color}}'>
+                        <div class='TabbyTemplate--buttons'>
+                          <button type='button' name='showInfo' title='Show entity information'
+                            class='TabbyTemplate--buttonInformation'>
+                          </button>
+                          <button type='button' name='followLink' title='Navigate to resource'
+                            class='TabbyTemplate--buttonNavigateToResource'>
+                          </button>
+                          <button type='button' name='openConnectionMenu' title='Open connections menu'
+                            class='TabbyTemplate--buttonConnections'>
+                          </button>
                         </div>
-                      {{else}} {{#if iconUrl}}
-                        <div class='TabbyTemplate--image'>
-                          <img src='{{iconUrl}}'/>
-                        </div>
-                      {{/if}}{{/if}}
-                      <div class='TabbyTemplate--body'>
-                        <div class='TabbyTemplate--label'>
-                          <div class='TabbyTemplate--labelValue' title='{{label}}'>
-                            {{label}}
+                        <div class='TabbyTemplate--content'>
+                          {{#if imgUrl}}
+                            <div class='TabbyTemplate--image'>
+                              <img src='{{imgUrl}}'/>
+                            </div>
+                          {{else}} {{#if iconUrl}}
+                            <div class='TabbyTemplate--image'>
+                              <img src='{{iconUrl}}'/>
+                            </div>
+                          {{/if}}{{/if}}
+                          <div class='TabbyTemplate--body'>
+                            <div class='TabbyTemplate--label'>
+                              <div class='TabbyTemplate--labelValue' title='{{label}}'>
+                                {{label}}
+                              </div>
+                            </div>
+                            {{#if types}}
+                              <div class='TabbyTemplate--types' title='{{types}}'>
+                                <div class='TabbyTemplate--typesValue'>{{types}}</div>
+                              </div>
+                            {{else}}
+                              <div class='TabbyTemplate--noTypes' title='Type is undefined'>
+                                <div class='TabbyTemplate--line'></div>
+                              </div>
+                            {{/if}}
                           </div>
                         </div>
-                        {{#if types}}
-                          <div class='TabbyTemplate--types' title='{{types}}'>
-                            <div class='TabbyTemplate--typesValue'>{{types}}</div>
-                          </div>
-                        {{else}}
-                          <div class='TabbyTemplate--noTypes' title='Type is undefined'>
-                            <div class='TabbyTemplate--line'></div>
-                          </div>
-                        {{/if}}
                       </div>
                     </div>
-                  </div>
-                </div>
-              </template>
-              ]]>
-            </mp-code-block>
-            </mp-collapsible-div-content>
+                  </template>
+                </mp-code-block>
+              </mp-collapsible-div-content>
             </mp-collapsible-div>
           </div>
         </div>
@@ -1499,6 +1559,194 @@
           </ontodia>
           ]]>
         </mp-code-block>
+
+        <h3 id='data-provider-rdf-star'>RDF-star properties</h3>
+        <p>
+          This example shows how to display <semantic-link uri='[[resolvePrefix "Help:RdfStar"]]'>RDF-star edge properties</semantic-link> in Ontodia. We use a custom <code>ontodia-sparql-provider</code> configured with a <code>linksInfoQuery</code> to retrieve any optional RDF-star annotations on every relation in the diagram. The RDF-star annotation property is returned as <code>?propType</code>, the value as <code>?propValue</code>:
+        </p>
+        <bs-alert variant="warning">The following examples will only work if the RDF database on which metaphactory is running supports RDF-star and SPARQL* syntax. Databases that do not suport this feature will report a SPARQL syntax error.
+        </bs-alert>
+        <div class='documentation__example__demo' style="width: 100%">
+            <mp-code-example show-code-by-default='true'>
+              <![CDATA[
+              <div style='border: 1px solid #80808026; height:  350px'>
+                <ontodia query='
+                  [[> exampleQuery]]
+                '>
+                  <ontodia-data-providers>
+                      <ontodia-sparql-provider repository='default'
+                      provider-settings='{
+                        "linksInfoQuery": "SELECT ?source ?type ?target ?propType ?propValue
+                          WHERE {
+                              ?source ?type ?target.
+                              OPTIONAL {<< ?source ?type ?target >> ?propType ?propValue .
+
+                              VALUES (?source) {${ids}}
+                              VALUES (?target) {${ids}}
+                          }"
+                      }'
+                    ></ontodia-sparql-provider>
+                    <ontodia-rdf-provider provision-query='
+                                            prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                      prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                      prefix person: <http://example.com/person/>
+                      prefix org: <http://example.com/org/>
+                      prefix foaf: <http://xmlns.com/foaf/0.1/>
+
+                      CONSTRUCT {
+                        ?s ?p ?o .
+                        <<?s ?p ?o>> org:statedBy org:metaphacts .
+                      } WHERE {
+                        {
+                          SELECT ?s ?p ?o WHERE {
+                            VALUES (?s ?p ?o)
+                            {
+                              (person:alice foaf:knows person:bob)
+                              (person:alice foaf:knows person:carol)
+                              (person:carol foaf:knows person:mike)
+                              (person:mike foaf:knows person:carol)
+                              (person:bob foaf:knows person:carol)
+                              (person:alice foaf:knows person:mike)
+                              (person:alice foaf:member org:W3C)
+                              (person:mike foaf:member org:W3C)
+                              (person:alice rdf:type foaf:Person)
+                              (person:carol rdf:type foaf:Person)
+                              (person:mike rdf:type foaf:Person)
+                              (person:bob rdf:type foaf:Person)
+                              (org:W3C rdf:type foaf:Organization)
+                              (person:alice rdfs:label "Alice")
+                              (person:alice foaf:birthday "1990-01-01")
+                              (person:bob rdfs:label "Bob")
+                              (person:carol rdfs:label "Carol")
+                              (person:mike rdfs:label "Mike")
+                            }
+                          }
+                        }
+                      }
+                    '>
+                    </ontodia-rdf-provider>
+                  </ontodia-data-providers>
+                  <ontodia-canvas id='canvas-demo4'></ontodia-canvas>
+                </ontodia>
+              </div>
+              ]]>
+            </mp-code-example>
+          </div>
+          <p>
+            We can in addition make the relation reactive, and allow clicking on a relation to show additional RDF-star properties in a side panel. In the following example, we use a <semantic-link uri='[[resolvePrefix "Help:CSSLayout"]]'>workspace layout</semantic-link> and a <semantic-link uri='[[resolvePrefix "Help:EventSystem"]]'>event proxy</semantic-link> to make this happen:
+             <div class='documentation__example__demo' style="width: 100%">
+            <mp-code-example show-code-by-default='true'>
+              <![CDATA[
+              <div style='border: 1px solid #80808026; height:  350px'>
+          <mp-workspace-layout horizontal-collapsed-size=0>
+          <mp-workspace-row>
+            <mp-workspace-item id='ontodiaPanel'>
+              <div style='flex: 1'>
+              <ontodia query='
+                  [[> exampleQuery]]
+                '>
+                  <ontodia-data-providers>
+                      <ontodia-sparql-provider repository='default'
+                      provider-settings='{
+                        "linksInfoQuery": "SELECT ?source ?type ?target ?propType ?propValue
+                          WHERE {
+                              ?source ?type ?target.
+                              OPTIONAL {<< ?source ?type ?target >> ?propType ?propValue .
+
+                              VALUES (?source) {${ids}}
+                              VALUES (?target) {${ids}}
+                          }"
+                      }'
+                    ></ontodia-sparql-provider>
+                    <ontodia-rdf-provider provision-query='
+                      prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                      prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                      prefix person: <http://example.com/person/>
+                      prefix org: <http://example.com/org/>
+                      prefix foaf: <http://xmlns.com/foaf/0.1/>
+
+                      CONSTRUCT {
+                        ?s ?p ?o .
+                        <<?s ?p ?o>> org:statedBy org:metaphacts .
+                      } WHERE {
+                        {
+                          SELECT ?s ?p ?o WHERE {
+                            VALUES (?s ?p ?o)
+                            {
+                              (person:alice foaf:knows person:bob)
+                              (person:alice foaf:knows person:carol)
+                              (person:carol foaf:knows person:mike)
+                              (person:mike foaf:knows person:carol)
+                              (person:bob foaf:knows person:carol)
+                              (person:alice foaf:knows person:mike)
+                              (person:alice foaf:member org:W3C)
+                              (person:mike foaf:member org:W3C)
+                              (person:alice rdf:type foaf:Person)
+                              (person:carol rdf:type foaf:Person)
+                              (person:mike rdf:type foaf:Person)
+                              (person:bob rdf:type foaf:Person)
+                              (org:W3C rdf:type foaf:Organization)
+                              (person:alice rdfs:label "Alice")
+                              (person:alice foaf:birthday "1990-01-01")
+                              (person:bob rdfs:label "Bob")
+                              (person:carol rdfs:label "Carol")
+                              (person:mike rdfs:label "Mike")
+                            }
+                          }
+                        }
+                      }
+                    '>
+                    </ontodia-rdf-provider>
+                  </ontodia-data-providers>
+                  <ontodia-canvas id='canvas-demo6'>
+                  </ontodia-canvas>
+                </ontodia>
+              </div>
+            </mp-workspace-item>
+            <mp-workspace-item id='linkInfoPanel' undocked=false default-size=300>
+              <div style='flex: 1'>
+              <mp-event-target-template-render id='selectedlinkInfo'
+                template='{{> t}}'>
+                <template id='t'>
+                  {{#ifCond links.length '==' 1}}
+                    {{#each links}}
+                    <p>RDF-star properties:</p>
+                    <semantic-table
+                        query='
+                        prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                      prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                      prefix person: <http://example.com/person/>
+                      prefix org: <http://example.com/org/>
+                      prefix foaf: <http://xmlns.com/foaf/0.1/>
+                          SELECT ?property ?value WHERE {
+                            VALUES (?property ?value) {
+                              ( org:statedBy org:metaphacts )
+                              ( org:knownBy  person:bob )
+                            }
+                          }
+                        '
+                        options='{
+                          "showFilter":false
+                        }'>
+                      </semantic-table>
+                    {{/each}}
+                  {{/ifCond}}
+                </template>
+              </mp-event-target-template-render>
+              </div>
+            </mp-workspace-item>
+          </mp-workspace-row>
+        </mp-workspace-layout>
+        </div>
+      <mp-event-proxy id='selectedLinksProxy'
+        on-event-type='Ontodia.SelectedLinks'
+        proxy-event-type='Component.TemplateUpdate'
+        proxy-targets='["selectedlinkInfo"]'>
+      </mp-event-proxy>
+              ]]>
+            </mp-code-example>
+          </div>
+            </p>
       </section>
 
       <section id='interaction'>
@@ -1587,13 +1835,13 @@
                 type='Canvas.ZoomIn'
                 targets='["ontodia-canvas-events-demo"]'
                 data='{}'>
-                <button class='btn btn-default'>Zoom in</button>
+                <button class='btn btn-secondary'>Zoom in</button>
               </mp-event-trigger>
               <mp-event-trigger id='zoom-out'
                 type='Canvas.ZoomOut'
                 targets='["ontodia-canvas-events-demo"]'
                 data='{}'>
-                <button class='btn btn-default'>Zoom out</button>
+                <button class='btn btn-secondary'>Zoom out</button>
               </mp-event-trigger>
 
               <div style='border: 1px solid #80808026; height: 350px'>
@@ -1697,12 +1945,12 @@
             <h3 id='authoring-entity-metadata'>Entity metadata configuration</h3>
             Configures metadata for an entity of given type, collecting all information on entity schema together.
             <code>ontodia-entity-metadata</code> has following configuration options:
-            <mp-documentation type="OntodiaEntityMetadataProps"></mp-documentation>
+            <mp-documentation type="OntodiaEntityMetadataConfig"></mp-documentation>
 
             <h3 id='authoring-input-override'>Input override configuration</h3>
             Provides a way to gradually specify semantic form by overriding default inputs for fields.
             <code>ontodia-field-input-override</code> has following configuration options:
-            <mp-documentation type="FieldInputOverrideConfig"></mp-documentation>
+            <mp-documentation type="OntodiaFieldInputOverrideConfig"></mp-documentation>
 
           </div>
           <div class="documentation__example__demo">

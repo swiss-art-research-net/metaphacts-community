@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,12 +58,13 @@ const CLASS_NAME = 'ontodia-list-element-view';
 
 export class ListElementView extends React.Component<ListElementViewProps, {}> {
     render() {
-        const {className, view, model, highlightText, disabled, selected, onDragStart} = this.props;
+        const {className, view, model, highlightText, disabled, selected, onDragStart, children} = this.props;
 
-        const {h, c, l} = view.getTypeStyle(model.types).color;
-        const frontColor = (selected && !disabled) ? hcl(h, c, l * 1.2) : hcl('white');
+        const {h, c, l} = view.getElementStyle(model).color;
+        const backgroundColor = (selected && !disabled) ? hcl(h, c * 0.3, l * 1.3) : hcl('white');
 
         let classNames = `${CLASS_NAME}`;
+        classNames += children ? ` ${CLASS_NAME}--has-content` : '';
         classNames += disabled ? ` ${CLASS_NAME}--disabled` : '';
         classNames += className ? ` ${className}` : '';
         const localizedText = view.formatLabel(model.label.values, model.id);
@@ -72,12 +73,15 @@ export class ListElementView extends React.Component<ListElementViewProps, {}> {
         return <li className={classNames}
             draggable={!disabled && Boolean(onDragStart)}
             title={`${localizedText} ${view.formatIri(model.id)}${classesString}`}
-            style={{background: hcl(h, c, l)}}
             onClick={this.onClick}
-            onDragStart={onDragStart}>
-            <div className={`${CLASS_NAME}__label`} style={{background: frontColor}}>
+            onDragStart={onDragStart}
+            style={{backgroundColor, color: hcl(h, c, l)}}>
+            <div className={`${CLASS_NAME}__label`}>
                 {highlightSubstring(localizedText, highlightText)}
             </div>
+            {children ? (
+                <div className={`${CLASS_NAME}__content`}>{children}</div>
+            ) : null}
         </li>;
     }
 

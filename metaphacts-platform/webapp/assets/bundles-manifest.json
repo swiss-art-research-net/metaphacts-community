@@ -1,4 +1,23 @@
 {
-  "app":{"js":"http://localhost:3000/assets/app-bundle.js"},
-  "tableau":{"js":"http://localhost:3000/assets/tableau-bundle.js"}
+  "app": {
+    "js": "http://localhost:3000/assets/app-bundle.js"
+  },
+  "tableau": {
+    "js": "http://localhost:3000/assets/tableau-bundle.js"
+  },
+  "monaco.editor.worker": {
+    "js": "http://localhost:3000/assets/monaco.editor.worker-bundle.js"
+  },
+  "monaco.html.worker": {
+    "js": "http://localhost:3000/assets/monaco.html.worker-bundle.js"
+  },
+  "monaco.css.worker": {
+    "js": "http://localhost:3000/assets/monaco.css.worker-bundle.js"
+  },
+  "monaco.json.worker": {
+    "js": "http://localhost:3000/assets/monaco.json.worker-bundle.js"
+  },
+  "monaco.mp-template.worker": {
+    "js": "http://localhost:3000/assets/monaco.mp-template.worker-bundle.js"
+  }
 }

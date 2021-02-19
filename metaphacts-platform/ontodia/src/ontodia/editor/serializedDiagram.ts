@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import { pick } from 'lodash';
 
-import { ElementIri, LinkTypeIri } from '../data/model';
+import { ElementIri, LinkIri, LinkTypeIri } from '../data/model';
 import { DIAGRAM_CONTEXT_URL_V1 } from '../data/schema';
 
 import { Element, ElementTemplateState, Link, LinkTemplateState } from '../diagram/elements';
@@ -80,6 +80,7 @@ export interface LayoutElement {
 export interface LayoutLink {
     '@type': 'Link';
     '@id': string;
+    iri?: LinkIri;
     property: LinkTypeIri;
     source: { '@id': string };
     target: { '@id': string };
@@ -198,6 +199,7 @@ export function makeLayoutData(
     const links = modelLinks.map((link): LayoutLink => ({
         '@type': 'Link',
         '@id': link.id,
+        iri: link.data.linkIri,
         property: link.typeId,
         source: {'@id': link.sourceId},
         target: {'@id': link.targetId},

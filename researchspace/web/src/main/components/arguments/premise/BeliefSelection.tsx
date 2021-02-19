@@ -19,7 +19,7 @@ import * as React from 'react';
 import * as Maybe from 'data.maybe';
 import * as _ from 'lodash';
 import * as Kefir from 'kefir';
-import { FormGroup, Col, Button, ControlLabel, ButtonGroup, Form } from 'react-bootstrap';
+import { FormGroup, Row, Col, Button, FormLabel, ButtonGroup, Form } from 'react-bootstrap';
 
 
 import { Rdf } from 'platform/api/rdf';
@@ -105,9 +105,9 @@ export class BeliefSelection extends React.Component<BeliefSelectionProps, State
 
   private fieldSelection = (belief: SelectedBelief) => {
     const { messages, multiSelection } = this.props;
-    return <Form horizontal>
-        <FormGroup>
-          <Col componentClass={ControlLabel} sm={2}>Fields:</Col>
+    return <Form>
+        <FormGroup as={Row}>
+          <Col as={FormLabel} sm={2}>Fields:</Col>
           <Col sm={10}>
             <FieldSelection
               multiSelection={multiSelection}
@@ -118,11 +118,11 @@ export class BeliefSelection extends React.Component<BeliefSelectionProps, State
             />
           </Col>
         </FormGroup>
-        <FormGroup>
-          <Col smOffset={2} sm={10}>
+        <FormGroup as={Row}>
+          <Col sm={{span: 10, offset: 2}}>
             <ButtonGroup className='pull-right'>
-              <Button onClick={this.onCancelBelief} bsStyle='danger'>Cancel</Button>
-              <Button bsStyle='success' style={{marginLeft:'12px'}} onClick={() => this.onSelectBelief(this.state.belief.get())}
+              <Button onClick={this.onCancelBelief} variant='danger'>Cancel</Button>
+              <Button variant='success' style={{marginLeft:'12px'}} onClick={() => this.onSelectBelief(this.state.belief.get())}
               >Save</Button>
             </ButtonGroup>
           </Col>

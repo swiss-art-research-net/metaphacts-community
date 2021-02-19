@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "This component render number of SPARQL query results.\n\nIf query has a limit and number of results is larger than a limit,\nthis component will render also total number of results.",
+    "properties": {
+        "id": {
+            "description": "ID for issuing component events.",
+            "type": "string"
+        },
+        "query": {
+            "description": "SPARQL query",
+            "type": "string"
+        },
+        "template": {
+            "description": "Handlebars template that will be rendered on query execution.\n\nSpecial variables will be available in the template:\n   - `numberOfResults`\n   - `totalNumberOfResults`\n   - `hasLimit`",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "query",
+        "template",
+        "id"
+    ],
+    "required": [
+        "query"
+    ],
+    "type": "object"
+}
+

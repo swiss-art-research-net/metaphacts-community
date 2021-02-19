@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,8 @@ import { ReactElement, CSSProperties, ClassAttributes, createElement } from 'rea
 import * as maybe from 'data.maybe';
 import * as _ from 'lodash';
 
+import { Cancellation } from 'platform/api/async';
+import { Rdf } from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Component, ComponentContext } from 'platform/api/components';
 import { ErrorNotification } from 'platform/components/ui/notification';
@@ -48,6 +50,37 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
 
+/**
+ * Component to render SPARQL SELECT results in a fully customizable way using templates.
+ *
+ * **Example** (with default template):
+ * ```
+ * <semantic-query
+ *   query='
+ *     SELECT ?person ?name WHERE {}
+ *   	 VALUES (?person ?name) { (foaf:Joe "Joe") (foaf:Mike "Mike") }
+ *   '>
+ * </semantic-query>
+ * ```
+ *
+ * **Example** (with custom template):
+ * ```
+ * <semantic-query
+ *   query='
+ *     SELECT ?person ?name WHERE {}
+ *     VALUES (?person ?name) { (foaf:Joe "Joe") (foaf:Mike "Mike") }
+ *   '>
+ *   template='{{> results}}'>
+ *   <template id='results'>
+ *     <ul>
+ *       {{#each bindings}}
+ *       <li><semantic-link iri='{{person.value}}'>{{name.value}}</semantic-link></li>
+ *       {{/each}}
+ *     </ul>
+ *   </template>
+ * </semantic-query>
+ * ```
+ */
 export interface SemanticQueryConfig {
   /**
    * SPARQL SELECT query string.
@@ -55,22 +88,35 @@ export interface SemanticQueryConfig {
   query: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>, that gets a <a target='_blank' href='https://www.w3.org/TR/sparql11-results-json/#select-results'>bindings</a> object
-   * injected as template context i.e. the result binding to iterate over.
-   * [each helper](http://handlebarsjs.com/builtin_helpers.html#iteration) can be used to iterate over the bindings.
+   * Template that gets a [bindings](https://www.w3.org/TR/sparql11-results-json/#select-results)
+   * object injected as template context i.e. the result binding to iterate over.
+   *
+   * [each helper](http://handlebarsjs.com/builtin_helpers.html#iteration) can be used to iterate
+   * over the bindings.
+   *
    * The template will only be rendered if and only if the result is not empty, so that one
    * does not need to have additional if expressions around the component in order to hide it,
    * for example, a list header if actually no result are to be displayed.
    *
-   * **Example:** `My Result: {{#each bindings}}{{bindingName.value}}{{/each}}` .
+   * **Example:** `My Result: {{#each bindings}}{{bindingName.value}}{{/each}}`
    *
    * **Default:** If no template is provided, all tuples for the first projection variable will be
-   * rendered as a comma-separated list.
+   * rendered as a comma-separated list of semantic-link (if IRI) or plain text items.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
-  template: string;
+  template?: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.
+   * Template which is applied when query returns no results.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   noResultTemplate?: string;
 
@@ -91,6 +137,19 @@ export interface SemanticQueryConfig {
   style?: CSSProperties;
 }
 
+interface SemanticQueryTemplateData {
+  bindings: ReadonlyArray<SemanticQueryBinding>;
+  distinct: boolean;
+  ordered: boolean;
+}
+
+/**
+ * JSON object which maps binding names to RDF terms.
+ */
+interface SemanticQueryBinding {
+  readonly [bindingName: string]: Rdf.Node | Rdf.Quad;
+}
+
 export type SemanticQueryProps = SemanticQueryConfig & ClassAttributes<SemanticQuery>;
 
 interface SemanticQueryState {
@@ -99,48 +158,9 @@ interface SemanticQueryState {
   error?: any;
 }
 
-/**
- * Component to render SPARQL Select results in a fully customizable way
- * using handlebars.js templates.
- *
- * 'data-query' specifies the plain SPARQL Select query string.
- *
- * 'data-template' specifies the handlebars template string. The template will
- * need to iterate over the bindings using each helper to access individual RDF nodes:
- * {{#each}}
- * 	{{binding1.value}} {{binding1.value}}
- * {{/each}}
- * If no template is provided, a default template will be used to iterate over the bindings,
- * rendering the first binding node as semantic-link (if IRI) or plain text value.
- *
- *
- * @example
- *  // with default template
- *  <semantic-query
- *   	data-query='
- *   		SELECT ?person ?name WHERE {}
- *   		VALUES(?person ?name){(foaf:Joe "Joe")(foaf:Mike "Mike")}
- *     '>
- *  </semantic-query>
- *
- * @example
- * 	// with custom template
- *  <semantic-query
- *   	data-query='
- *   		SELECT ?person ?name WHERE {}
- *   		VALUES(?person ?name){(foaf:Joe "Joe")(foaf:Mike "Mike")}
- *     '>
- *    	data-template='
- *    		<ul>
- *    			{{#each bindings}}
- *    				<li><semantic-link data-uri="{{person.value}}">{{name.value}}</semantic-link></li>
- *    		 	{{/each}}
- *    		</ul>
- *    	'>
- *  </semantic-query>
- */
 export class SemanticQuery extends Component<SemanticQueryProps, SemanticQueryState>  {
-  context: ComponentContext;
+  private querying = Cancellation.cancelled;
+
   constructor(props: SemanticQueryConfig, context: ComponentContext) {
     super(props, context);
     this.state = {
@@ -151,6 +171,10 @@ export class SemanticQuery extends Component<SemanticQueryProps, SemanticQuerySt
 
   public componentDidMount() {
     this.executeQuery(this.props, this.context);
+  }
+
+  componentWillUnmount() {
+    this.querying.cancelAll();
   }
 
   public shouldComponentUpdate(nextProps: SemanticQueryProps, nextState: SemanticQueryState) {
@@ -186,10 +210,12 @@ export class SemanticQuery extends Component<SemanticQueryProps, SemanticQuerySt
     }
 
     const firstBindingVar = res.head.vars[0];
+    const templateData: SemanticQueryTemplateData = res.results;
+
     return createElement(TemplateItem, {
       template: {
         source: this.getTemplateString(templateString, firstBindingVar),
-        options: res.results,
+        options: templateData,
       },
       componentProps: {
         style: this.props.style,
@@ -227,19 +253,23 @@ export class SemanticQuery extends Component<SemanticQueryProps, SemanticQuerySt
    * Executes the SPARQL Select query and pushes results to state on value.
    */
   private executeQuery = (props: SemanticQueryProps, ctx: ComponentContext): void => {
+    this.querying.cancelAll();
+    this.querying = new Cancellation();
+
     this.setState({isLoading: true, error: undefined});
     const context = ctx.semanticContext;
-    SparqlClient.selectStar(props.query, {context}).onValue(
-      result => this.setState({
+    this.querying.map(
+      SparqlClient.selectStar(props.query, {context})
+    ).observe({
+      value: result => this.setState({
         result: maybe.Just(result),
         isLoading: false,
-      })
-    ).onError(
-      error =>  this.setState({
+      }),
+      error: error => this.setState({
         error,
         isLoading: false,
-      })
-    );
+      }),
+    });
   }
 }
 export default SemanticQuery;

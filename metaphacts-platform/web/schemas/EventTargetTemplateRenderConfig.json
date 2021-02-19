@@ -1,12 +1,17 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Updates the template component when receives `Component.TemplateUpdate` event.\n\n**Example**:\n```\n<mp-event-trigger type='Component.TemplateUpdate'\n   targets='[\"event-target\"]'\n   data='{\"iri\": \"http://example.com/resource\"}'>\n   <button>Update</button>\n</mp-event-trigger>\n\n<mp-event-target-template-render id='event-target' template='{{> template}}'>\n   <template id='template'>\n     {{#if iri}}<mp-label iri='{{iri}}'></mp-label>{{/if}}\n   </template>\n</mp-event-target-template-render>\n```",
     "properties": {
         "id": {
             "description": "Identifier which will be used as event target id.",
             "type": "string"
         },
         "template": {
-            "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>\nthat will be rendered with data passed as context variables.",
+            "description": "Template that will be rendered with data passed as context variables.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
         }
     },

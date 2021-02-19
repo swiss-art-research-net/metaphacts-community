@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,6 @@ import org.eclipse.rdf4j.repository.base.RepositoryWrapper;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.sparql.keyword.virtuoso.VirtuosoKeywordSearchHandler;
 
 /**
  * A wrapper repository to be used over a remote Virtuoso SPARQL endpoint.
@@ -56,8 +55,6 @@ import com.metaphacts.sparql.keyword.virtuoso.VirtuosoKeywordSearchHandler;
  * <ul>
  *  <li>Supports ASK queries (not allowed in Virtuoso) by transforming them 
  *      into equivalent SELECT ones.</li>
- *  <li>Re-writes keyword search clauses according to the Virtuoso syntax
- *      (see {@link VirtuosoKeywordSearchHandler}).</li>
  * </ul>
  * 
  * @author Andriy Nikolov an@metaphacts.com

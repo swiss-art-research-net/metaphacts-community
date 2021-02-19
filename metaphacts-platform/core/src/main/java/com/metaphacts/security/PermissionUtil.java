@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,13 +41,17 @@ package com.metaphacts.security;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
+
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
 import org.eclipse.rdf4j.model.IRI;
 
 import com.metaphacts.api.sparql.SparqlUtil.SparqlOperation;
 import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.security.Permissions.SPARQL;
 import com.metaphacts.security.Permissions.PAGES;
+import com.metaphacts.security.Permissions.SPARQL;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -63,6 +67,26 @@ public class PermissionUtil {
                 || SecurityUtils.getSubject().isPermitted(SPARQL.sparqlOperationPermission(repositoryId, op));
     }
     
+    /**
+     * Check whether the current user has the permission to perform an action on the
+     * specified named graph.
+     * 
+     * @param graphStoreAction graph store action, one of
+     *                         <code>Permissions.SPARQL.GRAPH_STORE_*</code>
+     * @param namedGraphIRI    IRI of the named graph to check (optional, may be
+     *                         <code>null</code> to check for access to all named
+     *                         graphs)
+     * @return <code>true</code> if the permission is granted, <code>false</code>
+     *         otherwise
+     */
+    public static boolean hasGraphStorePermission(String graphStoreAction, @Nullable IRI namedGraphIRI) {
+        Subject subject = SecurityUtils.getSubject();
+        // check for either a general permission or one for the specific named graph
+        return (subject.isPermitted(graphStoreAction)
+                || 
+                subject.isPermitted(Permissions.SPARQL.graphStorePermission(graphStoreAction, namedGraphIRI)));
+    }
+
     public static boolean hasTemplateActionPermission(IRI iri, PAGES.Action action) {
         return (SecurityUtils.getSubject().isPermitted(PAGES.templateOperationPermission(iri, action)));
     }

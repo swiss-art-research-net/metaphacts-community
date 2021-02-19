@@ -18,7 +18,7 @@
 import * as React from 'react';
 import { CSSProperties } from 'react';
 import * as classnames from 'classnames';
-import { Button } from 'react-bootstrap';
+import { Button, Card } from 'react-bootstrap';
 import * as SparqlJs from 'sparqljs';
 
 import { Cancellation } from 'platform/api/async';
@@ -28,10 +28,6 @@ import { Spinner } from 'platform/components/ui/spinner';
 import { Rdf } from 'platform/api/rdf';
 
 import { SplitPaneComponent } from 'platform/components/ui/splitpane/SplitPaneComponent';
-import { Panel } from 'platform/components/ui/panel/Panel';
-import { PanelHeader } from 'platform/components/ui/panel/PanelHeader';
-import { PanelFooter } from 'platform/components/ui/panel/PanelFooter';
-import { PanelBody } from 'platform/components/ui/panel/PanelBody';
 import { addNotification } from 'platform/components/ui/notification';
 
 import {
@@ -137,9 +133,9 @@ export class AlignmentTool extends Component<AlignmentToolProps, State> {
       return (
         <div className={classnames(styles.component, className)} style={style}>
           <SplitPaneComponent id='alignment-tool-pane' dock={false} minSize={300}>
-            <Panel className={styles.leftPanel}>
-              <PanelHeader><div>Source</div></PanelHeader>
-              <PanelBody>
+            <Card className={styles.leftPanel}>
+              <Card.Header><div>Source</div></Card.Header>
+              <Card.Body>
                 <MatchPanel ref={this.onSourcePanelMount}
                   className={styles.sourcePanel}
                   role={AlignementRole.Source}
@@ -154,12 +150,12 @@ export class AlignmentTool extends Component<AlignmentToolProps, State> {
                   onDragEnd={this.onDragEnd}
                   onFindAligned={this.onSourceFindAligned}
                 />
-              </PanelBody>
-            </Panel>
+              </Card.Body>
+            </Card>
             <div className={styles.rightPanel}>
-              <Panel className={styles.targetHolder}>
-                <PanelHeader><div>Target</div></PanelHeader>
-                <PanelBody>
+              <Card className={styles.targetHolder}>
+                <Card.Header><div>Target</div></Card.Header>
+                <Card.Body>
                   <MatchPanel ref={this.onTargetPanelMount}
                     className={styles.targetPanel}
                     role={AlignementRole.Target}
@@ -172,31 +168,31 @@ export class AlignmentTool extends Component<AlignmentToolProps, State> {
                     onAlign={this.onAlign}
                     onUnalign={this.onUnalign}
                   />
-                </PanelBody>
-              </Panel>
-              <Panel className={styles.controlHolder}>
-                <PanelHeader><div>Alignments</div></PanelHeader>
-                <PanelBody>
+                </Card.Body>
+              </Card>
+              <Card className={styles.controlHolder}>
+                <Card.Header><div>Alignments</div></Card.Header>
+                <Card.Body>
                   <div className={styles.controlPanel}>
                     <MatchList className={styles.controlList}
                       matches={matches} savedMatches={savedMatches}
                       onScrollToEntry={this.onScrollToEntry}
                     />
                   </div>
-                </PanelBody>
-                <PanelFooter>
+                </Card.Body>
+                <Card.Footer>
                   <div className={styles.controlToolbar}>
-                    <Button disabled={matches === savedMatches} bsStyle='danger'
+                    <Button disabled={matches === savedMatches} variant='danger'
                       onClick={this.onCancelUnsaved}>
                       Cancel Pending
                     </Button>
                     <Button disabled={matches === savedMatches}
-                      bsStyle='success' onClick={this.onSaveAlignments}>
+                      variant='success' onClick={this.onSaveAlignments}>
                       Save alignment
                     </Button>
                   </div>
-                </PanelFooter>
-              </Panel>
+                </Card.Footer>
+              </Card>
             </div>
           </SplitPaneComponent>
         </div>

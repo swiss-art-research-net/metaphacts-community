@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Props as ReactProps, ReactNode, CSSProperties, createElement } from 'react';
+import { ReactNode, CSSProperties, createElement } from 'react';
 import * as _ from 'lodash';
 import * as maybe from 'data.maybe';
 import * as Kefir from 'kefir';
@@ -53,12 +53,61 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 import { ResourceLink as InternalResourceLink } from './ResourceLink';
 import { extractParams } from 'platform/api/navigation/NavigationUtils';
 
-export interface ResourceLinkProps extends ReactProps<ResourceLinkComponent> {
+/**
+ * Component which can be used in a template to generate a routed
+ * link for the resource.
+ *
+ * If no children are given (elements or text), the
+ * component will automatically try to fetch a label and render a sensible and
+ * human readable default link (unless `getlabel=true`).
+ *
+ * `urlqueryparam-{paramName}` attributes specify additional URL query parameters
+ * where `{paramName}` corresponds to the query parameter name.
+ * E.g. `urlqueryparam-example="test"` attribute will result
+ * into `?example=test` query parameter.
+ *
+ * **Example**:
+ * ```
+ * <semantic-link iri='http://researchspace.org/SearchDemo'
+ *   title='Execute' urlqueryparam-query='{{ID.value}}'>
+ *   <i class="fa fa-play-circle"></i>
+ * </semantic-link>
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <!-- fetching label automatically -->
+ * <semantic-link iri='http://xmlns.com/foaf/0.1/Person'>
+ * </semantic-link>
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <!-- fetching no label, will render plain link -->
+ * <semantic-link iri='http://xmlns.com/foaf/0.1/Person'
+ *   getlabel=false>
+ * </semantic-link>
+ * ```
+ *
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
+ */
+interface ResourceLinkConfig {
+  /**
+   * Specifies destination resource IRI.
+   */
   iri?: string;
   /**
-   * @deprecated
+   * **Deprecated**: use `iri` property instead.
+   * @deprecated Use `iri` property instead.
    */
   uri?: string;
+  /**
+   * Whether label for the given resource should be fetched automatically.
+   *
+   * @default true
+   */
   getlabel?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -77,7 +126,7 @@ export interface ResourceLinkProps extends ReactProps<ResourceLinkComponent> {
    * Equivalent to the `target` attribute of the `<a>` DOM element.
    * Can be set to `_blank` to open the link in a new tab/window.
    *
-   * @default '_self'
+   * @default "_self"
    */
   target?: '_self' | '_blank';
 
@@ -85,53 +134,15 @@ export interface ResourceLinkProps extends ReactProps<ResourceLinkComponent> {
    * Fragment identifier
    */
   fragment?: string;
-
-  // catcher for query params
-  [index: string]: any;
 }
+
+export interface ResourceLinkProps extends ResourceLinkConfig {}
 
 interface State {
   label?: Data.Maybe<string>;
   repository: Data.Maybe<string>;
 }
 
-interface ParamMap {
-    [index: string]: string;
-}
-
-/**
- * Component which can be used in handlebars templates to generate a routed
- * link for the resource. If no children are given (elements or text), the
- * component will automatically try to fetch a label and render a sensible and
- * human readable default link (unless getlabel=true).
- *
- * 'iri' attribute specifies destination resource iri.
- *
- * 'urlqueryparam-*' attribute specify additional url query parameter,
- * last part of attribute name corresponds to the url query parameter name.
- * For example 'urlqueryparam-example="test"' attribute will result into
- * '?example=test' query parameter.
- *
- * 'getlabel' boolean attribute to specify whether label for the given resource
- * should be fetched automatically. Default: true
- *
- * @example
- *   <semantic-link
- *   	title="Execute" iri="http://researchspace.org/SearchDemo"
- *   	urlqueryparam-query="{{ID.value}}">
- *       <i class="fa fa-play-circle"></i>
- *   </semantic-link>
- *
- * @example
- * 	 // fetching label automatically
- *   <semantic-link iri="http://xmlns.com/foaf/0.1/Person">
- *   </semantic-link>
- *
- * @example
- * 	 //  fetching no label, will render plain link
- *   <semantic-link iri="http://xmlns.com/foaf/0.1/Person" getlabel=false>
- *   </semantic-link>
- */
 export class ResourceLinkComponent extends Component<ResourceLinkProps, State> {
   private cancellation = new Cancellation();
 
@@ -150,7 +161,18 @@ export class ResourceLinkComponent extends Component<ResourceLinkProps, State> {
     return iri || uri;
   }
 
-  public componentDidMount() {
+  componentDidMount() {
+    this.updateLabelAndRepository();
+  }
+
+  componentDidUpdate(prevProps: ResourceLinkProps) {
+    const {iri} = this.props;
+    if (prevProps.iri !== iri) {
+      this.updateLabelAndRepository();
+    }
+  }
+
+  private updateLabelAndRepository() {
     const iri = this.getIri();
 
     if (!iri) { return; }
@@ -169,11 +191,11 @@ export class ResourceLinkComponent extends Component<ResourceLinkProps, State> {
     );
   }
 
-  public componentWillUnmount() {
+  componentWillUnmount() {
     this.cancellation.cancelAll();
   }
 
-  public render() {
+  render() {
     const iri = this.getIri();
 
     if (!iri) {

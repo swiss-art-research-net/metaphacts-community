@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,13 +49,8 @@ export interface AuthoringState {
 
 export type AuthoringEvent = ElementChange | LinkChange;
 
-export enum AuthoringKind {
-    ChangeElement = 'changeElement',
-    ChangeLink = 'changeLink',
-}
-
 export interface ElementChange {
-    readonly type: AuthoringKind.ChangeElement;
+    readonly type: 'element';
     readonly before?: ElementModel;
     readonly after: ElementModel;
     readonly newIri?: ElementIri;
@@ -63,7 +58,7 @@ export interface ElementChange {
 }
 
 export interface LinkChange {
-    readonly type: AuthoringKind.ChangeLink;
+    readonly type: 'link';
     readonly before?: LinkModel;
     readonly after: LinkModel;
     readonly deleted: boolean;
@@ -92,40 +87,51 @@ export namespace AuthoringState {
     }
 
     export function has(state: AuthoringState, event: AuthoringEvent): boolean {
-        return event.type === AuthoringKind.ChangeElement
+        return event.type === 'element'
             ? state.elements.get(event.after.id) === event
             : state.links.get(event.after) === event;
     }
 
-    export function discard(state: AuthoringState, discarded: AuthoringEvent): AuthoringState {
-        if (!has(state, discarded)) {
-            return state;
-        }
+    export function discard(
+        state: AuthoringState,
+        discardedEvents: ReadonlyArray<AuthoringEvent>
+    ): AuthoringState {
         const newState = clone(state);
-        if (discarded.type === AuthoringKind.ChangeElement) {
-            newState.elements.delete(discarded.after.id);
-            if (!discarded.before) {
-                state.links.forEach(e => {
-                    if (isLinkConnectedToElement(e.after, discarded.after.id)) {
-                        newState.links.delete(e.after);
+        let changed = false;
+        for (const discarded of discardedEvents) {
+            switch (discarded.type) {
+                case 'element': {
+                    changed = changed || newState.elements.has(discarded.after.id);
+                    newState.elements.delete(discarded.after.id);
+                    if (!discarded.before) {
+                        state.links.forEach(e => {
+                            if (isLinkConnectedToElement(e.after, discarded.after.id)) {
+                                changed = changed || newState.links.has(e.after);
+                                newState.links.delete(e.after);
+                            }
+                        });
                     }
-                });
+                    break;
+                }
+                case 'link': {
+                    changed = changed || newState.links.has(discarded.after);
+                    newState.links.delete(discarded.after);
+                    break;
+                }
             }
-        } else {
-            newState.links.delete(discarded.after);
         }
-        return newState;
+        return changed ? newState : state;
     }
 
     export function addElement(state: AuthoringState, item: ElementModel): AuthoringState {
-        const event: ElementChange = {type: AuthoringKind.ChangeElement, after: item, deleted: false};
+        const event: ElementChange = {type: 'element', after: item, deleted: false};
         const newState = clone(state);
         newState.elements.set(event.after.id, event);
         return newState;
     }
 
     export function addLink(state: AuthoringState, item: LinkModel): AuthoringState {
-        const event: LinkChange = {type: AuthoringKind.ChangeLink, after: item, deleted: false};
+        const event: LinkChange = {type: 'link', after: item, deleted: false};
         const newState = clone(state);
         newState.links.set(event.after, event);
         return newState;
@@ -140,7 +146,7 @@ export namespace AuthoringState {
         if (previous && !previous.before) {
             // adding or changing new entity
             newState.elements.set(after.id, {
-                type: AuthoringKind.ChangeElement,
+                type: 'element',
                 after,
                 deleted: false,
             });
@@ -150,7 +156,7 @@ export namespace AuthoringState {
                         const updatedLink = updateLinkToReferByNewIri(e.after, before.id, after.id);
                         newState.links.delete(e.after);
                         newState.links.set(updatedLink, {
-                            type: AuthoringKind.ChangeLink,
+                            type: 'link',
                             after: updatedLink,
                             deleted: false,
                         });
@@ -162,7 +168,7 @@ export namespace AuthoringState {
             const iriChanged = after.id !== before.id;
             const previousBefore = previous ? previous.before : undefined;
             newState.elements.set(before.id, {
-                type: AuthoringKind.ChangeElement,
+                type: 'element',
                 // always initialize 'before', otherwise entity will be considered new
                 before: previousBefore || before,
                 after: iriChanged ? {...after, id: before.id} : after,
@@ -181,8 +187,8 @@ export namespace AuthoringState {
         const newState = clone(state);
         const previous = state.links.get(before);
         newState.links.set(before, {
-            type: AuthoringKind.ChangeLink,
-            before: previous ? previous.before : undefined,
+            type: 'link',
+            before: previous ? previous.before : before,
             after: after,
             deleted: false,
         });
@@ -199,7 +205,7 @@ export namespace AuthoringState {
         });
         if (!isNewElement(state, model.id)) {
             newState.elements.set(model.id, {
-                type: AuthoringKind.ChangeElement,
+                type: 'element',
                 before: model,
                 after: model,
                 deleted: true,
@@ -213,7 +219,7 @@ export namespace AuthoringState {
         newState.links.delete(target);
         if (!isNewLink(state, target)) {
             newState.links.set(target, {
-                type: AuthoringKind.ChangeLink,
+                type: 'link',
                 before: target,
                 after: target,
                 deleted: true,
@@ -239,7 +245,7 @@ export namespace AuthoringState {
 
     export function isNewElement(state: AuthoringState, target: ElementIri): boolean {
         const event = state.elements.get(target);
-        return Boolean(event && event.type === AuthoringKind.ChangeElement && !event.before);
+        return Boolean(event && !event.before);
     }
 
     export function isDeletedElement(state: AuthoringState, target: ElementIri): boolean {
@@ -253,7 +259,7 @@ export namespace AuthoringState {
 
     export function getElementModifiedIri(state: AuthoringState, target: ElementIri): ElementIri | undefined {
         const event = state.elements.get(target);
-        if (event && event.type === AuthoringKind.ChangeElement && event.before) {
+        if (event && event.before) {
             return event.newIri;
         }
         return undefined;

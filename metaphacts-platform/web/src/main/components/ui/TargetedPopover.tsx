@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,10 +39,11 @@
  */
 import * as React from 'react';
 import { findDOMNode } from 'react-dom';
-import { Popover } from 'react-bootstrap';
+import { Overlay, Popover } from 'react-bootstrap';
 
 export interface TargetedPopoverProps {
   id: string;
+  reference?: HTMLElement;
   targetLeft: number;
   targetTop: number;
   popoverSide: 'left' | 'right' | 'top' | 'bottom';
@@ -57,12 +58,12 @@ interface State {
 }
 
 export class TargetedPopover extends React.Component<TargetedPopoverProps, State> {
-  static defaultProps: Partial<TargetedPopoverProps> = {
+  static defaultProps: Required<Pick<TargetedPopoverProps, 'arrowOffset' | 'hideTimeout'>> = {
     arrowOffset: 15,
     hideTimeout: 2000,
   };
 
-  private popover: Popover | undefined;
+  private popover: HTMLDivElement | undefined;
   private observer: MutationObserver | undefined;
 
   private hovering = false;
@@ -75,7 +76,7 @@ export class TargetedPopover extends React.Component<TargetedPopoverProps, State
 
   render() {
     const {
-      id, targetLeft, targetTop, popoverSide, arrowAlignment, arrowOffset, children
+      id, reference, targetLeft, targetTop, popoverSide, arrowAlignment, arrowOffset, children
     } = this.props;
     const {contentSize} = this.state;
 
@@ -84,54 +85,24 @@ export class TargetedPopover extends React.Component<TargetedPopoverProps, State
     let arrowOffsetLeft: number | undefined;
     let arrowOffsetTop: number | undefined;
 
-    if (contentSize) {
-      switch (popoverSide) {
-        case 'left':
-        case 'right':
-          arrowOffsetTop = (
-            arrowAlignment === 'start' ? arrowOffset :
-            arrowAlignment === 'end' ? (contentSize.height - arrowOffset) :
-            contentSize.height / 2
-          );
-          positionTop -= arrowOffsetTop;
-          break;
-        case 'top':
-        case 'bottom':
-          arrowOffsetLeft = (
-            arrowAlignment === 'start' ? arrowOffset :
-            arrowAlignment === 'end' ? (contentSize.width - arrowOffset) :
-            contentSize.width / 2
-          );
-          positionLeft -= arrowOffsetLeft;
-          break;
-      }
-
-      if (popoverSide === 'left') {
-        positionLeft -= contentSize.width;
-      } else if (popoverSide === 'top') {
-        positionTop -= contentSize.height;
-      }
-    }
+    const targetReference = reference ?? document.documentElement;
+    const virtualTarget = this.createVirtualTarget(targetReference, positionLeft, positionTop);
 
     return (
-      <Popover ref={this.onPopoverMount}
-        id={id}
-        style={{whiteSpace: 'nowrap', maxWidth: 'unset'}}
-        onMouseEnter={this.onMouseEnter}
-        onMouseLeave={this.onMouseLeave}
-        placement={popoverSide}
-        positionLeft={positionLeft}
-        positionTop={positionTop}
-        arrowOffsetLeft={arrowOffsetLeft}
-        arrowOffsetTop={arrowOffsetTop}>
-        <div ref={this.onObservedChildMount}>
-          {children}
-        </div>
-      </Popover>
+      <Overlay target={virtualTarget as any} show={true} placement={popoverSide}>
+        <Popover ref={this.onPopoverMount}
+          id={id}
+          style={{ whiteSpace: 'nowrap', maxWidth: 'unset' }}
+          onMouseEnter={this.onMouseEnter}
+          onMouseLeave={this.onMouseLeave}>
+          <div ref={this.onObservedChildMount}>
+            {children}
+          </div>
+        </Popover>
+      </Overlay>
     );
   }
-
-  private onPopoverMount = (popover: Popover | undefined) => {
+  private onPopoverMount = (popover: HTMLDivElement | undefined) => {
     this.popover = popover;
     this.onPotentialSizeChange();
   }
@@ -163,6 +134,24 @@ export class TargetedPopover extends React.Component<TargetedPopoverProps, State
         return null;
       });
     }
+  }
+
+  private createVirtualTarget(reference: HTMLElement, left: number, top: number) {
+    return {
+      getBoundingClientRect: () => {
+        const bbox = reference.getBoundingClientRect();
+        return {
+          width: 0,
+          height: 0,
+          get top() { return bbox.top + top; },
+          get bottom() { return bbox.top + top; },
+          get left() { return bbox.left + left; },
+          get right() { return bbox.left + left; },
+        }
+      },
+      // setting a nodeType because react-bootstrap is checking for this
+      nodeType: 'virtual',
+    };
   }
 
   componentDidMount() {

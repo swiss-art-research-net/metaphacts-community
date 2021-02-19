@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,25 +39,26 @@
  */
 import { CSSProperties } from 'react';
 
-export interface SetManagementProps {
+export interface SetManagementConfig {
   /**
    * SPARQL SELECT query to fetch sets and set items, perform search.
    *
    * Query bindings:
-   *   ?__rootSet__ refers to a set or the set container;
-   *   ?__isSearch__ is `true` when performing search otherwise false;
-   *   ?__setToSearch__ refers to a set to perform search within;
-   *   FILTER(?__filterPatterns__) is replaced by keyword and additional
+   *   - `?__rootSet__` refers to a set or the set container;
+   *   - `?__isSearch__` is `true` when performing search otherwise false;
+   *   - `?__setToSearch__` refers to a set to perform search within;
+   *   - `FILTER(?__filterPatterns__)` is replaced by keyword and additional
    *     filter patterns when performing search;
-   *   ?__preferredLabel__ refers to preferred label predicate for elements.
+   *   `?__preferredLabel__` refers to preferred label predicate for elements.
    *
    * Result tuple:
-   *   ?item refers to set IRI or set item IRI;
-   *   ?itemHolder refers to set item holder IRI which can be used to remove the item from set;
-   *   ?parent refers to IRI of set's container or item's parent set;
-   *   ?kind refers to item kind (set or set item, see `itemConfig`);
+   *   - `item` refers to set IRI or set item IRI;
+   *   - `itemHolder` refers to set item holder IRI which can be used to remove the item from set;
+   *   - `parent` refers to IRI of set's container or item's parent set;
+   *   - `kind` refers to item kind (set or set item, see `item-config`);
    *
-   * @default
+   * **Default**:
+   * ```
    *   PREFIX ldp: <http://www.w3.org/ns/ldp#>
    *   PREFIX prov: <http://www.w3.org/ns/prov#>
    *   PREFIX platform: <http://www.metaphacts.com/ontologies/platform#>
@@ -88,47 +89,52 @@ export interface SetManagementProps {
    *     }
    *     BIND(COALESCE(?type, platform:SetItem) AS ?kind) .
    *   } ORDER BY DESC(?modificationDate)
+   * ```
    */
   setItemsQuery?: string;
   /**
-   * SPARQL SELECT query parametrized by results of `setItemsQuery` and used to
+   * SPARQL SELECT query parametrized by results of `set-items-query` and used to
    * retrieve additional metadata for sets or set items that can be used in
    * visualization templates.
    *
-   * VALUES() bindings:
-   *   ?item refers to set or set item;
-   *   ?kind refers to item kind (set or set item, see `itemConfig`)
+   * `VALUES()` bindings:
+   *   - `?item` refers to set or set item;
+   *   - `?kind` refers to item kind (set or set item, see `item-config`);
    *
    * Result tuple:
-   *   ?item refers to set IRI or set item IRI
+   *   - `item` refers to set IRI or set item IRI;
    *
-   * @default
+   * **Default**:
+   * ```
    *   SELECT ?item WHERE { }
+   * ```
    */
   setItemsMetadataQuery?: string;
   /**
    * SPARQL SELECT query to fetch set item counts.
    *
    * Query bindings:
-   *   ?__rootSet__ refers to a set or the set container;
+   *   - `?__rootSet__` refers to a set or the set container;
    *
    * Result tuple:
-   *   ?set refers to set IRI;
-   *   ?count refers to set item count
+   *   - `set` refers to set IRI;
+   *   - `count` refers to set item count;
    *
-   * @default
+   * **Default**:
+   * ```
    *   PREFIX ldp: <http://www.w3.org/ns/ldp#>
    *   SELECT ?set (COUNT(?item) as ?count) WHERE {
    *      ?__rootSet__ ldp:contains ?set .
    *      OPTIONAL { ?set ldp:contains ?item }
    *   } GROUP BY ?set
+   * ```
    */
   setCountQuery?: string;
   /**
    * SPARQL ASK query to check whether it's allowed to add item to the set.
    *
    * Query bindings:
-   *   ?value refers to the added item
+   *   - `?value` refers to the added item;
    */
   acceptResourceQuery?: string;
   /**
@@ -161,11 +167,13 @@ export interface SetManagementProps {
   id?: string;
   /**
    * Default view mode for set items.
-   * @default 'list'
+   *
+   * @default "list"
    */
   defaultViewMode?: ItemViewMode;
   /**
    * Whether should persist view mode to local storage.
+   *
    * @default true
    */
   persistViewMode?: boolean;
@@ -180,7 +188,7 @@ export type ItemViewMode = 'list' | 'grid';
 export interface ItemConfig {
   [type: string]: {
     /**
-     * True if element is a set; otherwise false.
+     * `true` if element is a set; otherwise `false`.
      */
     isSet: boolean;
     /**
@@ -205,10 +213,10 @@ export interface KeywordFilter {
    */
   placeholderInSet?: string;
   /**
-   * SparQL query pattern inserted into search query to search for items.
+   * SPARQL query pattern inserted into search query to search for items.
    *
    * Query bindings:
-   *   ?__token__ (inside string literals) refers to the search input text.
+   *   - `?__token__` (inside string literals) refers to the search input text;
    */
   queryPattern: string;
   /**
@@ -223,17 +231,17 @@ export interface SetFilter {
    */
   placeholder: string;
   /**
-   * SparQL query pattern inserted into search query to filter items.
+   * SPARQL query pattern inserted into search query to filter items.
    *
    * Query bindings:
-   *   ?__value__ refers to filter's selected value.
+   *   - `?__value__` refers to filter's selected value;
    */
   queryPattern: string;
   /**
-   * SparQL query for filter value autosuggestion.
+   * SPARQL SELECT query for filter value autosuggestion.
    *
    * Query bindings:
-   *   ?token (inside string literals) refers to filter input text.
+   *   - `?token` (inside string literals) refers to filter input text;
    */
   suggestionsQuery: string;
 }

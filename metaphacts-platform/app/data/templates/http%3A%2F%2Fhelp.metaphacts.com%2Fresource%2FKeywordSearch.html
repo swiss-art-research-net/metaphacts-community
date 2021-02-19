@@ -7,12 +7,12 @@
     <p>
       The Keyword Search Component (<code>semantic-search-query-keyword</code>) complements the <semantic-link iri='[[resolvePrefix "Help:SemanticSearch"]]'>semantic search framework</semantic-link> with a simple facility for keyword search. Keyword search is one of the most simple search definition components available in the platform. It allows to run a single-domain search using the query token.
     </p>
-    
+
     <h2>Configuration</h2>
     <mp-documentation type="SemanticSearchKeywordConfig"></mp-documentation>
-    
+
     <p><code>semantic-search-query-keyword</code> does not have a default configuration for the query. For most use-cases it is recommended to define the query using <semantic-link iri="[[resolvePrefix "Help:LookupService"]]">Lookup Service</semantic-link> technology. This abstraction allows to define the search query independent of the underlying database, i.e. the platform makes sure to select a lookup service implementation optimized for the target database.</p>
-        
+
         <mp-code-block>
         <![CDATA[
         <semantic-search-query-keyword
@@ -21,13 +21,14 @@
             SELECT ?subject ?description WHERE {
               SERVICE Repository:lookup {
                 ?subject lookup:token ?__token__ .
+                ?subject lookup:description ?description .
                 # ?subject lookup:type foaf:Person
               }
             }'
         ></semantic-search-query-keyword>
         ]]>
           </mp-code-block>
-       
+
       <br/>
       <mp-collapsible-div expanded=false>
       <mp-collapsible-div-trigger>
@@ -112,20 +113,21 @@
     </mp-collapsible-div>
         <br/>
 
-    
+
     <h2>Examples</h2>
-    
+
         <p>The most basic search configuration using this component looks as follows:</p>
-        
+
         <mp-code-example>
               <![CDATA[
-<semantic-search> 
+<semantic-search>
   <semantic-search-query-keyword
           query='
             PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
             SELECT ?subject ?description WHERE {
               SERVICE Repository:lookup {
                 ?subject lookup:token ?__token__ .
+                ?subject lookup:description ?description .
                 # ?subject lookup:type foaf:Person
               }
             }'
@@ -139,21 +141,33 @@
 </semantic-search>
 ]]>
         </mp-code-example>
-        
+
         <p>
         Besides using SPARQL queries for search, the <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> can be used to look up entities based on the provided search terms. See <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> for details and examples.
       </p>
-    
+
     <h3>Further examples</h3>
-    
+
     <ul>
       <li>
         <semantic-link iri="[[resolvePrefix "Help:StructuredKeywordSearchExample"]]">Keyword search with facets</semantic-link>
       </li>
       <li>
         <semantic-link iri="[[resolvePrefix "Help:StructuredKeywordSearchExampleWikidata"]]">Keyword search with facets (Wikidata)</semantic-link>
-      </li>      
+      </li>
     </ul>
-    
+
+    <h3>Performance considerations</h3>
+
+    <p>
+      The keyword search component defines the base query for the current semantic search. Each child component visualizing search results executes the complete query independently, potentially adding further graph patterns to fetch additional properties for each search result, e.g. to show another table column. This might lead to repeated execution of similar search queries, e.g. for displaying an overall result count as well as a tabular and graphical view of the search results.
+    </p>
+    <p>
+      When the initial query including keyword search is expensive it might be more efficient to run the search only once and further refine the results for visualization. This can be done using the <semantic-link iri='[[resolvePrefix "Help:KeywordPrefetchSearch"]]'><code>semantic-search-keyword-prefetch</code></semantic-link> component which translates the results of the initial query into <code>VALUES</code> clauses which are then injected into the queries of all visualization components. This means that the potentially costly keyword search is performend only once.
+    </p>
+    <p>
+       As <b>all</b> results are injected into the visualization queries generated from the first result this only works for a limited result set as high number or results would create a query string which might exceed database limitations.
+    </p>
+
   </div>
 </div>

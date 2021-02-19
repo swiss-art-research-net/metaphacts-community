@@ -17,7 +17,7 @@
  */
 import * as React from 'react';
 import {
-  FormControl, FormGroup, Form, Button, ControlLabel, ButtonGroup,
+  FormControl, FormGroup, Form, Button, FormLabel, ButtonGroup,
 } from 'react-bootstrap';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
@@ -110,19 +110,19 @@ export class ObservationComponent extends React.Component<ObservationComponentPr
     const {initialState} = this.props;
     return <Form>
       <FormGroup>
-        <ControlLabel>Title*</ControlLabel>
+        <FormLabel>Title*</FormLabel>
         <FormControl
           type='text' placeholder='Observation title...'
           value={this.state.title} onChange={this.onTitleChange} />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Description</ControlLabel>
+        <FormLabel>Description</FormLabel>
         <FormControl
-          componentClass='textarea' placeholder='Observation description...'
+          as='textarea' placeholder='Observation description...'
           value={this.state.note} onChange={this.onNoteChange} />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Date*</ControlLabel>
+        <FormLabel>Date*</FormLabel>
         <DateTimePicker
           onChange={this.onDateSelected}
           closeOnSelect={true}
@@ -133,15 +133,15 @@ export class ObservationComponent extends React.Component<ObservationComponentPr
           inputProps={{placeholder: 'Select observation date...'}} />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Place*</ControlLabel>
+        <FormLabel>Place*</FormLabel>
         <SemanticTreeInput {...PlaceSelectionConfig}
           initialSelection={this.state.place ? [this.state.place] : []}
           onSelectionChanged={this.onPlaceSelected} />
       </FormGroup>
       <FormGroup>
         <ButtonGroup className='pull-right'>
-          <Button bsStyle='default' onClick={this.props.onCancel}>Cancel</Button>
-          <Button bsStyle='primary'
+          <Button variant='secondary' onClick={this.props.onCancel}>Cancel</Button>
+          <Button variant='primary'
             style={{marginLeft:'12px'}}
             onClick={this.saveArgument}
             disabled={!this.canSave()}>

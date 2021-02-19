@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -140,7 +140,7 @@ export class ProteinViewerComponent extends Component<ProteinViewerConfig, Prote
     }
 
     const items = _.map(modes, (mode: MODE, label: string) =>
-      Button({onClick: () => this.changeMode(mode), className: 'btn btn-link btn-xs'}, label)
+      Button({onClick: () => this.changeMode(mode), className: 'btn btn-link btn-sm'}, label)
     );
     return D.div({style: {position: 'absolute', bottom: -20}}, items);
   }

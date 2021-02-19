@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,7 +42,7 @@ import * as D from 'react-dom-factories';
 import { doc } from 'docson';
 import * as _ from 'lodash';
 
-import { JsonSchema } from './JsonSchema';
+import { JsonSchema, MpSeeResource } from './JsonSchema';
 import 'docson/css/docson.css';
 import './ConfigDocComponent.scss';
 
@@ -51,15 +51,6 @@ const signature: string = require('raw-loader!./templates/signature.html');
 
 const allSchemas: { [schemaName: string]: JsonSchema } = require('platform-schemas');
 
-interface Props {
-  type: string;
-  disableTransformAttributes?: boolean;
-  hideRequiredLabel?: boolean;
-}
-
-type PropertyTransformer =
-  (fn: (key: string, value?: any) => string) => (json: JsonSchema) => JsonSchema;
-
 /**
  * Displays generated JSON schema for specified interface type.
  *
@@ -67,11 +58,38 @@ type PropertyTransformer =
  * command at `project/webpack` directory:
  *   `yarn run generate-schema <project-name> <interface-name>`
  *
- * @example
- * <mp-documentation type="<interface-name>"></mp-documentation>
+ * **Example**:
+ * ```
+ * <mp-documentation type="SomeComponentConfig"></mp-documentation>
+ * ```
  */
-export default class ConfigDocComponent extends Component<Props, {}>  {
+interface ConfigDocConfig {
+  /**
+   * Component schema name to display.
+   */
+  type: string;
+  /**
+   * @default false
+   */
+  showTopDescription?: boolean;
+  /**
+   * @default false
+   */
+  disableTransformAttributes?: boolean;
+  /**
+   * @default false
+   */
+  hideRequiredLabel?: boolean;
+}
 
+export type ConfigDocProps = ConfigDocConfig;
+
+type PropertyNameTransformer =
+  (fn: (key: string, value?: any) => string) => (json: JsonSchema) => JsonSchema;
+type PropertyValueTransformer =
+  (fn: (key: string, value?: JsonSchema) => JsonSchema) => (json: JsonSchema) => JsonSchema;
+
+export class ConfigDocComponent extends Component<ConfigDocProps, {}>  {
   private container: HTMLElement;
 
   componentDidMount() {
@@ -80,12 +98,16 @@ export default class ConfigDocComponent extends Component<Props, {}>  {
 
   private renderDocson = (jsonSchema: JsonSchema) => {
     let renderedSchema = jsonSchema;
+    if (!this.props.showTopDescription) {
+      renderedSchema = {...renderedSchema, description: undefined};
+    }
     if (!this.props.disableTransformAttributes) {
       renderedSchema = this.handleProperties(renderedSchema);
     }
     if (this.props.hideRequiredLabel) {
       renderedSchema = {...renderedSchema, required: []};
     }
+    renderedSchema = addSeeResourceReferences(renderedSchema);
     doc(
       this.container,
       renderedSchema,
@@ -102,11 +124,13 @@ export default class ConfigDocComponent extends Component<Props, {}>  {
     );
   }
 
-  private transformPropertyName: PropertyTransformer = fn => json  => {
+  private transformPropertyName: PropertyNameTransformer = fn => json  => {
+    json = {...json};
     json.properties = _.mapKeys(json.properties, (val, key: string) => fn(key));
     json.required = _.map(json.required, fn);
     json.propertyOrder = _.map(json.propertyOrder, fn);
     if (json.anyOf) {
+      json.definitions = {...json.definitions};
       _.forEach(json.anyOf, ({$ref}) => {
         const refName = _.last(_.split($ref, '/'));
         json.definitions[refName] = this.transformPropertyName(fn)(json.definitions[refName]);
@@ -115,9 +139,11 @@ export default class ConfigDocComponent extends Component<Props, {}>  {
     return json;
   }
 
-  private transformPropertyValue: PropertyTransformer = fn => json  => {
+  private transformPropertyValue: PropertyValueTransformer = fn => json  => {
+    json = {...json};
     json.properties = _.mapValues(json.properties, (val, key) => fn(key, val));
     if (json.anyOf) {
+      json.definitions = {...json.definitions};
       _.forEach(json.anyOf, ({$ref}) => {
         const refName = _.last(_.split($ref, '/'));
         json.definitions[refName] = this.transformPropertyValue(fn)(json.definitions[refName]);
@@ -127,26 +153,53 @@ export default class ConfigDocComponent extends Component<Props, {}>  {
   }
 
 
-  private handleClassNameProperty = (key: string) =>
-    key === 'className' ? 'class' : key
+  private handleClassNameProperty = (key: string) => {
+    return key === 'className' ? 'class' : key;
+  }
 
-  private handleStyleValue = (key: string, value: any) => {
+  private handleStyleValue = (key: string, value: JsonSchema): JsonSchema => {
     if (key === 'style' && value.$ref === '#/definitions/React.CSSProperties') {
-      delete value.$ref;
-      value.type = 'string';
+      return {...value, $ref: undefined, type: 'string'};
     }
     return value;
   }
 
-  private transformJsonToHtmlAttributes = this.transformPropertyName(_.kebabCase);
+  private handleCustomJsDoc = (key: string, value: JsonSchema): JsonSchema => {
+    return addSeeResourceReferences(value);
+  }
+
   private transformClassNameAttribute = this.transformPropertyName(this.handleClassNameProperty);
   private transformStyleAttribute = this.transformPropertyValue(this.handleStyleValue);
+  private transformCustomJsDoc = this.transformPropertyValue(this.handleCustomJsDoc);
+  private transformJsonToHtmlAttributes = this.transformPropertyName(_.kebabCase);
 
   private handleProperties(json: JsonSchema): JsonSchema {
     let schema = json;
-    schema = this.transformJsonToHtmlAttributes(schema);
     schema = this.transformClassNameAttribute(schema);
     schema = this.transformStyleAttribute(schema);
+    schema = this.transformCustomJsDoc(schema);
+    schema = this.transformJsonToHtmlAttributes(schema);
     return schema;
   }
 }
+
+function addSeeResourceReferences(schema: JsonSchema): JsonSchema {
+  if (!schema.mpSeeResource) {
+    return schema;
+  }
+  const makeSeeResourceText = (resource: MpSeeResource) => {
+    return `<li><semantic-link iri="${resource.iri}">${resource.name}</semantic-link></li>`;
+  };
+  const referencesText = Array.isArray(schema.mpSeeResource)
+    ? schema.mpSeeResource.map(makeSeeResourceText).join('\n')
+    : makeSeeResourceText(schema.mpSeeResource);
+  const seeAlsoText = `See also: <ul>${referencesText}</ul>`;
+  return {
+    ...schema,
+    description: schema.description
+      ? (schema.description + '\n\n' + seeAlsoText)
+      : seeAlsoText,
+  };
+}
+
+export default ConfigDocComponent;

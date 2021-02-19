@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,20 +39,71 @@
  */
 package com.metaphacts.services.storage.api;
 
-import javax.annotation.Nullable;
 import java.time.Instant;
+
+import javax.annotation.Nullable;
+
+import com.metaphacts.services.storage.StorageUtils;
 
 /**
  * Represents metadata stored with object in {@link ObjectStorage}.
  */
 public final class ObjectMetadata {
+
+    public static class ObjectMetadataBuilder {
+
+        public static ObjectMetadataBuilder create() {
+            return new ObjectMetadataBuilder();
+        }
+
+        public static ObjectMetadataBuilder defaultMetadata() {
+            String author = StorageUtils.currentUsername().orElse(null);
+            return new ObjectMetadataBuilder().withAuthor(author);
+        }
+
+        private final ObjectMetadata metadata = new ObjectMetadata();
+
+        public ObjectMetadataBuilder withAuthor(String author) {
+            metadata.author = author;
+            return this;
+        }
+
+        public ObjectMetadataBuilder withCreationDate(Instant creationDate) {
+            metadata.creationDate = creationDate;
+            return this;
+        }
+
+        public ObjectMetadataBuilder withTitle(String title) {
+            metadata.title = title;
+            return this;
+        }
+
+        public ObjectMetadataBuilder withComment(String comment) {
+            metadata.comment = comment;
+            return this;
+        }
+        
+        public ObjectMetadata build() {
+            return metadata;
+        }
+    }
     @Nullable
     private String author;
     @Nullable
     private Instant creationDate;
+    @Nullable
+    private String title;
+    @Nullable
+    private String comment;
 
     public ObjectMetadata() {}
 
+    /**
+     * 
+     * @param author
+     * @param creationDate
+     * @note use {@link ObjectMetadataBuilder} instead
+     */
     public ObjectMetadata(
         @Nullable String author,
         @Nullable Instant creationDate
@@ -77,6 +128,29 @@ public final class ObjectMetadata {
     @Nullable
     public Instant getCreationDate() {
         return creationDate;
+    }
+
+    /**
+     * The optional title for the object's revision (e.g. a Git summary message)
+     * <p>
+     * Note: the title may be a substring of the {@link #getComment()}.
+     * </p>
+     * 
+     * @return
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * The optional comment for the object's revision (e.g. a full Git commit
+     * message)
+     * 
+     * @return
+     */
+    @Nullable
+    public String getComment() {
+        return comment;
     }
 
     public ObjectMetadata withCurrentDate() {

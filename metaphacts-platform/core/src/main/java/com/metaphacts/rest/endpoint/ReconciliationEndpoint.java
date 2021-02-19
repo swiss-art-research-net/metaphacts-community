@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,15 +42,13 @@ package com.metaphacts.rest.endpoint;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.constraints.NotNull;
@@ -59,13 +57,16 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import com.metaphacts.util.LanguageHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
@@ -85,8 +86,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Maps;
-import com.metaphacts.cache.DescriptionCache;
-import com.metaphacts.cache.LabelCache;
+import com.google.common.base.Strings;
+import com.metaphacts.cache.DescriptionService;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.lookup.api.EntityTypesFetchingException;
 import com.metaphacts.lookup.api.LookupService;
@@ -108,7 +110,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 /**
  * Endpoint for interacting with {@link LookupService}s
- * 
+ *
  */
 @Path("reconciliation")
 @Singleton
@@ -121,10 +123,10 @@ public class ReconciliationEndpoint {
     protected RepositoryManager repositoryManager;
 
     @Inject
-    private LabelCache labelCache;
+    private LabelService labelCache;
 
     @Inject
-    private DescriptionCache descriptionCache;
+    private DescriptionService descriptionCache;
 
     @Inject
     protected Configuration config;
@@ -140,10 +142,10 @@ public class ReconciliationEndpoint {
 
     /**
      * Perform a query provided as body part
-     * 
+     *
      * @example: curl -X POST -H "Content-Type: application/json" -d '{ "q0" : {
      *           "query" : "Mannheim", "limit": "5" } }'
-     *           http://localhost:10214/rest/reconciliation
+     *           http://localhost:10214/rest/reconciliation/{lookupServiceName}
      */
     @POST
     @Operation(
@@ -157,27 +159,55 @@ public class ReconciliationEndpoint {
             )
         }
     )
+    @Path("/{lookupServiceName}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({"application/javascript", MediaType.APPLICATION_JSON})
     @JSONP(queryParam="callback")
     @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
-    public Response lookupRawJson(Map<String, LookupQuery> queries) throws TimeoutException {
-        LookupMultiRequest multiRequest = this.prepareMultiRequest(queries);
-        try {
-            return Response.ok(this.lookup(multiRequest).getResponses()).build();
-        } catch (TimeoutException timeoutException) {
-            return Response.status(Response.Status.REQUEST_TIMEOUT)
-                .type("text/plain").entity("Failed to wait for lookup service results.").build();
-        } catch (Exception internalException) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .type("text/plain").entity("Failed to process lookup service results. See log for details.").build();
-        }
+    public Response lookupRawJson(
+        Map<String, LookupQuery> queries,
+        @PathParam("lookupServiceName") String lookupServiceName,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupByRawJson(queries, lookupServiceName, selectPreferredLanguage(prefLang1, prefLang2));
+    }
+
+    /**
+     * Perform a query provided as body part
+     *
+     * @example: curl -X POST -H "Content-Type: application/json" -d '{ "q0" : {
+     *           "query" : "Mannheim", "limit": "5" } }'
+     *           http://localhost:10214/rest/reconciliation
+     */
+    @POST
+    @Operation(
+            summary = "Returns reconciliation multi response which contains reconciliation candidates grouped by query ids",
+            responses = {
+                    @ApiResponse(description = "Reconciliation multi response",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = LookupMultiResponse.class)
+                            )
+                    )
+            }
+    )
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({"application/javascript", MediaType.APPLICATION_JSON})
+    @JSONP(queryParam="callback")
+    @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
+    public Response lookupRawJson(
+        Map<String, LookupQuery> queries,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupByRawJson(queries, null, selectPreferredLanguage(prefLang1, prefLang2));
     }
 
     /**
      * Perform a query provided as form data
-     * 
-     * @example: curl -X POST 'http://localhost:10214/rest/reconciliation' -d
+     *
+     * @example: curl -X POST 'http://localhost:10214/rest/reconciliation/{lookupServiceName}' -d
      *           'queries={"q1":{"query":"VincentvanGogh","limit":3},"q2":{"query":"Car","limit":3},"q3":{"query":"Home","limit":3},"q0":{"query":"Meinheim","limit":3}}'
      */
     @POST
@@ -192,18 +222,54 @@ public class ReconciliationEndpoint {
             )
         }
     )
+    @Path("/{lookupServiceName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @JSONP(queryParam="callback")
     @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
-    public Response lookupFormData(@FormDataParam("queries") String queries) {
-        return this.lookupEntry(queries);
+    public Response lookupFormData(
+        @FormDataParam("queries") String queries,
+        @PathParam("lookupServiceName") String lookupServiceName,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupEntry(queries, lookupServiceName, selectPreferredLanguage(prefLang1, prefLang2));
+    }
+
+    /**
+     * Perform a query provided as form data
+     *
+     * @example: curl -X POST 'http://localhost:10214/rest/reconciliation' -d
+     *           'queries={"q1":{"query":"VincentvanGogh","limit":3},"q2":{"query":"Car","limit":3},"q3":{"query":"Home","limit":3},"q0":{"query":"Meinheim","limit":3}}'
+     */
+    @POST
+    @Operation(
+            summary = "Returns reconciliation multi response which contains reconciliation candidates grouped by query ids",
+            responses = {
+                    @ApiResponse(description = "Reconciliation multi response",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = LookupMultiResponse.class)
+                            )
+                    )
+            }
+    )
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @JSONP(queryParam="callback")
+    @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
+    public Response lookupFormData(
+        @FormDataParam("queries") String queries,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupEntry(queries, null, selectPreferredLanguage(prefLang1, prefLang2));
     }
 
     /**
      * Perform a query provided as url encoded form data
-     * 
-     * @example: curl -X POST 'http://localhost:10214/rest/reconciliation'
+     *
+     * @example: curl -X POST 'http://localhost:10214/rest/reconciliation/{lookupServiceName}'
      *           --data-urlencode
      *           'queries={"q1":{"query":"VincentvanGogh","limit":3},"q2":{"query":"Car","limit":3},"q3":{"query":"Home","limit":3},"q0":{"query":"Meinheim","limit":3}}'
      */
@@ -219,20 +285,57 @@ public class ReconciliationEndpoint {
             )
         }
     )
+    @Path("/{lookupServiceName}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @JSONP(queryParam="callback")
     @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
-    public Response lookupUrlEncodedFormData(@FormParam("queries") String queries) {
-        return this.lookupEntry(queries);
+    public Response lookupUrlEncodedFormData(
+        @FormParam("queries") String queries,
+        @PathParam("lookupServiceName") String lookupServiceName,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupEntry(queries, lookupServiceName, selectPreferredLanguage(prefLang1, prefLang2));
+    }
+
+    /**
+     * Perform a query provided as url encoded form data
+     *
+     * @example: curl -X POST 'http://localhost:10214/rest/reconciliation'
+     *           --data-urlencode
+     *           'queries={"q1":{"query":"VincentvanGogh","limit":3},"q2":{"query":"Car","limit":3},"q3":{"query":"Home","limit":3},"q0":{"query":"Meinheim","limit":3}}'
+     */
+    @POST
+    @Operation(
+            summary = "Returns reconciliation multi response which contains reconciliation candidates grouped by query ids",
+            responses = {
+                    @ApiResponse(description = "Reconciliation multi response",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = LookupMultiResponse.class)
+                            )
+                    )
+            }
+    )
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @JSONP(queryParam="callback")
+    @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
+    public Response lookupUrlEncodedFormData(
+        @FormParam("queries") String queries,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupEntry(queries, null, selectPreferredLanguage(prefLang1, prefLang2));
     }
 
     /**
      * Perform a query provided a request parameter (if any) or return the service
      * manifest if there is no parameter.
-     * 
-     * @example: 1) curl http://localhost:10214/rest/reconciliation 2) curl
-     *           http://localhost:10214/rest/reconciliation?queries=%7B%22q0%22%3A%7B%22query%22%3A%22foo%22%7D%7D
+     *
+     * @example: 1) curl http://localhost:10214/rest/reconciliation/{lookupServiceName} 2) curl
+     *           http://localhost:10214/rest/reconciliation/{lookupServiceName}?queries=%7B%22q0%22%3A%7B%22query%22%3A%22foo%22%7D%7D
      */
     @GET
     @Operation(
@@ -249,23 +352,50 @@ public class ReconciliationEndpoint {
             )
         }
     )
+    @Path("/{lookupServiceName}")
     @Produces({"application/javascript", MediaType.APPLICATION_JSON})
     @JSONP(queryParam="callback")
     @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
-    public Response lookupOrGetManifest(@QueryParam("queries") String stringQueries) {
-        // if no queries are supplied it is a request for the service manifest
-        if (stringQueries == null && SecurityUtils.getSubject()
-                .isPermitted(new WildcardPermission(Permissions.RECONCILIATION_SERVICE.READ_MANIFEST))) {
-            try {
-                return Response.ok(this.getServiceManifest()).build();
-            } catch (EntityTypesFetchingException e) {
-                logger.warn(e.getMessage());
-                logger.debug("Details: ", e);
-                return Response.status(Response.Status.REQUEST_TIMEOUT)
-                        .type("text/plain").entity("Failed to fetch list of available entityTypes.").build();
+    public Response lookupOrGetManifest(
+        @QueryParam("queries") String stringQueries,
+        @PathParam("lookupServiceName") String lookupServiceName,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupOrGetManifestForService(stringQueries, lookupServiceName, selectPreferredLanguage(prefLang1, prefLang2));
+    }
+
+    /**
+     * Perform a query provided a request parameter (if any) or return the service
+     * manifest if there is no parameter.
+     *
+     * @example: 1) curl http://localhost:10214/rest/reconciliation 2) curl
+     *           http://localhost:10214/rest/reconciliation?queries=%7B%22q0%22%3A%7B%22query%22%3A%22foo%22%7D%7D
+     */
+    @GET
+    @Operation(
+            summary = "Returns the Manifest of the reconciliation service or reconciliation multi response which contains reconciliation candidates grouped by query ids",
+            responses = {
+                    @ApiResponse(description = "The service manifest",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = LookupMultiResponse.class)
+                            )
+                    ),
+                    @ApiResponse(description = "Reconciliation multi response",
+                            content = @Content(mediaType = "application/json")
+                    )
             }
-        }
-        return this.lookupEntry(stringQueries);
+    )
+    @Produces({"application/javascript", MediaType.APPLICATION_JSON})
+    @JSONP(queryParam="callback")
+    @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.LOOKUP})
+    public Response lookupOrGetManifest(
+        @QueryParam("queries") String stringQueries,
+        @Nullable @HeaderParam("accept-language") String prefLang1,
+        @Nullable @QueryParam("preferredLanguage") String prefLang2
+    ) {
+        return this.lookupOrGetManifestForService(stringQueries, null, selectPreferredLanguage(prefLang1, prefLang2));
     }
 
     @GET
@@ -292,12 +422,12 @@ public class ReconciliationEndpoint {
         Repository repository = repositoryId == null ?
             this.repositoryManager.getDefault() :
             this.repositoryManager.getRepository(repositoryId);
-        String resourceLabel = LabelCache.resolveLabelWithFallback(
-                this.labelCache.getLabel(resourceIri, repository, this.getPreferredLanguage()),
+        String resourceLabel = LabelService.resolveLabelWithFallback(
+                this.labelCache.getLabel(resourceIri, repository, this.getPreferredLanguageForDescription()),
                 resourceIri
         );
         Literal resourceDescriptionLiteral = this.descriptionCache
-                .getDescription(resourceIri, repository, this.getPreferredLanguage()).orElse(null);
+                .getDescription(resourceIri, repository, this.getPreferredLanguageForDescription()).orElse(null);
 
         Map<String, Object> map = st.getDefaultPageLayoutTemplateParams();
         map.put("resourceIri", resourceIri.stringValue());
@@ -321,11 +451,62 @@ public class ReconciliationEndpoint {
         }
     }
 
-    protected String getPreferredLanguage() {
+    protected Response lookupByRawJson(
+        Map<String, LookupQuery> queries,
+        String lookupServiceName,
+        @Nullable String preferredLanguage
+    ) {
+        LookupMultiRequest multiRequest;
+        try {
+            multiRequest = this.prepareMultiRequest(queries, preferredLanguage);
+        } catch (IllegalArgumentException illegalArgumentException) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .type("text/plain").entity("Lookup preferredLanguage has wrong format.").build();
+        }
+        try {
+            return Response.ok(this.lookup(multiRequest, lookupServiceName).getResponses()).build();
+        } catch (TimeoutException timeoutException) {
+            return Response.status(Response.Status.REQUEST_TIMEOUT)
+                    .type("text/plain").entity("Failed to wait for lookup service results.").build();
+        } catch (Exception internalException) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type("text/plain").entity("Failed to process lookup service results. See log for details.").build();
+        }
+    }
+
+    protected Response lookupOrGetManifestForService(
+        String stringQueries,
+        @Nullable String lookupServiceName,
+        @Nullable String preferredLanguage
+    ) {
+        // if no queries are supplied it is a request for the service manifest
+        if (
+            stringQueries == null &&
+            SecurityUtils.getSubject().isPermitted(
+                new WildcardPermission(Permissions.RECONCILIATION_SERVICE.READ_MANIFEST)
+            )
+        ) {
+            try {
+                return Response.ok(this.getServiceManifest(lookupServiceName)).build();
+            } catch (EntityTypesFetchingException e) {
+                logger.warn(e.getMessage());
+                logger.debug("Details: ", e);
+                return Response.status(Response.Status.REQUEST_TIMEOUT)
+                        .type("text/plain").entity("Failed to fetch list of available entityTypes.").build();
+            }
+        }
+        return this.lookupEntry(stringQueries, lookupServiceName, preferredLanguage);
+    }
+
+    protected String getPreferredLanguageForDescription() {
         return config.getUiConfig().resolvePreferredLanguage(null);
     }
 
-    protected Response lookupEntry(String stringQueries) {
+    protected Response lookupEntry(
+        String stringQueries,
+        @Nullable String lookupServiceName,
+        @Nullable String preferredLanguage
+    ) {
         Map<String, LookupQuery> queries;
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -337,10 +518,15 @@ public class ReconciliationEndpoint {
             return Response.status(Response.Status.BAD_REQUEST)
                 .type("text/plain").entity(errorMessage).build();
         }
-
-        LookupMultiRequest multiRequest = this.prepareMultiRequest(queries);
+        LookupMultiRequest multiRequest;
         try {
-            return Response.ok(this.lookup(multiRequest).getResponses()).build();
+            multiRequest = this.prepareMultiRequest(queries, preferredLanguage);
+        } catch (IllegalArgumentException illegalArgumentException) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .type("text/plain").entity("Lookup preferredLanguage has wrong format.").build();
+        }
+        try {
+            return Response.ok(this.lookup(multiRequest, lookupServiceName).getResponses()).build();
         } catch (TimeoutException timeoutException) {
             return Response.status(Response.Status.REQUEST_TIMEOUT)
                 .type("text/plain").entity("Failed to wait for lookup service results.").build();
@@ -350,8 +536,8 @@ public class ReconciliationEndpoint {
         }
     }
 
-    protected LookupMultiResponse lookup(LookupMultiRequest multiRequest) throws TimeoutException {
-        LookupService service = getLookupService();
+    protected LookupMultiResponse lookup(LookupMultiRequest multiRequest, @Nullable String lookupServiceName) throws TimeoutException {
+        LookupService service = getLookupService(lookupServiceName);
         // TODO: share thread pool between requests
         ExecutorService executorService = createExecutorService(multiRequest.getRequests().size());
         Map<String, LookupResponse> responseMap = Maps.newConcurrentMap();
@@ -389,12 +575,17 @@ public class ReconciliationEndpoint {
                 throw new TimeoutException(exceptionMessage);
             }
         }
+
         return new LookupMultiResponse(responseMap);
     }
 
-    protected LookupService getLookupService() {
-        // TODO support specifying the name of the lookup service to use via additional but optional parameter
-        Optional<LookupService> lookupService = this.lookupServiceManager.getDefaultLookupService();
+    protected LookupService getLookupService(@Nullable String lookupServiceName) {
+        Optional<LookupService> lookupService;
+        if (Strings.isNullOrEmpty(lookupServiceName)) {
+            lookupService = this.lookupServiceManager.getDefaultExternalLookupService();
+        } else {
+            lookupService = this.lookupServiceManager.getLookupServiceByName(lookupServiceName);
+        }
         if (!lookupService.isPresent()) {
             throw new IllegalArgumentException("No default LookupService available");
         }
@@ -410,19 +601,31 @@ public class ReconciliationEndpoint {
     }
 
     // TODO: extend service manifest
-    private JsonNode getServiceManifest() throws EntityTypesFetchingException {
-        return createServiceManifest();
+    private JsonNode getServiceManifest(@Nullable String lookupServiceName) throws EntityTypesFetchingException {
+        return createServiceManifest(lookupServiceName);
     }
 
-    protected LookupMultiRequest prepareMultiRequest(Map<String, LookupQuery> request) {
+    protected LookupMultiRequest prepareMultiRequest(Map<String, LookupQuery> request, @Nullable String preferredLanguage) throws IllegalArgumentException {
         Map<String, LookupRequest> requests = new LinkedHashMap<>();
-        for (Map.Entry<String, LookupQuery> entry : request.entrySet()) {
-            requests.put(entry.getKey(), new LookupRequest(entry.getKey(), entry.getValue()));
+        LanguageHelper.LanguageValidationResults validation = LanguageHelper.validatePreferredLanguage(preferredLanguage);
+        if (!validation.isValid) {
+            throw new IllegalArgumentException(validation.errorMessage);
         }
+        for (Map.Entry<String, LookupQuery> entry : request.entrySet()) {
+            LookupQuery query = entry.getValue();
+            query.setPreferredLanguage(
+                LanguageHelper.mergePreferredLanguages(
+                    query.getPreferredLanguage(),
+                    preferredLanguage
+                )
+            );
+            requests.put(entry.getKey(), new LookupRequest(entry.getKey(), query));
+        }
+
         return new LookupMultiRequest(requests);
     }
 
-    protected JsonNode createServiceManifest() throws EntityTypesFetchingException {
+    protected JsonNode createServiceManifest(@Nullable String lookupServiceName) throws EntityTypesFetchingException {
         ObjectMapper mapper = new ObjectMapper();
         final ObjectNode serviceManifest = mapper.createObjectNode();
         serviceManifest.put("name", "mp-reconciliation");
@@ -430,7 +633,7 @@ public class ReconciliationEndpoint {
         serviceManifest.put("schemaSpace", "http://www.metaphacts.com/ontologies/platform/reconciliation-schema#");
 
         serviceManifest.putArray("defaultTypes").addAll(
-            mapper.convertValue(getLookupService().getAvailableEntityTypes(), ArrayNode.class)
+                mapper.convertValue(getLookupService(lookupServiceName).getAvailableEntityTypes(), ArrayNode.class)
         );
 
         try {
@@ -452,5 +655,17 @@ public class ReconciliationEndpoint {
         }
 
         return serviceManifest;
+    }
+
+    /**
+     * This function selects from one of two provided language strings where
+     * the {@param langFromHeader} will be selected if both are provided.
+     * @param langFromHeader nullable string
+     * @param langFromParam nullable string
+     * @return
+     */
+    protected String selectPreferredLanguage(@Nullable String langFromHeader, @Nullable String langFromParam) {
+        return !Strings.isNullOrEmpty(langFromParam) ? langFromParam :
+            !Strings.isNullOrEmpty(langFromHeader) ? langFromHeader : null;
     }
 }

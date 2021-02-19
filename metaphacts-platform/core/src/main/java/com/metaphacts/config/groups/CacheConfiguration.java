@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,9 +54,9 @@ import com.metaphacts.config.ConfigurationParameterHook;
 import com.metaphacts.config.InvalidConfigurationException;
 import com.metaphacts.data.rdf.container.LDPApiInternalRegistry;
 import com.metaphacts.lookup.impl.DefaultLookupServiceManager;
-import com.metaphacts.rest.endpoint.TemplateEndpoint;
 import com.metaphacts.services.fields.SimpleFieldDefinitionGeneratorChain;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.templates.PageViewConfigManager;
 
 public class CacheConfiguration extends ConfigurationGroupBase {
 
@@ -64,9 +64,9 @@ public class CacheConfiguration extends ConfigurationGroupBase {
 
     public final static String DESCRIPTION =
             "<p>The platform supports the configuration of certain caches, e.g. to define a maximum size or an automatic retention policy.</p>"
-            + "<p>Cache configurations can be provided using a "
-            + "<a href=\"https://guava.dev/releases/16.0/api/docs/com/google/common/cache/CacheBuilderSpec.html\" target=\"_BLANK\">Guava Cache Builder Spec</a> "
-            + "(e.g. <code>maximumSize=1000,expireAfterAccess=6h</code>).</p>";
+                    + "<p>Cache configurations can be provided using a "
+                    + "<a href=\"https://guava.dev/releases/16.0/api/docs/com/google/common/cache/CacheBuilderSpec.html\" target=\"_BLANK\">Guava Cache Builder Spec</a> "
+                    + "(e.g. <code>maximumSize=1000,expireAfterAccess=6h</code>).</p>";
 
     @Inject
     public CacheConfiguration(PlatformStorage platformStorage) throws InvalidConfigurationException {
@@ -79,7 +79,7 @@ public class CacheConfiguration extends ConfigurationGroupBase {
 
     @ConfigurationParameter(
             name = ResourceDescriptionCacheHolder.LABEL_CACHE_ID,
-            desc = "The cache configuration for the label cache. This cache keeps records for display values of resources.", 
+            desc = "The cache configuration for the label cache. This cache keeps records for display values of resources.",
             restartRequired = false)
     public String getLabelCacheSpec() {
         return getCacheSpec(ResourceDescriptionCacheHolder.LABEL_CACHE_ID, "maximumSize=100000,expireAfterAccess=6h");
@@ -94,13 +94,13 @@ public class CacheConfiguration extends ConfigurationGroupBase {
     }
 
     @ConfigurationParameter(
-            name = TemplateEndpoint.PageViewConfigCache.CACHE_ID, 
+            name = PageViewConfigManager.CACHE_ID,
             desc = "The cache configuration for the page view configuration cache. "
                     + "This cache keeps records for rendering a specific page (e.g. the "
                     + "resolved template identifiers).",
             restartRequired = false)
     public String getPageViewConfigCacheSpec() {
-        return getCacheSpec(TemplateEndpoint.PageViewConfigCache.CACHE_ID, "maximumSize=1000,expireAfterAccess=6h");
+        return getCacheSpec(PageViewConfigManager.CACHE_ID, "maximumSize=1000,expireAfterAccess=6h");
     }
 
     @ConfigurationParameter(
@@ -122,7 +122,7 @@ public class CacheConfiguration extends ConfigurationGroupBase {
     public String getFieldDefinitionCacheSpec() {
         return getCacheSpec(SimpleFieldDefinitionGeneratorChain.CACHE_ID, "maximumSize=1000,expireAfterAccess=30m");
     }
-    
+
     @ConfigurationParameter(
             name = DefaultLookupServiceManager.CACHE_ID,
             desc = "The cache configuration for LookupServices.",
@@ -138,7 +138,7 @@ public class CacheConfiguration extends ConfigurationGroupBase {
     public String getTemplateIncludeCacheSpec() {
         return getCacheSpec(TemplateIncludeCache.CACHE_ID, "maximumSize=1000,expireAfterAccess=30m");
     }
-    
+
     @ConfigurationParameter(
             name = "assetCacheMaxAge",
             desc = "Max age in seconds for caching control of assets. Default: 31536000.",
@@ -180,7 +180,7 @@ public class CacheConfiguration extends ConfigurationGroupBase {
     /**
      * Returns the Guava cache specification for the given cache spec known to this
      * configuration, or the fallback value otherwise.
-     * 
+     *
      * @param cacheId
      * @param fallbackValue
      * @return

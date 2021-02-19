@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,7 +59,6 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.FOAF;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
@@ -84,7 +83,7 @@ import com.github.sdorra.shiro.SubjectAware;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
@@ -135,7 +134,7 @@ public class MetaphactsHandlebarsTest  extends JerseyTest {
     public ExpectedException exception= ExpectedException.none();
 
     @Inject
-    private LabelCache labelCache;
+    private LabelService labelCache;
     
     @Inject
     private CacheManager cacheManager;
@@ -290,10 +289,9 @@ public class MetaphactsHandlebarsTest  extends JerseyTest {
                                 + FOAF.PERSON.stringValue() + ">']]")
                 .apply(context(vf.createIRI(thisIriString)));
 
-        String expected = "SELECT ?x (<" + FOAF.PERSON.stringValue() + "> AS ?type) \n"
-                + "WHERE { \n"
-                + "\t?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <" + FOAF.PERSON.stringValue() + "> . \n"
-                + " }";
+        String expected = "SELECT * WHERE {\n"
+                + "  ?x a <http://xmlns.com/foaf/0.1/Person> .\n"
+                + "}";
 
         Assert.assertEquals(expected, rendered);
         
@@ -333,10 +331,9 @@ public class MetaphactsHandlebarsTest  extends JerseyTest {
                         "[[getQueryString \"http://localhost:10214/container/queryTemplateContainer/test-query3\"]]")
                 .apply(context(vf.createIRI(thisIriString)));
 
-        String expected = "SELECT ?x (<" + FOAF.ORGANIZATION.stringValue() + "> AS ?type) \n"
-                + "WHERE { \n"
-                + "\t?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <" + FOAF.ORGANIZATION.stringValue() + "> . \n"
-                + " }";
+        String expected = "SELECT * WHERE {\n"
+                + "  ?x a <http://xmlns.com/foaf/0.1/Organization> .\n"
+                + "}";
 
         Assert.assertEquals(expected, rendered);
         
@@ -354,10 +351,9 @@ public class MetaphactsHandlebarsTest  extends JerseyTest {
                         "[[getQueryString \"http://localhost:10214/container/queryTemplateContainer/test-query\"]]")
                 .apply(context(vf.createIRI(thisIriString)));
 
-        String expected = "SELECT ?x ?type \n"
-                + "WHERE { \n"
-                + "\t?x <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type . \n"
-                + " }";
+        String expected = "SELECT * WHERE {\n"
+                + "  ?x a ?type .\n"
+                + "}";
 
         Assert.assertEquals(expected, rendered);
         
@@ -375,11 +371,10 @@ public class MetaphactsHandlebarsTest  extends JerseyTest {
                         "[[getQueryString \"http://localhost:10214/container/queryTemplateContainer/test-query-label\" label='\"mylabel\"']]")
                 .apply(context(vf.createIRI(thisIriString)));
 
-        String expected = "SELECT ?x (\"mylabel\"^^<" + XMLSchema.STRING + "> AS ?label) \n"
-                + "WHERE { \n" 
-                + "\t?x <http://www.w3.org/2000/01/rdf-schema#label> \"mylabel\"^^<" + XMLSchema.STRING + "> . \n" 
-                + " }";
-
+        String expected = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n"
+                + "  SELECT ?x (\"mylabel\" as ?label) WHERE {\n"
+                + "    ?x rdfs:label \"mylabel\" .\n"
+                + "}";
         Assert.assertEquals(expected, rendered);
         
     }    

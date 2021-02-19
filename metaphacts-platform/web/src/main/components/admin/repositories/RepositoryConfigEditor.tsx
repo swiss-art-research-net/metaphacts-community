@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,8 +39,8 @@
  */
 import * as React from 'react';
 import {
-  Button, Alert, DropdownButton, MenuItem,
-  FormControl, Form, FormGroup, HelpBlock
+  Button, Alert, DropdownButton, Dropdown,
+  FormControl, Form, FormGroup,
 } from 'react-bootstrap';
 import { createElement } from 'react';
 import { Cancellation } from 'platform/api/async';
@@ -76,13 +76,20 @@ interface State {
   readonly validateConfiguration?: boolean;
 }
 
-type ValidationState = 'warning' | 'error' | 'success';
-
 const SUCCESS_MESSAGE = 'The repository configuration was updated.';
+
+type DefaultProps = Required<Pick<Props,
+  'id' |
+  'repositoryTemplates' |
+  'showRestartPrompt' |
+  'preselectedTemplate' |
+  'reloadPageOnSuccess' |
+  'initializerMode'
+>>;
 
 export class RepositoryConfigEditor extends Component<Props, State> {
   private readonly cancellation = new Cancellation();
-  static defaultProps: Partial<Props> = {
+  static defaultProps: DefaultProps = {
     id: undefined,
     repositoryTemplates: [],
     showRestartPrompt: false,
@@ -143,7 +150,7 @@ export class RepositoryConfigEditor extends Component<Props, State> {
     const {showRestartPrompt, reloadPageOnSuccess, initializerMode} = this.props;
 
     if (loadingError) {
-        return <Alert bsStyle='info'> {loadingError} </Alert>;
+        return <Alert variant='info'> {loadingError} </Alert>;
     }
 
     if (this.isEditMode() && !source) {
@@ -162,20 +169,21 @@ export class RepositoryConfigEditor extends Component<Props, State> {
         </div>
         { !this. isEditMode() &&
           <div>
-          <Form horizontal>
-              <FormGroup className={styles.formGroup}
-                        validationState={this.getNewRepositoryIDValidation()}>
+          <Form>
+              <FormGroup className={styles.formGroup}>
                       <strong> Repository ID:</strong><br/>
                       <FormControl
                           className={styles.formGroup}
                           type='text'
                           value={this.state.newRepositoryID}
                           onChange={this.handleNewRepositoryID}
+                          isValid={this.isNewRepositoryIDValid()}
+                          isInvalid={!this.isNewRepositoryIDValid()}
                           placeholder='Please specify a new and unique repository id.'/>
-                {this.getNewRepositoryIDValidation() &&
-                  <HelpBlock>
+                {!this.isNewRepositoryIDValid() &&
+                <FormControl.Feedback type='invalid'>
                   Repository ID must be a unique, alphanumeric string of length &gt;= 5 characters.
-                  </HelpBlock>
+                </FormControl.Feedback>
                 }
               </FormGroup>
           </Form>
@@ -205,27 +213,26 @@ export class RepositoryConfigEditor extends Component<Props, State> {
                 Validate configuration
               </label>
             </div>
-            <Button bsStyle='primary'
+            <Button variant='primary'
               className={styles.ActionButton}
-              disabled={(!this.isEditMode() &&
-                            this.getNewRepositoryIDValidation() !== 'success')}
+              disabled={(!this.isEditMode() && !this.isNewRepositoryIDValid())}
               onClick={this.onSubmitConfig}>
                 {this.isEditMode() ? 'Update Config' : 'Create Config' }
             </Button>
             { this.isEditMode() && !initializerMode && <Button
-              bsStyle='danger'
+              variant='danger'
               className={styles.ActionButton}
               onClick={() => this.onDeleteRepository(this.props.id)}
               >Delete</Button>
             }
             {responseError &&
-                <Alert bsStyle='danger'> {responseError} </Alert>
+                <Alert variant='danger'> {responseError} </Alert>
             }
             { reloadPageOnSuccess && submittedSuccessfully &&
                 window.location.reload()
             }
             { showRestartPrompt && submittedSuccessfully &&
-                <Alert bsStyle='success'> {SUCCESS_MESSAGE} </Alert>
+                <Alert variant='success'> {SUCCESS_MESSAGE} </Alert>
             }
         </div>
       </div>
@@ -239,16 +246,16 @@ export class RepositoryConfigEditor extends Component<Props, State> {
   }
 
 
-  getNewRepositoryIDValidation = (): ValidationState => {
+  isNewRepositoryIDValid = (): boolean => {
     if (this.isEditMode()) {
       return undefined;
     }
     const id = this.state.newRepositoryID;
     const reg = new RegExp('');
     if (!id || id.length < 5 || !reg.test(id)) {
-      return 'warning';
+      return false;
     }
-    return 'success';
+    return true;
   }
 
   onSubmitConfig = () => {
@@ -282,11 +289,11 @@ export class RepositoryConfigEditor extends Component<Props, State> {
         return <Spinner />;
     }
     const items = repositoryTemplates.map( id => {
-        return <MenuItem eventKey={id} key={id}>{id}</MenuItem>;
+        return <Dropdown.Item eventKey={id} key={id}>{id}</Dropdown.Item>;
     });
     return (
         <DropdownButton
-            bsStyle='default'
+            variant='secondary'
             title='From template ....'
             onSelect={this.onTemplateSelected}
             id='template-dropdown'>

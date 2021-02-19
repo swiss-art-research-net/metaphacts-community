@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,10 +38,8 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as React from 'react';
-import { FormEvent, CSSProperties } from 'react';
 import * as _ from 'lodash';
-import { ProgressBar, FormControl, Button, Panel, Checkbox, Tab, Tabs } from 'react-bootstrap';
-
+import { ProgressBar, FormControl, Button, Card, FormCheck, Tab, Tabs, FormGroup } from 'react-bootstrap';
 import * as moment from 'moment';
 import * as Kefir from 'kefir';
 import * as SparqlJs from 'sparqljs';
@@ -69,6 +67,83 @@ import { RdfUploadExtension } from './extensions';
 
 import './RdfUpload.scss';
 
+// TODO unify across forms etc
+export type PostAction = 'reload' | 'redirect' | string;
+
+interface RdfUploadConfig {
+  /**
+   * Optional IRI string (without brackets) of the target named graph to load the data into.
+   *
+   * By default this is undefined and supposed to be either provided by the user at runtime or
+   * generated automatically.
+   *
+   * @default undefined
+   */
+  targetGraph?: string;
+  /**
+   * Whether the NamedGraphs from the source serialization should be preserved
+   * (only applicable to .trig and .nq files).
+   */
+  keepSourceGraphs?: boolean;
+  /**
+   * A handlebars template string to shown as placeholder in the drop area.
+   *
+   * As default context object it will get an object with elements from
+   * the current state (`{targetGraph: string}`).
+   */
+  placeholderTemplate?: string;
+  /**
+   * Whether advanced options (specifying target named graph, keep source named graphs)
+   * should be displayed to the user.
+   *
+   * @default true
+   */
+  showAdvancedOptions?: boolean;
+  /**
+   * Whether the option/input to load data by URL should be displayed to the user.
+   *
+   * @default true
+   */
+  showLoadByUrl: boolean;
+  /**
+   * Accepted file types. If set, the field will only allow to drop or select the
+   * specified file types.
+   *
+   * By default any file type is allowed.
+   *
+   * Keep in mind that mime type determination is not reliable across
+   * platforms. CSV files, for example, are reported as text/plain under macOS but as
+   * application/vnd.ms-excel under Windows. In some cases there might not be a
+   * mime type set at all. Instead of specifying the mime type, you can also specify file endings.
+   *
+   * See https://github.com/okonet/attr-accept for more information.
+   *
+   * **Example**:
+   * ```
+   * accept='application/rdf+xml'
+   * accept='["application/rdf+xml", ".ttl"]'
+   * ```
+   *
+   * @default undefined
+   */
+  accept?: string | string[];
+  /**
+   * Action to perform after the data has been uploaded successfully.
+   *
+   * By default the page will refresh. Other options:
+   * - `redirect`: will navigate to `Assets:NamedGraph?graph=<iri of the generated graph>`;
+   * - `{any iri string}`: will navigate to the resource IRI;
+   *
+   * @default "refresh"
+   */
+  postAction: PostAction;
+  className?: string;
+  style?: React.CSSProperties;
+  contentType?: string;
+}
+
+export type RdfUploadProps = RdfUploadConfig;
+
 interface State {
   messages?: ReadonlyArray<AlertConfig>;
   progress?: number;
@@ -80,92 +155,35 @@ interface State {
   repositoryType?: RepositoryType;
 }
 
-interface PlaceholderTemplateData { targetGraph?:string }
-
-// TODO unify across forms etc
-export type PostAction = 'reload' | 'redirect' | string;
-
-export interface Props {
-  /**
-   * Optional IRI string (without brackets) of the target named graph to load the data into. 
-   * By default this is undefined and supposed to be either provided by the user at runtime or generated automatically.
-   * @default undefined
-   */
+interface RdfUploadPlaceholderTemplateData {
   targetGraph?: string;
-  /**
-   * Whether the NamedGraphs from the source serialization should be preserved (only applicable to .trig and .nq files)
-   */
-  keepSourceGraphs?: boolean;
-  /**
-   * A handlebars template string to shown as placeholder in the drop area.
-   * As default context object it will get an object with elements from the current state ( {targetGraph: string} )
-   */
-  placeholderTemplate?: string;
-  /**
-   * Whether advanced options (specifying target named graph, keep source named graphs) 
-   * should be displayed to the user.
-   * @default true
-   */
-  showAdvancedOptions?: boolean;
-  /**
-   * Whether the option/input to load data by URL should be displayed to the user.
-   * @default true
-   */
-  showLoadByUrl: boolean;
-  /**
-   * Accepted file types. If set, the field will only allow to drop or select the 
-   * specified file types.
-   * See https://github.com/okonet/attr-accept for more
-   * information. Keep in mind that mime type determination is not reliable across 
-   * platforms. CSV files, for example, are reported as text/plain under macOS but as 
-   * application/vnd.ms-excel under Windows. In some cases there might not be a 
-   * mime type set at all. Instead of specifying the mime type, you can also specify file endings.
-   * Can be either a string or an array of strings.
-   * @default undefined - any file type is allowed
-   * @example 
-   *  accept='application/rdf+xml'
-   *  accept='["application/rdf+xml" ".ttl"]'
-   */
-  accept?: string | string[] ;
-  /**
-   * Action to perform after the data has been uploaded successfully. 
-   * By default the page will refresh. Other options:
-   * - 'redirect': will navigate to Assets:NamedGraph?graph=<iri of the generated graph>
-   * - 'iri string': will navigate to the resource IRI
-   * @default refresh
-   */
-  postAction: PostAction,
-  className?: string;
-  style?: CSSProperties;
-  contentType?: string;
 }
 
 const CLASS_NAME = 'RdfUpload';
 const tabClass = `${CLASS_NAME}__tab`;
 const noteClass = `${CLASS_NAME}__note`;
 
+type DefaultProps = Required<Pick<RdfUploadProps,
+  'showAdvancedOptions' | 'showLoadByUrl' | 'keepSourceGraphs' | 'placeholderTemplate'
+>>;
 
-/**
- * @example
- * <mp-rdf-upload></mp-rdf-upload>
- */
-export class RdfUpload extends Component<Props, State> {
+export class RdfUpload extends Component<RdfUploadProps, State> {
   private readonly cancellation = new Cancellation();
 
-  static defaultProps: Partial<Props> = {
+  static defaultProps: DefaultProps = {
     showAdvancedOptions: true,
     showLoadByUrl: true,
     keepSourceGraphs: false,
     placeholderTemplate: `
-      <div><i style="color:#d4d4d4;" class="fa fa-cloud-upload fa-4x"></i><br>  
+      <div><i style="color:#d4d4d4;" class="fa fa-cloud-upload fa-4x"></i><br>
         <span style="font-size:150%">Drag & Drop your RDF file(s) here</span><br>
         <span style="font-size:75%">OR</span><br>
         <button type="button" style="width:100px;" class="btn btn-light">Browse Files</button><br>
       </div>
     `,
-  }
+  };
 
-  constructor(props: Props, context: any) {
+  constructor(props: RdfUploadProps, context: any) {
     super(props, context);
     this.state = {
       messages: [],
@@ -253,10 +271,10 @@ export class RdfUpload extends Component<Props, State> {
     });
   }
 
-  private onChangeTargetGraph = (e: FormEvent<ReactBootstrap.FormControl>) => {
+  private onChangeTargetGraph = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    const val = (e.target as any).value.trim();
+    const val = e.target.value.trim();
     if (!_.isEmpty(val)) {
       this.setState({ targetGraph: val });
     } else {
@@ -264,8 +282,8 @@ export class RdfUpload extends Component<Props, State> {
     }
   }
 
-  private onChangeKeepSourceGraphs = (e: FormEvent<ReactBootstrap.FormControl>) => {
-    this.setState({ keepSourceGraphs: (e.target as any).checked });
+  private onChangeKeepSourceGraphs = (e: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ keepSourceGraphs: e.target.checked });
   }
 
   private postAction = () => {
@@ -288,7 +306,7 @@ export class RdfUpload extends Component<Props, State> {
 
     const messages = this.state.messages.map((config, index) => <Alert key={index} {...config} />);
     const progressBar = this.state.progress ? (
-      <ProgressBar active min={0} max={100}
+      <ProgressBar animated min={0} max={100}
         now={this.state.progress} label={this.state.progressText ?? 'Uploading Files'}
       />
     ) : null;
@@ -297,15 +315,15 @@ export class RdfUpload extends Component<Props, State> {
 
     // extracting parts of the state
     const {targetGraph} = this.state;
-    const templateOptions: PlaceholderTemplateData = {targetGraph};
-    
+    const templateOptions: RdfUploadPlaceholderTemplateData = {targetGraph};
+
     const uploadTabContent = (
       <>
         {progressBar}
-        <Dropzone 
-          onDropAccepted={this.onDrop} 
-          accept={this.props.accept} 
-          onDropRejected={this.onRejected} 
+        <Dropzone
+          onDropAccepted={this.onDrop}
+          accept={this.props.accept}
+          onDropRejected={this.onRejected}
           className={`${CLASS_NAME}__rdf-dropzone-content`} >
             <TemplateItem template={{ source: this.props.placeholderTemplate, options: templateOptions} } />
         </Dropzone>
@@ -328,25 +346,25 @@ export class RdfUpload extends Component<Props, State> {
         {showAdvancedOptions ? this.renderAdvancedOptions() : null}
         <Tabs id='rdf-upload-tabs' unmountOnExit={true}>
           {this.renderTabExtensions()}
-          <Tab eventKey={1} className={tabClass} title='File Upload' disabled={isInProgress}>
+          <Tab eventKey='1' className={tabClass} title='File Upload' disabled={isInProgress}>
             {uploadTabContent}
           </Tab>
           {/* load by URL doesn't make any sense for Neptune repository */}
           {this.state.repositoryType !== NeptuneRepositoryType ?
-            <Tab eventKey={2} className={tabClass} title='Load by HTTP/FTP/File URL'
+            <Tab eventKey='2' className={tabClass} title='Load by HTTP/FTP/File URL'
                 disabled={isInProgress}>
               {progressBar}
               <FormControl type='text' value={this.state.remoteFileUrl || ''}
                 placeholder='Please enter publicly accessible HTTP/FTP URL'
                 onChange={e => this.setState({
-                  remoteFileUrl: (e.currentTarget as any as HTMLInputElement).value,
+                  remoteFileUrl: e.currentTarget.value,
                 })}
               />
               <div className={noteClass}>
                 The database must support the SPARQL LOAD command and must allow outgoing
                 network connections to the publicly accessible HTTP/FTP URLs or must have access to the File URL respectively (files must be available in the database file system).
               </div>
-              <Button bsStyle='primary' className={`${CLASS_NAME}__load-button`}
+              <Button variant='primary' className={`${CLASS_NAME}__load-button`}
                 disabled={!this.state.remoteFileUrl || isInProgress}
                 onClick={this.onClickLoadByUrl}>
                 Load by URL
@@ -372,7 +390,7 @@ export class RdfUpload extends Component<Props, State> {
       const tab = tabs[tabKey]({repositoryType, targetGraph});
       if (tab) {
         return (
-          <Tab eventKey={3 + index} className={tabClass} title={tab.title}>
+          <Tab eventKey={String(3 + index)} className={tabClass} title={tab.title}>
             {tab.content}
           </Tab>
         );
@@ -383,12 +401,12 @@ export class RdfUpload extends Component<Props, State> {
   }
 
   private renderAdvancedOptions() {
-    
+
     const {showOptions, keepSourceGraphs} = this.state ;
     const clName = `fa fa-angle-${showOptions? 'up' : 'down'}`
     return (
       <>
-        <Panel>
+        <Card body className='mb-3'>
           <h4>
             <a onClick={() => this.setState({ showOptions: !showOptions })}>
               <i className={clName} style={{ marginRight: '10px' }}></i>
@@ -397,18 +415,19 @@ export class RdfUpload extends Component<Props, State> {
           </h4>
           {showOptions ?
             <div>
-              <FormControl type='text' label='Target NamedGraph'
+              <FormControl type='text'
                 placeholder='URI of the target NamedGraph. Will be generated automatically if empty.'
                 disabled={this.state.keepSourceGraphs}
                 onChange={this.onChangeTargetGraph}
               />
-              <Checkbox label='Keep source NamedGraphs'
-                defaultChecked={keepSourceGraphs}
-                onChange={this.onChangeKeepSourceGraphs}>
-                Keep source NamedGraphs (.trig and .nq files)
-              </Checkbox>
+              <FormGroup controlId='keepsourcegraph'>
+                <FormCheck type='checkbox' label='Keep source NamedGraphs (.trig and .nq files)'
+                  defaultChecked={keepSourceGraphs}
+                  onChange={this.onChangeKeepSourceGraphs}>
+                </FormCheck>
+              </FormGroup>
             </div> : null}
-        </Panel>
+        </Card>
       </>
     );
   }

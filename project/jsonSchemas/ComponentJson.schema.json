@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Defines schema for `components.json` files in metaphactory platform",
+  "type": "object",
+  "additionalProperties": {
+    "anyOf": [
+      {
+        "type": "string",
+        "description": "Path to the component module."
+      },
+      {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the component module."
+          },
+          "deferAttributes": {
+            "type": "object",
+            "description": "Defines which attributes should be deferred when resolving template syntax.",
+            "additionalProperties": {
+              "type": "boolean",
+              "enum": [true]
+            }
+          },
+          "deferJsonProperties": {
+            "type": "object",
+            "description": "Defines which values from JSON properties inside attributes should be deferred when resolving template syntax.",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "boolean",
+                "enum": [true]
+              }
+            }
+          },
+          "propsSchema": {
+            "type": "string",
+            "description": "TypeScript interface name to generate and import schema for the component."
+          },
+          "helpResource": {
+            "type": "string",
+            "description": "Documentation resource IRI to link for the component."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    ]
+  }
+}

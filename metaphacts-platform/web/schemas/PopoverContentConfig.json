@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "properties": {
+        "className": {
+            "description": "Custom CSS class for the wrapping `<div>` element.",
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Custom styles for the wrapping `<div>` element."
+        }
+    },
+    "propertyOrder": [
+        "className",
+        "style"
+    ],
+    "type": "object"
+}
+

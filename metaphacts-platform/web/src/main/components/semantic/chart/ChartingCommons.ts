@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,6 +69,11 @@ export interface DataSetMappings {
   category?: string;
   /** Same as y for two-dimensional data. */
   value?: string;
+  /**
+   * Default value if there's no data point. Can also be `null`.
+   * @default 0
+   */
+  defaultValue?: number | null;
   /** Color of specific data point. */
   color?: string;
 }
@@ -144,13 +149,25 @@ export interface SemanticChartConfig {
   disableTooltips?: boolean;
 
   /**
-   * <semantic-link iri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.
+   * Template which is applied when query returns no results.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   noResultTemplate?: string;
 
   /**
-   * <semantic-link iri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied to render tooltip for chart points; the following properies are provided:
+   * Template which is applied to render tooltip for chart points.
+   *
+   * The following properties are provided:
    * <mp-documentation type="ChartTooltipData"></mp-documentation>
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   tooltipTemplate?: string;
 }

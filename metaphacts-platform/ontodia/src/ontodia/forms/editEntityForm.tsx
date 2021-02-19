@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,27 +39,31 @@
  */
 import * as React from 'react';
 
-import { DiagramView } from '../diagram/view';
 import { ElementModel, PropertyTypeIri, Property, ElementIri } from '../data/model';
-import { Rdf } from '../data/rdf';
+
+import { PaperWidgetProps } from '../diagram/paperArea';
+
+import { WorkspaceContextTypes, WorkspaceContextWrapper } from '../workspace/workspaceContext';
 
 const CLASS_NAME = 'ontodia-edit-form';
 
-export interface EditEntityFormProps {
-    view: DiagramView;
+export interface EditEntityFormProps extends PaperWidgetProps {
     entity: ElementModel;
-    onApply: (entity: ElementModel) => void;
-    onCancel: () => void;
+    onFinish: () => void;
 }
 
 interface State {
     elementModel: ElementModel;
 }
 
+type RequiredProps = EditEntityFormProps & Required<PaperWidgetProps>;
+
 export class EditEntityForm extends React.Component<EditEntityFormProps, State> {
+    static contextTypes = WorkspaceContextTypes;
+    declare readonly context: WorkspaceContextWrapper;
+
     constructor(props: EditEntityFormProps) {
         super(props);
-
         this.state = {elementModel: props.entity};
     }
 
@@ -70,7 +74,7 @@ export class EditEntityForm extends React.Component<EditEntityFormProps, State> 
     }
 
     private renderProperty = (key: PropertyTypeIri, property: Property) => {
-        const {view} = this.props;
+        const {view} = this.props as RequiredProps;
         const richProperty = view.model.getProperty(key);
         const label = view.formatLabel(richProperty ? richProperty.label : [], key);
 
@@ -102,7 +106,7 @@ export class EditEntityForm extends React.Component<EditEntityFormProps, State> 
     }
 
     private renderType() {
-        const {view} = this.props;
+        const {view} = this.props as RequiredProps;
         const {elementModel} = this.state;
         const label = view.getElementTypeString(elementModel);
         return (
@@ -141,7 +145,8 @@ export class EditEntityForm extends React.Component<EditEntityFormProps, State> 
     }
 
     private onChangeLabel = (e: React.FormEvent<HTMLInputElement>) => {
-        const {factory} = this.props.view.model;
+        const {view} = this.props as RequiredProps;
+        const {factory} = view.model;
         const target = (e.target as HTMLInputElement);
 
         const labels = target.value.length > 0 ? [factory.literal(target.value)] : [];
@@ -153,7 +158,7 @@ export class EditEntityForm extends React.Component<EditEntityFormProps, State> 
     }
 
     private renderLabel() {
-        const {view} = this.props;
+        const {view} = this.props as RequiredProps;
         const label = view.selectLabel(this.state.elementModel.label.values);
         const text = label ? label.value : '';
         return (
@@ -181,15 +186,27 @@ export class EditEntityForm extends React.Component<EditEntityFormProps, State> 
                 </div>
                 <div className={`${CLASS_NAME}__controls`}>
                     <button className={`ontodia-btn ontodia-btn-success ${CLASS_NAME}__apply-button`}
-                        onClick={() => this.props.onApply(this.state.elementModel)}>
+                        onClick={this.onApply}>
                         Apply
                     </button>
                     <button className='ontodia-btn ontodia-btn-danger'
-                        onClick={this.props.onCancel}>
+                        onClick={this.onCancel}>
                         Cancel
                     </button>
                 </div>
             </div>
         );
+    }
+
+    private onApply = () => {
+        const {editor} = this.context.ontodiaWorkspace;
+        const {entity, onFinish} = this.props;
+        editor.changeEntityData(entity.id, this.state.elementModel);
+        onFinish();
+    }
+
+    private onCancel = () => {
+        const {onFinish} = this.props;
+        onFinish();
     }
 }

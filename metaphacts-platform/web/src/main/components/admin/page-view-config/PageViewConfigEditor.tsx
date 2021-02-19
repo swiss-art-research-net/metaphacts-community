@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -147,14 +147,14 @@ export class PageViewConfigStorageEditor extends React.Component<PageViewConfigS
             </div>
 
             <div className={styles.controls}>
-                {this.props.editable && !this.state.editing ? <button className='btn btn-default'
+                {this.props.editable && !this.state.editing ? <button className='btn btn-secondary'
                     onClick={() => this.setState({editing: true})}>
 
                     Edit
                     </button> : null}
                 {this.state.editing ? <div>
                     <button className='btn btn-primary' onClick={() => this.save()}>Save</button>
-                    <button className='btn btn-default' onClick={() => this.cancel()}>
+                    <button className='btn btn-secondary' onClick={() => this.cancel()}>
                         Cancel
                     </button>
                 </div> : null}

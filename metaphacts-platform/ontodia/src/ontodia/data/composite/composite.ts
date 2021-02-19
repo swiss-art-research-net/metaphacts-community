@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,10 +37,10 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { DataProvider, LinkElementsParams, FilterParams } from '../provider';
+import { DataProvider, FilterParams } from '../provider';
 import {
     Dictionary, ClassModel, LinkTypeModel, ElementModel, LinkModel, LinkCount, PropertyModel,
-    ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri,
+    LinkedElement, ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri,
 } from '../model';
 import { Rdf } from '../rdf';
 import {
@@ -53,7 +53,6 @@ import {
     mergeElementInfo,
     mergeLinksInfo,
     mergeLinkTypesOf,
-    mergeLinkElements,
     mergeFilter,
 } from './mergeUtils';
 
@@ -198,26 +197,12 @@ export class CompositeDataProvider implements DataProvider {
         }
     }
 
-    linkElements(params: LinkElementsParams): Promise<Dictionary<ElementModel>> {
-        if (this.mergeMode === 'fetchAll') {
-            return this.fetchSequentially('linkElements', mergeLinkElements, params);
-        } else {
-            return this.queueProcessResults((previousResult: Dictionary<ElementModel>, dp: DPDefinition) => {
-                if (!previousResult || previousResult && Object.keys(previousResult).length === 0) {
-                    return dp.dataProvider.linkElements(params);
-                } else {
-                    return undefined;
-                }
-            }).then(response  => mergeLinkElements(response, this.factory));
-        }
-    }
-
-    filter(params: FilterParams): Promise<Dictionary<ElementModel>> {
+    filter(params: FilterParams): Promise<LinkedElement[]> {
         if (this.mergeMode === 'fetchAll') {
             return this.fetchSequentially('filter', mergeFilter, params);
         } else {
-            return this.queueProcessResults((previousResult: Dictionary<ElementModel>, dp: DPDefinition) => {
-                if (!previousResult || previousResult && Object.keys(previousResult).length === 0) {
+            return this.queueProcessResults((previousResult: LinkedElement[], dp: DPDefinition) => {
+                if (!previousResult || previousResult && previousResult.length === 0) {
                     return dp.dataProvider.filter(params);
                 } else {
                     return undefined;

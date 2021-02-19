@@ -1,0 +1,218 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page documentation">
+  <div class='page__body'>
+
+    <h1>Field Visualization Component </h1>
+    <div class="documentation__intro">
+      <div class="documentation__intro__description">
+        The <code>mp-field-visualization</code> component is the powerful and flexible component which provides the ability to render data described using fields. This component takes the same approach for visualization as the <semantic-link iri='[[resolvePrefix "Help:SemanticQuery"]]'>Query Component</semantic-link> with the only difference that it uses field defenitions instead of SELECT/CONSTRUCT queries. 
+        <p>
+          Compared to the other visualization components such as tables or trees, the <code>mp-field-visualization</code> component is much simpler in its basic configuration. 
+          However, at the same time it requires advanced knowledge about the field definitions, SPARQL SELECT result tuples as well as handlebars.js since it leaves the task of iterating and formatting the result tuples completely to the template configuration.
+        </p>
+        <p>
+          The component also provides the ability to render data stored in the field configurations, so along with values you can render the field's metadata (e.g. the patterns or the label).
+        </p>
+      </div>
+      <div class="documentation__intro__demo" id='demo1'>
+        <mp-field-visualization
+          subject='http://example.org/alice#me'
+          fields='[{
+            "id": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            "label": "Type",
+            "selectPattern": "SELECT ?value WHERE { BIND (<http://example.com/Person> as ?value) }",
+            "xsdDatatype": "http://www.w3.org/2001/XMLSchema#anyURI"
+          }, {
+            "id": "http://www.w3.org/2000/01/rdf-schema#label",
+            "iri": "http://www.w3.org/2000/01/rdf-schema#label",
+            "label": "Label",
+            "selectPattern": "SELECT ?value WHERE { BIND (\"Alice\" as ?value) }",
+            "xsdDatatype": "http://www.w3.org/2001/XMLSchema#string"
+          }]'
+          template='{{> template}}'>
+          <template id='template'>
+            <b>This data visualisation is generated using field defenitions:</b>
+            <div>
+              {{#each fields as |field|}}
+                {{#if field.values}}
+                  Field: <i>{{field.iri}}</i><br>
+                  Values:
+                  <ol>
+                    {{#each field.values as |value|}}
+                      <li>
+                        {{value.value.value}}              
+                      </li>
+                    {{/each}}
+                  </ol>
+                {{/if}}
+              {{/each}}
+            </div>
+          </template>
+        </mp-field-visualization>       
+      </div>
+    </div>
+    <div style="clear:both;"></div>
+
+    <h2>Configuration</h2>
+    <mp-documentation type="FieldBasedVisualizationConfig"></mp-documentation>
+
+    <h2>Examples</h2>
+
+    <p>The following examples make use of our sample dataset. To visualize the demo, please download the <a href="/metaphacts/samples/sample.ttl">sample data</a> (simple right click and save as) and load it through the
+    <semantic-link uri="[[resolvePrefix "Admin:DataImportExport"]]">data import and export</semantic-link> administration page. </p>
+
+    <div>
+      [[#if (ask "ASK {  <http://example.org/alice#me> a <http://xmlns.com/foaf/0.1/Person>  }") ]] 
+      <span style="color:green;font-weight: bold; ">Check: It seems that you have already correctly loaded the sample data.</span>
+      [[else]]
+      <span style="color:red;font-weight: bold; ">Check: It seems that you have not yet loaded the sample data.</span>
+      [[/if]]
+    </div>
+    <br/>
+    
+    <h3>Example 1</h3>
+    <div>
+      <mp-code-example show-code-by-default=true>
+      [[> example1]]
+      </mp-code-example>
+    </div>
+    
+    <h3>Example 2</h3>
+    <p>This example demonstrates how metadata of a field can be visualized in addition to the raw values.</p>
+    <div>
+      <mp-code-example show-code-by-default=true>
+      [[> example2]]
+      </mp-code-example>
+    </div>
+
+    <h3>Example 3</h3>
+    
+    <p>In addition to inline field definitions, it is possible to retrieve them from the backend using the corresponding backend helper. See  <semantic-link iri='[[resolvePrefix "Help:SemanticForm"]]'>here</semantic-link> for details.</p>
+    <div>
+      <mp-code-block data-mode="text/html" show-code-by-default=true>
+<mp-field-visualization
+subject='http://example.org/alice#me'
+fields='&#091;&#091;fieldDefinitions
+  type="http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+  label="http://www.w3.org/2000/01/rdf-schema#label"
+&#093;&#093;'
+template='{{> template}}'>
+<template id='template'>
+  <div>
+    {{#each fields as |field|}}
+      {{#if field.values}}
+        Field: <i>{{field.iri}}</i><br>
+        Values:
+        <ol>
+          {{#each field.values as |value|}}
+            <li>
+              {{value.value.value}}              
+            </li>
+          {{/each}}
+        </ol>
+      {{/if}}
+    {{/each}}
+  </div>
+</template>
+</mp-field-visualization>
+      </<mp-code-block>
+    </div>
+
+  </div>
+</div>
+
+[[#*inline "example1"]]
+<mp-field-visualization
+  subject='http://example.org/alice#me'
+  fields='[{
+    "id": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "label": "Type",
+    "selectPattern": "SELECT ?value WHERE { ?subject a ?value }",
+    "xsdDatatype": "http://www.w3.org/2001/XMLSchema#anyURI"
+  }, {
+    "id": "http://www.w3.org/2000/01/rdf-schema#label",
+    "iri": "http://www.w3.org/2000/01/rdf-schema#label",
+    "label": "Label",
+    "selectPattern": "SELECT ?value WHERE { ?subject <http://www.w3.org/2000/01/rdf-schema#label> ?value }",
+    "xsdDatatype": "http://www.w3.org/2001/XMLSchema#string"
+  }]'
+  template='{{> template}}'>
+  <template id='template'>
+    <div>
+      {{#each fields as |field|}}
+        {{#if field.values}}
+          Field: <i>{{field.iri}}</i><br>
+          Values:
+          <ol>
+            {{#each field.values as |value|}}
+              <li>
+                {{value.value.value}}              
+              </li>
+            {{/each}}
+          </ol>
+        {{/if}}
+      {{/each}}
+    </div>
+  </template>
+</mp-field-visualization>
+[[/inline]]
+
+[[#*inline "example2"]]
+<mp-field-visualization
+  subject='http://example.org/alice#me'
+  fields='[{
+    "id": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "label": "Type",
+    "selectPattern": "SELECT ?value WHERE { ?subject a ?value }",
+    "xsdDatatype": "http://www.w3.org/2001/XMLSchema#anyURI"
+  }, {
+    "id": "http://www.w3.org/2000/01/rdf-schema#label",
+    "iri": "http://www.w3.org/2000/01/rdf-schema#label",
+    "label": "Label",
+    "selectPattern": "SELECT ?value WHERE { ?subject <http://www.w3.org/2000/01/rdf-schema#label> ?value }",
+    "xsdDatatype": "http://www.w3.org/2001/XMLSchema#string"
+  }]'
+  template='{{> template}}'>
+  <template id='template'>
+    Used fields:
+    <ol>
+      {{#each fields as |field|}}
+      <li>
+        <i>{{field.iri}}</i><br>
+        <div>
+          <span><b>id:</b></label>
+          <span>{{field.id}}</span>
+        </div>
+
+        <div>
+          <span><b>Label:</b></label>
+          <span>{{field.label}}</span>
+        </div>
+        
+        <div>
+          <span><b>XSD Datatype:</b></label>
+          <span>{{field.xsdDatatype}}</span>
+        </div>
+
+        {{#if field.values}}
+          <div>
+            <span><b>Values:</b></label>
+            <ol>
+              {{#each field.values as |value|}}
+                <li>
+                  {{value.value.value}}              
+                </li>
+              {{/each}}
+            </ol>
+          </div>
+        {{/if}}
+      </li>
+      {{/each}}
+    </ol>
+  </template>
+</mp-field-visualization>  
+[[/inline]]

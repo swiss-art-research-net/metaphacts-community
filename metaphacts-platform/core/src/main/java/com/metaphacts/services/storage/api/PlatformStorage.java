@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,10 +39,11 @@
  */
 package com.metaphacts.services.storage.api;
 
-import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * Represents a stack of registered {@link ObjectStorage} instances in fixed override order.
@@ -95,6 +96,24 @@ public interface PlatformStorage {
      * @return storage status list in override order, e.g. [base, override1, override2, ...]
      */
     List<StorageStatus> getStorageStatusFor(StoragePath prefix);
+
+    /**
+     * Refresh the dynamic storages at runtime.
+     * 
+     * <p>
+     * This method removes all currently known dynamic storages, and re-initializes
+     * them by inspecting <i>storage.prop</i> configurations of static storages.
+     * </p>
+     * 
+     * <p>
+     * Note explicitly that this method does not re-initialize modules that rely on
+     * files from storages (e.g. security configuration). Certain things may only be
+     * applied after an explicit restart of the platform.</p
+     * 
+     * @throws StorageConfigException
+     * @throws StorageException
+     */
+    void refreshDynamicStorages() throws StorageConfigException, StorageException;
 
     class FindResult {
         private final String appId;

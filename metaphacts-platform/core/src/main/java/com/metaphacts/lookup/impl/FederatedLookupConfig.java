@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.eclipse.rdf4j.model.BNode;
+import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.util.Models;
@@ -55,21 +57,33 @@ import com.metaphacts.lookup.spi.LookupServiceConfigException;
  * @author Wolfgang Schell <ws@metaphacts.com>
  */
 public class FederatedLookupConfig extends CommonLookupConfig {
-    private List<String> serviceMembers;
+    private List<LookupServiceMember> serviceMembers;
 
     public FederatedLookupConfig() {
         super(FederatedLookupServiceFactory.LOOKUP_TYPE);
     }
     
-    public List<String> getServiceMembers() {
+    public List<LookupServiceMember> getServiceMembers() {
         return serviceMembers;
     }
     
-    public void setServiceMembers(List<String> serviceMembers) {
+    public void setServiceMembers(List<LookupServiceMember> serviceMembers) {
         this.serviceMembers = serviceMembers;
     }
     
+    protected void parseServiceMember(Resource serviceMember, Model model) {
+        Optional<Literal> serviceMemberName = Models.objectLiteral(model.filter(serviceMember, PROPERTY_NAME, null));
+        if (serviceMemberName.isEmpty()) { return; }
+
+        addServiceMember(new LookupServiceMember(serviceMemberName.get().stringValue(), 
+                CommonLookupConfig.parseLookupScoreOptions(model, serviceMember)));
+    }
+    
     public void addServiceMember(String serviceMember) {
+        addServiceMember(new LookupServiceMember(serviceMember));
+    }
+    
+    public void addServiceMember(LookupServiceMember serviceMember) {
         if (this.serviceMembers == null) {
             this.serviceMembers = new ArrayList<>();
         }
@@ -81,7 +95,14 @@ public class FederatedLookupConfig extends CommonLookupConfig {
         Resource implNode = super.export(model);
         
         Optional.ofNullable(getServiceMembers()).ifPresent(list ->
-            list.forEach(member -> model.add(implNode, LOOKUP_SERVICE_MEMBER, VF.createLiteral(member))));
+            list.forEach(member -> {
+                BNode memberNode = VF.createBNode();
+                model.add(implNode, LOOKUP_SERVICE_MEMBER, memberNode);
+                model.add(memberNode, PROPERTY_NAME, VF.createLiteral(member.getName()));
+                if (member.getLookupScoreOptions() != null) {
+                    model.addAll(exportLookupScoreOptions(member.getLookupScoreOptions(), memberNode));
+                }
+            }));
         
         return implNode;
     }
@@ -90,8 +111,11 @@ public class FederatedLookupConfig extends CommonLookupConfig {
     public void parse(Model model, Resource resource) throws LookupServiceConfigException {
         super.parse(model, resource);
         
+        // parse structured service members (a sub resource for each member)
+        Models.objectResources(model.filter(resource, LOOKUP_SERVICE_MEMBER, null))
+            .forEach(iri -> parseServiceMember(iri, model));
+        // parse service member names (a string literal (the name) of each member)
         Models.objectLiterals(model.filter(resource, LOOKUP_SERVICE_MEMBER, null))
             .forEach(literal -> addServiceMember(literal.stringValue()));
     }
-
 }

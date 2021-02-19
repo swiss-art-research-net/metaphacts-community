@@ -1,15 +1,16 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Components that listen to specified event, and when it happens triggers some other event.\n\n**Example**: Refresh some area on events from `<mp-set-management>` component:\n```\n<mp-event-proxy on-event-source='some-set-management'\n   proxy-event-type='Component.Refresh'\n   proxy-targets='[\"some-element\"]'>\n</mp-event-proxy>\n```\nWhen there is any event from component with ID `some-set-management`,\n`<mp-event-proxy>` will send `Component.Refresh` event to component with ID `some-element`.",
     "properties": {
         "data": {
             "additionalProperties": true,
-            "description": "Data that will be sent to all targets instead of the original event's data",
+            "description": "Data that will be sent to all targets instead of data from the original event.",
             "properties": {
             },
             "type": "object"
         },
         "id": {
-            "description": "Used as a source id for re-triggered event",
+            "description": "Used as a source ID for re-triggered event.",
             "type": "string"
         },
         "onEventSource": {
@@ -41,7 +42,6 @@
         "data"
     ],
     "required": [
-        "id",
         "proxyEventType"
     ],
     "type": "object"

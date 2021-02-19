@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,8 +49,8 @@ import * as classNames from 'classnames';
 
 import { componentHasType } from 'platform/components/utils';
 
-import OverlayDialogTrigger from './OverlayDialogTrigger';
-import OverlayDialogContent from './OverlayDialogContent';
+import { OverlayDialogTrigger } from './OverlayDialogTrigger';
+import { OverlayDialogContent } from './OverlayDialogContent';
 import { getOverlaySystem } from './OverlaySystem';
 
 const Modal = createFactory(ReactBootstrap.Modal);
@@ -88,8 +88,8 @@ export const OverlayDialog: SFC<OverlayDialogProps> = (props: OverlayDialogProps
           {onHide: props.onHide, backdrop: type === 'modal' ? 'static' : false,
            className: b('').toString(),
            dialogClassName: classNames('modal-dialog', b('dialog').toString()),
-           bsSize: (props.type === 'modal' || props.type === undefined) && props.bsSize
-             ? props.bsSize : null}),
+           size: (props.type === 'modal' || props.type === undefined) && props.bsSize
+             ? getModalSize(props.bsSize) : null}),
         props.title ? ModalHeader(
           {closeButton: true, className: b('header').toString()},
           ModalTitle({}, props.title)
@@ -103,35 +103,50 @@ export const OverlayDialog: SFC<OverlayDialogProps> = (props: OverlayDialogProps
     );
   };
 
-export interface OverlayComponentProps extends ReactProps<OverlayComponent> {
-  // title to render
+/**
+ * Component that displays it's contents in page-wide lightbox or overlay.
+ *
+ * **Example**:
+ * ```
+ * <overlay-dialog title='Title here' type='modal'>
+ *   <overlay-trigger>
+ *     <button class='btn btn-primary'>Open in modal</button>
+ *   </overlay-trigger>
+ *   <overlay-content>
+ *     Content here
+ *   </overlay-content>
+ * </overlay-dialog>
+ * ```
+ */
+interface OverlayComponentConfig {
+  /** Title to render */
   title: string;
-  // type could be 'dialog' or 'lightbox', lightbox will span over all space, dialog will be small
-  type?: string;
-  // what dialog css class to use. Defaults to 'overlay-modal'
-  // when type=modal and 'overlay-lightbox' when type=lightbox
-  // css should follow BEM, example is @overlay-dialog.less/.overlay-modal
+  /**
+   * Overlay type:
+   *   - `dialog` will be small;
+   *   - `lightbox` will span over all space;
+   */
+  type?: 'dialog' | 'lightbox';
+  /**
+   * What dialog css class to use.
+   *
+   * Defaults to `overlay-modal` when `type='modal'` and
+   * `overlay-lightbox` when `type=lightbox`.
+   */
   className?: string;
-  // Size of dialog. It's used when type = 'modal'.
-  // Default width of the dialog is 600px.
-  // Width is 900px when bsSize is equal to 'lg' or 'large'
-  // and 300px when bsSize is equal to 'sm' or 'small'.
+  /**
+   * Size of dialog; used only when `type='modal'`.
+   *
+   * Default width of the dialog is `600px`.
+   *
+   * Width is `900px` when `bsSize` is equal to `lg` or `large`
+   * and `300px` when `bsSize` is equal to `sm` or `small`.
+   */
   bsSize?: 'lg' | 'large' | 'sm' | 'small';
 }
 
-/**
- * Component that displays it's contents in page-wide lightbox/overlay.
- * @see OverlayProps for props documentation
- * Usage:
- * <overlay-dialog data-title="OverlayDialog" data-type="modal|lightbox">
- * <overlay-trigger>
- * <button class="btn btn-primary">Open in lightbox</button>
- * </overlay-trigger>
- * <overlay-content>
- *   content here
- * </overlay-content>
- * </overlay-dialog>
- */
+export type OverlayComponentProps = OverlayComponentConfig;
+
 export class OverlayComponent extends Component<OverlayComponentProps, {}> {
   render() {
     // 1. find anchor child and body child
@@ -156,7 +171,7 @@ export class OverlayComponent extends Component<OverlayComponentProps, {}> {
             className: this.props.className,
             onHide: () => getOverlaySystem().hide(this.props.title),
             children: bodyChild,
-            bsSize: this.props.bsSize,
+            bsSize: getModalSize(this.props.bsSize),
           })
         );
       },
@@ -164,4 +179,19 @@ export class OverlayComponent extends Component<OverlayComponentProps, {}> {
     return cloneElement(anchorChild, props);
   }
 }
+
+const getModalSize = (size: string): 'sm' | 'lg' => {
+  switch (size) {
+    case 'small':
+    case 'sm':
+      return 'sm';
+    case 'large':
+    case 'lg':
+      return 'lg';
+    default:
+      return size as any;
+  }
+}
+
+
 export default OverlayComponent;

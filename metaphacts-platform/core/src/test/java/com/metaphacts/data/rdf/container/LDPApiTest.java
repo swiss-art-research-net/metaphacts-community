@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,12 +65,14 @@ import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import com.github.sdorra.shiro.SubjectAware;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.metaphacts.data.rdf.PointedGraph;
+import com.metaphacts.junit.MpAssert;
 import com.metaphacts.junit.TestUtils;
 import com.metaphacts.ldptest.LDPTestContainer;
 import com.metaphacts.ldptest.LDPTestResource;
@@ -227,9 +229,10 @@ public class LDPApiTest extends AbstractLDPTest {
         configuration = sparqlPermissionShiroFile //TODO
     )
     public void testGetLDPResourceNotExists() throws Exception {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage(containsString("There exists no LDP Resource"));
-        api.getLDPResource(vf.createIRI("http://www.metaphacts.com/non-existing-resource/"));
+        MpAssert.assertThrows(Matchers.containsString("There exists no LDP Resource"), IllegalArgumentException.class,
+                () -> {
+            api.getLDPResource(vf.createIRI("http://www.metaphacts.com/non-existing-resource/"));
+        });
     }
 
     /**
@@ -243,9 +246,13 @@ public class LDPApiTest extends AbstractLDPTest {
         configuration = sparqlPermissionShiroFile //TODO
     )
     public void failToCreateNonContainerResourceInRootContainer() throws Exception {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage(containsString("Only LDP Container can be added to the Platform Root Container"));
-        api.createLDPResource(Optional.of("TestResource"), new RDFStream(TestUtils.readPlainTextTurtleInput(FILE_DUMMY_RESOURCE_TTL), RDFFormat.TURTLE), RootContainer.IRI, "http://www.metaphacts.com/testinstances/");
+        MpAssert.assertThrows("Only LDP Container can be added to the Platform Root Container",
+                IllegalArgumentException.class, () -> {
+                    api.createLDPResource(Optional.of("TestResource"),
+                            new RDFStream(TestUtils.readPlainTextTurtleInput(FILE_DUMMY_RESOURCE_TTL),
+                                    RDFFormat.TURTLE),
+                            RootContainer.IRI, "http://www.metaphacts.com/testinstances/");
+                });
     }
 
     @Test
@@ -361,9 +368,13 @@ public class LDPApiTest extends AbstractLDPTest {
 
         // assert that it is not possible to add a res to a container which does
         // not exist yet and also does not have a implementation
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage(containsString("Target resource htt://www.test.de/nonexisting is not a container."));
-        api.createLDPResource(Optional.of("http://www.metaphacts.com/slug"), new RDFStream(TestUtils.readPlainTextTurtleInput(FILE_DUMMY_RESOURCE_TTL), RDFFormat.TURTLE), vf.createIRI("htt://www.test.de/nonexisting"), "http://www.metaphacts.com/testinstances/");
+        MpAssert.assertThrows(containsString("Target resource htt://www.test.de/nonexisting is not a container."),
+                IllegalArgumentException.class, () -> {
+                    api.createLDPResource(Optional.of("http://www.metaphacts.com/slug"),
+                            new RDFStream(TestUtils.readPlainTextTurtleInput(FILE_DUMMY_RESOURCE_TTL),
+                                    RDFFormat.TURTLE),
+                            vf.createIRI("htt://www.test.de/nonexisting"), "http://www.metaphacts.com/testinstances/");
+                });
     }
 
 

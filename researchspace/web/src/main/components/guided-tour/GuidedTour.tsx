@@ -180,7 +180,7 @@ export class GuidedTour extends React.Component<Props, State> {
   render() {
     const {run, autoStart} = this.state;
     return (
-      <Overlay show={true}>
+      <Overlay show={true} target={null}>
         <ReactJoyride ref={this.onInitJoyride} {...this.props} run={run} autoStart={autoStart}
           callback={event => {
             if (event.type === 'finished') {

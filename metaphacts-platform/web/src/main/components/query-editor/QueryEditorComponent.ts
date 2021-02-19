@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -130,7 +130,7 @@ export class QueryEditorComponent extends Component<Props, State> {
     return D.div({},
       FormGroup({},
         templateCount
-          ? Alert({bsStyle: 'warning'},
+          ? Alert({variant: 'warning'},
             D.strong({}, 'Warning! '),
             `This query is used in ${templateCount} templates.
               Modifications to the query below may break existing templates.`
@@ -142,7 +142,7 @@ export class QueryEditorComponent extends Component<Props, State> {
         })
       ),
       Button({
-        bsStyle: 'success',
+        variant: 'success',
         disabled: !isValid,
         onClick: iri ? this.updateQuery : this.createQuery,
       }, iri ? 'Update' : 'Create')

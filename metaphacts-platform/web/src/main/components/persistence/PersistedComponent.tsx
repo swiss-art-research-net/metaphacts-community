@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,6 +46,7 @@ import { Cancellation } from 'platform/api/async';
 import { Rdf } from 'platform/api/rdf';
 import { Component, SemanticContext, SemanticContextProvider } from 'platform/api/components';
 import { ModuleRegistry } from 'platform/api/module-loader';
+import { loadComponent } from 'platform/api/module-loader/ComponentsStore';
 import { ldpc } from 'platform/api/services/ldp';
 import { VocabPlatform } from 'platform/api/rdf/vocabularies/vocabularies';
 import {
@@ -134,18 +135,16 @@ export class PersistedComponent extends Component<Props, State> {
 
 function renderComponentTree(root: DeserializedComponent): Promise<ReactElement<any>> {
   const {type, props, children} = root;
-  return Promise.all(children.map(renderComponentTree)).then(renderedChildren => {
-    if (ModuleRegistry.isWebComponent(type)) {
+  return loadComponent(type)
+    .then(() => Promise.all(children.map(renderComponentTree)))
+    .then(renderedChildren => {
       return ModuleRegistry.renderWebComponent(
         type,
         props,
         renderedChildren,
-        props.markupTemplateScope,
+        props.markupTemplateScope
       );
-    } else {
-      return createElement(type, props, ...renderedChildren);
-    }
-  });
+    });
 }
 
 export default PersistedComponent;

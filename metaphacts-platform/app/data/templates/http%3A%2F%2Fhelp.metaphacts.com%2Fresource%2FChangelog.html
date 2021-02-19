@@ -52,7 +52,81 @@
 
   <div class='page__body'>
   
-      <h2 id="3.6.0">3.6.0</h2>
+    <h2 id="4.0.0">4.0.0</h2>
+    <hr>
+    <h3>Release Notes</h3>
+    <p>4.0.0 is a major release of the platform.</p>
+    
+    <h3>Upgrade Notes</h3>
+    <h4>Bootstrap 4</h4>
+    
+    <p>With 4.0 the platform has been updated to use Bootstrap 4.5. This provides application developers and frontend designers with the latest style improvements and pre-bundled components of the framework.</p>
+
+    <p>Depending on the usage of Bootstrap components or styles, existing applications may require migration. The most common changes are listed below, for a full list of changes refer to the <a href="https://getbootstrap.com/docs/4.5/migration" target="_blank">Bootstrap migration guide</a>. Note particularly that customized page layouts (i.e. <code>header.hbs</code> or <code>login.hbs</code>) require migration. See <semantic-link iri="[[resolvePrefix "Help:CustomPageLayout"]]">here</semantic-link> for details on the default platform version. It is recommended to make use of a <i>diff</i> tool to spot and apply differences.</p>
+
+    <ul>
+      <li>The attribute <code>bs-style</code> is now called <code>variant</code></li>
+      <li>The class <code>btn-default</code> is now called <code>btn-secondary</code></li>
+      <li>The class <code>btn-xs</code> has been removed. Use <code>btn-sm</code> instead</li>
+      <li>The <code>bs-dropdown-toggle</code> has now the primary variant by default. For the previous styling it can be changed to <code>&lt;bs-dropdown-toggle variant='secondary'></code>
+      <li>For split button dropdowns, the <code>btn-group</code> should now be set on the dropdown itself, instead of a wrapping element, e.g. <code>&lt;bs-dropdown size='sm' class='btn-group btn-group-sm'></code></li>
+      <li>The DOM structure of <code>bs-tabs</code> changed. There is no longer a wrapping <code>div</code>, which means custom <code>class</code> properties are added to a different node. Custom CSS targeting tabs might require adjustments.</li>
+      <li>The <code>panel</code> component has been replaced with <code>card</code>. While the <code>bs-panel</code> and <code>mp-panel</code> components have been changed to create cards, directly used panel CSS classes need to be migrated.</li>
+      <li>The structure of vertical tabs changes. For details see the updated example on <semantic-link iri='[[resolvePrefix 'Help:ReactBootstrap']]'></semantic-link></li>
+    </ul>
+
+    <h4>New Visual Template Editor</h4>
+
+    <p>A core component for semantic application development experience is the <semantic-link iri='[[resolvePrefix 'Help:PageEditor']]'>Template Page Editor</semantic-link>.</p>
+
+    <p>As of the 4.0 release the underlying UI component has been replaced with a state-of-the-art editor (based on the editor that powers Microsoft Visual Studio Code). This allows us to provide a smooth editing experience with intelligent features, including:</p>
+    
+    <ul>
+      <li>on-hover info for tags and attributes</li>
+      <li>auto completion for tags and attributes</li>
+      <li>accessible links for component documentation</li>
+      <li>experimental support for diagnostics and syntax validation</li>
+    </ul>
+
+    <p>For more details and usage information see the <semantic-link iri='[[resolvePrefix 'Help:PageEditor']]'>Template Page Editor documentation</semantic-link>.</p>
+    
+    <h4>VOWL integration removed and replaced with Ontodia visualization</h4>
+
+    <p>The integration of VOWL for ontologies has been removed from the platform and is replaced with integrated tooling support through Ontodia.</p>
+    
+    
+    <h4>Permissions</h4>
+    <p>In 4.0 the following permissions have been introduced or refined. Existing installations may require an update of the role definitions (e.g. in custom roles) for new functionality to properly work.</p>
+
+    <table>
+      <tr>
+        <th><b>Permission</b></th>
+        <th><b>Description</b></th>
+        <th><b>Change</b></th></tr>
+      <tr>
+        <td><code>assets:*:*</code></td>
+        <td>Grants permission to use asset management and cataloging functionality</td>
+        <td>New Permission. May need to be added to existing shiro-roles.ini (or shiro.ini for older systems). In the default shiro-roles.ini it will be part of the admin role.</td>
+      </tr>
+      <tr>
+        <td><code>storage:add:*</code></td>
+        <td>Grants permission to add a new storage</td>
+        <td>New Permission. May need to be added to existing shiro-roles.ini (or shiro.ini for older systems). In the default shiro-roles.ini it will be part of the root role.</td>
+      </tr>
+      <tr>
+        <td><code>sparql:graphstore:{ACTION}:{&lt;namedGraphIRI&gt;}</code></td>
+        <td>Grants permission to interact with the RDF graphstore endpoint</td>
+        <td>Modified Permission. Support for optionally specifying the <code>namedGraphIri</code> to restrict operations on a specific named graph. Existing definitions (e.g. <code>sparql:graphstore:get</code>) are fully backwards compatible and are equivalent to <code>sparql:graphstore:{ACTION}:*</code>.</td>
+      </tr>
+    </table>
+
+    <br/>
+    <p>Refer to the <semantic-link title="Help Security" uri='[[resolvePrefix "Help:Security"]]'>security documentation</semantic-link> for further details.</p>
+
+    
+    
+    
+    <h2 id="3.6.0">3.6.0</h2>
     <hr>
     <h3>Release Notes</h3>
     <p>3.6.0 is a minor release of the platform. </p>
@@ -140,6 +214,12 @@ layout='{
   options='{"showFilter": false}'
 ]]>
      </mp-code-block>
+
+
+    <h4>Deprecated Wikidata Sail Repository removed</h4>
+
+    <p>The Wikidata Sail Repository (which was deprecated in the previous release) is now entirely removed, and replaced with the <semantic-link iri="[[resolvePrefix "Help:LookupService"]]">Wikidata Lookup Service</semantic-link> as its successor. Applications that are using <code>metaphacts:WikidataTextSearch</code> in any sail repository configuration are required to migrate.</p>
+    
 
 
     <h4>Permissions</h4>

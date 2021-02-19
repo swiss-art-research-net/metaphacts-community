@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,12 +58,14 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
+import com.metaphacts.config.groups.UIConfiguration;
 import com.metaphacts.lookup.model.LookupDataProperty;
 import com.metaphacts.lookup.model.LookupObjectProperty;
 import com.metaphacts.lookup.model.LookupObjectPropertyLink;
 import com.metaphacts.lookup.model.LookupProperty;
 import com.metaphacts.lookup.model.LookupPropertyStrictType;
 import com.metaphacts.lookup.model.LookupQuery;
+import com.metaphacts.util.LanguageHelper;
 
 /**
  * Set of functions and classes which make it easier to convert {@link LookupQuery} to the respective SPARQL search
@@ -132,6 +134,8 @@ import com.metaphacts.lookup.model.LookupQuery;
 public class LookupSparqlQueryBuilder {
     private static final ValueFactory vf = SimpleValueFactory.getInstance();
     protected static final double BLAZEGRAPH_MIN_RELEVANCE = 0.1;
+
+    public static final String LANGUAGE_VARIABLE_NAME = "__language__";
 
     public static final String TOKEN_VARIABLE_NAME = "__token__";
     public static final String TOKEN_VARIABLE = "?" + TOKEN_VARIABLE_NAME;
@@ -399,6 +403,9 @@ public class LookupSparqlQueryBuilder {
             Map<String, Value> bindings = new LinkedHashMap<>();
 
             bindings.put(TOKEN_VARIABLE_NAME, queryConversionFunction.apply(query.getQuery()));
+            String preferredLanguage = LanguageHelper.getPreferredLanguage(query.getPreferredLanguage())
+                    .orElse(UIConfiguration.DEFAULT_LANGUAGE);
+            bindings.put(LANGUAGE_VARIABLE_NAME, vf.createLiteral(preferredLanguage));
             return bindings;
         }
     }

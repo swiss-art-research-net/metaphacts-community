@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -102,9 +102,14 @@ export interface ColumnConfiguration {
    */
   variableName?: string;
   /**
-   * Custom cell visualization <semantic-link
-   *   uri='http://help.metaphacts.com/resource/FrontendTemplating'>template</semantic-link>.
+   * Custom cell visualization template.
+   *
    * Template has access to all projection variables for a single result tuple.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   cellTemplate?: string;
 }

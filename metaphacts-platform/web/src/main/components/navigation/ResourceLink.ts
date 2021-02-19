@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,26 +37,24 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { createElement, Props, MouseEvent, CSSProperties } from 'react';
+import { createElement, ClassAttributes, MouseEvent, CSSProperties } from 'react';
 import * as D from 'react-dom-factories';
 import { assign } from 'lodash';
 import * as classNames from 'classnames';
 import * as _ from 'lodash';
 
-import { Cancellation } from 'platform/api/async';
 import { Component } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
 import { Draggable } from 'platform/components/dnd';
 import {
-  getCurrentResource, navigateToResource, getCurrentUrl,
-  constructUrlForResource, construcUrlForResourceSync,
+  getCurrentResource, navigateToResource, getCurrentUrl, constructUrlForResourceSync,
 } from 'platform/api/navigation/Navigation';
 
 export enum ResourceLinkAction {
   edit,
 }
 
-interface ResourceLinkProps extends Props<ResourceLink> {
+interface ResourceLinkProps extends ClassAttributes<ResourceLink> {
   resource: Rdf.Iri;
   title?: string;
   draggable?: boolean;
@@ -75,34 +73,18 @@ interface State {
 }
 
 export class ResourceLink extends Component<ResourceLinkProps, State> {
-  private readonly cancellation = new Cancellation();
+  static defaultProps: Required<Pick<ResourceLinkProps, 'target'>> = {
+    target: '_self' as const,
+  };
 
   constructor(props: ResourceLinkProps, context: any) {
     super(props, context);
+    const queryParams = makeQueryParams(this.props);
     this.state = {
-      url: construcUrlForResourceSync(
-        this.props.resource, this.props.params, this.getRepository(), this.props.fragment
+      url: constructUrlForResourceSync(
+        this.props.resource, queryParams, this.getRepository(), this.props.fragment
       ),
     };
-  }
-
-  static defaultProps = {
-    target: '_self' as '_self',
-  };
-
-  componentDidMount() {
-    this.cancellation.map(
-      constructUrlForResource(
-        this.props.resource, this.props.params, this.getRepository(), this.props.fragment
-      )
-    ).observe({
-      value: url => this.setState({url}),
-      error: error => console.error(error),
-    });
-  }
-
-  componentWillUnmount() {
-    this.cancellation.cancelAll();
   }
 
   public render() {
@@ -137,7 +119,7 @@ export class ResourceLink extends Component<ResourceLinkProps, State> {
       e.preventDefault();
       e.stopPropagation();
 
-      const query = {action: ResourceLinkAction[this.props.action], ...this.props.params};
+      const query = makeQueryParams(this.props);
       navigateToResource(this.props.resource, query, this.getRepository(), this.props.fragment)
         .onValue(() => {/**/});
     }
@@ -145,16 +127,14 @@ export class ResourceLink extends Component<ResourceLinkProps, State> {
     // target='_blank' is set it will just open the page in a new window
   }
 
-  private getRepository = () =>
-    this.props.repository ? this.props.repository :
+  private getRepository = () => {
+    return this.props.repository ? this.props.repository :
       (this.context.semanticContext ? this.context.semanticContext.repository : undefined);
+  }
 
   private isLinkActive = () => {
-    const {resource, params} = this.props;
-    const urlParams: { [param: string]: string } = assign({}, params);
-    if (!_.isUndefined(this.props.action)) {
-      urlParams['action'] = ResourceLinkAction[this.props.action];
-    }
+    const {resource} = this.props;
+    const urlParams = makeQueryParams(this.props);
 
     // extract params from current url and drop ?uri param
     // for comparison i.e. in case of dealing with full uris
@@ -165,6 +145,12 @@ export class ResourceLink extends Component<ResourceLinkProps, State> {
   }
 }
 
+function makeQueryParams(props: ResourceLinkProps): { [param: string]: string } {
+  return {
+    action: ResourceLinkAction[props.action],
+    ...props.params,
+  };
+}
 
 /**
  * make sure that we don't hijack Ctrl+Click, Meta+Click, middle mouse click default actions

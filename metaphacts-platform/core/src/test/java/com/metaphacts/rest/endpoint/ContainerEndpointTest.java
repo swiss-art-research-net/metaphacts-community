@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.metaphacts.services.storage.api.*;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -65,11 +64,13 @@ import org.junit.Test;
 
 import com.github.sdorra.shiro.ShiroRule;
 import com.github.sdorra.shiro.SubjectAware;
-import com.google.common.base.Throwables;
 import com.metaphacts.data.rdf.container.LDPApiInternal;
 import com.metaphacts.junit.MetaphactsJerseyTest;
 import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.services.storage.api.PlatformStorage.FindResult;
+import com.metaphacts.services.storage.api.StoragePath;
 
 public class ContainerEndpointTest extends MetaphactsJerseyTest {
 
@@ -231,7 +232,7 @@ public class ContainerEndpointTest extends MetaphactsJerseyTest {
                     .queryParam("Slug", slug).request()
                     .post(Entity.<String>entity(queryData, RDFFormat.TURTLE.getDefaultMIMEType()));
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 }

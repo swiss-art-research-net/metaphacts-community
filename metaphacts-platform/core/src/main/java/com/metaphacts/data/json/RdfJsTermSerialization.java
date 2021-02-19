@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -166,7 +166,7 @@ public final class RdfJsTermSerialization {
             }
             case "Literal": {
                 JsonNode datatypeNode = node.get("datatype");
-                IRI datatype = datatypeNode != null ? jp.getCodec().treeToValue(datatypeNode, IRI.class) : XMLSchema.STRING;
+                IRI datatype = datatypeNode != null ? jp.getCodec().treeToValue(datatypeNode, IRI.class) : XSD.STRING;
 
                 JsonNode languageNode = node.get("language");
                 if (languageNode == null) {

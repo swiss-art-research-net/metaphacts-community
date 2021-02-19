@@ -1,0 +1,60 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "languages": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "maxRows": {
+            "default": 7,
+            "description": "Maximum number of rows to show when `multiline=true`.",
+            "type": "number"
+        },
+        "multiline": {
+            "description": "Display as `<input>` field or `<textarea>`.",
+            "type": "boolean"
+        },
+        "placeholder": {
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        },
+        "requireLanguage": {
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "placeholder",
+        "multiline",
+        "maxRows",
+        "languages",
+        "requireLanguage",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "type": "object"
+}
+

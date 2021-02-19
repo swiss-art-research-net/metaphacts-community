@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,7 @@
  */
 package com.metaphacts.junit;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -59,8 +60,12 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.DescriptionCache;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.DelegatingDescriptionService;
+import com.metaphacts.cache.DelegatingLabelService;
+import com.metaphacts.cache.DescriptionService;
+import com.metaphacts.cache.ExternalLabelDescriptionService;
+import com.metaphacts.cache.LabelService;
+import com.metaphacts.cache.ResourceDescriptionCache;
 import com.metaphacts.cache.ResourceDescriptionCacheHolder;
 import com.metaphacts.cache.TemplateIncludeCache;
 import com.metaphacts.config.Configuration;
@@ -68,6 +73,7 @@ import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.groups.EnvironmentConfiguration;
 import com.metaphacts.data.rdf.container.LDPApiInternal;
 import com.metaphacts.data.rdf.container.LDPImplManager;
+import com.metaphacts.di.MainGuiceModule;
 import com.metaphacts.federation.service.MpSparqlServiceRegistry;
 import com.metaphacts.lookup.api.LookupServiceManager;
 import com.metaphacts.lookup.impl.DefaultLookupServiceManager;
@@ -75,6 +81,14 @@ import com.metaphacts.plugin.PlatformPluginManager;
 import com.metaphacts.querycatalog.QueryCatalogRESTServiceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.RepositoryManagerInterface;
+import com.metaphacts.resource.DefaultResourceDescriptionService;
+import com.metaphacts.resource.DelegatingDescriptionPropertiesProvider;
+import com.metaphacts.resource.DelegatingDescriptionRenderer;
+import com.metaphacts.resource.DelegatingTypeService;
+import com.metaphacts.resource.DescriptionPropertiesProvider;
+import com.metaphacts.resource.DescriptionRenderer;
+import com.metaphacts.resource.ResourceDescriptionService;
+import com.metaphacts.resource.TypeService;
 import com.metaphacts.secrets.DefaultSecretsStore;
 import com.metaphacts.secrets.SecretResolver;
 import com.metaphacts.secrets.SecretsStore;
@@ -83,8 +97,10 @@ import com.metaphacts.services.fields.FieldDefinitionGeneratorChain;
 import com.metaphacts.services.fields.FieldDefinitionManager;
 import com.metaphacts.services.fields.SimpleFieldDefinitionGeneratorChain;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StorageRegistry;
 import com.metaphacts.servlet.SparqlServlet;
 import com.metaphacts.templates.MetaphactsHandlebars;
+import com.metaphacts.templates.PageViewConfigManager;
 import com.metaphacts.templates.PageViewConfigSettings;
 import com.metaphacts.templates.index.TemplateIndexManager;
 import com.metaphacts.thumbnails.DefaultThumbnailService;
@@ -129,9 +145,13 @@ public class MetaphactsGuiceTestModule extends AbstractModule {
         bind(SecretsStore.class).to(DefaultSecretsStore.class).in(TestSingleton.class);
         bind(QueryCatalogRESTServiceRegistry.class).in(TestSingleton.class);
         bind(CacheManager.class).in(TestSingleton.class);
+        bind(ExternalLabelDescriptionService.class).in(TestSingleton.class);
         bind(ResourceDescriptionCacheHolder.class).in(TestSingleton.class);
-        bind(LabelCache.class).to(ResourceDescriptionCacheHolder.class);
-        bind(DescriptionCache.class).to(ResourceDescriptionCacheHolder.class);
+        bind(LabelService.class).to(DelegatingLabelService.class).in(TestSingleton.class);
+        bind(DescriptionService.class).to(DelegatingDescriptionService.class).in(TestSingleton.class);
+        bind(DefaultResourceDescriptionService.class).in(TestSingleton.class);
+        bind(ResourceDescriptionService.class).to(DefaultResourceDescriptionService.class).in(TestSingleton.class);
+        bind(ResourceDescriptionCache.class).in(TestSingleton.class);
         bind(TemplateIncludeCache.class).in(TestSingleton.class);
         bind(SparqlServlet.class).in(TestSingleton.class);
         bind(ThumbnailServiceRegistry.class).in(TestSingleton.class);
@@ -145,10 +165,75 @@ public class MetaphactsGuiceTestModule extends AbstractModule {
         bind(MetaphactsHandlebars.class).in(TestSingleton.class);
         bind(Handlebars.class).to(MetaphactsHandlebars.class);
         bind(HelperRegistry.class).to(Handlebars.class);
+        bind(PageViewConfigManager.class).in(TestSingleton.class);
 
         //ldp bindings
         requestStaticInjection(LDPImplManager.class);
         requestStaticInjection(LDPApiInternal.class);
+    }
+
+    @Inject
+    @Provides
+    @TestSingleton
+    public DelegatingLabelService getLabelService(
+        ResourceDescriptionCacheHolder descriptionCacheHolder,
+        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder
+    ) {
+        final List<LabelService> labelServices = Arrays.asList(descriptionCacheHolder, lookupCandidateDescriptionCacheHolder);
+        return new DelegatingLabelService(labelServices);
+    }
+
+    @Inject
+    @Provides
+    @TestSingleton
+    public DelegatingDescriptionService getDescriptionService(
+        ResourceDescriptionCacheHolder descriptionCacheHolder,
+        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder,
+        ResourceDescriptionCache resourceDescriptionCache
+    ) {
+        final List<DescriptionService> descriptionServices = Arrays.asList(resourceDescriptionCache,
+                descriptionCacheHolder,
+                lookupCandidateDescriptionCacheHolder);
+        return new DelegatingDescriptionService(descriptionServices);
+    }
+
+    @Inject
+    @Provides
+    @TestSingleton
+    public TypeService getTypeService(PlatformPluginManager platformPluginManager) {
+        List<TypeService> delegates = MainGuiceModule.loadServiceInstancesIncludingApps(platformPluginManager,
+                TypeService.class);
+        if (delegates.size() == 1) {
+            // if there's only one instance, return that directly
+            return delegates.get(0);
+        }
+        return new DelegatingTypeService(delegates);
+    }
+
+    @Inject
+    @Provides
+    @TestSingleton
+    public DescriptionPropertiesProvider getDescriptionPropertiesProvider(PlatformPluginManager platformPluginManager) {
+        List<DescriptionPropertiesProvider> delegates = MainGuiceModule
+                .loadServiceInstancesIncludingApps(platformPluginManager, DescriptionPropertiesProvider.class);
+        if (delegates.size() == 1) {
+            // if there's only one instance, return that directly
+            return delegates.get(0);
+        }
+        return new DelegatingDescriptionPropertiesProvider(delegates);
+    }
+
+    @Inject
+    @Provides
+    @TestSingleton
+    public DescriptionRenderer getDescriptionRenderer(PlatformPluginManager platformPluginManager) {
+        List<DescriptionRenderer> delegates = MainGuiceModule.loadServiceInstancesIncludingApps(platformPluginManager,
+                DescriptionRenderer.class);
+        if (delegates.size() == 1) {
+            // if there's only one instance, return that directly
+            return delegates.get(0);
+        }
+        return new DelegatingDescriptionRenderer(delegates);
     }
 
     @Provides
@@ -183,4 +268,15 @@ public class MetaphactsGuiceTestModule extends AbstractModule {
         ppm.setApplicationInjector(injector);
         return ppm;
     }
+
+    @Inject
+    @Provides
+    @TestSingleton
+    public StorageRegistry provideStorageRegistry(Injector injector) {
+        StorageRegistry registry = new StorageRegistry();
+        // dependency injection for storage factories
+        registry.getAll().forEach(storageFactory -> injector.injectMembers(storageFactory));
+        return registry;
+    }
+
 }

@@ -25,7 +25,7 @@ const makeDefaults = require('./defaults');
  */
 module.exports = function (env) {
     const defaults = makeDefaults();
-    const config = require('./webpack.dll.js')(defaults);
+    const config = require('./webpack.dll.js')(defaults, {buildMode: 'prod'});
     config.mode = 'production';
 
     config.optimization = {

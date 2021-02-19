@@ -51,9 +51,9 @@
 
     Furthermore, the following attributes can be configured:
     <mp-documentation type='ResourceEditorFormConfig'></mp-documentation>
-    
+
     <p>For <code>persistence</code> attribute the <code>'rest'</code> mode allows transferring the collected form data to a REST endpoint, e.g. to trigger an action. This requires additional configuration, see <semantic-link iri="[[resolvePrefix "Help:SemanticFormRestPersistence"]]">REST-based Form Persistence</semantic-link> for details.</p>
-    
+
     <p>See <semantic-link iri="[[resolvePrefix "Help:SemanticFormDependenciesConstraints"]]">Form Dependencies and Constraints</semantic-link> for details on how to configure multi-field dependencies and constraints.</p>
 
     <h2 id="html5markup">HTML5 Markup</h2>
@@ -99,7 +99,7 @@
           </td>
           <td>
             <p>Commonly used for Literal values. However, can also be used for IRIs if corresponding xsdDatatype of field definition is <code>xsd:anyURI</code>.</p>
-            <p>Accepts an optional attribute <code>languages=["de","en"]</code>, which can be used to let the user select a language tag if xsdDatatype is <code>rdf:langString</code>.</p>
+            <p>Accepts an optional attribute <code>languages='["de","en"]'</code>, which can be used to let the user select a language tag if xsdDatatype is <code>rdf:langString</code>.</p>
             <p>The optional attribute <code>require-language=true</code> selects the first language by default and disables non-language option.</p>
             <p>Setting the optional HTML attribute <code>multiline</code> to <code>multiline=true</code> will render a autoresizable text area.</p>
           </td>
@@ -372,18 +372,18 @@
     </ul>
 
     <h1>Examples</h1>
-    
+
 
     <h3>Example 1: Basic form</h3>
-    
+
     <p>The following example illustrates the basic definition of a form to create a person. It defines two fields (<code>name</code> and <code>knows</code>) and places the form components.</p>
-    
+
     <mp-code-example>
     <![CDATA[
-<semantic-form 
+<semantic-form
           new-subject-template='http://www.example.com/id/person-{{UUID}}'
           post-action='redirect'
-          form-id='example-1' 
+          form-id='example-1'
           fields='[
             {
               "id": "name",
@@ -402,23 +402,24 @@
                     SERVICE Repository:lookup {
                       ?value lookup:token ?__token__ .
                       ?value lookup:type foaf:Person .
+                      ?value lookup:name ?label .
                     }
                   }"
             }]'
           >
   <semantic-form-text-input for="name"></semantic-form-text-input>
   <semantic-form-autocomplete-input for="knows"></semantic-form-autocomplete-input>
-  <button name="submit" class="btn btn-default">Save</button>
-  <button name="reset" class="btn btn-default">Reset</button>
-</semantic-form>         
+  <button name="submit" class="btn btn-secondary">Save</button>
+  <button name="reset" class="btn btn-secondary">Reset</button>
+</semantic-form>
 ]]>
     </mp-code-example>
-    
+
     <h3>Example 2: Simple field definitions</h3>
-      
+
     <p>In the following we show a very simple example form with two simple field definitions to create a new object using the <a href="http://www.cidoc-crm.org/comprehensive_intro.html" target="_blank">CIDOC Conceptual Reference Model</a> (CRM) ontology.
     The fields capture an RDFS label as well as the CRM type, which can be selected from a given set of CRM type.</p>
-      
+
     <mp-code-example>
 <![CDATA[
       <semantic-form new-subject-template='http://www.example.com/id/{{UUID}}'
@@ -489,8 +490,8 @@
           <semantic-form-tree-picker-input for='location'></semantic-form-tree-picker-input>
           <semantic-form-errors></semantic-form-errors>
           <!-- save and reset button for form -->
-          <button name="submit" class="btn btn-default">Save</button>
-          <button name="reset" class="btn btn-default">Reset</button>
+          <button name="submit" class="btn btn-secondary">Save</button>
+          <button name="reset" class="btn btn-secondary">Reset</button>
         </bs-panel>
       </semantic-form>
 ]]>
@@ -695,7 +696,7 @@
         <bs-panel>
           <h4>Create CRM Instance </h4>
           <semantic-form-recover-notification></semantic-form-recover-notification>
-          <bs-tabs fixed-key="form">
+          <bs-tabs>
             <bs-tab event-key="1" title="General Information">
               <semantic-form-text-input for='label'></semantic-form-text-input>
               <semantic-form-select-input for='type'></semantic-form-select-input>
@@ -709,8 +710,8 @@
           </bs-tabs>
           <semantic-form-errors></semantic-form-errors>
           <!-- save and reset button for form -->
-          <button name="submit" class="btn btn-default">Save</button>
-          <button name="reset" class="btn btn-default">Reset</button>
+          <button name="submit" class="btn btn-secondary">Save</button>
+          <button name="reset" class="btn btn-secondary">Reset</button>
         </bs-panel>
       </semantic-form>
 ]]>
@@ -808,8 +809,8 @@
           </semantic-form-composite-input>
           <semantic-form-errors></semantic-form-errors>
           <!-- save and reset button for form -->
-          <button name="submit" class="btn btn-default">Save</button>
-          <button name="reset" class="btn btn-default">Reset</button>
+          <button name="submit" class="btn btn-secondary">Save</button>
+          <button name="reset" class="btn btn-secondary">Reset</button>
         </semantic-form>
       </bs-panel>
 ]]>
@@ -954,8 +955,8 @@
               <semantic-form-text-input for='label'></semantic-form-text-input>
               <semantic-form-text-input for='dimension'></semantic-form-text-input>
               <semantic-form-errors></semantic-form-errors>
-              <button name='submit' class='btn btn-default'>Create feature</button>
-              <button name='reset' class='btn btn-default'>Reset feature</button>
+              <button name='submit' class='btn btn-secondary'>Create feature</button>
+              <button name='reset' class='btn btn-secondary'>Reset feature</button>
             </semantic-form>
           </semantic-form-autocomplete-input>
           <semantic-form-tree-picker-input for='location'>
@@ -1030,14 +1031,14 @@
               <semantic-form-text-input for='label'></semantic-form-text-input>
               <semantic-form-tree-picker-input for='broader'></semantic-form-tree-picker-input>
               <semantic-form-errors></semantic-form-errors>
-              <button name='submit' class='btn btn-default'>Create location</button>
-              <button name='reset' class='btn btn-default'>Reset location</button>
+              <button name='submit' class='btn btn-secondary'>Create location</button>
+              <button name='reset' class='btn btn-secondary'>Reset location</button>
             </semantic-form>
           </semantic-form-tree-picker-input>
           <semantic-form-errors></semantic-form-errors>
           <!-- save and reset button for form -->
-          <button name='submit' class='btn btn-default'>Save</button>
-          <button name='reset' class='btn btn-default'>Reset</button>
+          <button name='submit' class='btn btn-secondary'>Save</button>
+          <button name='reset' class='btn btn-secondary'>Reset</button>
         </semantic-form>
       </bs-panel>
 ]]>
@@ -1082,8 +1083,8 @@
           </semantic-form-hidden-input>
           <semantic-form-errors></semantic-form-errors>
           <!-- save and reset button for form -->
-          <button name="submit" class="btn btn-default">Save</button>
-          <button name="reset" class="btn btn-default">Reset</button>
+          <button name="submit" class="btn btn-secondary">Save</button>
+          <button name="reset" class="btn btn-secondary">Reset</button>
         </bs-panel>
       </semantic-form>
 ]]>
@@ -1160,8 +1161,8 @@
         <semantic-form-checklist-input for='event-happen' type='radio'></semantic-form-checklist-input>
         <semantic-form-errors></semantic-form-errors>
         <!-- save and reset button for form -->
-        <button name="submit" class="btn btn-default">Save</button>
-        <button name="reset" class="btn btn-default">Reset</button>
+        <button name="submit" class="btn btn-secondary">Save</button>
+        <button name="reset" class="btn btn-secondary">Reset</button>
       </bs-panel>
     </semantic-form>
 ]]>
@@ -1190,8 +1191,8 @@
         <semantic-form-checkbox-input for='is-dinosaur'></semantic-form-checkbox-input>
         <semantic-form-errors></semantic-form-errors>
         <!-- save and reset button for form -->
-        <button name="submit" class="btn btn-default">Save</button>
-        <button name="reset" class="btn btn-default">Reset</button>
+        <button name="submit" class="btn btn-secondary">Save</button>
+        <button name="reset" class="btn btn-secondary">Reset</button>
       </bs-panel>
     </semantic-form>
 ]]>
@@ -1379,8 +1380,8 @@
           </semantic-form-switch>
           <semantic-form-errors></semantic-form-errors>
           <!-- save and reset button for form -->
-          <button name="submit" class="btn btn-default">Save</button>
-          <button name="reset" class="btn btn-default">Reset</button>
+          <button name="submit" class="btn btn-secondary">Save</button>
+          <button name="reset" class="btn btn-secondary">Reset</button>
         </bs-panel>
       </semantic-form>
 ]]>
@@ -1489,8 +1490,8 @@
           <semantic-form-select-input for="artwork"></semantic-form-select-input>
           <semantic-form-errors></semantic-form-errors>
           <!-- save and reset button for form -->
-          <button name="submit" class="btn btn-default">Save</button>
-          <button name="reset" class="btn btn-default">Reset</button>
+          <button name="submit" class="btn btn-secondary">Save</button>
+          <button name="reset" class="btn btn-secondary">Reset</button>
         </semantic-form>
       </bs-panel>
       ]]>

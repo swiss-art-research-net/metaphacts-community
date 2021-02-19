@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -393,7 +393,7 @@ export function resolveIris(iris: string[]): Rdf.Iri[] {
 const IRI_LOCAL_PART = /^[a-zA-Z][\\-_a-zA-Z0-9]*$/;
 
 // TODO: move to NamespaceService
-export function compactIriUsingPrefix(iri: Rdf.Iri): string {
+export function tryCompactIriUsingPrefix(iri: Rdf.Iri): string {
   const iriValue = iri.value;
   for (const prefix in RegisteredPrefixes) {
     if (!RegisteredPrefixes.hasOwnProperty(prefix)) { continue; }
@@ -405,5 +405,10 @@ export function compactIriUsingPrefix(iri: Rdf.Iri): string {
       }
     }
   }
-  return `<${iriValue}>`;
+  return undefined;
+}
+
+// TODO: move to NamespaceService
+export function compactIriUsingPrefix(iri: Rdf.Iri): string | undefined {
+  return tryCompactIriUsingPrefix(iri) ?? `<${iri.value}>`;
 }

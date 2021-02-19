@@ -1,0 +1,92 @@
+[[> Platform:OntologyStyles]]
+
+<style>
+  .knowledge-panel section h4 {
+    background-color: #fafafa;
+    margin: 10px -20px 0 -20px;
+    padding: 10px 20px;
+  }
+</style>
+
+<div class='ontologyKnowledgePanel'>
+  <div class='ontologyKnowledgePanel__header'>
+    <div class='ontologyKnowledgePanel__title'><mp-label iri='[[this]]'></mp-label></div>
+    <div class='ontologyKnowledgePanel__navigate'>
+      <span class='ontologyKnowledgePanel__type'>[[type]]</span> · <semantic-link iri='[[this]]'>Go to resource</semantic-link>
+    </div>
+  </div>
+  <bs-tabs id="kpTabs">
+    <bs-tab event-key="info" title="Info">
+      <div class='ontologyKnowledgePanel__content'>
+        <div class='ontologyKnowledgePanel__infoSection'>
+          <div class='ontologyKnowledgePanel__contentLabel'>IRI</div>
+          <div class='ontologyKnowledgePanel__iri'>[[this]]</div>
+        </div>
+        <semantic-if query='ASK {
+            OPTIONAL { <[[this]]> rdfs:domain ?domain . }
+            OPTIONAL { <[[this]]> rdfs:range ?range . }
+            FILTER(BOUND(?domain) || BOUND(?range))
+          }' then='{{> domainRange}}'>
+          <template id='domainRange'>
+           <div class='ontologyKnowledgePanel__infoSection'>
+              <div class='ontologyKnowledgePanel__contentLabel'>Domain</div>
+              <semantic-query query='SELECT DISTINCT ?domain WHERE {
+                <[[this]]> rdfs:domain ?domain .
+              }' template='{{> template}}' no-result-template='-'>
+                <template id='template'>
+                  <div>{{#each bindings~}}<mp-label iri='{{domain.value}}'></mp-label>{{#unless @last}}, {{/unless}}{{/each}}</div>
+                </template>
+              </semantic-query>
+            </div>
+            <div class='ontologyKnowledgePanel__infoSection'>
+              <div class='ontologyKnowledgePanel__contentLabel'>Range</div>
+              <semantic-query query='SELECT DISTINCT ?range ?isDatatype WHERE {
+                OPTIONAL { <[[this]]> a owl:DatatypeProperty . BIND(true as ?isDatatype) }
+                <[[this]]> rdfs:range ?range .
+              }' template='{{> template}}' no-result-template='-'>
+                <template id='template'>
+                  <div>{{#each bindings~}}
+                    <mp-label iri='{{range.value}}'></mp-label>{{#unless @last}}, {{/unless}}
+                  {{/each}}</div>
+                </template>
+              </semantic-query>
+            </div>
+          </template>
+        </semantic-if>
+
+        <div class='ontologyKnowledgePanel__infoSection'>
+          <div class='ontologyKnowledgePanel__contentLabel'>Description</div>
+          <div><mp-description iri='[[this]]' no-result-template='<i>No description available</i>'></mp-description></div>
+        </div>
+      </div>
+    </bs-tab>
+    <bs-tab event-key="[[section]]" title="[[section]]">
+      <div class='ontologyKnowledgePanel__content'>
+        [[#> Platform:OntologyPropertyTable noDataMessage='No data available.']]
+          [[#*inline "query"]]
+            SELECT DISTINCT (?source as ?relation) ("" as ?inherited) ?target ?minCount ?maxCount WHERE {
+              ?sh <http://www.w3.org/ns/shacl#path> <[[this]]>  .
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#minCount> ?minCount }
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#maxCount> ?maxCount }
+              {
+                ?sh <http://www.w3.org/ns/shacl#class> ?target .
+                BIND(false as ?isDatatype)
+              } UNION {
+                ?sh <http://www.w3.org/ns/shacl#datatype> ?target .
+                BIND(true as ?isDatatype)
+              }
+              
+              {
+                ?nodeShape <http://www.w3.org/ns/shacl#targetClass> ?source .
+                ?nodeShape <http://www.w3.org/ns/shacl#property> ?sh .
+              } UNION {
+                ?source <http://www.w3.org/ns/shacl#property> ?sh .
+                ?source a owl:Class .
+              }
+            }
+          [[/inline]]
+        [[/Platform:OntologyPropertyTable]]
+      </div>
+    </bs-tab>
+  </bs-tabs>
+</div>

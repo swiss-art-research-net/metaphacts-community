@@ -1,13 +1,13 @@
 .ontodia-list-element-view {
-  position: relative;
-  display: block;
-  background: #808080;
-  padding: 1px 1px 1px 10px;
-  border-radius: 2px;
-  margin: 0 0 2px 0;
+  display: flex;
+  margin-bottom: 2px;
   opacity: 1.0;
-  cursor: move;
   user-select: none;
+  border-radius: 2px;
+  border: 1px solid;
+  border-left: 10px solid;
+  padding: 1px 5px 1px 7px;
+  cursor: pointer;
 
   &--disabled {
     opacity: 0.4;
@@ -15,13 +15,22 @@
   }
 
   &__label {
-    background: white;
-    border-radius: 0 2px 2px 0;
+    flex: auto;
+    color: black;
     font-family: "Andale Mono", sans-serif;
     font-size: 15px;
     min-height: 1.3em;
-    padding-left: 7px;
-    padding-right: 5px;
+    overflow-wrap: break-word;
+  }
+
+  &--has-content &__label {
+    flex: 1 1 50%;
+    max-width: 50%;
+  }
+
+  &__content {
+    flex: 1 1 50%;
+    max-width: 50%;
     overflow-wrap: break-word;
   }
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -142,10 +142,15 @@ interface ResourceEditorFormConfigBase {
   browserPersistence?: boolean;
   /**
    * Optional post-action to be performed after saving the form.
-   * Can be either `'none'`, `'reload'` or `'redirect'` (redirects to the subject of the form)
-   * or any IRI string to which the form will redirect.
    *
-   * @default 'reload'
+   * The following values are supported:
+   *   - `none`
+   *   - `reload`
+   *   - `event` to emit events. Note that this requires `id` to be set
+   *   - `redirect` to redirect to the subject of the form
+   *   - any IRI string to which the form will redirect.
+   *
+   * @default "reload"
    */
   postAction?: PostAction;
   /**
@@ -169,6 +174,68 @@ interface ResourceEditorFormConfigBase {
   debug?: boolean;
 }
 
+/**
+ * Form component to create and edit resources represented by input fields.
+ *
+ * The component supports submitting or reverting the form to the initial
+ * state by specifying <button> element as child with the following name attribute:
+ *   - `reset` - revert form content to initial state;
+ *   - `submit` - persist form content as new or edited resource.
+ *
+ * This functionality can be used to backup form data,
+ * to clone forms and to create multiple similar forms
+ * without read access to the repository:
+ *   - `load-state` - load file from disk;
+ *   - `save-state` - save file to disk.
+ *
+ * **Example**:
+ * ```
+ * <semantic-form subject='http://exmaple.com/thing/foo' fields='{[...]}'>
+ *   <!-- all the children will be passed down to SemanticForm -->
+ *   <semantic-form-text-input for='person-name'></semantic-form-text-input>
+ *   <div style='color: blue;'>
+ *     <semantic-form-datetime-input for='event-date'>
+ *     </semantic-form-datetime-input>
+ *   </div>
+ *   <!-- Button's onClick handler binds by 'name' attribute -->
+ *   <semantic-form-errors></semantic-form-errors>
+ *   <button name='reset' type='button' class='btn btn-secondary'>Reset</button>
+ *   <button name='submit' type='button' class='btn btn-primary'>Submit</button>
+ *   <button name='load-state' type='button' class='btn btn-info'>Load to file</button>
+ *   <button name='save-state' type='button' class='btn btn-info'>Save to file</button>
+ * </semantic-form>
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <!-- enable storing and recovering intermediate inputs from client persistence layer -->
+ * <semantic-form
+ *   subject='http://exmaple.com/thing/foo'
+ *   fields='{[...]}'
+ *   browser-persistence=true>
+ *   <semantic-form-recover-notification></semantic-form-recover-notification>
+ *   <!-- ... -->
+ * </semantic-form>
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <!-- custom form identifier for client persistence when
+ *      using multiple forms on the same page -->
+ * <semantic-form
+ *   subject='http://exmaple.com/thing/foo'
+ *   fields='{[...]}'
+ *   browser-persistence=true
+ *   form-id='form123'>
+ *   <semantic-form-recover-notification></semantic-form-recover-notification>
+ *   <!-- ... -->
+ * </semantic-form>
+ * ```
+ *
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
+ */
 export interface ResourceEditorFormConfig extends ResourceEditorFormConfigBase {
   /**
    * An array of fields to define data model of the form.
@@ -185,7 +252,7 @@ export interface ResourceEditorFormConfig extends ResourceEditorFormConfigBase {
    *
    * In the `sparql` mode no provenance can be captured.
    *
-   * @default 'ldp'
+   * @default "ldp"
    */
   persistence?: TriplestorePersistenceConfig['type'];
 }
@@ -200,7 +267,7 @@ export interface ResourceEditorFormProps extends ResourceEditorFormConfigBase {
     TriplestorePersistenceConfig |
     TriplestorePersistence;
   initializeModel?: (model: CompositeValue) => CompositeValue;
-  children?: JSX.Element | ReadonlyArray<JSX.Element>;
+  children?: React.ReactNode;
 }
 
 export type TriplestorePersistenceConfig =
@@ -220,60 +287,6 @@ interface State {
 
 const BROWSER_PERSISTENCE = BrowserPersistence.adapter<ValuePatch>();
 
-/**
- * Form component to create and edit resources represented by input fields.
- *
- * The component supports submitting or reverting the form to the initial
- * state by specifying <button> element as child with the following name attribute:
- *   'reset' - revert form content to initial state.
- *   'submit' - persist form content as new or edited resource.
- *
- * This functionality can be used to backup form data,
- * to clone forms and to create multiple similar forms
- * without read access to the repository.
- *   'load-state' - load file from disk.
- *   'save-state' - save file to disk.
- *
- * @example
- * <resource-editor-form subject='http://exmaple.com/thing/foo' fields='{[...]}'>
- *   <!-- all the children will be passed down to SemanticForm -->
- *   <plain-text-input for='person-name'></plain-text-input>
- *   <div style='color: blue;'>
- *     <datetimepicker-text-input for='event-date'>
- *     </datetimepicker-text-input>
- *   </div>
- *   <!-- Button's onClick handler binds by 'name' attribute -->
- *   <semantic-form-errors></semantic-form-errors>
- *   <button name='reset' type='button' class='btn btn-default'>Reset</button>
- *   <button name='submit' type='button' class='btn btn-primary'>Submit</button>
- *   <button name='load-state' type='button' class='btn btn-info'>Load to file</button>
- *   <button name='save-state' type='button' class='btn btn-info'>Save to file</button>
- * </resource-editor-form>
- *
- * @example
- *  <!-- enable storing and recovering intermediate inputs from client persistence layer -->
- *  <resource-editor-form
- *  	subject='http://exmaple.com/thing/foo'
- *  	fields='{[...]}'
- *  	browser-persistence=true
- *  >
- *    <semantic-form-recover-notification></semantic-form-recover-notification>
- *    <!-- ... -->
- *  <resource-editor-form>
- *
- *  <!--
- *   custom form identifier for client persistence when using multiple forms on the same page
- *  -->
- *  <resource-editor-form
- *  	subject='http://exmaple.com/thing/foo'
- *  	fields='{[...]}'
- *    browser-persistence=true
- *  	form-id='form123'
- *  >
- *    <semantic-form-recover-notification></semantic-form-recover-notification>
- *    <!-- ... -->
- *  <resource-editor-form>
- */
 export class ResourceEditorForm extends Component<ResourceEditorFormProps, State> {
   private initialState: State;
 

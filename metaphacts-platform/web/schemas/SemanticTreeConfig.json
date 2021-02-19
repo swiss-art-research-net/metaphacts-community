@@ -64,7 +64,11 @@
             "type": "array"
         },
         "noResultTemplate": {
-            "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>\nwhich is applied when the query returns no results.",
+            "description": "Template which is applied when the query returns no results.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
         },
         "nodeBindingName": {
@@ -94,7 +98,11 @@
             "type": "array"
         },
         "tupleTemplate": {
-            "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>\nwhich is used to render every tree node. Template has access to all projection\nvariables for a single result tuple.\nBy default `<semantic-link>` component is used for node visualization.",
+            "description": "Template which is used to render every tree node.\n\nTemplate has access to all projection variables for a single result tuple.\nBy default `<semantic-link>` component is used for node visualization.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
         }
     },

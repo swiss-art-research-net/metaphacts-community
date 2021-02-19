@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,55 +60,49 @@ import {
 
 import { FormSwitchCase, FormSwitchCaseProps } from './FormSwitchCase';
 
-export interface FormSwitchProps extends SingleValueInputProps {
+/**
+ * Form input to select different nested forms depending on the one type of an entity.
+ *
+ * Each `<semantic-form-switch-case>` child is required to have a single
+ * `<semantic-form-hidden-input>` input with `for` attribute equal to `switch-on-field`
+ * and `default-value` attribute set to entity type IRI for that case.
+ *
+ * **Example**:
+ * ```
+ * <semantic-form-switch for='factoryHasOwner'
+ *  switch-on-field='ownerType'>
+ *    <semantic-form-switch-case label='Person'>
+ *      <semantic-form-composite-input for='factoryHasOwner' fields='[...]'>
+ *        <semantic-form-hidden-input for='ownerType'
+ *          default-value='http://www.example.com/Person'>
+ *        </semantic-form-hidden-input>
+ *        ... Person field inputs ...
+ *      </semantic-form-composite-input>
+ *    </semantic-form-switch-case>
+ *    <semantic-form-switch-case label='Organization'>
+ *      <semantic-form-composite-input for='factoryHasOwner' fields='[...]'>
+ *        <semantic-form-hidden-input for='ownerType'
+ *          default-value='http://www.example.com/Organization'>
+ *        </semantic-form-hidden-input>
+ *          ... Organization field inputs ...
+ *        </semantic-form-composite-input>
+ *      </semantic-form-switch-case>
+ *  </semantic-form-switch>
+ * ```
+ */
+interface SemanticFormSwitchConfig {
+  /**
+   * Hidden field ID to determine entity type IRI from its default value for each case.
+   */
   switchOnField: string;
+}
+
+export interface FormSwitchProps extends SemanticFormSwitchConfig, SingleValueInputProps {
   children: React.ReactElement<FormSwitchCaseProps>;
 }
 
 const CLASS_NAME = 'form-switch';
 
-/**
- * The component FormSwitch allows the end users to select different forms depending
- * on the one type of an object, but with different realizes. For example: There is
- * an object which has a type "event". Events for an artefact: repatriation, sale,
- * excavation, theft, ect. Every event has an own realise.
- *
- * "general-switch-type" - the field which define a general type of switch i.e.
- * define a type of each composite-input.
- *
- * "switch-on-field=switch-case-type" - the field which define types
- * of switch cases. This is a service field. It works only with
- * "default-value=iri:special-type" of hidden-input.
- *
- * "label" - label for a list of types.
- *
- * @example
- * <semantic-form-switch for='{general-switch-type}'
- *  switch-on-field='switch-case-type'>
- *    <semantic-form-switch-case label='case label 1'>
- *      <semantic-form-composite-input
- *        for='{general-switch-type}'
- *        new-subject-template='template'
- *        fields='[{fieldDefinitions}]'>
- *        <semantic-form-hidden-input for='{switch-case-type}'
- *          default-value='http://www.example.com/spec-type-1'>
- *        </semantic-form-hidden-input>
- *        ... child inputs ...
- *      </semantic-form-composite-input>
- *    </semantic-form-switch-case>
- *    <semantic-form-switch-case label='case label 2'>
- *      <semantic-form-composite-input
- *        for='{general-switch-type}'
- *        new-subject-template='template'
- *        fields='[{fieldDefinitions}]'>
- *        <semantic-form-hidden-input for='{switch-case-type}'
- *          default-value='http://www.example.com/spec-type-2'>
- *        </semantic-form-hidden-input>
- *          ... another child inputs ...
- *        </semantic-form-composite-input>
- *      </semantic-form-switch-case>
- *  </semantic-form-switch>
- */
 export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
   private switchOperations = Cancellation.cancelled;
   private fieldValuesMap = new Map<string, FieldValue>();
@@ -254,12 +248,13 @@ export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
     const nextType = handler.cases.get(event.target.value);
     this.chosenType = nextType;
     this.fieldValuesMap.set(previousType.type.value, this.props.value);
+    handler.discard(this.props.value);
     this.props.updateValue(() => {
       return this.fieldValuesMap.get(nextType.type.value) || FieldValue.empty;
     });
   }
 
-  private renderCase(caseType: SwitchCaseType): JSX.Element {
+  private renderCase(caseType: SwitchCaseType): React.ReactNode {
     const handler = this.getHandler();
     if (handler.cases.size === 0) {
       return;
@@ -346,6 +341,18 @@ class FormSwitchHandler implements SingleValueHandler {
     }
     const caseType = this.selectCaseForValue(value, this.cases.first());
     return caseType.handler.validate(value);
+  }
+
+  discard(value: FieldValue): void {
+    if (!FieldValue.isComposite(value)) { return; }
+    const caseType = this.selectCaseForValue(value, this.cases.first());
+    caseType.handler.discard?.(value);
+  }
+
+  beforeFinalize(): void {
+    this.cases.forEach(caseType => {
+      caseType.handler.beforeFinalize?.();
+    });
   }
 
   finalize(value: FieldValue, owner: EmptyValue | CompositeValue) {

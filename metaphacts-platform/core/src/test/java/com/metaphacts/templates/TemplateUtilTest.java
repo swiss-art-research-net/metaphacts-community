@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,20 +40,19 @@
 package com.metaphacts.templates;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.google.common.collect.Lists;
-
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.vocabulary.FOAF;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 /**
@@ -116,7 +115,7 @@ public class TemplateUtilTest {
         set.add(RDF.TYPE);
         set.add(FOAF.PERSON);
         set.add(FOAF.AGENT);
-        assertThat(
+        MatcherAssert.assertThat(
                Lists.newArrayList(
                         "Template:"+RDF.TYPE.stringValue(),
                         "Template:"+FOAF.PERSON.stringValue(),

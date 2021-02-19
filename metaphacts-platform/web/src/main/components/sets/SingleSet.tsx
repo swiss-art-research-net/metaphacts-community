@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,7 @@ import {
 import { SetManagementEventType } from 'platform/api/services/ldp-set/SetManagementEvents';
 
 import * as Defaults from './Defaults';
-import { SetManagementProps } from './Configuration';
+import { SetManagementConfig } from './Configuration';
 import { PlatformSet } from './SetsModel';
 import { ViewState, ViewModel, emptySet } from './ViewModel';
 
@@ -70,16 +70,17 @@ import {
 
 import { CLASS_NAME } from './SetManagement';
 
-export interface SingleSetProps extends SetManagementProps {
+interface SingleSetConfig extends SetManagementConfig {
   /**
    * IRI of displayed set.
    */
   openedSet: string;
 }
 
-type Props = SingleSetProps & ComponentProps;
-export class SingleSet extends Component<Props, ViewState> {
-  static readonly defaultProps: Partial<Props> = Defaults.ForAllProps;
+export interface SingleSetProps extends SingleSetConfig, ComponentProps {}
+
+export class SingleSet extends Component<SingleSetProps, ViewState> {
+  static readonly defaultProps = Defaults.ForAllProps;
 
   static readonly childContextTypes = {
     ...Component.childContextTypes,
@@ -107,7 +108,7 @@ export class SingleSet extends Component<Props, ViewState> {
   private model: ViewModel;
   private pendingState: ViewState;
 
-  constructor(props: Props, context: any) {
+  constructor(props: SingleSetProps, context: any) {
     super(props, context);
 
     this.state = this.pendingState = ViewModel.loadState(this.props);

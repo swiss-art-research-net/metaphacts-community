@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,7 @@
 import * as Rdf from '../rdf/rdfModel';
 import {
     Dictionary, ClassModel, LinkTypeModel, ElementModel, LinkModel, LinkCount, Property, PropertyModel,
+    LinkedElement, ElementIri, hashLink, sameLink,
 } from '../model';
 import { objectValues } from '../../viewUtils/collections';
 import { HashSet } from '../../viewUtils/hashMap';
@@ -164,38 +165,6 @@ export function mergeElementInfo(
     response: CompositeResponse<Dictionary<ElementModel>>[],
     factory: Rdf.DataFactory
 ): Dictionary<ElementModel> {
-    const mergeElementModels = (a: ElementModel, b: ElementModel): ElementModel => {
-        const types = a.types;
-        for (const t of b.types) {
-            if (types.indexOf(t) === -1) {
-                types.push(t);
-            }
-        }
-        const sources: string[] = [];
-        if (a.sources) {
-            for (const s of a.sources) {
-                if (sources.indexOf(s) === -1) {
-                    sources.push(s);
-                }
-            }
-        }
-        if (b.sources) {
-            for (const s of b.sources) {
-                if (sources.indexOf(s) === -1) {
-                    sources.push(s);
-                }
-            }
-        }
-        return {
-            id: a.id,
-            label: mergeLabels(a.label, b.label),
-            types: types,
-            image: a.image || b.image,
-            properties: mergeProperties(a.properties, b.properties),
-            sources: sources,
-        };
-    };
-
     const dictionary: Dictionary<ElementModel> = {};
 
     for (const resp of response) {
@@ -214,6 +183,38 @@ export function mergeElementInfo(
         }
     }
     return dictionary;
+}
+
+function mergeElementModels(a: ElementModel, b: ElementModel): ElementModel {
+    const types = a.types;
+    for (const t of b.types) {
+        if (types.indexOf(t) === -1) {
+            types.push(t);
+        }
+    }
+    const sources: string[] = [];
+    if (a.sources) {
+        for (const s of a.sources) {
+            if (sources.indexOf(s) === -1) {
+                sources.push(s);
+            }
+        }
+    }
+    if (b.sources) {
+        for (const s of b.sources) {
+            if (sources.indexOf(s) === -1) {
+                sources.push(s);
+            }
+        }
+    }
+    return {
+        id: a.id,
+        label: mergeLabels(a.label, b.label),
+        types: types,
+        image: a.image || b.image,
+        properties: mergeProperties(a.properties, b.properties),
+        sources: sources,
+    };
 }
 
 export function mergeProperties(a: Dictionary<Property>, b: Dictionary<Property>): Dictionary<Property> {
@@ -255,22 +256,18 @@ export function mergeProperties(a: Dictionary<Property>, b: Dictionary<Property>
 }
 
 export function mergeLinksInfo(response: CompositeResponse<LinkModel[]>[]): LinkModel[] {
-    const lists: LinkModel[][] = response.filter(r => r.response).map(r => r.response);
+    const linkSet = new HashSet(hashLink, sameLink);
     const resultInfo: LinkModel[] = [];
 
-    function compareLinksInfo(a: LinkModel, b: LinkModel): boolean {
-        return a.sourceId === b.sourceId &&
-               a.targetId === b.targetId &&
-               a.linkTypeId === b.linkTypeId;
-    }
-
-    for (const linkInfo of lists) {
-        for (const linkModel of linkInfo) {
-            if (!resultInfo.some(l => compareLinksInfo(l, linkModel))) {
-                resultInfo.push(linkModel);
-            }
+    for (const info of response) {
+        if (!info.response) { continue; }
+        for (const linkModel of info.response) {
+            if (linkSet.has(linkModel)) { continue; }
+            linkSet.add(linkModel);
+            resultInfo.push(linkModel);
         }
     }
+
     return resultInfo;
 }
 
@@ -298,18 +295,57 @@ export function mergeLinkTypesOf(response: CompositeResponse<LinkCount[]>[]): Li
     return objectValues(dictionary);
 }
 
-export function mergeLinkElements(
-    response: CompositeResponse<Dictionary<ElementModel>>[],
+export function mergeFilter(
+    responses: CompositeResponse<LinkedElement[]>[],
     factory: Rdf.DataFactory
-): Dictionary<ElementModel> {
-    return mergeElementInfo(response, factory);
+): LinkedElement[] {
+    const elementIris: ElementIri[] = [];
+    const index = new Map<ElementIri, LinkedElement>();
+    for (const response of responses) {
+        for (const item of response.response) {
+            item.element.sources = [response.dataSourceName];
+            item.element.properties[DATA_PROVIDER_PROPERTY] = {
+                values: [factory.literal(response.dataSourceName)],
+            };
+            let indexedItem = index.get(item.element.id);
+            if (indexedItem) {
+                const mergedItem = mergeLinkedElements(indexedItem, item);
+                index.set(item.element.id, mergedItem);
+            } else {
+                indexedItem = item;
+                elementIris.push(item.element.id);
+                index.set(item.element.id, item);
+            }
+        }
+    }
+    const result: LinkedElement[] = [];
+    for (const elementIri of elementIris) {
+        const item = index.get(elementIri);
+        if (item) {
+            result.push(item);
+        }
+    }
+    return result;
 }
 
-export function mergeFilter(
-    response: CompositeResponse<Dictionary<ElementModel>>[],
-    factory: Rdf.DataFactory
-): Dictionary<ElementModel> {
-    return mergeElementInfo(response, factory);
+function mergeLinkedElements(a: LinkedElement, b: LinkedElement): LinkedElement {
+    const element = mergeElementModels(a.element, b.element);
+
+    const inLinks = [...a.inLinks];
+    for (const link of b.inLinks) {
+        if (inLinks.indexOf(link) < 0) {
+            inLinks.push(link);
+        }
+    }
+
+    const outLinks = [...a.outLinks];
+    for (const link of b.outLinks) {
+        if (outLinks.indexOf(link) < 0) {
+            outLinks.push(link);
+        }
+    }
+
+    return {element, inLinks, outLinks};
 }
 
 export function classTreeToArray(models: ClassModel[]): ClassModel[] {

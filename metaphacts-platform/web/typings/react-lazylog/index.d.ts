@@ -24,9 +24,7 @@ declare module 'react-lazylog'  {
         extraLines?: number;
     }
 
-    export class LazyLog extends Component<LazyLogProps> {
-        static defaultProps: Partial<LazyLogProps>;
-    }
+    export class LazyLog extends Component<LazyLogProps> {}
 
     import { Component, ReactNode } from "react";
 

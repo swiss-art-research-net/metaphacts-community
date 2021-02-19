@@ -45,14 +45,14 @@ export class ConfirmAlignDialog extends Component<ConfirmAlignDialogProps, {}> {
         className={styles.component}
         title='Select alignment relation type'
         onHide={onClose}>
-        <Button bsSize='large' block={true}
+        <Button size='lg' block={true}
           onClick={() => onSubmit(AlignKind.ExactMatch)}>
         <span className={styles.description}>
           <span className={styles.sourceTerm}>{Node.getLabel(sourceNode)}</span> is exact
           match (=) to <span className={styles.targetTerm}>{Node.getLabel(targetNode)}</span>
         </span>
         </Button>
-        <Button bsSize='large' block={true}
+        <Button size='lg' block={true}
           onClick={() => onSubmit(AlignKind.NarrowerMatch)}>
         <span className={styles.description}>
           <span className={styles.sourceTerm}>{Node.getLabel(sourceNode)}</span> is narrow

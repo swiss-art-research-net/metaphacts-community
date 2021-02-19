@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import { createFactory, createElement, Component, ReactNode } from 'react';
 import * as D from 'react-dom-factories';
-import { Row, Col, Button } from 'react-bootstrap';
+import { Row, Col, Button, ColProps } from 'react-bootstrap';
 import * as bem from 'bem-cn';
 
 const row = createFactory(Row);
@@ -79,13 +79,13 @@ export class FieldEditorRow extends Component<Props, {}> {
     return row(
       {className: block('row').toString()},
       col(
-        {md: 3, onClick: () => this.toggle({expand: true})},
+        {md: 3, onClick: () => this.toggle({expand: true})} as ColProps,
         D.span({}, label)
       ),
       col(
         {md: canBeCollapsed ? 8 : 9},
         row({},
-          expanded ? children : D.i(
+          expanded ? col({}, children) : D.i(
             {
               className: block('expand').toString(),
               onClick: () => this.toggle({expand: true}),
@@ -97,11 +97,12 @@ export class FieldEditorRow extends Component<Props, {}> {
           ? row({className: block('error').toString()}, error.message)
           : null,
       ),
-      col({md: 1, style: {display: canBeCollapsed ? undefined : 'none'}},
+      col({md: 1, style: {display: canBeCollapsed ? undefined : 'none'}} as ColProps,
         createElement(Button,
           {
             className: block('collapse').toString(),
-            bsSize: 'sm',
+            size: 'sm',
+            variant: 'secondary',
             onClick: () => this.toggle({expand: false}),
           },
           D.span({className: 'fa fa-times'})

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,7 +53,7 @@ import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.query.algebra.StatementPattern;
 import org.eclipse.rdf4j.query.algebra.Var;
 import org.eclipse.rdf4j.query.impl.MapBindingSet;
@@ -282,7 +282,7 @@ public class RESTWrappingSailUtils {
     }
     
     private static Value toValue(Object objVal, IRI dataType) {
-        if (dataType.equals(XMLSchema.ANYURI)) {
+        if (dataType.equals(XSD.ANYURI)) {
             return VF.createIRI(objVal.toString());
         } else {
             return VF.createLiteral(objVal.toString(), dataType);

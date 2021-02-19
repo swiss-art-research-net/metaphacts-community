@@ -26,17 +26,19 @@ Help:Services a skos:Concept ;
   skos:preferredLabel "Services" ;
   mpo:order 3 .
 
+Help:KnowledgeGraphAssetManagement a skos:Concept ;
+  skos:preferredLabel "Knowledge Graph Asset Management" ;
+  mpo:order 4.
+
 Help:PlatformOperations a skos:Concept ;
   skos:preferredLabel "Platform Operations" ;
-  mpo:order 3 .
+  mpo:order 5 .
 
 Help:InstallationAndAppLifecycle a skos:Concept ;
   skos:preferredLabel "Installation & App Lifecycle" ;
-  mpo:order 4 .
-
+  mpo:order 6 .
 
 # semantic components
-
 
 Help:HTML5Components a mpo:HelpPage ;
   skos:preferredLabel "Semantic Components" ;
@@ -79,12 +81,15 @@ Help:SemanticSimpleSearch a mpo:HelpPage ;
 Help:Ontodia a mpo:HelpPage ;
   skos:broader Help:HTML5Components .
 
+Help:FieldVisualization a mpo:HelpPage ;
+  skos:broader Help:HTML5Components .
+
 Help:SemanticForm a mpo:HelpPage ;
   skos:broader Help:HTML5Components .
 
 Help:SemanticFormDependenciesConstraints a mpo:HelpPage ;
   skos:broader Help:SemanticForm .
-  
+
 Help:SemanticUpdate a mpo:HelpPage ;
   skos:broader Help:MPComponents ;
   mpo:order 1100 .
@@ -98,7 +103,7 @@ Help:SemanticSearch a mpo:HelpPage ;
 Help:KeywordSearch a mpo:HelpPage ;
   skos:broader Help:SemanticSearch ;
   mpo:order 1100 .
-  
+
 Help:KeywordTypeSearch a mpo:HelpPage ;
   skos:broader Help:SemanticSearch ;
   mpo:order 1200 .
@@ -132,10 +137,6 @@ Help:StructuredConstantSearchExample a mpo:HelpPage ;
   mpo:order 10000 .
 
 
-
-
-
-
 # templates and templating
 
 Help:TemplatesAndTemplating a mpo:HelpPage ;
@@ -147,6 +148,9 @@ Help:TemplateAndApplicationPages a mpo:HelpPage ;
   skos:broader Help:TemplatesAndTemplating ;
   mpo:order 1000 .
 
+Help:PageEditor a mpo:HelpPage ;
+  skos:broader Help:TemplatesAndTemplating ;
+  mpo:order 1050 .
 
 Help:PageStructure a mpo:HelpPage ;
   skos:broader Help:TemplatesAndTemplating ;
@@ -212,7 +216,24 @@ Help:Publishing a mpo:HelpPage ;
   skos:preferredLabel "RDF Publishing" ;
   skos:broader Help:Services .
 
+Help:DescriptionService a mpo:HelpPage ;
+  skos:preferredLabel "Description Service" ;
+  skos:broader Help:Services .
 
+# knowledge graph asset management
+
+Help:DataManagement a skos:Concept ;
+  skos:prefLabel "Data Management" ;
+  skos:broader Help:KnowledgeGraphAssetManagement ;
+  mpo:order 110 .
+
+Help:DataLoading a mpo:HelpPage ;
+  skos:broader Help:DataManagement ;
+  mpo:order 1000.
+
+Help:WorkingWithData a mpo:HelpPage ;
+  skos:broader Help:DataManagement ;
+  mpo:order 1010.
 
 # platform operations
 
@@ -221,16 +242,6 @@ Help:RepositoryManager a mpo:HelpPage ;
 
 Help:OperationsAndTroubleshooting a mpo:HelpPage ;
   skos:broader Help:PlatformOperations .
-
-Help:DataLoading a mpo:HelpPage ;
-  skos:broader Help:PlatformOperations .
-
-Help:WorkingWithData a mpo:HelpPage ;
-  skos:broader Help:PlatformOperations .
-
-Help:RdfStar a mpo:HelpPage ;
-  skos:broader Help:WorkingWithData ;
-  mpo:order 1500 .
 
 Help:BasicSystemConfiguration a mpo:HelpPage ;
   skos:broader Help:PlatformOperations .

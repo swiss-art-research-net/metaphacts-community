@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -87,7 +87,7 @@ function renderQuad(quad: Rdf.Triple, props: RdfValueDisplayProps): React.ReactN
   if (props.showCopyToClipboardButton) {
     copyButton = (
       <CopyToClipboardComponent text={starTermToString(quad)}>
-        <button className='btn btn-link btn-xs' title='Copy triple'>
+        <button className='btn btn-link btn-sm' title='Copy triple'>
           <i className='fa fa-clipboard text-muted'></i>
         </button>
       </CopyToClipboardComponent>
@@ -213,7 +213,7 @@ function renderRdfNode(
       <>
         {resourceLink}
         <CopyToClipboardComponent text={data.value}>
-          <button className='btn btn-link btn-xs' title='Copy IRI'>
+          <button className='btn btn-link btn-sm' title='Copy IRI'>
             <i className='fa fa-clipboard text-muted'></i>
           </button>
         </CopyToClipboardComponent>

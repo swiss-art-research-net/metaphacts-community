@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,16 +39,24 @@
  */
 package com.metaphacts.services.storage.file;
 
-import com.metaphacts.services.storage.api.*;
-import org.apache.commons.configuration2.Configuration;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.apache.commons.configuration2.Configuration;
+
+import com.metaphacts.services.storage.StorageUtils;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.StorageConfig;
+import com.metaphacts.services.storage.api.StorageConfigException;
+import com.metaphacts.services.storage.api.StorageCreationParams;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StorageFactory;
+import com.metaphacts.services.storage.file.NonVersionedFileStorage.Config;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
  */
-public class NonVersionedFileStorageFactory implements StorageFactory {
+public class NonVersionedFileStorageFactory implements StorageFactory<NonVersionedFileStorage.Config> {
     @Override
     public String getStorageType() {
         return NonVersionedFileStorage.STORAGE_TYPE;
@@ -66,5 +74,11 @@ public class NonVersionedFileStorageFactory implements StorageFactory {
             config.setRoot(root);
         }
         return config;
+    }
+
+    @Override
+    public ObjectStorage createStorage(Config config, StorageCreationParams params) throws StorageException {
+        StorageUtils.mkdirs(config.getRoot());
+        return new NonVersionedFileStorage(params.getPathMapping(), config);
     }
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,7 +45,7 @@ import * as Maybe from 'data.maybe';
 
 import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil } from 'platform/api/sparql';
-import { getPrefixedUri, getFullIri } from 'platform/api/services/namespace';
+import { getFullIri } from 'platform/api/services/namespace';
 import { ConfigHolder } from 'platform/api/services/config-holder';
 
 import { init as initPersistentHistory, persistRecentPages } from './PersistentHistory';
@@ -151,7 +151,7 @@ export function openResourceInNewWindow(
   iri: Rdf.Iri, props?: {}, repository?: string
 ): void {
   window.open(
-    construcUrlForResourceSync(iri, props, repository).toString(), '_blank'
+    constructUrlForResourceSync(iri, props, repository).toString(), '_blank'
   );
 }
 
@@ -206,34 +206,32 @@ export function refresh(): void {
 /**
  * Construct URL for resource page with optional additional query parameters.
  * If possible, shortcuts full IRI to prefixed IRI.
+ *
+ * @deprecated Use `constructUrlForResourceSync()` instead
  */
 export function constructUrlForResource(
   iri: Rdf.Iri, props: {} = {}, repository = 'default', fragment = ''
 ): Kefir.Property<uri.URI> {
-  return getPrefixedUri(iri)
-    .map(mUri => {
-      const baseQuery = repository === 'default' ? {} : {repository: repository};
-      const resourceUrl = ConfigHolder.getEnvironmentConfig().resourceUrlMapping.value;
-      if (mUri.isJust) {
-        const url = uri(`${resourceUrl}${mUri.get()}`);
-        url.setQuery({...baseQuery, ...props});
-        url.fragment(fragment);
-        return url;
-      } else {
-        return construcUrlForResourceSync(iri, props, repository, fragment);
-      }
-    });
+  return Kefir.constant(constructUrlForResourceSync(iri, props, repository, fragment));
 }
 
-export function construcUrlForResourceSync(
+export function constructUrlForResourceSync(
   iri: Rdf.Iri, props: {} = {}, repository = 'default', fragment = ''
 ) {
+  const prefixedIri = SparqlUtil.tryCompactIriUsingPrefix(iri);
   const baseQuery = repository === 'default' ? {} : {repository: repository};
   const resourceUrl = ConfigHolder.getEnvironmentConfig().resourceUrlMapping.value;
-  const url = uri(`${resourceUrl}`);
-  url.setQuery({...baseQuery, ...props, uri: iri.value});
-  url.fragment(fragment);
-  return url;
+  if (!prefixedIri) {
+    const url = uri(`${resourceUrl}`);
+    url.setQuery({...baseQuery, ...props, uri: iri.value});
+    url.fragment(fragment);
+    return url;
+  } else {
+    const url = uri(`${resourceUrl}${prefixedIri}`);
+    url.setQuery({...baseQuery, ...props});
+    url.fragment(fragment);
+    return url;
+  }
 }
 
 /**

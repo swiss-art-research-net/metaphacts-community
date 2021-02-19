@@ -14,12 +14,12 @@
         <template id='statements'>
             {{#each bindings}}
             {{#ifCond number.value ">=" 1000}}
-                <bs-alert bs-style="warning">
+                <bs-alert variant="warning">
                     The table below is a preview of <strong>1000 statements</strong> from the named graph.
                     However, the absolute number of statements in the graph seems to be larger and some statements might be missing.
                 </bs-alert>
             {{else}}
-                <bs-alert bs-style="info">
+                <bs-alert variant="info">
                 The named graphs contains <strong>{{number.value}}</strong> distinct statements.
                 </bs-alert>
             {{/ifCond}}

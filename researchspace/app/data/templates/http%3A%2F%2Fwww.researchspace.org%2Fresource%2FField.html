@@ -23,7 +23,7 @@
 <div class='rs-field-assertions'>
   <div class='row'>
     <bs-col sm=6>
-      <mp-panel collapsible=true default-expanded=true bs-style='info'>
+      <mp-panel collapsible=true default-expanded=true variant='info'>
         <mp-panel-header>
           <div data-flex-layout="row">
             <span>Community Assertions</span>
@@ -57,7 +57,7 @@
                             ></mp-field-visualization>
                           </div>
                           <mp-event-trigger id='assert-new-value' type='Component.TemplateUpdate' targets='["assertion"]' data='{"assertion": "{{assertion.value}}"}'>
-                            <button class='btn btn-default btn-xs pull-right' title='Edit assertion' style='margin-left: 5px;'>
+                            <button class='btn btn-secondary btn-sm pull-right' title='Edit assertion' style='margin-left: 5px;'>
                               <i class='fa fa-pencil'></i> Edit
                             </button>
                           </mp-event-trigger>
@@ -110,7 +110,7 @@
     <bs-tab-container class="page__body-navtabs--borderless" default-active-key="assertions">
       [[/if]]
       <div>
-        <bs-nav bs-style="tabs">
+        <bs-nav variant="tabs">
           <bs-nav-item event-key="assertions">Assertions</bs-nav-item>
           <bs-nav-item event-key="annotations">
             Annotations <semantic-context repository='assets'><semantic-query query="SELECT (COUNT(DISTINCT ?s) AS ?count) WHERE {

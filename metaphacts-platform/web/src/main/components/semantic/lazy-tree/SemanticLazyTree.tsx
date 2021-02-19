@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,9 @@ import { Spinner } from 'platform/components/ui/spinner';
 import { KeyedForest, KeyPath, Traversable } from './KeyedForest';
 import { TreeSelection } from './TreeSelection';
 import { SingleFullSubtree } from './SelectionMode';
-import { TreeNode, ForestChange, queryMoreChildren } from './NodeModel';
+import {
+  TreeNode, ForestChange, expandPath, loadExistingPathInParallel, queryMoreChildren,
+} from './NodeModel';
 import {
   Node, TreeQueryPatterns, NodeDataPatterns, SparqlNodeModel, sealLazyExpanding,
 } from './SparqlNodeModel';
@@ -67,10 +69,44 @@ import { LazyTreeSelector, LazyTreeSelectorProps } from './LazyTreeSelector';
 import * as inputStyles from './SemanticTreeInput.scss';
 import * as lazyTreeStyles from './SemanticLazyTree.scss';
 import { LinkComponent } from 'platform/components/navigation/Link';
-import { construcUrlForResourceSync } from 'platform/api/navigation/Navigation';
+import { constructUrlForResourceSync } from 'platform/api/navigation/Navigation';
 
-// Exported for documentation
-export interface SemanticLazyTreeProps extends TreeQueryPatterns, NodeDataPatterns {
+/**
+ * Tree visualization component which provides ability to lazily render and
+ * search in large hierarchies by providing set of queries.
+ *
+ * **Example:**
+ * ```
+ * <semantic-lazy-tree
+ *   roots-query='
+ *     SELECT ?item WHERE {
+ *       ?item a owl:Class .
+ *       FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
+ *     }
+ *   '
+ *   children-query='
+ *     SELECT ?item WHERE {
+ *       ?item rdfs:subClassOf ?parent .
+ *     }
+ *   '
+ *   parents-query='
+ *     SELECT ?item ?parent WHERE {
+ *       ?item rdfs:subClassOf ?parent .
+ *     }
+ *   '
+ *   search-query='
+ *     SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
+ *       ?item a owl:Class .
+ *       ?item rdfs:label ?label .
+ *       BIND(false AS ?hasChildren)
+ *       FILTER REGEX(LCASE(?label), LCASE(?__token__), "i")
+ *     } ORDER BY DESC (?score) (?label) LIMIT 200
+ *   '
+ *   placeholder='Select or search for a class..'>
+ * </semantic-lazy-tree>
+ * ```
+ */
+interface SemanticLazyTreeConfig extends TreeQueryPatterns, NodeDataPatterns {
   /**
    * Optional custom class for the tree.
    */
@@ -81,7 +117,7 @@ export interface SemanticLazyTreeProps extends TreeQueryPatterns, NodeDataPatter
 
   /**
    * A flag determining whether any special Lucene syntax will
-   * be escaped in the <b>search-query</b> pattern. When `false` lucene
+   * be escaped in the `search-query` pattern. When `false` lucene
    * syntax in the user input is not escaped.
    *
    * Deprecated: escaping will be applied automatically based on SPARQL query.
@@ -92,7 +128,7 @@ export interface SemanticLazyTreeProps extends TreeQueryPatterns, NodeDataPatter
 
   /**
    * A flag determining whether the user input is tokenized by
-   * whitespace into words postfixed by `*` in the <b>search-query</b> pattern.
+   * whitespace into words postfixed by `*` in the `search-query` pattern.
    * E.g. the search for `Hello World` becomes `Hello* World*`.
    *
    * Deprecated: tokenization will be applied automatically based on SPARQL query.
@@ -103,19 +139,43 @@ export interface SemanticLazyTreeProps extends TreeQueryPatterns, NodeDataPatter
 
   /**
    * Template which is used to render every tree node.
+   *
    * By default `<semantic-link>` component is used for node visualization.
-   * <semantic-link iri='http://help.metaphacts.com/resource/FrontendTemplating'>
-   * See Frontend Templating</semantic-link>
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   nodeTemplate?: string;
 
   /**
    * Template which is applied when the query returns no results.
-   * <semantic-link iri='http://help.metaphacts.com/resource/FrontendTemplating'>
-   * See Frontend Templating</semantic-link>
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   noResultTemplate?: string;
+
+  /**
+   * Node IRI that should be opened and focused on by default.
+   */
+  focusedIri?: string;
 }
+
+// Exported for documentation
+interface SemanticLazyTreeTemplateData {
+  iri: string;
+  data: { [bindingName: string]: Rdf.Node | Rdf.Quad };
+  label?: string;
+  expanded: boolean;
+  hasError: boolean;
+  highlight?: string;
+}
+
+export type SemanticLazyTreeProps = SemanticLazyTreeConfig;
 
 const ITEMS_LIMIT = 200;
 const MIN_SEARCH_TERM_LENGTH = 3;
@@ -129,6 +189,7 @@ const MOCK_PARENTS_QUERY = `
 interface State {
   compiledTemplates?: CompiledTemplates;
   forest?: KeyedForest<Node>;
+  loadingFocusItem?: boolean;
   loadError?: any;
   model?: SparqlNodeModel;
   searchQuery?: SparqlJs.SelectQuery;
@@ -144,16 +205,6 @@ interface CompiledTemplates {
   noResultTemplate?: CompiledTemplate;
 }
 
-// Exported for documentation
-interface SemanticLazyTreeTemplateData {
-  iri: string;
-  data: { [bindingName: string]: Rdf.Node | Rdf.Quad };
-  label?: string;
-  expanded: boolean;
-  hasError: boolean;
-  highlight?: string;
-}
-
 interface SearchResult {
   forest?: KeyedForest<Node>;
   error?: any;
@@ -161,47 +212,13 @@ interface SearchResult {
   matchLimit?: number;
 }
 
-/**
- * This components provides ability to lazily render and search in
- * large tree-like hierarchies by providing set of queries for:
- * - querying roots
- * - querying children
- * - querying parents
- * - searching
- *
- * For children-query the variable "?parent" will be instantiated
- * @example
- *  <semantic-lazy-tree
- *    roots-query='
- *      SELECT ?item WHERE {
- *        ?item a owl:Class .
- *        FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }
- *      }
- *    '
- *    children-query='
- *      SELECT ?item WHERE {
- *        ?item rdfs:subClassOf ?parent .
- *      }
- *    '
- *    parents-query='
- *      SELECT ?item ?parent WHERE {
- *        ?item rdfs:subClassOf ?parent .
- *      }
- *    '
- *    search-query='
- *      SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
- *        ?item a owl:Class .
- *        ?item rdfs:label ?label .
- *        BIND(false AS ?hasChildren)
- *        FILTER REGEX(LCASE(?label), LCASE(?__token__), "i")
- *      } ORDER BY DESC (?score) (?label) LIMIT 200
- *    '
- *    placeholder='Select or search for a class..'>
- *  </semantic-lazy-tree>
- */
 export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   private readonly cancellation = new Cancellation();
-  private searchCancellation = new Cancellation();
+  private requestChildrenCancellation = new Cancellation();
+  private loadingFocusItemCancellation = Cancellation.cancelled;
+  private searchCancellation = Cancellation.cancelled;
+
+  private treeSelector: LazyTreeSelector | undefined;
 
   constructor(props: SemanticLazyTreeProps, context: any) {
     super(props, context);
@@ -213,7 +230,7 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   }
 
   componentDidMount() {
-    const {nodeTemplate, noResultTemplate} = this.props;
+    const {nodeTemplate, noResultTemplate, focusedIri} = this.props;
     if (nodeTemplate || noResultTemplate) {
       const noTemplate = Kefir.constant<CompiledTemplate | undefined>(undefined);
       this.cancellation.map(Kefir.combine<CompiledTemplates>({
@@ -229,6 +246,9 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
       // use default rendering
       this.setState({compiledTemplates: {}});
     }
+    if (focusedIri) {
+      this.focusOnItem(focusedIri);
+    }
   }
 
   componentWillReceiveProps(nextProps: SemanticLazyTreeProps) {
@@ -242,6 +262,9 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
     );
     if (!sameQueries) {
       this.setState(this.createQueryModel(nextProps));
+    }
+    if (nextProps.focusedIri !== props.focusedIri) {
+      this.focusOnItem(nextProps.focusedIri);
     }
   }
 
@@ -281,13 +304,66 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
 
   componentWillUnmount() {
     this.cancellation.cancelAll();
+    this.requestChildrenCancellation.cancelAll();
+    this.loadingFocusItemCancellation.cancelAll();
     this.searchCancellation.cancelAll();
+  }
+
+  private focusOnItem(focusedIri: string | undefined) {
+    this.loadingFocusItemCancellation.cancelAll();
+    if (!focusedIri) {
+      return;
+    }
+    const scrollToFocusedIfPossible = () => requestAnimationFrame(
+      () => this.scrollToNode(focusedIri)
+    );
+    this.setState(state => {
+      const leaf: Node = {
+        iri: Rdf.iri(focusedIri),
+        data: {},
+      };
+      this.loadingFocusItemCancellation.cancelAll();
+      this.loadingFocusItemCancellation = new Cancellation();
+      this.loadingFocusItemCancellation.map(
+        state.model.loadFromLeafs([leaf], {transitiveReduction: false})
+          .map(treeRoot => KeyedForest.create(Node.keyOf, treeRoot))
+          .flatMap(forest => (
+            loadExistingPathInParallel(
+              parent => state.model.hasMoreChildren(parent),
+              parent => state.model.loadMoreChildren(parent),
+              forest,
+              forest.getKeyPath(forest.getFirst(focusedIri))
+            )
+          ))
+      ).observe({
+        value: forest => {
+          this.requestChildrenCancellation.cancelAll();
+          this.requestChildrenCancellation = new Cancellation();
+          const path = forest.getKeyPath(forest.getFirst(focusedIri));
+          this.setState({
+            forest: expandPath(forest, path),
+            loadingFocusItem: false,
+          }, scrollToFocusedIfPossible);
+        },
+        error: loadError => this.setState({loadingFocusItem: false, loadError}),
+      });
+      return {loadingFocusItem: true};
+    }, scrollToFocusedIfPossible);
+  }
+
+  private scrollToNode(iri: string) {
+    const {forest} = this.state;
+    const nodes = forest.nodes.get(iri);
+    if (nodes && nodes.size > 0) {
+      const path = forest.getKeyPath(nodes.first());
+      this.treeSelector.scrollToPath(path);
+    }
   }
 
   render() {
     const {loadError, searchQuery} = this.state;
     if (loadError) {
-      return <Alert bsStyle='danger'>
+      return <Alert variant='danger'>
         <ErrorPresenter error={loadError}></ErrorPresenter>
       </Alert>;
     } else {
@@ -408,7 +484,7 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
 
     if (searchResult) {
       if (this.state.searchResult.error) {
-        return <Alert bsStyle='warning'>
+        return <Alert variant='warning'>
           <ErrorPresenter error={searchResult.error}></ErrorPresenter>
         </Alert>;
       }
@@ -419,8 +495,7 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
         </span>;
       } else if (!forest.root.children || forest.root.children.length === 0) {
         if (compiledTemplates.noResultTemplate) {
-          const {templateDataContext} = this.context;
-          const dataContext = mergeInContextOverride(templateDataContext, undefined);
+          const dataContext = mergeInContextOverride(this.appliedDataContext, undefined);
           const nodes = compiledTemplates.noResultTemplate(dataContext);
           return ModuleRegistry.mapHtmlTreeToReact(nodes);
         } else {
@@ -438,11 +513,15 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   }
 
   private renderTree(): React.ReactElement<any> {
-    const {searchResult} = this.state;
+    const {searchResult, loadingFocusItem} = this.state;
     const renderedForest = searchResult ?
       searchResult.forest : this.state.forest;
     const searchTerm = (searchResult && this.state.searchText)
       ? this.state.searchText.toLowerCase() : undefined;
+
+    if (loadingFocusItem) {
+      return <Spinner />;
+    }
 
     const config: LazyTreeSelectorProps<Node> = {
       forest: renderedForest,
@@ -469,7 +548,11 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
       },
     };
     const traversableConfig = config as unknown as LazyTreeSelectorProps<Traversable<Node>>;
-    return <LazyTreeSelector {...traversableConfig}></LazyTreeSelector>;
+    return <LazyTreeSelector ref={this.onTreeSelectorMount} {...traversableConfig} />;
+  }
+
+  private onTreeSelectorMount = (treeSelector: LazyTreeSelector | null) => {
+    this.treeSelector = treeSelector ?? undefined;
   }
 
   private updateForest(
@@ -483,13 +566,13 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
     this.setState((state: State, props: SemanticLazyTreeProps): State => {
       const {searchResult} = state;
       if (searchResult) {
-        return {searchResult: _.assign({}, searchResult, {
-          forest: update(searchResult.forest, state, props),
-        })};
-      } else {
+        const forest = update(searchResult.forest, state, props);
         return {
-          forest: update(state.forest, state, props),
+          searchResult: {...searchResult, forest},
         };
+      } else {
+        const forest = update(state.forest, state, props);
+        return {forest};
       }
     }, callback);
   }
@@ -497,7 +580,6 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   private renderItem(node: Node, highlightedTerm: string | undefined): React.ReactNode {
     const {compiledTemplates} = this.state;
     if (compiledTemplates.nodeTemplate) {
-      const {templateDataContext} = this.context;
       const templateData: SemanticLazyTreeTemplateData = {
         iri: node.iri.value,
         data: node.data,
@@ -506,7 +588,7 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
         hasError: Boolean(node.error || node.dataError),
         highlight: highlightedTerm,
       };
-      const dataContext = mergeInContextOverride(templateDataContext, templateData);
+      const dataContext = mergeInContextOverride(this.appliedDataContext, templateData);
       const nodes = compiledTemplates.nodeTemplate(dataContext);
       return ModuleRegistry.mapHtmlTreeToReact(nodes);
     } else {
@@ -517,7 +599,7 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   private defaultRenderItem(node: Node, highlightedTerm: string) {
     const rawText = node.label ? node.label.value : node.iri.value;
 
-    const resourceUrl = construcUrlForResourceSync(
+    const resourceUrl = constructUrlForResourceSync(
       node.iri, undefined, this.context.semanticContext.repository
     ).toString();
     let text = <LinkComponent url={resourceUrl}>{rawText}</LinkComponent>;
@@ -551,9 +633,12 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
     }, () => {
       const {searchResult, searchText} = this.state;
       const cancellation = searchText && !searchResult ?
-        this.searchCancellation : this.cancellation;
-      cancellation.map(changePromise)
-        .onValue(change => this.updateForest(change));
+        this.searchCancellation : this.requestChildrenCancellation;
+      cancellation.map(changePromise).observe({
+        value: change => {
+          this.updateForest(change);
+        }
+      });
     });
   }
 

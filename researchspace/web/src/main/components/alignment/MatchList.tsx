@@ -66,7 +66,7 @@ export class MatchList extends Component<MatchListProps, {}> {
         <span> {relationSign} </span>
         <span>{getLabel(targetBase.base)}</span>
         { hasBeenSaved ? null : <span className={styles.unsaved}>unsaved</span> }
-        <Button className={styles.scrollTo} bsSize='xs'
+        <Button className={styles.scrollTo} size='sm'
           title='Scroll to aligned terms'
           onClick={() => this.scrollToItem(entry)}>
           <span className='fa fa-arrow-right' aria-hidden='true'></span>

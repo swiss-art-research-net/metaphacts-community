@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,13 +53,13 @@ import com.metaphacts.rest.endpoint.CacheEndpoint;
 import com.metaphacts.rest.endpoint.ConfigurationEndpoint;
 import com.metaphacts.rest.endpoint.FieldEndpoint;
 import com.metaphacts.rest.endpoint.LogAdminEndpoint;
-import com.metaphacts.rest.endpoint.OntologyManagerEndpoint;
 import com.metaphacts.rest.endpoint.RdfNamespaceEndpoint;
 import com.metaphacts.rest.endpoint.ReconciliationEndpoint;
 import com.metaphacts.rest.endpoint.RepositoryManagerEndpoint;
 import com.metaphacts.rest.endpoint.ResourceUtilsEndpoint;
 import com.metaphacts.rest.endpoint.SecurityEndpoint;
 import com.metaphacts.rest.endpoint.SetManagementEndpoint;
+import com.metaphacts.rest.endpoint.StorageAdminEndpoint;
 import com.metaphacts.rest.endpoint.SystemAdminEndpoint;
 import com.metaphacts.rest.endpoint.TemplateEndpoint;
 import com.metaphacts.rest.endpoint.URLMinifierEndpoint;
@@ -132,9 +132,9 @@ public class RestApplication extends AbstractPlatformApplication {
         register(ReconciliationEndpoint.class);
 
         /*
-         * /rest/ontologies
+         * /rest/admin/storage
          */
-        register(OntologyManagerEndpoint.class);
+        register(StorageAdminEndpoint.class);
 
         register(AppAdminEndpoint.class);
 

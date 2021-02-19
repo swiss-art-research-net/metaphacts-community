@@ -1,0 +1,124 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+
+<div class='page'>
+  <div class='page__body'>
+  	<h1>Keyword Prefetch Search Component</h1>
+    <p>
+      The Keyword Prefetch Search Component (<code>semantic-search-keyword-prefetch</code>) complements the <semantic-link iri='[[resolvePrefix "Help:SemanticSearch"]]'>semantic search framework</semantic-link> with the ability to prefetch required data via the <semantic-link iri='[[resolvePrefix "Help:LookupService"]]'>Lookup Service</semantic-link> and then use it for the further investigation and refinement of the search.
+    </p>
+    <bs-alert variant="info" style="margin-left:2%;">
+      <strong>Info</strong><br/>
+      <p>
+        This component is very similar to the regular <semantic-link iri='[[resolvePrefix "Help:KeywordSearch"]]'>keyword search</semantic-link> component which should be used instead in most cases. This component should only be used to optimize performance when running costly search queries which should not be re-evaluated for each visualization component. The other use case is when using the LookupService via Ephedra is not possible and the lookup is to be performed with the <semantic-link iri='[[resolvePrefix "Help:DataClient"]]'>DataClient</semantic-link> instead.
+      </p>
+    </bs-alert>
+    <p>
+      The component executes a prefetch query and constructs a SPARQL VALUES clause based on the results. The results of the prefetch query are the set of bindings with columns defined by variables. Those variables are being used for injection into VALUES clause and can be passed into the component with the variable-definitions parameter.
+    </p>
+
+    <h2>Configuration</h2>
+    <mp-documentation type="KeywordPrefetchSearchConfig"></mp-documentation>
+
+    <p>
+      Unlike <code>semantic-search-keyword</code>, <code>semantic-search-keyword-prefetch</code> does not have a default configuration for a query. Along with plain SPARQL query execution this component supports <semantic-link iri="[[resolvePrefix "Help:DataClient"]]">Data Client</semantic-link> technology. The example bellow Illustrates the case of a SPARQL query passed into the component as string.
+    </p>
+
+    <mp-code-block>
+<semantic-search-keyword-prefetch
+  query='SELECT * WHERE {
+      ?subject a ?type.
+      ?subject ?keyProp ?key.
+      FILTER ISLITERAL(?key)
+      FILTER REGEX(LCASE(?key), LCASE(?__token__), "i").
+    } LIMIT 4'
+    placeholder='Type in "Alice"'>
+</semantic-search-keyword-prefetch>
+    </mp-code-block>
+In this example we show how to make use of <semantic-link iri='[[resolvePrefix "Help:DataClient"]]'>Lookup DataClient</semantic-link> query.
+    <mp-code-block>
+<semantic-search-keyword-prefetch
+  query='{ "type": "lookup", "limit": 100 }'>
+</semantic-search-keyword-prefetch>
+    </mp-code-block>
+
+    <br/>
+
+    <h2>Example 1</h2>
+    <p>The most basic search configuration using this component looks as follows:</p>
+    <p><i>Note: If <code>variable-definitions</code> parameter is not provided, the component tries to bind all possible columns for the VALUE clause.</i></p>
+
+    <mp-code-example>
+<semantic-search id="demo-1">
+<semantic-search-keyword-prefetch
+  query='SELECT ?subject ?type ?keyProp ?key WHERE {
+    ?subject a ?type.
+    ?subject ?keyProp ?key.
+    FILTER ISLITERAL(?key)
+    FILTER REGEX(LCASE(?key), LCASE(?__token__), "i").
+  } LIMIT 4'
+  placeholder='Type in "Alice"'
+></semantic-search-keyword-prefetch>
+
+<semantic-search-result-holder>
+  <semantic-search-result>
+    <semantic-table id='table' query='SELECT ?subject ?type ?keyProp ?key WHERE { } ORDER BY DESC(?score)'></semantic-table>
+  </semantic-search-result>
+</semantic-search-result-holder>
+</semantic-search>
+    </mp-code-example>
+
+   <h2>Example 2</h2>
+    <p>In case you want to manually provide the name of the variable, which is different form the name of the column in the preliminary fetched results or bind additional constant variable you should use <code>variable-definitions</code> parameter.</p>
+    <p><i>Note that the value for the variable, which was not returned from the prefetch query, will be set based on the fallback value if it's provided, otherwise it will be equal to <code>UNDEF</code>.</i></p>
+    <p><i>To map the name of the variable use <code>aliasId</code> parameter for variables.</i></p>
+    <p><i>For the case when you use DataClientQuery the only way to provide additional columns with a constant value is to use <code>variable-definitions</code> with <code>fallback</code> parameter.</i></p>
+
+    <mp-code-example>
+<semantic-search id="demo-2">
+<semantic-search-keyword-prefetch
+  query='SELECT ?subject ?type ?label ?keyProp ?key WHERE {
+    ?subject a ?type.
+    ?subject ?keyProp ?key.
+    FILTER ISLITERAL(?key)
+    FILTER REGEX(LCASE(?key), LCASE(?__token__), "i").
+    OPTIONAL { ?subject rdfs:label ?label }
+  } LIMIT 4'
+  placeholder='Type in "Alice"'
+  min-search-term-length = 2
+  variable-definitions='[
+    { "id": "subject" },
+    { "id": "label" },
+    { "id": "keyProp" },
+    { "id": "key" },
+    {
+      "id": "additionalValue",
+      "aliasId": "artificialLiteral",
+      "fallback": {
+        "termType": "Literal",
+        "value": "Constant literal with a lang",
+        "language": "de"
+      }
+    },
+    {
+      "id": "additionalValue2",
+      "aliasId": "artificialIri",
+      "fallback": {
+        "termType": "NamedNode",
+        "value": "http://example.com/artificialIri"
+      }
+    }
+  ]'
+></semantic-search-keyword-prefetch>
+
+<semantic-search-result-holder>
+  <semantic-search-result>
+    <semantic-table id='table' query='SELECT ?subject ?label ?keyProp ?key ?artificialLiteral ?artificialLiteralLang ?artificialIri WHERE {
+      BIND(LANG(?artificialLiteral) as ?artificialLiteralLang)
+    } ORDER BY DESC(?score)'></semantic-table>
+  </semantic-search-result>
+</semantic-search-result-holder>
+</semantic-search>
+    </mp-code-example>
+  </div>
+</div>

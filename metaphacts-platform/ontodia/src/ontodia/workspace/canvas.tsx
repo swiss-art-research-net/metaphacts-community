@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -316,12 +316,12 @@ export namespace CanvasImplementation {
         props: CanvasProps,
         context: WorkspaceContext
     ) {
-        const {editor} = context;
+        const {model, editor} = context;
         if (paperArea) {
             paperListener.listen(context.view.events, 'syncUpdateAll', () => {
                 renderingState.performSyncUpdate();
             });
-            paperListener.listen(editor.model.events, 'loadingSuccess', () => {
+            paperListener.listen(model.events, 'loadingSuccess', () => {
                 renderingState.performSyncUpdate();
                 performPostLoadingAction(paperArea, props);
             });
@@ -334,7 +334,7 @@ export namespace CanvasImplementation {
             paperListener.listen(paperArea.events, 'pointerDown', e => props.onPointerDown?.(e));
             paperListener.listen(paperArea.events, 'pointerMove', e => props.onPointerMove?.(e));
             paperListener.listen(paperArea.events, 'pointerUp', e => {
-                editor.handlePaperPointerUp(e);
+                editor._handlePaperPointerUp(e);
                 props.onPointerUp?.(e);
             });
             paperListener.listen(paperArea.events, 'zoom', e => props.onZoom?.(e));

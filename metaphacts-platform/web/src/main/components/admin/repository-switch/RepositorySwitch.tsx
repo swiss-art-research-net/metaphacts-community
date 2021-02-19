@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -88,8 +88,8 @@ export class RepositorySwitch extends Component<{}, State> {
     });
   }
 
-  private selectRepository(event: React.FormEvent<FormControl>) {
-    const currentRepository = (event.target as HTMLSelectElement).value;
+  private selectRepository(event: React.ChangeEvent<HTMLSelectElement>) {
+    const currentRepository = event.target.value;
     const uri = new URI(window.location.href);
     if (currentRepository) {
       uri.setQuery('repository', currentRepository);
@@ -119,10 +119,10 @@ export class RepositorySwitch extends Component<{}, State> {
     return (
       <div className={styles.repositorySelector}>
         <div className={styles.repositoryTitle}>Repository:</div>
-        <FormControl componentClass='select'
+        <FormControl as='select'
           className={styles.repositorySelectorDropdown}
           value={currentRepository}
-          onChange={event => this.selectRepository(event)}>
+          onChange={(event: React.ChangeEvent<HTMLSelectElement>) => this.selectRepository(event)}>
           {options}
         </FormControl>
       </div>

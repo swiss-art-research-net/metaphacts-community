@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,7 +57,7 @@
     padding: 10px 12px;
 
   }
-  .navbar-logo-name {
+  &.navbar-logo-name {
     display: flex;
 
     .navbar-logo, .navbar-name {
@@ -66,9 +66,11 @@
     .navbar-name .navbar-brand {
       margin-left: 0;
     }
+    .navbar-logo {
+      display: flex;
+    }
     .navbar-logo img {
       float: left;
-      margin: -10px 12px 0 0;
       height: 45px;
       width: auto;
     }

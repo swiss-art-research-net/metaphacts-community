@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,6 +50,7 @@ import org.eclipse.rdf4j.model.IRI;
 import org.junit.rules.ExternalResource;
 
 import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.SizedStream;
 import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.TemplateByIriLoader;
@@ -133,7 +134,9 @@ public class PlatformStorageRule extends ExternalResource {
             String storageId)
             throws IOException {
         try (InputStream in = sourceClass.getResourceAsStream(resourceFileName)) {
-            storeContent(targetPath, in, -1, storageId);
+            try (SizedStream sizedStream = SizedStream.bufferAndMeasure(in)) {
+                storeContent(targetPath, sizedStream.getStream(), sizedStream.getLength(), storageId);
+            }
         }
     }
 
@@ -143,7 +146,7 @@ public class PlatformStorageRule extends ExternalResource {
         storeContent(targetPath, new ByteArrayInputStream(bytes), bytes.length, storageId);
     }
 
-    public void storeContent(StoragePath targetPath, InputStream in, int length, String storageId) {
+    public void storeContent(StoragePath targetPath, InputStream in, long length, String storageId) {
         try {
             ObjectStorage storage = getObjectStorage(storageId);
             storage.appendObject(targetPath, getPlatformStorage().getDefaultMetadata(), in, length);

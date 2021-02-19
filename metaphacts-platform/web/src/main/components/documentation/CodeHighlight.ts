@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,37 +57,41 @@ import 'codemirror/mode/sparql/sparql';
 import 'codemirror/mode/turtle/turtle';
 import 'codemirror/mode/shell/shell';
 
-export interface CodeHighlightProps {
-  codeText: string;
-
+/**
+ * Component for code highlight. In templates it is exposed as a `<code>` tag.
+ *
+ * For inline code highlight with default `html` mode one can just use `<code>` tag:
+ * **Example**:
+ * ```
+ * <p>Some text <code><a>Hello World</a></code> </p>
+ * ```
+ */
+export interface CodeHighlightConfig {
   /**
    * Supported modes:
-   * 'text/html' - HTML
-   * 'text/x-java' - Java
-   * 'text/typescript' - TypeScript
-   * 'text/javascript' - JavaScript
-   * 'application/json' - JSON
-   * 'application/ld+json' - JSON-LD
-   * 'application/sparql-query' - SPARQL
-   * 'text/turtle' - Turtle
-   * 'application/n-triples' - N-Triples
-   * 'application/n-quads' - N-Quads
-   * 'text/x-sh' - Shell/Bash
-   * 'application/xml' - XML
+   *   - `text/html` - HTML
+   *   - `text/x-java` - Java
+   *   - `text/typescript` - TypeScript
+   *   - `text/javascript` - JavaScript
+   *   - `application/json` - JSON
+   *   - `application/ld+json` - JSON-LD
+   *   - `application/sparql-query` - SPARQL
+   *   - `text/turtle` - Turtle
+   *   - `application/n-triples` - N-Triples
+   *   - `application/n-quads` - N-Quads
+   *   - `text/x-sh` - Shell/Bash
+   *   - `application/xml` - XML
    *
-   * @default text/html
+   * @default "text/html"
    */
   mode?: string;
 }
 
-/**
- * Component for code highlight. In templates it is exposed as a <code> tag.
- *
- * For inline code highlight with default 'html' mode one can just use '<code>' tag:
- * @example
- *   <p>Some text <code><a>Hello World</a></code> </p>
- *
- */
+export interface CodeHighlightProps extends CodeHighlightConfig {
+  // provided by template markup parser, see Registry.ts
+  codeText: string;
+}
+
 export class CodeHighlightComponent extends Component<CodeHighlightProps, {}> {
 
   static defaultProps = {

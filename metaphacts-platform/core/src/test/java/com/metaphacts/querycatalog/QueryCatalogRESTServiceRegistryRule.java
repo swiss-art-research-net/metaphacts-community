@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,10 +45,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.metaphacts.junit.TestPlatformStorage;
-import com.metaphacts.repository.RepositoryManager;
-import com.metaphacts.repository.MpRepositoryProvider;
-import com.metaphacts.services.storage.api.ObjectKind;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Rule;
@@ -63,6 +59,9 @@ import com.metaphacts.data.rdf.container.LDPApiInternal;
 import com.metaphacts.data.rdf.container.LocalLDPAPIClient;
 import com.metaphacts.data.rdf.container.QueryTemplateContainer;
 import com.metaphacts.junit.NamespaceRule;
+import com.metaphacts.junit.TestPlatformStorage;
+import com.metaphacts.repository.MpRepositoryProvider;
+import com.metaphacts.repository.RepositoryManager;
 
 @Singleton
 public class QueryCatalogRESTServiceRegistryRule extends TemporaryFolder {

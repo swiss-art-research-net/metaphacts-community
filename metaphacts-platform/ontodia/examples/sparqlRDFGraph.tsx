@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {
-    Workspace, EventSource, CanvasCommands, SparqlDataProvider, OWLStatsSettings, GraphBuilder, Rdf,
+    Workspace, EventSource, SparqlDataProvider, OWLStatsSettings, GraphBuilder, Rdf, DefaultWorkspaceLayoutCommands,
 } from '../src/ontodia/index';
 
 import { renderExample } from './resources/common';
@@ -32,12 +32,12 @@ const GRAPH: Rdf.Quad[] = [
 ];
 
 class SparqlRdfGraphExample extends React.Component {
-    private commands = new EventSource<CanvasCommands>();
+    private commands = new EventSource<DefaultWorkspaceLayoutCommands>();
 
     render() {
         return (
             <Workspace ref={this.onWorkspaceMount}>
-                <ExampleWorkspaceLayout canvasCommands={this.commands} />
+                <ExampleWorkspaceLayout commands={this.commands} />
             </Workspace>
         );
     }

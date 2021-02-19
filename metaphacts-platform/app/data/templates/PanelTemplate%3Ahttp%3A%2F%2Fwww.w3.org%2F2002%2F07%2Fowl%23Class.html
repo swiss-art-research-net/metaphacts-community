@@ -1,0 +1,104 @@
+[[> Platform:OntologyStyles]]
+
+<div class='ontologyKnowledgePanel'>
+  <div class='ontologyKnowledgePanel__header'>
+    <div class='ontologyKnowledgePanel__title'><mp-label iri='[[this]]'></mp-label></div>
+    <div class='ontologyKnowledgePanel__navigate'>
+      <span class='ontologyKnowledgePanel__type'>Class</span> · <semantic-link iri='[[this]]'>Go to resource</semantic-link>
+    </div>
+  </div>
+  <bs-tabs id="kpTabs">
+    <bs-tab event-key="info" title="Info">
+      <div class='ontologyKnowledgePanel__content'>
+        <div class='ontologyKnowledgePanel__infoSection'>
+          <div class='ontologyKnowledgePanel__contentLabel'>IRI</div>
+          <div class='ontologyKnowledgePanel__iri'>[[this]]</div>
+        </div>
+        <semantic-if query='ASK {
+          OPTIONAL { ?property rdfs:domain <[[this]]> . }
+          OPTIONAL { ?property rdfs:range <[[this]]> . }
+          FILTER(BOUND(?property))
+        }' then='{{> domainRange}}'>
+          <template id='domainRange'>
+            <div class='ontologyKnowledgePanel__infoSection'>
+              <div class='ontologyKnowledgePanel__contentLabel'>Domain of</div>
+              <semantic-query query='SELECT DISTINCT ?property WHERE {
+                ?property rdfs:domain <[[this]]> .
+              }' template='{{> template}}' no-result-template='-'>
+                <template id='template'>
+                    <div>{{#each bindings~}}<mp-label iri='{{property.value}}'></mp-label>{{#unless @last}}, {{/unless}}{{/each}}</div>
+                </template>
+              </semantic-query>
+            </div>
+            <div class='ontologyKnowledgePanel__infoSection'>
+              <div class='ontologyKnowledgePanel__contentLabel'>Range of</div>
+              <semantic-query query='SELECT DISTINCT ?property WHERE {
+                ?property rdfs:range <[[this]]> .
+              }' template='{{> template}}' no-result-template='-'>
+                <template id='template'>
+                  <div>{{#each bindings~}}<mp-label iri='{{property.value}}'></mp-label>{{#unless @last}}, {{/unless}}{{/each}}</div>
+                </template>
+              </semantic-query>
+            </div>
+          </template>
+        </semantic-if>
+        
+
+        <div class='ontologyKnowledgePanel__infoSection'>
+          <div class='ontologyKnowledgePanel__contentLabel'>Description</div>
+          <div><mp-description iri='[[this]]' no-result-template='<i>No description available</i>'></mp-description></div>
+        </div>
+      </div>
+    </bs-tab>
+    <bs-tab event-key="attributes" title="Attributes">
+      <div class='ontologyKnowledgePanel__content'>
+        [[#> Platform:OntologyPropertyTable noDataMessage='This class has no attributes.']]
+          [[#*inline "query"]]
+            SELECT ?relation ?inherited ?source ?target ?minCount ?maxCount WHERE {
+              ?relation a owl:DatatypeProperty.
+
+              ?sh <http://www.w3.org/ns/shacl#path> ?relation .
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#datatype> ?target . }
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#minCount> ?minCount . }
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#maxCount> ?maxCount . }
+
+              {
+                ?nodeShape <http://www.w3.org/ns/shacl#targetClass> ?source .
+                ?nodeShape <http://www.w3.org/ns/shacl#property> ?sh .
+              } UNION {
+                ?source <http://www.w3.org/ns/shacl#property> ?sh .
+              }
+              <[[this]]> rdfs:subClassOf* ?source .
+              BIND(IF(?source != <[[this]]>, ?source, "") as ?inherited)
+            } ORDER BY DESC(?inherited) ?source ?relation ?target'
+          [[/inline]]
+        [[/Platform:OntologyPropertyTable]]
+      </div>
+    </bs-tab>
+    <bs-tab event-key="relation" title="Relations">
+      <div class='ontologyKnowledgePanel__content'>
+        [[#> Platform:OntologyPropertyTable noDataMessage='This class has no relations.']]
+          [[#*inline "query"]]
+            SELECT ?relation ?inherited ?source ?target ?minCount ?maxCount WHERE {
+              ?relation a owl:ObjectProperty.
+
+              ?sh <http://www.w3.org/ns/shacl#path> ?relation .
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#class> ?target . }
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#minCount> ?minCount . }
+              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#maxCount> ?maxCount . }
+
+              {
+                ?nodeShape <http://www.w3.org/ns/shacl#targetClass> ?source .
+                ?nodeShape <http://www.w3.org/ns/shacl#property> ?sh .
+              } UNION {
+                ?source <http://www.w3.org/ns/shacl#property> ?sh .
+              }
+              <[[this]]> rdfs:subClassOf* ?source .
+              BIND(IF(?source != <[[this]]>, ?source, "") as ?inherited)
+            } ORDER BY DESC(?inherited) ?source ?relation ?target
+          [[/inline]]
+        [[/Platform:OntologyPropertyTable]]
+      </div>
+    </bs-tab>
+  </bs-tabs>
+</div>

@@ -1,0 +1,57 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ChartType": {
+            "enum": [
+                "bar",
+                "bubble",
+                "donut",
+                "line",
+                "pie",
+                "radar"
+            ],
+            "type": "string"
+        }
+    },
+    "properties": {
+        "className": {
+            "description": "CSS class",
+            "type": "string"
+        },
+        "default": {
+            "$ref": "#/definitions/ChartType",
+            "description": "Default chart type"
+        },
+        "id": {
+            "description": "ID for issuing component events.",
+            "type": "string"
+        },
+        "style": {
+            "description": "CSS style"
+        },
+        "types": {
+            "description": "Adds chart type selector to quickly switch between specified chart types.",
+            "items": {
+                "enum": [
+                    "bar",
+                    "bubble",
+                    "donut",
+                    "line",
+                    "pie",
+                    "radar"
+                ],
+                "type": "string"
+            },
+            "type": "array"
+        }
+    },
+    "propertyOrder": [
+        "types",
+        "default",
+        "style",
+        "className",
+        "id"
+    ],
+    "type": "object"
+}
+

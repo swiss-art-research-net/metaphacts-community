@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,8 @@ import { isQuery, isSelectQuery } from 'platform/api/sparql/TypeGuards';
 const { xsd } = vocabularies;
 
 /**
- * Defines a binding input parameters, tells if the parameter is optional or not and what datatype the parameter should have.
+ * Defines a binding input parameters, tells if the parameter is optional or not
+ * and what datatype the parameter should have.
  */
 interface BindSparqlParam {
   /**
@@ -69,7 +70,7 @@ interface BindSparqlParam {
 /**
  * Defines a token input parameters and tells whether it should be escaped and tokenized or not.
  * Also here it's possible to specify if the parameter is optional or not.
- * It's expected that token alway of <code>Literal^^xsd:string</code> type.
+ * It's expected that token is always of `xsd:string` datatype.
  */
 interface TokenSparqlParam {
   /**
@@ -108,18 +109,18 @@ export type SparqlParam = TokenSparqlParam | BindSparqlParam;
  */
 export interface SparqlDataQuery {
   /**
-   * Type of the query. Should be always "<b>sparql</b>" in order to be of a type SparqlQuery
+   * Type of the query. Should be always `sparql` in order to be of a type SparqlQuery
    */
   type: 'sparql';
 
   /**
-   * SPARQL <b>SELECT</b> query
+   * SPARQL SELECT query.
    */
   query: string;
 
   /**
-   * Dictionary of input parameters where for each defined input variable there is a corresponding definition.
-   * The definition can be one of two types <code>TokenSparqlParam</code> or <code>BindSparqlParam</code>.
+   * Dictionary of input parameters where for each defined input variable
+   * there is a corresponding definition.
    */
   params?: { [variable: string]: SparqlParam };
 }

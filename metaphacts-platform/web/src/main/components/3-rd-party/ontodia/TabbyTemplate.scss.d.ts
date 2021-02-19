@@ -5,6 +5,7 @@ export const selected: string;
 export const ontodiaCanvasGray: string;
 export const content: string;
 export const image: string;
+export const imageShadow: string;
 export const body: string;
 export const label: string;
 export const types: string;

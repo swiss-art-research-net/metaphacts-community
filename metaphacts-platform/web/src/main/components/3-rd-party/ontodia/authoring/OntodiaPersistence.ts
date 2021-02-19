@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +38,7 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as Kefir from 'kefir';
-import { AuthoringState, ElementIri, ElementTypeIri, ElementModel } from 'ontodia';
+import { AuthoringState, DataProvider, ElementIri, ElementTypeIri, ElementModel } from 'ontodia';
 
 import { EntityMetadata } from './FieldConfigurationCommon';
 
@@ -48,6 +48,7 @@ export interface OntodiaPersistence {
 }
 
 export interface OntodiaPersistenceParams {
+  readonly dataProvider: DataProvider;
   readonly entityMetadata: ReadonlyMap<ElementTypeIri, EntityMetadata>;
   readonly state: AuthoringState;
   fetchModel(iri: ElementIri): Kefir.Property<ElementModel>;
@@ -64,8 +65,10 @@ export interface OntodiaPersistenceResult {
 // This interface defined here instead of next to implementation to be able to
 // expose it in Ontodia props interface and the documentation
 export interface OntologyPersistenceProps {
-  type: 'ontology';
+  type: 'ontology' | 'ontology-legacy';
   targetGraphIri: string;
+  ontology: string;
   repository: string;
   typePattern?: string;
+  debug?: boolean;
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,25 +39,19 @@
  */
 import * as React from 'react';
 
-import { MetadataApi } from '../data/metadataApi';
 import { ElementModel, LinkModel, sameLink } from '../data/model';
 
-import { EditorController } from '../editor/editorController';
-import { DiagramView } from '../diagram/view';
-import { LinkDirection } from '../diagram/elements';
-
-import { Cancellation } from '../viewUtils/async';
+import { Cancellation, CancellationToken } from '../viewUtils/async';
 
 import { ProgressBar, ProgressState } from '../widgets/progressBar';
+
+import { WorkspaceContextWrapper, WorkspaceContextTypes } from '../workspace/workspaceContext';
 
 import { LinkTypeSelector, LinkValue, validateLinkType } from './linkTypeSelector';
 
 const CLASS_NAME = 'ontodia-edit-form';
 
 export interface EditLinkFormProps {
-    editor: EditorController;
-    view: DiagramView;
-    metadataApi: MetadataApi | undefined;
     link: LinkModel;
     source: ElementModel;
     target: ElementModel;
@@ -72,13 +66,17 @@ interface State {
 }
 
 export class EditLinkForm extends React.Component<EditLinkFormProps, State> {
+    static contextTypes = WorkspaceContextTypes;
+    declare readonly context: WorkspaceContextWrapper;
+
     private validationCancellation = new Cancellation();
 
     constructor(props: EditLinkFormProps) {
         super(props);
         this.state = {
             linkValue: {
-                value: {link: props.link, direction: LinkDirection.out},
+                link: props.link,
+                generated: true,
                 validated: true,
                 allowChange: true,
             },
@@ -91,11 +89,11 @@ export class EditLinkForm extends React.Component<EditLinkFormProps, State> {
 
     componentDidUpdate(prevProps: EditLinkFormProps, prevState: State) {
         const {linkValue} = this.state;
-        if (!sameLink(linkValue.value.link, prevState.linkValue.value.link)) {
+        if (!sameLink(linkValue.link, prevState.linkValue.link)) {
             this.validate();
         }
         if (linkValue !== prevState.linkValue && linkValue.validated && linkValue.allowChange) {
-            this.props.onChange(linkValue.value.link);
+            this.props.onChange(linkValue.link);
         }
     }
 
@@ -103,39 +101,59 @@ export class EditLinkForm extends React.Component<EditLinkFormProps, State> {
         this.validationCancellation.abort();
     }
 
-    private validate() {
-        const {editor, link: originalLink} = this.props;
-        const {linkValue: {value}} = this.state;
+    private async validate() {
+        const {model, editor} = this.context.ontodiaWorkspace;
+        const {metadataApi} = editor;
+        const {source, target, link: originalLink} = this.props;
+        const {linkValue: {link, generated}} = this.state;
         this.setState({isValidating: true});
 
         this.validationCancellation.abort();
         this.validationCancellation = new Cancellation();
         const signal = this.validationCancellation.signal;
 
-        validateLinkType(editor, value.link, originalLink).then(error => {
-            if (signal.aborted) { return; }
-            this.setState(({linkValue}) => ({
-                linkValue: {...linkValue, ...error, validated: true},
-                isValidating: false,
-            }));
-        });
+        let regeneratedLink = link;
+        if (metadataApi && !generated) {
+            let generateSource = source;
+            let generateTarget = target;
+            if (link.sourceId !== source.id) {
+                [generateSource, generateTarget] = [generateTarget, generateSource];
+            }
+            const generatedLink = await CancellationToken.mapCancelledToNull(
+                signal,
+                metadataApi.generateNewLink(generateSource, generateTarget, link.linkTypeId, signal)
+            );
+            if (generatedLink === null) { return; }
+            regeneratedLink = generatedLink;
+        }
+
+        const error = await validateLinkType(regeneratedLink, model, editor.temporaryState, originalLink);
+        if (signal.aborted) { return; }
+
+        this.setState(({linkValue}) => ({
+            linkValue: {
+                ...linkValue,
+                ...error,
+                link: regeneratedLink,
+                generated: true,
+                validated: true,
+            },
+            isValidating: false,
+        }));
     }
 
     render() {
-        const {editor, view, metadataApi, source, target} = this.props;
+        const {source, target} = this.props;
         const {linkValue, isValidating} = this.state;
-        const isValid = !linkValue.error;
+        const linkIsReadyToApply = linkValue.generated && !linkValue.error;
         return (
             <div className={CLASS_NAME}>
                 <div className={`${CLASS_NAME}__body`}>
-                    <LinkTypeSelector editor={editor}
-                        view={view}
-                        metadataApi={metadataApi}
-                        linkValue={linkValue}
+                    <LinkTypeSelector linkValue={linkValue}
                         source={source}
                         target={target}
                         onChange={value => this.setState({
-                            linkValue: {value, error: undefined, validated: false, allowChange: false},
+                            linkValue: {...value, error: undefined, validated: false, allowChange: false},
                         })}
                     />
                     {isValidating ? (
@@ -146,8 +164,8 @@ export class EditLinkForm extends React.Component<EditLinkFormProps, State> {
                 </div>
                 <div className={`${CLASS_NAME}__controls`}>
                     <button className={`ontodia-btn ontodia-btn-success ${CLASS_NAME}__apply-button`}
-                        onClick={() => this.props.onApply(linkValue.value.link)}
-                        disabled={!isValid || isValidating}>
+                        onClick={() => this.props.onApply(linkValue.link)}
+                        disabled={!linkIsReadyToApply || isValidating}>
                         Apply
                     </button>
                     <button className='ontodia-btn ontodia-btn-danger'

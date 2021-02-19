@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,18 +45,22 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 
 interface SemanticSearchResultHolderConfig {
   /**
-   * An array of search domains categories (full IRIs without <>) to be shown.
-   * If effective search domain is <b>in the array</b>, search result will be <b>shown</b>,
-   * otherwise - it will be hidden in this <code>semantic-search-result-holder</code> visualization.
-   * Cannot be used together with domains-exclude.
+   * An array of search domains categories (full IRIs without `<>`) to be shown.
+   *
+   * If effective search domain is **in the array**, search result will be **shown**,
+   * otherwise it will be hidden in this `<semantic-search-result-holder>` visualization.
+   *
+   * Cannot be used together with `domains-exclude` attribute.
    */
   domainsInclude?: ReadonlyArray<string>;
 
   /**
-   * An array of search domains categories (full IRIs without <>) to be shown.
-   * If effective search domain is <b>in the array</b>, search result will be <b>hidden</b>,
-   * otherwise - it will be shown in this <code>semantic-search-result-holder</code> visualization.
-   * Cannot be used together with domains-include.
+   * An array of search domains categories (full IRIs without `<>`) to be shown.
+   *
+   * If effective search domain is **in the array**, search result will be **hidden**,
+   * otherwise it will be shown in this `<semantic-search-result-holder>` visualization.
+   *
+   * Cannot be used together with `domains-include` attribute.
    */
   domainsExclude?: ReadonlyArray<string>;
 }

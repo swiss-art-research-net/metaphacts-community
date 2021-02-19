@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,9 @@ import { Rdf, vocabularies, XsdDataTypeValidation } from 'platform/api/rdf';
 
 import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import { FieldValue, AtomicValue, EmptyValue } from '../FieldValues';
-import { SingleValueInput, AtomicValueInput, AtomicValueInputProps } from './SingleValueInput';
+import {
+  SingleValueInput, SingleValueInputConfig, AtomicValueInput, AtomicValueInputProps,
+} from './SingleValueInput';
 import { ValidationMessages } from './Decorations';
 
 import './datetime.scss';
@@ -62,12 +64,15 @@ export const INPUT_XSD_TIME_FORMAT = 'HH:mm:ssZZ';
 export const OUTPUT_UTC_DATE_FORMAT = 'YYYY-MM-DD';
 export const OUTPUT_UTC_TIME_FORMAT = 'HH:mm:ss';
 
-export type DatePickerMode = 'date' | 'time' | 'dateTime';
-
-export interface DatePickerInputProps extends AtomicValueInputProps {
+interface SemanticFormDatePickerInputConfig extends SingleValueInputConfig {
   mode?: DatePickerMode;
   placeholder?: string;
 }
+
+export type DatePickerMode = 'date' | 'time' | 'dateTime';
+
+export interface DatePickerInputProps
+  extends SemanticFormDatePickerInputConfig, AtomicValueInputProps {}
 
 export class DatePickerInput extends AtomicValueInput<DatePickerInputProps, {}> {
   private get datatype() {

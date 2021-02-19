@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,7 +51,7 @@ import { EditorController } from './editorController';
 import { ElementChange } from './authoringState';
 import { ElementValidation, LinkValidation } from './validation';
 
-const CLASS_NAME = `ontodia-authoring-state`;
+import * as styles from './linkStateWidget.scss';
 
 export interface ElementDecoratorProps {
     model: Element;
@@ -152,10 +152,10 @@ export class ElementDecorator extends React.Component<ElementDecoratorProps, Sta
     }
 
     private renderErrorIcon(title: string, validation: LinkValidation | ElementValidation) {
-        return <div className={`${CLASS_NAME}__item-error`} title={title}>
+        return <div className={styles.itemError} title={title}>
             {validation.loading
                 ? <HtmlSpinner width={15} height={17} />
-                : <div className={`${CLASS_NAME}__item-error-icon`} />}
+                : <div className={styles.itemErrorIcon} />}
             {(!validation.loading && validation.errors.length > 0)
                 ? validation.errors.length : undefined}
         </div>;
@@ -204,8 +204,8 @@ export class ElementDecorator extends React.Component<ElementDecoratorProps, Sta
             if (statusText && title) {
                 renderedState = (
                     <span>
-                        <span className={`${CLASS_NAME}__state-label`}>{statusText}</span>
-                        [<span className={`${CLASS_NAME}__state-cancel`}
+                        <span className={styles.stateLabel}>{statusText}</span>
+                        [<span className={styles.stateCancel}
                             onClick={onCancel} title={title}>cancel</span>]
                     </span>
                 );
@@ -214,11 +214,11 @@ export class ElementDecorator extends React.Component<ElementDecoratorProps, Sta
             const renderedErrors = this.renderElementErrors();
             if (renderedState || renderedErrors) {
                 return (
-                    <div className={`${CLASS_NAME}__state-indicator`}
+                    <div className={styles.stateIndicator}
                         key={model.id}
                         style={{left: 0, top: 0}}>
-                        <div className={`${CLASS_NAME}__state-indicator-container`}>
-                            <div className={`${CLASS_NAME}__state-indicator-body`}>
+                        <div className={styles.stateIndicatorContainer}>
+                            <div className={styles.stateIndicatorBody}>
                                 {renderedState}
                                 {renderedErrors}
                             </div>

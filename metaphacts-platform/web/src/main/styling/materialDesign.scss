@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +38,8 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 .material-design-theme {
-  $font-size-base: 16px;
+  // TODO: validate
+  // $font-size-base: 16px;
   $line-height-base: 1.63;
   $brand-primary: #192946;
   $link-color: #3cb7d2;
@@ -60,7 +61,7 @@
   $state-info-border: darken(adjust-hue($state-info-bg, -10), 7%);
 
   $state-warning-text: #907c27;
-  $state-warning-bg: $brand-warning;
+  $state-warning-bg: $warning;
   $state-warning-border: darken(adjust-hue($state-warning-bg, -10), 5%);
 
   $state-danger-text: #d0021b;
@@ -73,47 +74,10 @@
 
   $web-font-path: "~platform/styling/fonts.css";
 
-  @import "~bootswatch/paper/_variables.scss";
-
-  // start bootstrap
-  // Core variables and mixins
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/variables";
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins";
-
-  // Core CSS
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/scaffolding";
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/type";
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/code";
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/grid";
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/tables";
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/forms";
-  @import "~bootstrap-sass/assets/stylesheets/bootstrap/buttons";
 
 
-// Components
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/component-animations";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/dropdowns";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/button-groups";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/input-groups";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/navs";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/navbar";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/breadcrumbs";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/pagination";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/pager";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/labels";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/badges";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/jumbotron";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/thumbnails";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/alerts";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/progress-bars";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/media";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/list-group";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/panels";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/responsive-embed";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/wells";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap/close";
-
-@import "~bootswatch/paper/_bootswatch.scss";
+  @import "~bootstrap/scss/bootstrap";
+  @import "~bootswatch/dist/flatly/_variables.scss";
 
   h1, h2, h3, h4, h5, h6 {
     color: #142948;

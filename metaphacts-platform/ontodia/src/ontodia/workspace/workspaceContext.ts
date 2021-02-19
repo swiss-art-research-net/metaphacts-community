@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,7 +42,9 @@ import { DiagramView } from '../diagram/view';
 import { PropTypes } from '../viewUtils/react';
 import { Events } from '../viewUtils/events';
 
+import { AsyncModel } from '../editor/asyncModel';
 import { EditorController } from '../editor/editorController';
+import { OverlayController } from '../editor/overlayController';
 
 import { CanvasMethods } from './canvas';
 
@@ -73,12 +75,14 @@ export interface WorkspaceContextWrapper {
 }
 
 export interface WorkspaceContext {
-    view: DiagramView;
-    editor: EditorController;
-    onClearAll: () => void;
-    onChangeLanguage: (language: string) => void;
-    triggerWorkspaceEvent: WorkspaceEventHandler;
-    workspaceCommands: Events<WorkspaceCommands>;
+    readonly model: AsyncModel;
+    readonly view: DiagramView;
+    readonly editor: EditorController;
+    readonly overlayController: OverlayController;
+    readonly onClearAll: () => void;
+    readonly onChangeLanguage: (language: string) => void;
+    readonly triggerWorkspaceEvent: WorkspaceEventHandler;
+    readonly workspaceCommands: Events<WorkspaceCommands>;
 }
 
 export const WorkspaceContextTypes: { [K in keyof WorkspaceContextWrapper]: any } = {

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,7 +56,6 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.metaphacts.ui.templates.ST;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.permission.WildcardPermission;
@@ -74,7 +73,12 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -100,6 +104,7 @@ import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.rest.endpoint.ReconciliationEndpoint;
 import com.metaphacts.security.MetaphactsSecurityTestUtils;
 import com.metaphacts.security.Permissions;
+import com.metaphacts.ui.templates.ST;
 
 public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
     static final ValueFactory vf = SimpleValueFactory.getInstance();
@@ -113,11 +118,22 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
     
     static HttpServer server;
 
+    private final static String LANGUAGE_TAG_EN = "en";
+    private final static String LANGUAGE_TAG_DE = "de";
+    private final static String LANGUAGE_TAG_RU = "ru";
+    private final static String LANGUAGE_TAG_FR = "fr";
+    private final static String LANGUAGE_TAG_IT = "it";
+
+    private final static String LANGUAGE_RANGE_DE = "de-CH";
+
     private static final IRI ALICE_1 = vf.createIRI("http://www.metaphacts.com/Alice1");
     private static final IRI ALICE_2 = vf.createIRI("http://www.metaphacts.com/Alice2");
     private static final IRI ALICE_3 = vf.createIRI("http://www.metaphacts.com/Alice3");
     private static final IRI ALICE_4 = vf.createIRI("http://www.metaphacts.com/Alice4");
     private static final Literal ALICE_NAME_1 = vf.createLiteral("Alice");
+    private static final Literal ALICE_NAME_1_EN = vf.createLiteral("Alice (EN)", LANGUAGE_TAG_EN);
+    private static final Literal ALICE_NAME_1_DE = vf.createLiteral("Alice (DE)", LANGUAGE_TAG_DE);
+    private static final Literal ALICE_NAME_1_RU = vf.createLiteral("Алиса (RU)", LANGUAGE_TAG_RU);
     private static final Literal ALICE_NAME_2 = vf.createLiteral("Alice from");
     private static final Literal ALICE_NAME_3 = vf.createLiteral("Alice from Wonderland");
     private static final Literal ALICE_NAME_4 = vf.createLiteral("Alice from Mirrorland");
@@ -125,7 +141,7 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
     private static final Literal AGE_2 = vf.createLiteral(20);
     private static final Literal ALICE_COMMENT_1 = vf.createLiteral("Alice is the character of the book \"Alice in Wonderland\"");
     private static final Literal ALICE_COMMENT_2 = vf.createLiteral("Alice is a real person");
-    private static final String DESCRIPTION_1 = "<div>\n    <h2>Alice</h2>\n    <p>Alice is the character of the book &quot;Alice in Wonderland&quot;</p>\n</div>";
+    private static final String DESCRIPTION_1 = "<div>\n    <h2>Alice (EN)</h2>\n    <p>Alice is the character of the book &quot;Alice in Wonderland&quot;</p>\n</div>";
     private static final String DESCRIPTION_2 = "<div>\n    <h2>Alice from</h2>\n    <p>Alice is a real person</p>\n</div>";
     private static final String DESCRIPTION_3 = "<div>\n    <h2>Alice from Wonderland</h2>\n    <p></p>\n</div>";
     private static final String DESCRIPTION_4 = "<div>\n    <h2>Alice from Mirrorland</h2>\n    <p></p>\n</div>";
@@ -190,6 +206,9 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
         Model model = new TreeModel();
         model.addAll(Lists.newArrayList(
             vf.createStatement(ALICE_1, RDFS.LABEL, ALICE_NAME_1),
+            vf.createStatement(ALICE_1, RDFS.LABEL, ALICE_NAME_1_EN),
+            vf.createStatement(ALICE_1, RDFS.LABEL, ALICE_NAME_1_DE),
+            vf.createStatement(ALICE_1, RDFS.LABEL, ALICE_NAME_1_RU),
             vf.createStatement(ALICE_1, RDF.TYPE, FOAF.AGENT),
             vf.createStatement(ALICE_1, FOAF.AGE, AGE_1),
             vf.createStatement(ALICE_1, RDFS.COMMENT, ALICE_COMMENT_1),
@@ -298,6 +317,157 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
         this.sendRemoteRequest(QueryMethod.postDataForm);
         this.sendRemoteRequest(QueryMethod.postUrlEncodedForm);
         this.sendRemoteManifestRequest();
+    }
+
+    @Test
+    public void lookupWithPreferredLanguage() throws Exception {
+        Response response = this.sendReconciliationQuery(QueryMethod.postRawJson, MULTI_LINGUAL_QUERY, false);
+        Map<String, LookupResponse> responseMap = this.getResponseAsMap(response);
+
+        LookupResponse recRespEn = responseMap.get("q0");
+        assertNotNull(recRespEn);
+        assertEquals(ALICE_NAME_1_EN.stringValue(), recRespEn.getResult().get(0).getName());
+
+        LookupResponse recRespDe = responseMap.get("q1");
+        assertNotNull(recRespDe);
+        assertEquals(ALICE_NAME_1_EN.stringValue(), recRespDe.getResult().get(0).getName());
+
+        LookupResponse recRespRu = responseMap.get("q2");
+        assertNotNull(recRespRu);
+        assertEquals(ALICE_NAME_1_RU.stringValue(), recRespRu.getResult().get(0).getName());
+
+        // Here we get preferredLanguage from platform defaults
+        LookupResponse recRespFr = responseMap.get("q3");
+        assertNotNull(recRespFr);
+        assertEquals(ALICE_NAME_1_EN.stringValue(), recRespFr.getResult().get(0).getName());
+    }
+
+    @Test
+    public void lookupWithPreferredLanguageInHeader() throws Exception {
+        Response responseEn = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.get, SINGLE_QUERY, LANGUAGE_TAG_EN + ", " + LANGUAGE_RANGE_DE + ";q=0.5");
+        Map<String, LookupResponse> responseMapEn = this.getResponseAsMap(responseEn);
+        LookupResponse recRespEn = responseMapEn.get("q0");
+        assertNotNull(recRespEn);
+        assertEquals(ALICE_NAME_1_EN.stringValue(), recRespEn.getResult().get(0).getName());
+
+        Response responseDe = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.postRawJson, SINGLE_QUERY, LANGUAGE_TAG_DE + ", " + LANGUAGE_TAG_RU);
+        Map<String, LookupResponse> responseMapDe = this.getResponseAsMap(responseDe);
+        LookupResponse recRespDe = responseMapDe.get("q0");
+        assertNotNull(recRespDe);
+        assertEquals(ALICE_NAME_1_DE.stringValue(), recRespDe.getResult().get(0).getName());
+
+        Response responseDeCh = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.postRawJson, SINGLE_QUERY, LANGUAGE_RANGE_DE + ", " + LANGUAGE_TAG_RU);
+        Map<String, LookupResponse> responseMapDeCh = this.getResponseAsMap(responseDeCh);
+        LookupResponse recRespDeCh = responseMapDeCh.get("q0");
+        assertNotNull(recRespDeCh);
+        assertEquals(ALICE_NAME_1_RU.stringValue(), recRespDeCh.getResult().get(0).getName());
+
+        Response responseRu = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.postDataForm, SINGLE_QUERY, LANGUAGE_TAG_RU);
+        Map<String, LookupResponse> responseMapRu = this.getResponseAsMap(responseRu);
+        LookupResponse recRespRu = responseMapRu.get("q0");
+        assertNotNull(recRespRu);
+        assertEquals(ALICE_NAME_1_RU.stringValue(), recRespRu.getResult().get(0).getName());
+
+        // We don't have FR label for the candidate, so we use fallback preferredLanguage
+        Response responseFr_1 = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.postUrlEncodedForm, SINGLE_QUERY, LANGUAGE_TAG_FR + ", " + LANGUAGE_TAG_DE + ";q=0.5");
+        Map<String, LookupResponse> responseMapFr_1 = this.getResponseAsMap(responseFr_1);
+        LookupResponse recRespFr_1 = responseMapFr_1.get("q0");
+        assertNotNull(recRespFr_1);
+        assertEquals(ALICE_NAME_1_DE.stringValue(), recRespFr_1.getResult().get(0).getName());
+
+        // We don't have FR label for the candidate, but we still get the response from the cache
+        Response responseFr_2 = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.postUrlEncodedForm, SINGLE_QUERY, LANGUAGE_TAG_FR);
+        Map<String, LookupResponse> responseMapFr_2 = this.getResponseAsMap(responseFr_2);
+        LookupResponse recRespFr_2 = responseMapFr_2.get("q0");
+        assertNotNull(recRespFr_2);
+        assertEquals(ALICE_NAME_1_DE.stringValue(), recRespFr_2.getResult().get(0).getName());
+
+        // We don't have IT label for the candidate, so we get preferredLanguage from platform defaults
+        Response responseFr_3 = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.postUrlEncodedForm, SINGLE_QUERY, LANGUAGE_TAG_IT);
+        Map<String, LookupResponse> responseMapFr_3 = this.getResponseAsMap(responseFr_3);
+        LookupResponse recRespFr_3 = responseMapFr_3.get("q0");
+        assertNotNull(recRespFr_3);
+        assertEquals(ALICE_NAME_1_EN.stringValue(), recRespFr_3.getResult().get(0).getName());
+
+        // Here we are providing the preferredLanguage in wrong locale format, so we should get exception.
+        Response brokenResponse = this.sendReconciliationQueryWithPreferredLanguage(QueryMethod.postRawJson, SINGLE_QUERY, "broken-language-tag...#$?,... asa-asas");
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, brokenResponse.getStatus());
+    }
+
+    @Test
+    public void lookupWithPreferredLanguageInQueryParams() throws Exception {
+        Response responseEn = target(ENDPOINT_URL)
+            .request()
+            .header("Accept", MediaType.APPLICATION_JSON)
+            .header("accept-language", LANGUAGE_TAG_EN + ", " + LANGUAGE_RANGE_DE + ";q=0.5")
+            .build(HttpMethod.POST, Entity.entity(SINGLE_QUERY, MediaType.APPLICATION_JSON))
+            .invoke();
+        Map<String, LookupResponse> responseMapEn = this.getResponseAsMap(responseEn);
+        LookupResponse recRespEn = responseMapEn.get("q0");
+        assertNotNull(recRespEn);
+        assertEquals(ALICE_NAME_1_EN.stringValue(), recRespEn.getResult().get(0).getName());
+
+        Response responseDe = target(ENDPOINT_URL )
+            .queryParam("preferredLanguage", UrlEscapers.urlFragmentEscaper().escape(LANGUAGE_RANGE_DE + ", " + LANGUAGE_TAG_RU))
+            .request()
+            .header("Accept", MediaType.APPLICATION_JSON)
+            .build(HttpMethod.POST, Entity.entity(SINGLE_QUERY, MediaType.APPLICATION_JSON))
+            .invoke();
+        Map<String, LookupResponse> responseMapDe = this.getResponseAsMap(responseDe);
+        LookupResponse recRespDe = responseMapDe.get("q0");
+        assertNotNull(recRespDe);
+        assertEquals(ALICE_NAME_1_RU.stringValue(), recRespDe.getResult().get(0).getName());
+
+        Response responseRu = target(ENDPOINT_URL)
+            .queryParam("preferredLanguage", UrlEscapers.urlFragmentEscaper().escape(LANGUAGE_TAG_RU))
+            .request()
+            .header("Accept", MediaType.APPLICATION_JSON)
+            .header("accept-language", LANGUAGE_TAG_EN + ", " + LANGUAGE_RANGE_DE + ";q=0.5")
+            .build(HttpMethod.POST, Entity.entity(SINGLE_QUERY, MediaType.APPLICATION_JSON))
+            .invoke();
+        Map<String, LookupResponse> responseMapRu = this.getResponseAsMap(responseRu);
+        LookupResponse recRespRu = responseMapRu.get("q0");
+        assertNotNull(recRespRu);
+        assertEquals(ALICE_NAME_1_RU.stringValue(), recRespRu.getResult().get(0).getName());
+    }
+
+    private Response sendReconciliationQueryWithPreferredLanguage(QueryMethod method, String query, String acceptLanguage) throws UnsupportedEncodingException {
+        if (method.equals(QueryMethod.get)) {
+            return target(ENDPOINT_URL)
+                    .queryParam("queries", UrlEscapers.urlFragmentEscaper().escape(query))
+                    .request()
+                    .header("Accept", MediaType.APPLICATION_JSON)
+                    .header("accept-language", acceptLanguage)
+                    .build(HttpMethod.GET)
+                    .invoke();
+        } else if (method.equals(QueryMethod.postDataForm)) {
+            final Form form = new Form();
+            form.param("queries", query);
+            return target(ENDPOINT_URL)
+                    .request()
+                    .header("Accept", MediaType.APPLICATION_JSON)
+                    .header("accept-language", acceptLanguage)
+                    .build(HttpMethod.POST, Entity.form(form))
+                    .invoke();
+        } else if (method.equals(QueryMethod.postUrlEncodedForm)) {
+            final Form form = new Form();
+            form.param("queries", query);
+            return target(ENDPOINT_URL)
+                    .request()
+                    .header("Accept", MediaType.APPLICATION_JSON)
+                    .header("accept-language", acceptLanguage)
+                    .build(HttpMethod.POST, Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE))
+                    .invoke();
+        } else if (method.equals(QueryMethod.postRawJson)) {
+            return target(ENDPOINT_URL)
+                    .request()
+                    .header("Accept", MediaType.APPLICATION_JSON)
+                    .header("accept-language", acceptLanguage)
+                    .build(HttpMethod.POST, Entity.entity(query, MediaType.APPLICATION_JSON))
+                    .invoke();
+        } else {
+            throw new IllegalArgumentException("Only GET and POST http methods are supported.");
+        }
     }
 
     private Response requestDescription(IRI uri) {
@@ -440,6 +610,25 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
                 "\"v\": \"18\"\n" +
             "}]\n" +
         "}";
+
+    private static final String getSubQueryWithPreferredLanguage(
+        String queryId,
+        String preferredLanguage
+    ) {
+        return "\"" + queryId + "\": {\n" +
+            "\"query\": \"Alice\",\n" +
+            "\"limit\": \"1\",\n" +
+            "\"type\": \"http://xmlns.com/foaf/0.1/Agent\",\n" +
+            "\"preferredLanguage\": \"" + preferredLanguage + ", it\"\n" +
+        "}";
+    }
+
+    private static final String MULTI_LINGUAL_QUERY = "{\n" +
+        getSubQueryWithPreferredLanguage("q0", LANGUAGE_TAG_EN) + ",\n" +
+        getSubQueryWithPreferredLanguage("q1", LANGUAGE_RANGE_DE) + ",\n" +
+        getSubQueryWithPreferredLanguage("q2", LANGUAGE_TAG_RU) + ",\n" +
+        getSubQueryWithPreferredLanguage("q3", LANGUAGE_TAG_FR) + "\n" +
+    "}";
 
     private static final String QUERY_2_ID = "q1";
     private static final String SUB_QUERY_2 =

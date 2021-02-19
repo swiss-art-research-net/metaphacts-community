@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,14 +37,16 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, createFactory, ReactElement, Children, cloneElement } from 'react';
+import { Component, ReactElement, Children, cloneElement } from 'react';
 import * as assign from 'object-assign';
 
-export interface Props {
+interface SplitPaneToggleOnConfig {}
+
+export interface SplitPaneToggleOnProps extends SplitPaneToggleOnConfig {
   onClick?: () => void;
 }
 
-export class SplitPaneToggleOnComponent extends Component<Props, {}> {
+export class SplitPaneToggleOnComponent extends Component<SplitPaneToggleOnProps, {}> {
   render() {
     const child = Children.only(this.props.children) as ReactElement<any>;
     const style = assign({}, {cursor: 'pointer'}, child.props.style);
@@ -53,7 +55,4 @@ export class SplitPaneToggleOnComponent extends Component<Props, {}> {
   }
 }
 
-export type component = SplitPaneToggleOnComponent;
-export const component = SplitPaneToggleOnComponent;
-export const factory = createFactory(component);
-export default component;
+export default SplitPaneToggleOnComponent;

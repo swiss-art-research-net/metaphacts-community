@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,13 +60,13 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.query.BindingSet;
-import org.eclipse.rdf4j.rio.ntriples.NTriplesUtil;
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.jknack.handlebars.Options;
 import com.google.common.collect.ImmutableList;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.data.json.JsonUtil;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.services.fields.FieldDefinition;
@@ -94,13 +94,13 @@ public class FieldDefinitionSource {
     private final FieldDefinitionGeneratorChain fieldDefinitionGenerators;
     private final FieldsBasedSearch fieldsBasedSearch;
 
-    private final LabelCache labelCache;
+    private final LabelService labelCache;
 
     public FieldDefinitionSource(
         RepositoryManager repositoryManager,
         FieldDefinitionGeneratorChain fieldDefinitionGenerators,
         FieldsBasedSearch fieldsBasedSearch,
-        LabelCache labelCache
+        LabelService labelCache
     ) {
         this.repositoryManager = repositoryManager;
         this.fieldDefinitionGenerators = fieldDefinitionGenerators;
@@ -319,6 +319,6 @@ public class FieldDefinitionSource {
             fieldIri, repositoryManager.getAssetRepository(), context.getPreferredLanguage().orElse(null)
         );
 
-        return LabelCache.resolveLabelWithFallback(label, fieldIri);
+        return LabelService.resolveLabelWithFallback(label, fieldIri);
     }
 }

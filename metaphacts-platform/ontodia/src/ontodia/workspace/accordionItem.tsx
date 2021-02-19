@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -75,10 +75,11 @@ interface State {
     resizing?: boolean;
 }
 
-type RequiredProps = AccordionItemProps & Required<ProvidedProps>;
+type RequiredProps = AccordionItemProps & Required<ProvidedProps> & DefaultProps;
+type DefaultProps = Required<Pick<AccordionItemProps, 'direction'>>;
 
 export class AccordionItem extends React.Component<AccordionItemProps, State> {
-    static defaultProps: Partial<AccordionItemProps> = {
+    static defaultProps: DefaultProps = {
         direction: 'vertical',
     };
 
@@ -116,7 +117,7 @@ export class AccordionItem extends React.Component<AccordionItemProps, State> {
             onChangeCollapsed, onBeginDragHandle, onDragHandle, onEndDragHandle,
         } = this.props as RequiredProps;
         const {resizing} = this.state;
-        const shouldRenderHandle = onBeginDragHandle && onDragHandle && onEndDragHandle;
+        const shouldRenderHandle = Boolean(onBeginDragHandle && onDragHandle && onEndDragHandle);
         const style: React.CSSProperties = this.isVertical ? {height: size} : {width: size};
 
         // unmount child component when the accordion item is collapsed and has dockSide

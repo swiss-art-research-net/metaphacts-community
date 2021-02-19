@@ -30,12 +30,24 @@ module.exports = function (env) {
     //reset source-maps
     delete config.devtool;
 
+    /** @type {Set<string>} */
+    const stableBundleNames = new Set();
+    for (const project of defaults.WEB_PROJECTS) {
+      if (project.stableEntryNames) {
+        for (const entryName of project.stableEntryNames) {
+          stableBundleNames.add(entryName);
+        }
+      }
+    }
+
     /*
-     * Add chunkhash to filename to make sure that we bust
+     * Add chunk hash to filename to make sure that we bust
      * browser cache on redeployment.
      */
-    config.output.filename = function(chunkData) {
-        return chunkData.chunk.name === 'page-renderer' ? '[name]-bundle.js': "[name]-[chunkhash]-bundle.js";
+    config.output.filename = function (chunkData) {
+        return stableBundleNames.has(chunkData.chunk.name)
+          ? '[name]-bundle.js'
+          : "[name]-[chunkhash]-bundle.js";
     };
     config.output.chunkFilename = "[name]-[chunkhash]-bundle.js";
 

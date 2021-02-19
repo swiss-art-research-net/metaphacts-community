@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -149,8 +149,8 @@ export class AppRemoveAction extends Component<AppRemoveActionProps, State> {
             <br/><br/>
             Do you want to continue?
           </p>
-          <Button bsStyle='danger' onClick={this.removeApp}>Yes</Button>
-          <Button bsStyle='default' onClick={this.hideRemoveConfirmationDialog}>No</Button>
+          <Button variant='danger' onClick={this.removeApp}>Yes</Button>
+          <Button variant='secondary' onClick={this.hideRemoveConfirmationDialog}>No</Button>
         </div>,
       })
     );
@@ -169,8 +169,8 @@ export class AppRemoveAction extends Component<AppRemoveActionProps, State> {
             <br></br>
             In order to complete the removal, a restart of the platform is required.
           </p>
-          <Button bsStyle='primary' onClick={this.restartSystem}>Restart Now</Button>
-          <Button bsStyle='default' onClick={this.hideRestartConfirmationDialog}>Close</Button>
+          <Button variant='primary' onClick={this.restartSystem}>Restart Now</Button>
+          <Button variant='secondary' onClick={this.hideRestartConfirmationDialog}>Close</Button>
         </div>,
       })
     );

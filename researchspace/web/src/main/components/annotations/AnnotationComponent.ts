@@ -15,7 +15,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { createFactory, createElement, MouseEvent } from 'react';
+import { createFactory, createElement, MouseEvent, ChangeEvent } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
 import * as maybe from 'data.maybe';
@@ -143,14 +143,13 @@ export class AnnotationComponentClass extends Component<Props, State> {
         Input({
           className: 'annotation-component__label-field',
           type: 'text',
-          ref: 'annotation-label',
           placeholder: 'Title',
-          onChange: (e) => {
-            const newValue = (e.target as any).value;
+          onChange: (e: ChangeEvent<HTMLInputElement>) => {
+            const newValue = e.target.value;
             this.setState(state => { return {label: newValue}; });
           },
           value: this.state.label ? this.state.label : '',
-        }),
+        } as ReactBootstrap.FormControlProps),
       AnnotationTextEditor({
         ref: ANNOTATION_EDITOR_REF,
         readOnly: this.props.readOnly === true,
@@ -167,8 +166,8 @@ export class AnnotationComponentClass extends Component<Props, State> {
           createElement(Alert, this.state.alert.map(config => config).getOrElse({ alert: AlertType.NONE, message: '' })),
           Button({
             className: 'annotation-component__submit-button',
-            bsSize: 'small',
-            bsStyle: 'default',
+            size: 'sm',
+            variant: 'default',
             onClick: this.onSubmit,
           }, this.isEditMode() ? 'Update' : 'Submit')
         )
@@ -180,7 +179,7 @@ export class AnnotationComponentClass extends Component<Props, State> {
     return editor.getValue();
   }
 
-  onSubmit = (e: MouseEvent<ReactBootstrap.Button>): void => {
+  onSubmit = (e: MouseEvent<HTMLButtonElement>): void => {
     e.preventDefault();
     e.stopPropagation();
     const editor = this.refs[ANNOTATION_EDITOR_REF] as AnnotationTextEditorComponent;

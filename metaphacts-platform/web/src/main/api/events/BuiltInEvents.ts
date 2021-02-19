@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,6 +55,10 @@ export interface BuiltInEventData {
    * Event which should be triggered when a template should be updated with new properties.
    */
   'Component.TemplateUpdate': object;
+  /**
+   * Event that can be triggered to hide all open dialogs.
+   */
+  'Dialog.HideAll': {};
 }
 const event: EventMaker<BuiltInEventData> = EventMaker;
 
@@ -65,3 +69,5 @@ export const ComponentRefresh = event('Component.Refresh');
 export const ComponentLoading: EventType<Kefir.Property<any>> = 'Component.Loading';
 export const ComponentLoaded = event('Component.Loaded');
 export const ComponentTemplateUpdate = event('Component.TemplateUpdate');
+
+export const DialogHideAll = event('Dialog.HideAll');

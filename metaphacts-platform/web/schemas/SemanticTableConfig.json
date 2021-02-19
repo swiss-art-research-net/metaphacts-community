@@ -13,7 +13,7 @@
     ],
     "definitions": {
         "BaseConfig": {
-            "description": "The simplest table configuration can be used to show all SPARQL result set projection variables.\nThe SPARQL projection variable name is used as column header. IRIs will be rendered as resolvable links using the `<semantic-link>` component or as a simple string otherwise.",
+            "description": "The simplest table configuration can be used to show all SPARQL result set projection variables.\n\nThe SPARQL projection variable name is used as column header.\nIRIs will be rendered as resolvable links using the `<semantic-link>` component\nor as a simple string otherwise.",
             "properties": {
                 "currentPage": {
                     "description": "In controlled mode sets current page in the table;\nin uncontrolled mode only sets initial page.",
@@ -30,7 +30,11 @@
                     "type": "object"
                 },
                 "noResultTemplate": {
-                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.",
+                    "description": "Template which is applied when the query returns no results.",
+                    "mpSeeResource": {
+                        "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                        "name": "Client-side templating"
+                    },
                     "type": "string"
                 },
                 "numberOfDisplayedRows": {
@@ -58,7 +62,7 @@
                 },
                 "showLiteralDatatype": {
                     "default": false,
-                    "description": "Enable displaying datatypes of literals. This option is applicable only to default cell templates.",
+                    "description": "Enable displaying datatypes of literals.\n\nThis option is applicable only to default cell templates.",
                     "type": "boolean"
                 }
             },
@@ -80,10 +84,10 @@
             "type": "object"
         },
         "ColumnConfig": {
-            "description": "More advanced configuration that can be used to restrict the set of columns to be visualized, to modify the column headings or to provide custom cell visualization templates",
+            "description": "More advanced configuration that can be used to restrict the set of columns to be visualized,\nto modify the column headings or to provide custom cell visualization templates.",
             "properties": {
                 "columnConfiguration": {
-                    "description": "List of columns to display. If specified table shows only columns explicitly specified in the configuration",
+                    "description": "List of columns to display.\n\nIf specified table shows only columns explicitly specified in the configuration.",
                     "items": {
                         "$ref": "#/definitions/ColumnConfiguration"
                     },
@@ -104,7 +108,11 @@
                     "type": "object"
                 },
                 "noResultTemplate": {
-                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.",
+                    "description": "Template which is applied when the query returns no results.",
+                    "mpSeeResource": {
+                        "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                        "name": "Client-side templating"
+                    },
                     "type": "string"
                 },
                 "numberOfDisplayedRows": {
@@ -132,7 +140,7 @@
                 },
                 "showLiteralDatatype": {
                     "default": false,
-                    "description": "Enable displaying datatypes of literals. This option is applicable only to default cell templates.",
+                    "description": "Enable displaying datatypes of literals.\n\nThis option is applicable only to default cell templates.",
                     "type": "boolean"
                 }
             },
@@ -159,7 +167,11 @@
             "description": "Table column configuration which allows to override column header or cell visualization template.\nEither `variableName` or `cellTemplate` is required to properly display column content.",
             "properties": {
                 "cellTemplate": {
-                    "description": "Custom cell visualization <semantic-link\n   uri='http://help.metaphacts.com/resource/FrontendTemplating'>template</semantic-link>.\nTemplate has access to all projection variables for a single result tuple.",
+                    "description": "Custom cell visualization template.\n\nTemplate has access to all projection variables for a single result tuple.",
+                    "mpSeeResource": {
+                        "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                        "name": "Client-side templating"
+                    },
                     "type": "string"
                 },
                 "displayName": {
@@ -207,7 +219,7 @@
             "type": "object"
         },
         "RowConfig": {
-            "description": "The most advanced table configuration that provides the ability to customize the rendering of an entire table row via tuple templates.",
+            "description": "The most advanced table configuration that provides the ability to customize\nthe rendering of an entire table row via tuple templates.",
             "properties": {
                 "currentPage": {
                     "description": "In controlled mode sets current page in the table;\nin uncontrolled mode only sets initial page.",
@@ -224,7 +236,11 @@
                     "type": "object"
                 },
                 "noResultTemplate": {
-                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.",
+                    "description": "Template which is applied when the query returns no results.",
+                    "mpSeeResource": {
+                        "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                        "name": "Client-side templating"
+                    },
                     "type": "string"
                 },
                 "numberOfDisplayedRows": {
@@ -252,11 +268,15 @@
                 },
                 "showLiteralDatatype": {
                     "default": false,
-                    "description": "Enable displaying datatypes of literals. This option is applicable only to default cell templates.",
+                    "description": "Enable displaying datatypes of literals.\n\nThis option is applicable only to default cell templates.",
                     "type": "boolean"
                 },
                 "tupleTemplate": {
-                    "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the whole table row. Can be used to have visualizations different from the standard, e.g grid of thumbnails.\nThe template has access to all projection variables for a single result tuple.",
+                    "description": "Template for the whole table row.\n\nCan be used to have visualizations different from the standard, e.g grid of thumbnails.\nThe template has access to all projection variables for a single result tuple.",
+                    "mpSeeResource": {
+                        "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                        "name": "Client-side templating"
+                    },
                     "type": "string"
                 }
             },

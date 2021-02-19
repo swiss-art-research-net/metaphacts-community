@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,7 @@ import * as React from 'react';
 import * as Immutable from 'immutable';
 import * as SparqlJs from 'sparqljs';
 
+import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil, SparqlTypeGuards } from 'platform/api/sparql';
 import {
   isValidChild, componentDisplayName, hasBaseDerivedRelationship, universalChildren,
@@ -50,8 +51,9 @@ import {
   FieldDefinition, FieldDefinitionProp, FieldDependency, MultipleFieldConstraint,
 } from './FieldDefinition';
 import { DependencyContext } from './FieldDependencies';
-import { CompositeValue, FieldError, ErrorKind, DataState, FieldState } from './FieldValues';
-import { StaticComponent, StaticFieldProps } from './static';
+import {
+  FieldValue, CompositeValue, FieldError, ErrorKind, DataState, FieldState,
+} from './FieldValues';
 
 // explicitly import base input classes from their respective modules instead of
 // importing from './input' to prevent cyclic dependencies when importing from CompositeInput
@@ -60,6 +62,7 @@ import {
   MultipleValuesInput, MultipleValuesProps, MultipleValuesHandler, ValuesWithErrors,
 } from './inputs/MultipleValuesInput';
 import { InputDecorator } from './inputs/Decorations';
+import { StaticComponent, StaticComponentProps } from './static/StaticComponent';
 
 export type FieldMapping = InputMapping | StaticMapping | OtherElementMapping;
 export namespace FieldMapping {
@@ -102,7 +105,7 @@ export interface InputMapping {
 export interface StaticMapping {
   for: string | undefined;
   staticType: React.ComponentClass<any>;
-  element: React.ReactElement<StaticFieldProps>;
+  element: React.ReactElement<StaticComponentProps>;
 }
 
 export interface OtherElementMapping {
@@ -235,23 +238,29 @@ function collectFieldConfiguration(
   });
 }
 
+export interface RenderFieldsContext {
+  inputHandlers: Immutable.Map<string, ReadonlyArray<MultipleValuesHandler>>;
+  getDataState: (fieldId: string) => DataState;
+  updateField: (
+    field: FieldDefinition,
+    reducer: (previous: ValuesWithErrors) => ValuesWithErrors
+  ) => void;
+  onInputMounted: (inputId: string, index: number, input: MultipleValuesInput<any, any>) => void;
+  dependencyContexts: ReadonlyMap<string, DependencyContext | undefined>;
+  mappingContext: FieldMappingContext;
+  setSuggestSubject: (suggest: boolean) => void;
+  updateSubject: (newSubject: Rdf.Iri) => void;
+}
+
 export function renderFields(
   inputChildren: React.ReactNode,
   model: CompositeValue,
-  inputHandlers: Immutable.Map<string, ReadonlyArray<MultipleValuesHandler>>,
-  getDataState: (fieldId: string) => DataState,
-  onValuesChanged: (
-    field: FieldDefinition,
-    reducer: (previous: ValuesWithErrors) => ValuesWithErrors
-  ) => void,
-  onInputMounted: (inputId: string, index: number, input: MultipleValuesInput<any, any>) => void,
-  dependencyContexts: ReadonlyMap<string, DependencyContext | undefined>,
-  mappingContext: FieldMappingContext
+  context: RenderFieldsContext
 ) {
   const inputIndices = new Map<string, number>();
 
   function mapChild(child: React.ReactNode): React.ReactNode {
-    const mapping = mapChildToComponent(child, mappingContext);
+    const mapping = mapChildToComponent(child, context.mappingContext);
     if (!mapping) {
       return child;
     } else if (FieldMapping.isInput(mapping)) {
@@ -264,7 +273,7 @@ export function renderFields(
       const index = inputIndices.get(mapping.for) || 0;
       inputIndices.set(mapping.for, index + 1);
 
-      const handlers = inputHandlers.get(mapping.for);
+      const handlers = context.inputHandlers.get(mapping.for);
       if (index >= handlers.length) {
         throw new Error(`Missing handler for field ${mapping.for} (at index ${index})`);
       }
@@ -273,17 +282,17 @@ export function renderFields(
       // save a reference to mapped component for validation
       // and lazy selectPattern evaluation
       const onMounted = (input: MultipleValuesInput<any, any>) => {
-        onInputMounted(mapping.for, index, input);
+        context.onInputMounted(mapping.for, index, input);
       };
 
       const baseProvidedProps: Partial<MultipleValuesProps> = {
         definition,
         handler,
-        dataState: getDataState(mapping.for),
+        dataState: context.getDataState(mapping.for),
         values: state.values,
         errors: state.errors,
-        updateValues: reducer => onValuesChanged(definition, reducer),
-        dependencyContext: dependencyContexts.get(mapping.for),
+        updateValues: reducer => context.updateField(definition, reducer),
+        dependencyContext: context.dependencyContexts.get(mapping.for),
       };
       const inputOverride: Partial<MultipleValuesProps> & React.ClassAttributes<any> = {
         ...baseProvidedProps,
@@ -296,7 +305,11 @@ export function renderFields(
       );
     } else if (FieldMapping.isStatic(mapping)) {
       const {element} = mapping;
-      const override: Partial<StaticFieldProps> = {model};
+      const override: Partial<StaticComponentProps> = {
+        model,
+        setSuggestSubject: context.setSuggestSubject,
+        updateSubject: context.updateSubject,
+      };
       if (element.props.for) {
         const definition = model.definitions.get(element.props.for);
         if (!definition) { return null; }

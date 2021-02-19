@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Renders a JSON result from a GET REST request as table or\naccording to the specified handlebars template.\n\n**Example**:\n```\n<mp-json-renderer\n   get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'\n   template='{{> t}}'>\n   <template id='t'>\n     <ul>{{#each this as |e|}}<li>{{@index}} : {{e}}</li> {{/each}}</ul>\n   </template>\n</mp-json-renderer>\n```\nWith default table rendering:\n```\n<mp-json-renderer\n   get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'>\n</mp-json-renderer>\n```",
+    "properties": {
+        "getUrl": {
+            "description": "The GET REST url, relative to the platform base url.",
+            "type": "string"
+        },
+        "template": {
+            "default": " a nested tabular representation of the json object",
+            "description": "A handlebars template. The json object retrieved from the getUrl\n  will be set as handlebars context if a custom template is provided\n  i.e. available as {{this}}.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "template",
+        "getUrl"
+    ],
+    "required": [
+        "getUrl"
+    ],
+    "type": "object"
+}
+

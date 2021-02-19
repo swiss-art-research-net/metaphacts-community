@@ -1,6 +1,6 @@
 {
   "aliases": {
-    "researchspace": "src/main"
+    "researchspace": "./src/main"
   },
   "cssModulesBasedComponents": [
     "src/main/components/alignment",
@@ -20,14 +20,7 @@
   ],
   "generatedJsonSchemas": [
     "TextAnnotationTemplateBindings",
-    "TextAnnotationTypeOptions",
-    "TextAnnotationWorkspaceProps",
     "DashboardViewConfig",
-    "DashboardLinkedViewConfig",
-    "ImageGraphAuthoringConfig",
-    "ImageRegionEditorConfig",
-    "ImageThumbnailConfig",
-    "OverlayComparisonConfig",
-    "SideBySideComparisonConfig"
+    "DashboardLinkedViewConfig"
   ]
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,7 @@ import { setSearchDomain } from '../commons/Utils';
 import { LoadingBackdrop } from 'platform/components/utils';
 import { Rdf, vocabularies} from 'platform/api/rdf';
 import {
-    Row, Col, InputGroup, FormGroup, Button, ButtonGroup, FormControl, Radio, Alert
+    Row, Col, InputGroup, FormGroup, Button, ButtonGroup, FormControl, FormCheck, Alert
  } from 'react-bootstrap';
 import { getOverlaySystem, OverlayDialog} from 'platform/components/ui/overlay';
 import Slider from 'rc-slider';
@@ -361,7 +361,7 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                             type='text'
                                             value={this.state.smilesCode}
                                             disabled={true}/>
-                                        <InputGroup.Addon
+                                        <InputGroup.Append
                                             style={{
                                                 borderRadius: '4px',
                                                 borderTopLeftRadius: 0,
@@ -369,7 +369,7 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                             }}
                                             onClick={() => this.showModal()}>
                                             <i className='fa fa-pencil' title='Draw Structure'></i>
-                                        </InputGroup.Addon>
+                                        </InputGroup.Append>
 
                                         </InputGroup>
                                     </FormGroup>
@@ -379,7 +379,7 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                         <Row>
                             <FormGroup>
                                 <Col sm={2}>
-                                    <Radio
+                                    <FormCheck type='radio'
                                         name='radioGroup'
                                         onChange={() => this.setState({ mode: Modes.EXACT })}
                                         checked={mode === 'exact' ? true : false}
@@ -389,10 +389,10 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                             ? 'Exact'
                                             : this.getDisabledModeLabel('Exact')
                                         }
-                                    </Radio>
+                                    </FormCheck>
                                 </Col>
                                 <Col sm={2}>
-                                    <Radio
+                                    <FormCheck type='radio'
                                         name='radioGroup'
                                         onChange={() => this.setState({ mode: Modes.SUBSTRUCTURE})}
                                         checked={mode === 'substructure' ? true : false}
@@ -402,10 +402,10 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                             ? 'Substructure'
                                             : this.getDisabledModeLabel('Substructure')
                                         }
-                                    </Radio>
+                                    </FormCheck>
                                 </Col>
                                 <Col sm={3}>
-                                    <Radio
+                                    <FormCheck type='radio'
                                         name='radioGroup'
                                         onChange={() => this.setState({ mode: Modes.SIMILARITY })}
                                         checked={mode === 'similarity' ? true : false}
@@ -417,12 +417,12 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                                 'Similarity  (Threshold: '+ this.state.similarityThreshold+'%)'
                                             )
                                         }
-                                    </Radio>
+                                    </FormCheck>
                                 </Col>
                                 <Col sm={2}>
                                     <Button
-                                        bsStyle='primary'
-                                        bsSize='small'
+                                        variant='primary'
+                                        size='sm'
                                         onClick={this.onSearch}>
                                             Search
                                     </Button>
@@ -430,7 +430,7 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                             </FormGroup>
                         </Row>
                         <Row>
-                                <Col sm={3} smOffset={4}>
+                                <Col sm={{span: 3, offset: 4}}>
                                     { this.state.mode === 'similarity' ?
                                         <Slider min={0} max={100}
                                             value={this.state.similarityThreshold}
@@ -448,7 +448,7 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                         </Row> : null}
                         {errorMessage ? <Row>
                             <Col sm={8}>
-                                <Alert bsStyle='warning'>
+                                <Alert variant='warning'>
                                     <strong>Error during execution of the search query:</strong> <br/>
                                         {this.state.errorMessage}
                                 </Alert>
@@ -487,11 +487,11 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
 
                 <div ref={this.renderKetcher} />
                 <ButtonGroup className='pull-right'>
-                    <Button bsSize='small' onClick={() => this.hideModal()}>
+                    <Button size='sm' onClick={() => this.hideModal()}>
                         Cancel
                     </Button>
                     <Button
-                        bsStyle='primary' bsSize='small'
+                        variant='primary' size='sm'
                         onClick={() => this.hideModal(this.getSmilesCode(), this.getMoleString())}>
                         Set As Input
                     </Button>

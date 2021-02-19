@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, Props as ReactProps, MouseEvent } from 'react';
+import { Component, ClassAttributes, MouseEvent } from 'react';
 import * as D from 'react-dom-factories';
 import * as classNames from 'classnames';
 import * as uri from 'urijs';
@@ -51,8 +51,14 @@ import { isSimpleClick } from './ResourceLink';
  * Component that uses platform 'Navigation',
  * to navigate to the given internal URL without page reload.
  *
- * @example
- *   <mp-link url="/sparql">sparql</mp-link>
+ * **Example**:
+ * ```
+ * <mp-link url="/sparql">sparql</mp-link>
+ * ```
+ *
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
  */
 export interface LinkConfig {
   /**
@@ -64,12 +70,6 @@ export interface LinkConfig {
    * link title shown on mouse-hover
    */
   title?: string;
-
-  /**
-   * 'urlqueryparam-*' attribute specify additional url query parameters
-   * that will be attached to the resulting url
-   */
-  params?: {[name: string]: string};
 
   /**
    * if link should be highlighted as active, if not specified
@@ -88,7 +88,7 @@ export interface LinkConfig {
    */
   activeClassName?: string;
 }
-export type LinkProps = LinkConfig & ReactProps<LinkComponent>;
+export type LinkProps = LinkConfig & ClassAttributes<LinkComponent>;
 
 export class LinkComponent extends Component<LinkProps, {}> {
 

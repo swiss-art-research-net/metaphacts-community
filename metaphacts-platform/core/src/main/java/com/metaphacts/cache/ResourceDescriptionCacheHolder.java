@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,20 +39,23 @@
  */
 package com.metaphacts.cache;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.annotation.Nullable;
+import javax.inject.Singleton;
+
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.repository.Repository;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.groups.UIConfiguration;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Literal;
-import org.eclipse.rdf4j.repository.Repository;
-
-import javax.annotation.Nullable;
-import javax.inject.Singleton;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.metaphacts.util.LanguageHelper;
 
 /**
  * Implements interfaces of LabelCache and DescriptionCache.
@@ -62,7 +65,7 @@ import java.util.Optional;
  * to Optional<Literal>. As it is not guaranteed that a literal for a given
  * IRI is present in the repo (i.e., the Optional may be not present),
  * the caller should use the the LabelCache's method
- * {@link LabelCache#resolveLabelWithFallback(Optional, IRI)} in order to
+ * {@link LabelService#resolveLabelWithFallback(Optional, IRI)} in order to
  * safely get a display string for a given Optional + the IRI.
  *
  * @author Johannes Trame <jt@metaphacts.com>
@@ -72,11 +75,12 @@ import java.util.Optional;
  *
  */
 @Singleton
-public class ResourceDescriptionCacheHolder implements LabelCache, DescriptionCache {
+public class ResourceDescriptionCacheHolder implements LabelService, DescriptionService {
     public static final String LABEL_CACHE_ID = "repository.LabelCache";
     public static final String DESCRIPTION_CACHE_ID = "repository.DescriptionCache";
     private final LiteralCache labelCache;
     private final LiteralCache descriptionCache;
+    private final Configuration config;
 
     @Inject
     public ResourceDescriptionCacheHolder(
@@ -84,6 +88,7 @@ public class ResourceDescriptionCacheHolder implements LabelCache, DescriptionCa
         NamespaceRegistry namespaceRegistry,
         CacheManager cacheManager
     ) {
+        this.config = config;
         this.labelCache = new LiteralCache(LABEL_CACHE_ID, namespaceRegistry) {
             @Override
             protected List<String> getPreferredProperties() {
@@ -91,13 +96,8 @@ public class ResourceDescriptionCacheHolder implements LabelCache, DescriptionCa
             }
 
             @Override
-            protected List<String> getPreferredLanguages() {
-                return config.getUiConfig().getPreferredLanguages();
-            }
-
-            @Override
-            protected String resolvePreferredLanguage(String preferredLanguage) {
-                return config.getUiConfig().resolvePreferredLanguage(preferredLanguage);
+            protected List<String> resolvePreferredLanguages(@Nullable String preferredLanguage) {
+                return resolvePreferredLanguagesInternal(preferredLanguage);
             }
 
             /**
@@ -117,13 +117,8 @@ public class ResourceDescriptionCacheHolder implements LabelCache, DescriptionCa
             }
 
             @Override
-            protected List<String> getPreferredLanguages() {
-                return config.getUiConfig().getPreferredLanguages();
-            }
-
-            @Override
-            protected String resolvePreferredLanguage(String preferredLanguage) {
-                return config.getUiConfig().resolvePreferredLanguage(preferredLanguage);
+            protected List<String> resolvePreferredLanguages(@Nullable String preferredLanguage) {
+                return resolvePreferredLanguagesInternal(preferredLanguage);
             }
 
             /**
@@ -135,6 +130,17 @@ public class ResourceDescriptionCacheHolder implements LabelCache, DescriptionCa
             };
         };
         cacheManager.register(this.descriptionCache);
+    }
+
+    /**
+     * Resolve the given user preferredLanguage using {@link LanguageHelper} and add
+     * those system preferred languages which are not already provided.
+     * 
+     * @param preferredLanguage
+     * @return
+     */
+    private List<String> resolvePreferredLanguagesInternal(@Nullable String preferredLanguage) {
+        return LanguageHelper.getPreferredLanguages(preferredLanguage, config.getUiConfig().getPreferredLanguages());
     }
 
     @Override

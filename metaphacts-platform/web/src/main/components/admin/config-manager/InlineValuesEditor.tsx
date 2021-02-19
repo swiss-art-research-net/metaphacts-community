@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -110,12 +110,12 @@ export class InlineValuesEditor extends Component<InlineValuesEditorProps, State
         <div className={styles.footer}>
           <div className={styles.submitControls}>
             <Button className={styles.save}
-              bsStyle='primary'
+              variant='primary'
               disabled={!allowedToSave}
               onClick={this.onSave}>
               Save
             </Button>
-            <Button onClick={onCancel}>Cancel</Button>
+            <Button variant='secondary' onClick={onCancel}>Cancel</Button>
           </div>
         </div>
       </div>
@@ -146,6 +146,7 @@ export class InlineValuesEditor extends Component<InlineValuesEditorProps, State
               <div key={index} className={styles.removableItem}>
                 {this.renderMultilineEditor(value, index)}
                 <Button className={styles.removeItemButton}
+                  variant='secondary'
                   onClick={() => {
                     const targetValues = [...values];
                     targetValues.splice(index, 1);

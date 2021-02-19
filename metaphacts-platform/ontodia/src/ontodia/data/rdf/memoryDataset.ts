@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,6 +45,7 @@ export interface MemoryDataset {
     add(quad: Quad): this;
     addAll(quads: ReadonlyArray<Quad>): this;
     delete(quad: Quad): this;
+    clear(): void;
     has(quad: Quad): boolean;
     iterateMatches(
         subject: Term | undefined | null,
@@ -60,7 +61,8 @@ export enum IndexQuadBy {
     OnlyQuad = 0,
     /** Index by quad subject. */
     S = 1,
-    /* Reserved: P = 2 */
+    /** Index by quad predicate. */
+    P = 2,
     /** Index by quad object. */
     O = 4,
     /** Index by quad subject and predicate. */
@@ -82,6 +84,7 @@ class IndexedDataset implements MemoryDataset {
 
     private readonly byQuad: HashMap<Quad, Quad>;
     private readonly bySubject: HashMap<Term, Set<Quad>> | undefined;
+    private readonly byPredicate: HashMap<Term, Set<Quad>> | undefined;
     private readonly byObject: HashMap<Term, Set<Quad>> | undefined;
     private readonly bySubjectPredicate: HashMap<SourcePredicateKey, Quad[]> | undefined;
     private readonly byObjectPredicate: HashMap<SourcePredicateKey, Quad[]> | undefined;
@@ -91,6 +94,9 @@ class IndexedDataset implements MemoryDataset {
         /* tslint:disable: no-bitwise */
         if (indexBy & IndexQuadBy.S) {
             this.bySubject = new HashMap<Term, Set<Quad>>(hashTerm, equalTerms);
+        }
+        if (indexBy & IndexQuadBy.P) {
+            this.byPredicate = new HashMap<Term, Set<Quad>>(hashTerm, equalTerms);
         }
         if (indexBy & IndexQuadBy.O) {
             this.byObject = new HashMap<Term, Set<Quad>>(hashTerm, equalTerms);
@@ -117,6 +123,9 @@ class IndexedDataset implements MemoryDataset {
             this.byQuad.set(quad, quad);
             if (this.bySubject) {
                 pushToByTermIndex(this.bySubject, quad.subject, quad);
+            }
+            if (this.byPredicate) {
+                pushToByTermIndex(this.byPredicate, quad.predicate, quad);
             }
             if (this.byObject) {
                 pushToByTermIndex(this.byObject, quad.object, quad);
@@ -154,6 +163,9 @@ class IndexedDataset implements MemoryDataset {
             if (this.bySubject) {
                 deleteFromByTermIndex(this.bySubject, existing.subject, existing);
             }
+            if (this.byPredicate) {
+                deleteFromByTermIndex(this.byPredicate, existing.predicate, existing);
+            }
             if (this.byObject) {
                 deleteFromByTermIndex(this.byObject, existing.object, existing);
             }
@@ -176,6 +188,26 @@ class IndexedDataset implements MemoryDataset {
         return this;
     }
 
+    clear(): void {
+        this._size = 0;
+        this.byQuad.clear();
+        if (this.bySubject) {
+            this.bySubject.clear();
+        }
+        if (this.byPredicate) {
+            this.byPredicate.clear();
+        }
+        if (this.byObject) {
+            this.byObject.clear();
+        }
+        if (this.bySubjectPredicate) {
+            this.bySubjectPredicate.clear();
+        }
+        if (this.byObjectPredicate) {
+            this.byObjectPredicate.clear();
+        }
+    }
+
     has(quad: Quad): boolean {
         return this.byQuad.has(quad);
     }
@@ -191,13 +223,20 @@ class IndexedDataset implements MemoryDataset {
             const found = this.byQuad.get(OntodiaDataFactory.quad(subject, predicate, object, graph));
             result = found ? [found] : [];
         } else if (this.bySubjectPredicate && subject && predicate) {
-            result = this.bySubjectPredicate.get({source: subject, predicate}) || EMPTY_QUADS;
+            const indexed = this.bySubjectPredicate.get({source: subject, predicate}) || EMPTY_QUADS;
+            result = filterBySPO(indexed, null, null, object);
         } else if (this.byObjectPredicate && predicate && object) {
-            result = this.byObjectPredicate.get({source: object, predicate}) || EMPTY_QUADS;
+            const indexed = this.byObjectPredicate.get({source: object, predicate}) || EMPTY_QUADS;
+            result = filterBySPO(indexed, subject, null, null);
         } else if (this.bySubject && subject) {
-            return quadSetToArray(this.bySubject.get(subject));
+            const indexed = this.bySubject.get(subject);
+            result = indexed ? filterBySPO(indexed, null, predicate, object) : [];
+        } else if (this.byPredicate && predicate) {
+            const indexed = this.byPredicate.get(predicate);
+            result = indexed ? filterBySPO(indexed, subject, null, object) : [];
         } else if (this.byObject && object) {
-            return quadSetToArray(this.byObject.get(object));
+            const indexed = this.byObject.get(object);
+            result = indexed ? filterBySPO(indexed, subject, predicate, null) : [];
         } else {
             result = filterBySPO(this.byQuad, subject, predicate, object);
         }
@@ -239,13 +278,6 @@ function deleteFromByTermIndex(index: HashMap<Term, Set<Quad>>, key: Term, quad:
     }
 }
 
-function quadSetToArray(set: Set<Quad> | undefined): ReadonlyArray<Quad> {
-    if (!set) { return EMPTY_QUADS; }
-    const array: Quad[] = [];
-    set.forEach(q => array.push(q));
-    return array;
-}
-
 function pushToSPIndex(
     index: HashMap<SourcePredicateKey, Quad[]>,
     key: SourcePredicateKey,
@@ -276,7 +308,7 @@ function deleteFromSPIndex(
 }
 
 function filterBySPO(
-    quads: HashMap<Quad, Quad>,
+    quads: { forEach(callback: (quad: Quad) => void): void },
     subject: Term | undefined | null,
     predicate: Term | undefined | null,
     object: Term | undefined | null,

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -73,10 +73,10 @@ interface SystemHelperOptions {
 }
 
 interface RenderingDataStack extends HandlebarsDataStack {
-  root?: {
-    __renderingContext?: RenderingContext;
-  }
+  root?: object;
 }
+
+const RENDERING_CONTEXTS = new WeakMap<object, RenderingContext>();
 
 interface RenderingContext {
   readonly node: ExtractedNode | undefined;
@@ -107,7 +107,7 @@ function systemNodeHelper(
     throw new Error('Missing data stack in system node helper');
   }
 
-  const context = data.root.__renderingContext;
+  const context = RENDERING_CONTEXTS.get(data.root);
   if (context.insideAttribute) {
     // disallow node rendering inside computed attributes
     return;
@@ -159,7 +159,7 @@ function systemAttributeHelper(this: unknown, attrName: string, options: SystemH
     throw new Error('Missing data stack in system attribute helper');
   }
 
-  const context = data.root.__renderingContext;
+  const context = RENDERING_CONTEXTS.get(data.root);
   if (context.insideAttribute) {
     throw new Error('Cannot compute attribute value inside another attribute');
   }
@@ -195,7 +195,7 @@ function systemTemplateHelper(this: unknown, templateIndex: string, options: Sys
     throw new Error('Missing data stack in system template helper');
   }
 
-  const context = data.root.__renderingContext;
+  const context = RENDERING_CONTEXTS.get(data.root);
   const template = context.nodeSource.childTemplates[templateIndex];
   if (!template) {
     throw new Error('Invalid template index in system template helper');
@@ -217,7 +217,7 @@ function systemTextHelper(this: unknown, options: SystemHelperOptions) {
     throw new Error('Missing data stack in system text helper');
   }
 
-  const context = data.root.__renderingContext;
+  const context = RENDERING_CONTEXTS.get(data.root);
   const textValue = options.fn(this);
   context.node.children.push({
     type: 'text',
@@ -231,7 +231,7 @@ function systemDynamicHtmlHelper(this: unknown, options: SystemHelperOptions) {
     throw new Error('Missing data stack in system dynamic HTML helper');
   }
 
-  const context = data.root.__renderingContext;
+  const context = RENDERING_CONTEXTS.get(data.root);
   const rawHtml = options.fn(this);
   const nodes = parseHtml(rawHtml);
 
@@ -255,7 +255,7 @@ function systemJsonPartHelper(this: unknown, options: SystemHelperOptions) {
     throw new Error('Missing data stack in system JSON part helper');
   }
 
-  const context = data.root.__renderingContext;
+  const context = RENDERING_CONTEXTS.get(data.root);
   if (!context.jsonParts) {
     throw new Error('Cannot evaluate system JSON part helper in non-JSON template context');
   }
@@ -280,7 +280,7 @@ export function renderTemplate(
   if (!renderingDataStack.root) {
     renderingDataStack.root = {};
   }
-  renderingDataStack.root.__renderingContext = {
+  RENDERING_CONTEXTS.set(renderingDataStack.root, {
     get node() {
       return nodeStack.length === 0
         ? undefined : nodeStack[nodeStack.length - 1];
@@ -305,8 +305,11 @@ export function renderTemplate(
       nodeStack.pop();
       sourceStack.pop();
     }
-  };
-  compiledSource(context, {data: renderingDataStack});
+  });
+  compiledSource(context, {
+    data: renderingDataStack,
+    allowProtoPropertiesByDefault: true,
+  });
   return syntheticRoot.children;
 }
 

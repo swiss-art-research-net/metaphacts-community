@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,16 +52,15 @@ import { Debouncer } from '../viewUtils/async';
 import { EventObserver } from '../viewUtils/events';
 import { HtmlSpinner } from '../viewUtils/spinner';
 
-import { EditorController } from './editorController';
+import { WorkspaceContextWrapper, WorkspaceContextTypes } from '../workspace/workspaceContext';
 
-import { AuthoringKind, AuthoringState } from './authoringState';
+import { AuthoringState } from './authoringState';
 import { LinkValidation, ElementValidation } from './validation';
 
-export interface LinkStateWidgetProps extends PaperWidgetProps {
-    editor: EditorController;
-}
+import * as styles from './linkStateWidget.scss';
 
-const CLASS_NAME = `ontodia-authoring-state`;
+export type LinkStateWidgetProps = PaperWidgetProps;
+
 const LINK_LABEL_MARGIN = 5;
 
 type RequiredProps = LinkStateWidgetProps & Required<PaperWidgetProps>;
@@ -69,6 +68,9 @@ type RequiredProps = LinkStateWidgetProps & Required<PaperWidgetProps>;
 export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
     static readonly attachment = WidgetAttachment.OverLinks;
     static readonly key = 'linkStateWidget';
+
+    static contextTypes = WorkspaceContextTypes;
+    declare readonly context: WorkspaceContextWrapper;
 
     private readonly listener = new EventObserver();
     private readonly delayedUpdate = new Debouncer();
@@ -79,21 +81,23 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
 
     componentWillUnmount() {
         this.listener.stopListening();
+        this.delayedUpdate.dispose();
     }
 
     private listenEvents() {
-        const {editor, renderingState} = this.props as RequiredProps;
-        this.listener.listen(editor.model.events, 'elementEvent',  ({data}) => {
+        const {model, editor} = this.context.ontodiaWorkspace;
+        const {renderingState} = this.props as RequiredProps;
+        this.listener.listen(model.events, 'elementEvent',  ({data}) => {
             if (data.changePosition) {
                 this.scheduleUpdate();
             }
         });
-        this.listener.listen(editor.model.events, 'linkEvent', ({data}) => {
+        this.listener.listen(model.events, 'linkEvent', ({data}) => {
             if (data.changeVertices) {
                 this.scheduleUpdate();
             }
         });
-        this.listener.listen(editor.model.events, 'changeCells', this.scheduleUpdate);
+        this.listener.listen(model.events, 'changeCells', this.scheduleUpdate);
         this.listener.listen(editor.events, 'changeAuthoringState', this.scheduleUpdate);
         this.listener.listen(editor.events, 'changeTemporaryState', this.scheduleUpdate);
         this.listener.listen(editor.events, 'changeValidationState', this.scheduleUpdate);
@@ -122,10 +126,11 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
     }
 
     private calculatePolyline(link: Link) {
-        const {editor, renderingState} = this.props as RequiredProps;
+        const {model} = this.context.ontodiaWorkspace;
+        const {renderingState} = this.props as RequiredProps;
 
-        const source = editor.model.getElement(link.sourceId)!;
-        const target = editor.model.getElement(link.targetId)!;
+        const source = model.getElement(link.sourceId)!;
+        const target = model.getElement(link.targetId)!;
 
         const route = renderingState.getRouting(link.id);
         const verticesDefinedByUser = link.vertices || [];
@@ -135,9 +140,9 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
     }
 
     private renderLinkStateLabels() {
-        const {editor} = this.props;
+        const {model, editor} = this.context.ontodiaWorkspace;
 
-        return editor.model.links.map(link => {
+        return model.links.map(link => {
             let renderedState: JSX.Element | null = null;
             const state = editor.authoringState.links.get(link.data);
             if (state) {
@@ -160,8 +165,8 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
                 if (statusText && title) {
                     renderedState = (
                         <span>
-                            <span className={`${CLASS_NAME}__state-label`}>{statusText}</span>
-                            [<span className={`${CLASS_NAME}__state-cancel`}
+                            <span className={styles.stateLabel}>{statusText}</span>
+                            [<span className={styles.stateCancel}
                                     onClick={onCancel} title={title}>cancel</span>]
                         </span>
                     );
@@ -175,11 +180,11 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
                     return null;
                 }
                 const style = {left: labelPosition.x, top: labelPosition.y};
-                return <div className={`${CLASS_NAME}__state-indicator`}
+                return <div className={styles.stateIndicator}
                     key={link.id}
                     style={style}>
-                    <div className={`${CLASS_NAME}__state-indicator-container`}>
-                        <div className={`${CLASS_NAME}__state-indicator-body`}>
+                    <div className={styles.stateIndicatorContainer}>
+                        <div className={styles.stateIndicatorBody}>
                             {renderedState}
                             {renderedErrors}
                         </div>
@@ -192,13 +197,12 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
     }
 
     private renderLinkStateHighlighting() {
-        const {editor} = this.props;
-        return editor.model.links.map(link => {
+        const {model, editor} = this.context.ontodiaWorkspace;
+        return model.links.map(link => {
             if (editor.temporaryState.links.has(link.data)) {
                 const path = this.calculateLinkPath(link);
                 return (
-                    <path key={link.id} d={path} fill={'none'} stroke={'grey'} strokeWidth={5} strokeOpacity={0.5}
-                        strokeDasharray={'8 8'} />
+                    <path key={link.id} d={path} className={styles.temporaryLink} />
                 );
             }
             const event = editor.authoringState.links.get(link.data);
@@ -206,17 +210,19 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
             const isUncertainLink = AuthoringState.isUncertainLink(editor.authoringState, link.data);
             if (event || isDeletedLink || isUncertainLink) {
                 const path = this.calculateLinkPath(link);
-                let color: string | undefined;
+
+                let className: string | undefined;
                 if (isDeletedLink) {
-                    color = 'red';
+                    className = styles.deletedLink;
                 } else if (isUncertainLink) {
-                    color = 'blue';
-                } else if (event && event.type === AuthoringKind.ChangeLink) {
-                    color = event.before ? 'blue' : 'green';
+                    className = styles.changedLink;
+                } else if (event) {
+                    className = event.before ? styles.changedLink : styles.newLink;
                 }
-                return (
-                    <path key={link.id} d={path} fill={'none'} stroke={color} strokeWidth={5} strokeOpacity={0.5} />
-                );
+
+                if (className) {
+                    return <path key={link.id} d={path} className={className} />;
+                }
             }
             return null;
         });
@@ -236,7 +242,7 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
     }
 
     private renderLinkErrors(linkModel: LinkModel) {
-        const {editor} = this.props;
+        const {editor} = this.context.ontodiaWorkspace;
         const {validationState} = editor;
 
         const validation = validationState.links.get(linkModel);
@@ -249,17 +255,18 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
     }
 
     private renderErrorIcon(title: string, validation: LinkValidation | ElementValidation): JSX.Element {
-        return <div className={`${CLASS_NAME}__item-error`} title={title}>
+        return <div className={styles.itemError} title={title}>
             {validation.loading
                 ? <HtmlSpinner width={15} height={17} />
-                : <div className={`${CLASS_NAME}__item-error-icon`} />}
+                : <div className={styles.itemErrorIcon} />}
             {(!validation.loading && validation.errors.length > 0)
                 ? validation.errors.length : undefined}
         </div>;
     }
 
     render() {
-        const {editor, paperTransform} = this.props as RequiredProps;
+        const {editor} = this.context.ontodiaWorkspace;
+        const {paperTransform} = this.props as RequiredProps;
         const {scale, originX, originY} = paperTransform;
         if (!editor.inAuthoringMode) {
             return null;
@@ -268,11 +275,11 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
             position: 'absolute', left: 0, top: 0,
             transform: `scale(${scale},${scale})translate(${originX}px,${originY}px)`,
         };
-        return <div className={`${CLASS_NAME}`}>
+        return <div className={styles.component}>
             <TransformedSvgCanvas paperTransform={paperTransform} style={{overflow: 'visible', pointerEvents: 'none'}}>
                 {this.renderLinkStateHighlighting()}
             </TransformedSvgCanvas>
-            <div className={`${CLASS_NAME}__validation-layer`} style={htmlTransformStyle}>
+            <div className={styles.validationLayer} style={htmlTransformStyle}>
                 {this.renderLinkStateLabels()}
             </div>
         </div>;

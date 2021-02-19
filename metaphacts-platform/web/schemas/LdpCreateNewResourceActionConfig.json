@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Creates new LDP resource.\n\nCurrently uses hard-coded `rdfs:label` property to represent object title.",
+    "properties": {
+        "container": {
+            "description": "IRI of LDP container to create resource within.",
+            "type": "string"
+        },
+        "placeholder": {
+            "description": "Prompt to enter title.",
+            "type": "string"
+        },
+        "title": {
+            "description": "Initial title for created object.",
+            "type": "string"
+        },
+        "type": {
+            "description": "IRI of resource type.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "title",
+        "placeholder",
+        "container",
+        "type"
+    ],
+    "required": [
+        "container",
+        "type"
+    ],
+    "type": "object"
+}
+

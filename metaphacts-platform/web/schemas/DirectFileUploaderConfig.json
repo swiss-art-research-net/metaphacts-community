@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Component which is used for uploading files directly into a storage.\nSupports any kind of storage type (file/system/app).\n\nYou can redefine inner body by passing custom element as a child component.\n\nTo have ability to upload files into storage you have to have permissions on this action.\nPermission should be defined this way in `shiro.ini`:\n```\nstorage:{write}:{storage-id}\n```\n\n**Example**:\n```\n<mp-direct-file-uploader\n   placeholder='Test placeholder'\n   accept-pattern='application/*'\n   default-storage-id='runtime'\n   default-object-kind='file'\n   default-folder='/'>\n</mp-direct-file-uploader>\n```",
+    "properties": {
+        "acceptPattern": {
+            "description": "Allow specific types of files. See https://github.com/okonet/attr-accept for more information",
+            "type": "string"
+        },
+        "defaultFolder": {
+            "description": "Path to a destination folder in the storage. (It should start with an Object.Kind prefix).",
+            "type": "string"
+        },
+        "defaultObjectKind": {
+            "description": "Path to a destination folder in the storage. (It should start with an Object.Kind prefix).",
+            "type": "string"
+        },
+        "defaultStorageId": {
+            "description": "Object storage id. Used to detect upload folder based on object sotrages which are\ndefined in `/runtime-data/config/data-storage.prop`.",
+            "type": "string"
+        },
+        "placeholder": {
+            "description": "Placeholder for the dropzone. You can use react children as well.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "acceptPattern",
+        "placeholder",
+        "defaultStorageId",
+        "defaultFolder",
+        "defaultObjectKind"
+    ],
+    "type": "object"
+}
+

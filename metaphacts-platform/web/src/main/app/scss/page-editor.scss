@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,26 +40,92 @@
 @import "~basic-styles.scss";
 
 .page-editor {
+  display: flex;
+  flex-direction: column;
+
+  .page--noBreadcrumbs &__breadcrumbs-spacer {
+    flex: 0 0 44px;
+    background-color: #fff;
+    border-bottom: 2px solid #DDD;
+    border-radius: 0;
+    box-shadow: 0 0 6px #ccc;
+  }
+
+  &__body {
+    flex: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__included-templates {
+    flex: auto;
+    height: 0;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+  }
+
+  &__included-templates-spinner {
+    top: unset;
+  }
+
+  &__applicable-templates {
+    flex: auto;
+    height: 0;
+    overflow-y: scroll;
+    overflow-wrap: break-word;
+    padding: 5px;
+
+    ul { padding-left: 25px; }
+  }
+
+  &__editor-settings {
+    padding: 5px;
+
+    > *:not(:last-child) {
+      margin-right: 10px;
+    }
+  }
+
+  &__main-part {
+    flex: auto;
+    display: flex;
+    flex-direction: column;
+    margin: 5px;
+  }
+
   &__app-selector {
     margin: 5px 0;
+
+    /* open storage selector upwards */
+    .Select-menu-outer {
+      top: auto;
+      bottom: 100%;
+    }
+  }
+
+  &__button-toolbar {
+    margin-top: 5px;
+
+    .btn:not(:first-child) {
+      margin-left: 5px;
+    }
+  }
+
+  &__button-spacer {
+    flex: auto;
+  }
+
+  &__modal > .modal-dialog {
+    max-width: 75vw;
   }
 }
 
 .template-editor {
-  height: auto;
-  border: solid 1px black;
-  .CodeMirror{
-    height: auto !important;
-    &-scroll {
-      min-height: 300px;
-    }
-  }
-}
-
-.template-cancel-save {
-  .btn-danger {
-    margin-right: $padding-base-horizontal/2;
-  }
+  flex: auto;
+  border: solid 1px #ccc;
+  margin-right: 5px;
 }
 
 .template-types {
@@ -78,7 +144,9 @@
   z-index: $zindex-toolbar;
   position: fixed;
   right: 15px;
-  padding: 3px 0;
+  height: $breadcrumb-bar-height;
+  display: flex;
+  align-items: center;
 
     &__btn_edit {
         background-color: transparent;
@@ -92,7 +160,7 @@
 
         &>span{
           font-family: $font-family-base !important;
-          font-size: $font-size-small !important;
+          font-size: $font-size-sm !important;
         }
     }
 
@@ -129,7 +197,7 @@
     &__reset_button_icon {
       opacity: 0.5;
       cursor: pointer;
-    } 
+    }
 }
 
 .resource-viewer-modal__dialog{

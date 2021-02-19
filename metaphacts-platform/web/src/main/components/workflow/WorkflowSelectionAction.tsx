@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,35 +49,40 @@ import {
 
 import { WorkflowManagerComponent } from './WorkflowManagerComponent';
 
-export interface Props {
+/**
+ * Listens to the `Components.Selection.Toggle` event, collects selected
+ * workflow instantiations and propagates them to the `<mp-workflow-manager>` component.
+ *
+ * **Example**:
+ * ```
+ * <mp-selection-group>
+ *   <!-- checkbox -->
+ *   <mp-selection-toggle selection='workflow-instantiations-selection'
+ *     tag='http://example.com/workflow/instantiation'>
+ *   </mp-selection-toggle>
+ *
+ *   <!-- workflow manager -->
+ *   <mp-workflow-selection-action selection="workflow-instantiations-selection">
+ *     <mp-workflow-manager definition='http://example.com/workflow/definition'>
+ *     </mp-workflow-manager>
+ *   </mp-workflow-selection-action>
+ * </mp-selection-group>
+ * ```
+ */
+interface WorkflowSelectionActionConfig {
   /**
    * Identifier
    */
   selection: string;
 }
 
-export interface State {
+export interface WorkflowSelectionActionProps extends WorkflowSelectionActionConfig {}
+
+interface State {
   values?: { [tag: string]: boolean };
 }
 
-/**
- * Listens to the Selection Toggle event, collects selected workflow instantiations and
- * propagates them to the Workflow Manager component.
- *
- * @example
- * <mp-selection-group>
- *  [[!-- checkblox --]]
- *  <mp-selection-toggle selection="workflow-instantiations-selection" tag="http://example.com/workflow/instantiation">
- *  </mp-selection-toggle>
- *
- *  [[!-- workflow manager --]]
- *  <mp-workflow-selection-action selection="workflow-instantiations-selection">
- *     <mp-workflow-manager definition='http://example.com/workflow/definition'>
- *     </mp-workflow-manager>
- *  </mp-workflow-selection-action>
- * </mp-selection-group>
- */
-export class WorkflowSelectionAction extends Component<Props, State> {
+export class WorkflowSelectionAction extends Component<WorkflowSelectionActionProps, State> {
   private readonly cancellation = new Cancellation();
 
   static contextTypes = {
@@ -86,7 +91,7 @@ export class WorkflowSelectionAction extends Component<Props, State> {
   };
   context: ComponentContext & SelectionGroupContext;
 
-  constructor(props: Props, context: any) {
+  constructor(props: WorkflowSelectionActionProps, context: any) {
     super(props, context);
     this.state = {
       values: {},
@@ -113,7 +118,7 @@ export class WorkflowSelectionAction extends Component<Props, State> {
     );
   }
 
-  componentDidUpdate(prevProps: Props, prevState: State) {
+  componentDidUpdate(prevProps: WorkflowSelectionActionProps, prevState: State) {
     if (this.state.values !== prevState.values && this.context.onChange) {
       this.context.onChange(this.state.values);
     }

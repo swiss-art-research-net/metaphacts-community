@@ -20,7 +20,7 @@ import * as _ from 'lodash';
 import * as Immutable from 'immutable';
 import * as Maybe from 'data.maybe';
 import {
-  FormControl, FormGroup, ControlLabel, Button, InputGroup,
+  FormControl, FormGroup, FormLabel, Button, InputGroup,
 } from 'react-bootstrap';
 
 import { Rdf } from 'platform/api/rdf';
@@ -63,7 +63,7 @@ class CreateAlignmentDialog extends React.Component<DialogProps, AlignmentMetada
       onHide={() => getOverlaySystem().hide(ACTION_DIALOG_REF)}
     >
       <FormGroup>
-        <ControlLabel>IRI</ControlLabel>
+        <FormLabel>IRI</FormLabel>
         <FormControl type='text' placeholder='alignment IRI (optional)'
           value={this.state.iri.map(i => i.value).getOrElse('')}
           onChange={(event) => {
@@ -77,7 +77,7 @@ class CreateAlignmentDialog extends React.Component<DialogProps, AlignmentMetada
         />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>label*</ControlLabel>
+        <FormLabel>label*</FormLabel>
         <FormControl type='text' placeholder='label'
           value={this.state.label}
           onChange={(event) => this.setState({
@@ -86,7 +86,7 @@ class CreateAlignmentDialog extends React.Component<DialogProps, AlignmentMetada
         />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>description*</ControlLabel>
+        <FormLabel>description*</FormLabel>
         <FormControl type='text' placeholder='description'
           value={this.state.description}
           onChange={(event) => this.setState({
@@ -95,21 +95,21 @@ class CreateAlignmentDialog extends React.Component<DialogProps, AlignmentMetada
         />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Source</ControlLabel>
+        <FormLabel>Source</FormLabel>
         <InputGroup>
           <FormControl type='text' readOnly={true}
             value={this.state.source.value}
         />
-        <InputGroup.Button>
+        <InputGroup.Append>
         <Button className={styles.swapTerminologies} title='Swap source and target terminologies'
                 onClick={this.swapTerminologies}>
             <span className='fa fa-exchange fa-flip-vertical'></span>
           </Button>
-        </InputGroup.Button>
+        </InputGroup.Append>
       </InputGroup>
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Target</ControlLabel>
+        <FormLabel>Target</FormLabel>
         <FormControl type='text' value={this.state.target.value} readOnly={true}
         />
       </FormGroup>

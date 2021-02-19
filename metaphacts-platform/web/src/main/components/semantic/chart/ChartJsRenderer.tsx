@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -139,7 +139,8 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
       label: set.name || labeled(set.iri, labels),
       data: set.points.map(point =>
         propertyValue(point, set.mapping.value || set.mapping.y)
-          .map(parseFloat).getOrElse(0)),
+          .map(parseFloat)
+          .getOrElse(set.mapping.defaultValue === undefined ? 0 : set.mapping.defaultValue)),
       backgroundColor: set.points.map((point, pointIndex) =>
         propertyValue(point, set.mapping.color)
           .getOrElse(getDefaultColor(pointIndex))),
@@ -251,6 +252,7 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
       .filter(({category}) => !this.state.hiddenCategories.has(category));
     const displayedIndices = displayedCategories.map(({index}) => index);
     const displayedIndicesSet = Immutable.Set<number>(displayedIndices);
+    const defaultValue = set.mapping.defaultValue === undefined ? 0 : set.mapping.defaultValue;
 
     const dataset: BarDataSet | LinearDataSet | BubbleDataSet = {
       label: set.name || labeled(set.iri, labels),
@@ -261,7 +263,11 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
           const y = propertyValue(point, set.mapping.y || set.mapping.value).chain(parseNumeric);
           const z = propertyValue(point, set.mapping.z).chain(parseNumeric);
           if (chartType === 'bubble') {
-            return {x: x.getOrElse(0), y: y.getOrElse(0), r: z.getOrElse(DEFAULT_BUBBLE_RADIUS)};
+            return {
+              x: x.getOrElse(0),
+              y: y.getOrElse(defaultValue),
+              r: z.getOrElse(DEFAULT_BUBBLE_RADIUS)
+            };
           } else {
             return y.getOrElse(null);
           }
@@ -362,11 +368,13 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
       datasets: data.sets.map((set, setIndex) => {
         const style = getLinearSeriesDefaultStyle(setIndex,
           this.props.config.type === 'bar' ? BAR_FILL_OPACITY : LINE_FILL_OPACITY);
+        const defaultValue = set.mapping.defaultValue === undefined ? 0 : set.mapping.defaultValue;
         const dataSet: BarDataSet & LinearDataSet = merge({
           label: set.name || labeled(set.iri, labels),
           data: set.points.map(point =>
             propertyValue(point, set.mapping.value || set.mapping.y)
-              .map(parseFloat).getOrElse(0)),
+              .map(parseFloat)
+              .getOrElse(defaultValue))
         }, style);
         return dataSet;
       }),
@@ -402,6 +410,7 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
   ): MappedOptions {
     type MappedPoint = { x: number; y: number; r?: number };
     const datasets = data.sets.map((set, setIndex) => {
+      const defaultValue = set.mapping.defaultValue === undefined ? 0 : set.mapping.defaultValue;
       const dataset: LinearDataSet = {
         label: set.name || labeled(set.iri, labels),
         data: set.points.map((point): MappedPoint | null => {
@@ -409,7 +418,7 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
           const y = propertyValue(point, set.mapping.y || set.mapping.value).chain(parseNumeric);
           return {
             x: x.getOrElse(0),
-            y: y.getOrElse(0),
+            y: y.getOrElse(defaultValue),
             r: propertyValue(point, set.mapping.z)
               .chain(parseNumeric).getOrElse(DEFAULT_BUBBLE_RADIUS),
           };
@@ -592,7 +601,6 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
     }
 
     const chart = this.chart.chartInstance;
-    const {offsetLeft, offsetTop} = chart.canvas as HTMLElement;
 
     this.setState({
       tooltip: {
@@ -604,8 +612,9 @@ export class ChartJsRenderer extends React.Component<ChartRendererProps, State> 
         ),
         props: {
           id: TOOLTIP_ID,
-          targetLeft: offsetLeft + model.caretX,
-          targetTop: offsetTop + model.caretY,
+          reference: chart.canvas as HTMLElement,
+          targetLeft: model.caretX,
+          targetTop: model.caretY,
           popoverSide,
           arrowAlignment,
         }

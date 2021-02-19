@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,21 +51,34 @@ import * as styles from './FileManager.scss';
 import { Cancellation } from 'platform/api/async';
 import { addNotification } from 'platform/components/ui/notification';
 
-
-interface FileUploaderState {
-  alertState?: AlertConfig;
-  progress?: number;
-  progressText?: string;
-  uploadCompleted?: boolean;
-}
-
-interface FileUploaderProps {
+/**
+ * File uploader which uploads a file into a storage and
+ * creates RDF meta-data, which is managed as a LDP resource.
+ *
+ * **Example**:
+ * ```
+ * <mp-file-uploader
+ *   placeholder="Please drag&drop your image-file here"
+ *   accept-pattern='image/*'
+ *   generate-iri-query='
+ *     SELECT ?resourceIri WHERE {
+ *       BIND(URI(CONCAT(STR(?__contextUri__), "/", ?__fileName__)) as ?resourceIri)
+ *     }
+ *   '
+ *   context-uri='[[this]]'
+ *   storage='file-storage'>
+ * </mp-file-uploader>
+ * ```
+ */
+interface FileUploaderConfig {
   /**
-   * Allow specific types of files.
-   * Several pattern can be concatenated by a comma.
-   * See https://github.com/okonet/attr-accept for more information
-   * @example
-   *  'application/json,video/*'
+   * Allow specific types of files. Several pattern can be concatenated by a comma.
+   * See https://github.com/okonet/attr-accept for more information.
+   *
+   * **Example**:
+   * ```
+   * accept-pattern='application/json,video/*'
+   * ```
    */
   acceptPattern?: string;
 
@@ -79,25 +92,29 @@ interface FileUploaderProps {
    * The must have exactly one projection variable *?newId* with the IRI.
    *
    * Also the query can use some variables which will be bound with values at runtime:
-   * * __contextUri__ - see `contextUri` property
-   * * __mediaType__ - Medai type: jpg, pdf. By default = 'auto'xw
-   * * __fileName__ - Name of the file
+   *   - `?__contextUri__` - see `contextUri` property
+   *   - `?__mediaType__` - Media type: jpg, pdf. By default = 'auto'
+   *   - `?__fileName__` - Name of the file
    */
   generateIriQuery?: string
 
   /**
-   * SPARQL construct query to generate additional meta-data which will be stored toghether with the file meta-data.
+   * SPARQL construct query to generate additional metadata
+   * which will be stored together with the file metadata.
    *
    * Also the query can use some variables which will be bound with values at runtime:
-   * * __contextUri__ - see `contextUri` property
-   * * __resourceIri__ - IRI generated with `generateIdQuery`
-   * * __mediaType__ - Medai type: jpg, pdf. By default = 'auto'
-   * * __fileName__ - Name of the file
+   *   - `?__contextUri__` - see `contextUri` property
+   *   - `?__resourceIri__` - IRI generated with `generateIdQuery`
+   *   - `?__mediaType__` - Media type: jpg, pdf. By default = 'auto'
+   *   - `?__fileName__` - Name of the file
    */
   resourceQuery?: string
 
   /**
-   * Placeholder for the dropzone. If html child components of the mp-file-uploader are defined, those will be be used as dropzone placeholder.
+   * Placeholder for the drop zone.
+   *
+   * If any `<mp-file-uploader>` child component is defined
+   * it will be be used as drop zone placeholder.
    */
   placeholder?: string;
 
@@ -107,31 +124,16 @@ interface FileUploaderProps {
   storage: string;
 }
 
-/**
- * File uploader which uploads a file into a storage and
- * creates RDF meta-data, which is managed as a LDP resource.
- * @example:
- * <mp-file-uploader
- *   placeholder="Please drag&drop your image-file here"
- *   accept-pattern='image/*'
- *   resource-query='
- *    CONSTRUCT {
- *      ?__resourceIri__ a <${VocabPlatform.fileTypePredicate}>.
- *      ?__resourceIri__ <${VocabPlatform.fileNamePredicate}> ?__fileName__.
- *      ?__resourceIri__ <${VocabPlatform.mediaTypePredicate}> ?__mediaType__.
- *      ?__resourceIri__ <${VocabPlatform.fileContextPredicate}> ?__contextUri__.
- *    } WHERE {}
- *   '
- *   generate-iri-query='
- *     SELECT ?resourceIri WHERE {
- *       BIND(URI(CONCAT(STR(?__contextUri__), "/", ?__fileName__)) as ?resourceIri)
- *     }
- *   '
- *   context-uri='[[this]]'
- *   storage='file-storage'
- * ></mp-file-uploader>
- */
-export class FileUploader extends Component<FileUploaderProps, FileUploaderState> {
+export type FileUploaderProps = FileUploaderConfig;
+
+interface State {
+  alertState?: AlertConfig;
+  progress?: number;
+  progressText?: string;
+  uploadCompleted?: boolean;
+}
+
+export class FileUploader extends Component<FileUploaderProps, State> {
   private readonly cancellation = new Cancellation();
 
   constructor(props: FileUploaderProps, context: any) {
@@ -202,7 +204,7 @@ export class FileUploader extends Component<FileUploaderProps, FileUploaderState
   }
 
   onDropRejected = (fileRejections: FileRejection[], event: DropEvent) => {
-    const msg = fileRejections.map(r => 
+    const msg = fileRejections.map(r =>
         `Incompatible file type: expected ${this.props.acceptPattern}, got ${r.file.type}`
     ).join('\n');
     this.setState({
@@ -220,7 +222,7 @@ export class FileUploader extends Component<FileUploaderProps, FileUploaderState
     return <div className={styles.FileUploader}>
       {this.state.progress ? <ReactBootstrap.ProgressBar
         className={styles.progress}
-        active={true}
+        animated
         min={0}
         max={100}
         now={this.state.progress}

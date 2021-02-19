@@ -1,0 +1,82 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Tree visualization component which provides ability to lazily render and\nsearch in large hierarchies by providing set of queries.\n\n**Example:**\n```\n<semantic-lazy-tree\n   roots-query='\n     SELECT ?item WHERE {\n       ?item a owl:Class .\n       FILTER NOT EXISTS { ?item rdfs:subClassOf ?parentClass }\n     }\n   '\n   children-query='\n     SELECT ?item WHERE {\n       ?item rdfs:subClassOf ?parent .\n     }\n   '\n   parents-query='\n     SELECT ?item ?parent WHERE {\n       ?item rdfs:subClassOf ?parent .\n     }\n   '\n   search-query='\n     SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {\n       ?item a owl:Class .\n       ?item rdfs:label ?label .\n       BIND(false AS ?hasChildren)\n       FILTER REGEX(LCASE(?label), LCASE(?__token__), \"i\")\n     } ORDER BY DESC (?score) (?label) LIMIT 200\n   '\n   placeholder='Select or search for a class..'>\n</semantic-lazy-tree>\n```",
+    "properties": {
+        "childrenQuery": {
+            "description": "Children SPARQL query with `[?parent]` input and `[?item, ?label, ?hasChildren]` output\nvariables:\n  - `?parent` - parametrized variable with node IRI to retrieve children for;\n  - `?item` - result child node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display value.",
+            "type": "string"
+        },
+        "className": {
+            "description": "Optional custom class for the tree.",
+            "type": "string"
+        },
+        "escapeLuceneSyntax": {
+            "description": "A flag determining whether any special Lucene syntax will\nbe escaped in the `search-query` pattern. When `false` lucene\nsyntax in the user input is not escaped.\n\nDeprecated: escaping will be applied automatically based on SPARQL query.",
+            "type": "boolean"
+        },
+        "focusedIri": {
+            "description": "Node IRI that should be opened and focused on by default.",
+            "type": "string"
+        },
+        "noResultTemplate": {
+            "description": "Template which is applied when the query returns no results.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
+            "type": "string"
+        },
+        "nodeDataQuery": {
+            "description": "A SPARQL query to fetch additional data to use in the node template.\n\nThe query gets a set of `[?item]` inputs (i.e. the node identifiers)\ninjected through a `VALUES` clause. These `?item` values can be used\nin the query to compute additional properties or to perform aggregations.\n\nBindings produced by this query can be accessed in the node template\nas `{{data.myBinding.value}}`.\n\nExample:\n```\nSELECT ?item ?myBinding WHERE {\n   ?item :myProperty ?myBinding .\n}\n```",
+            "type": "string"
+        },
+        "nodeTemplate": {
+            "description": "Template which is used to render every tree node.\n\nBy default `<semantic-link>` component is used for node visualization.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
+            "type": "string"
+        },
+        "parentsQuery": {
+            "description": "A SPARQL query to recursively compute the parent hierarchy for search results.\nCan be used together with the `search-query` setting.\n\nThe query has `[?item]` inputs through `VALUES(...)` clause\nand `[?item, ?parent, ?parentLabel]` outputs:\n  - `?item` - child node IRI provided with `VALUES(?item) { ... }` clause;\n  - `?parent` - result parent node IRI for `?item` node;\n  - `?parentLabel` (optional) - display label for `?parent` (if not provided the display label\n    is retrieved using the label service);\n\nBe aware to have a distinct association of node and label to not produce any cross products.",
+            "type": "string"
+        },
+        "placeholder": {
+            "description": "Empty field placeholder.",
+            "type": "string"
+        },
+        "rootsQuery": {
+            "description": "Tree roots SPARQL query with no input and `[?item, ?label, ?hasChildren]` output variables:\n  - `?item` - result root node IRI;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nIf the order is not explicitly defined in the query using `ORDER BY`, the result is sorted\nby the display label.",
+            "type": "string"
+        },
+        "searchQuery": {
+            "description": "A SPARQL query to compute a search result for a given user input.\n\nThe query has `[?__token__]` input and `[?item, ?score, ?label, ?hasChildren]` outputs:\n  - `?__token__` - parametrized search input string;\n  - `?item` - search result node IRI;\n  - `?score` (optional) - search result score of `?item` for tree sorting;\n  - `?label` (optional) - display label for `?item` (if not provided the display label is\n    retrieved using the label service);\n  - `?hasChildren` (optional) - pre-computed flag to visually indicate that the `?item` node\n    does not have children without expanding it;\n\nBe aware to have a distinct association of node and label to not produce any cross products.\n\nNote that the parent hierarchy is computed recursively using the `parents-query` configuration\nsetting.",
+            "type": "string"
+        },
+        "tokenizeLuceneQuery": {
+            "description": "A flag determining whether the user input is tokenized by\nwhitespace into words postfixed by `*` in the `search-query` pattern.\nE.g. the search for `Hello World` becomes `Hello* World*`.\n\nDeprecated: tokenization will be applied automatically based on SPARQL query.",
+            "type": "boolean"
+        }
+    },
+    "propertyOrder": [
+        "className",
+        "placeholder",
+        "escapeLuceneSyntax",
+        "tokenizeLuceneQuery",
+        "nodeTemplate",
+        "noResultTemplate",
+        "focusedIri",
+        "rootsQuery",
+        "childrenQuery",
+        "parentsQuery",
+        "searchQuery",
+        "nodeDataQuery"
+    ],
+    "required": [
+        "childrenQuery",
+        "rootsQuery"
+    ],
+    "type": "object"
+}
+

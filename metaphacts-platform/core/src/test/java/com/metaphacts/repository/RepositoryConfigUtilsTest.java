@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,7 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
+import org.eclipse.rdf4j.model.util.Values;
 import org.eclipse.rdf4j.repository.config.RepositoryConfig;
 import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
 import org.eclipse.rdf4j.repository.config.RepositoryConfigSchema;
@@ -72,9 +73,9 @@ import org.eclipse.rdf4j.sail.nativerdf.config.NativeStoreConfig;
 import org.eclipse.rdf4j.sail.nativerdf.config.NativeStoreFactory;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.metaphacts.junit.AbstractIntegrationTest;
+import com.metaphacts.junit.MpAssert;
 import com.metaphacts.junit.PlatformStorageRule;
 import com.metaphacts.junit.TestUtils;
 import com.metaphacts.services.storage.api.SizedStream;
@@ -92,9 +93,6 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
     @Inject
     @Rule
     public PlatformStorageRule storage;
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void testCreateMemorySailRepositoryConfigFromModel() throws Exception{
@@ -121,27 +119,29 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void testCreateRepositoryConfigFromModelFail() throws Exception{
-        exception.expect(RepositoryConfigException.class);
-        exception.expectMessage("Repository configuration model must have exactly one repository id.");
-        RepositoryConfigUtils.createRepositoryConfig(new LinkedHashModel());
+    public void testCreateRepositoryConfigFromModelFail() throws Exception {
+        MpAssert.assertThrows("Repository configuration model must have exactly one repository id.",
+                RepositoryConfigException.class, () -> {
+                    RepositoryConfigUtils.createRepositoryConfig(new LinkedHashModel());
+                });
     }
 
-    @SuppressWarnings("deprecation")
+
     @Test
     public void testCreateRepositoryConfigFromModelFail2() throws Exception{
         final Model model = new LinkedHashModel();
         final RepositoryConfig repConfig1 = createTestMemorySailRepositoryConfig("test-sail-memory-repository-1");
         final RepositoryConfig repConfig2 = createTestMemorySailRepositoryConfig("test-sail-memory-repository-2");
-        repConfig1.export(model);
-        repConfig2.export(model);
+        repConfig1.export(model, Values.bnode());
+        repConfig2.export(model, Values.bnode());
         assertEquals(
                 2,
                 model.filter(null, RepositoryConfigSchema.REPOSITORYID, null).size()
         );
-        exception.expect(RepositoryConfigException.class);
-        exception.expectMessage("Repository configuration model must have exactly one repository id.");
-        RepositoryConfigUtils.createRepositoryConfig(model);
+        MpAssert.assertThrows("Repository configuration model must have exactly one repository id.",
+                RepositoryConfigException.class, () -> {
+                    RepositoryConfigUtils.createRepositoryConfig(model);
+                });
     }
 
     private void assertMemorySailTestConfig(RepositoryConfig repConfig){
@@ -182,13 +182,13 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
         return repConfig;
     }
 
-    @SuppressWarnings("deprecation")
+
     @Test
     public void testWriteMemorySailRepositoryConfigToFile() throws Exception {
         final RepositoryConfig repConfig = createTestMemorySailRepositoryConfig("test-sail-memory-repository");
 
         final Model model = new LinkedHashModel();
-        repConfig.export(model);
+        repConfig.export(model, Values.bnode());
 
         final Model fileModel = TestUtils.readTurtleInputStreamIntoModel(
                 TestUtils.readPlainTextTurtleInput(MEMORY_STORE_CONFIG_FILE),
@@ -199,13 +199,13 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
         assertTrue(Models.isomorphic(fileModel, model));
     }
 
-    @SuppressWarnings("deprecation")
+
     @Test
     public void testWriteNativeSailRepositoryConfigToFile() throws Exception {
         final RepositoryConfig repConfig = createTestNativeSailRepositoryConfig("test-sail-native-repository");
 
         final Model model = new LinkedHashModel();
-        repConfig.export(model);
+        repConfig.export(model, Values.bnode());
 
         final Model fileModel = TestUtils.readTurtleInputStreamIntoModel(
                 TestUtils.readPlainTextTurtleInput(NATIVE_STORE_CONFIG_FILE),
@@ -236,12 +236,11 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
         assertMemorySailTestConfig(repConfig);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testReadInvalidRepositoryConfigurationFile() throws Exception {
         final Model model = new LinkedHashModel();
         final RepositoryConfig repConfig = createTestMemorySailRepositoryConfig("test-sail-memory-repository-invalid");
-        repConfig.export(model);
+        repConfig.export(model, Values.bnode());
 
         model.remove(null, SailConfigSchema.SAILTYPE, null);
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
@@ -249,10 +248,11 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
             writeConfigToStorage("test-sail-memory-repository-invalid", os.toInputStream());
         }
 
-        exception.expect(RepositoryConfigException.class);
-        exception.expectMessage("No Sail implementation specified for Sail repository");
-        RepositoryConfigUtils.readRepositoryConfigurationFile(
-            storage.getPlatformStorage(), "test-sail-memory-repository-invalid");
+        MpAssert.assertThrows("No Sail implementation specified for Sail repository", RepositoryConfigException.class,
+                () -> {
+                    RepositoryConfigUtils.readRepositoryConfigurationFile(storage.getPlatformStorage(),
+                            "test-sail-memory-repository-invalid");
+                });
     }
 
     @Test
@@ -278,20 +278,24 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
             storage.getPlatformStorage(), "test-sail-memory-repository");
         assertMemorySailTestConfig(repConfigFromFile);
 
-        exception.expect(IOException.class);
-        exception.expectMessage("Repository configuration for \"test-sail-memory-repository\" already exists, but is not supposed to be overwritten by the method which is calling this function.");
-        RepositoryConfigUtils.writeRepositoryConfigAsPrettyTurtleToFile(
-            storage.getObjectStorage(), storage.getPlatformStorage().getDefaultMetadata(), repConfig, false);
+        MpAssert.assertThrows(
+                "Repository configuration for \"test-sail-memory-repository\" already exists, but is not supposed to be overwritten by the method which is calling this function.",
+                IOException.class, () -> {
+
+                    RepositoryConfigUtils.writeRepositoryConfigAsPrettyTurtleToFile(storage.getObjectStorage(),
+                            storage.getPlatformStorage().getDefaultMetadata(), repConfig, false);
+                });
     }
 
     @Test
     public void testWriteInvalidRepositoryConfigAsPrettyTurtleToFile() throws Exception {
         final RepositoryConfig repConfig = createTestMemorySailRepositoryConfig("test-sail-memory-repository-invalid");
         ((SailRepositoryConfig)repConfig.getRepositoryImplConfig()).setSailImplConfig(null);
-        exception.expect(RepositoryConfigException.class);
-        exception.expectMessage("No Sail implementation specified for Sail repository");
-        RepositoryConfigUtils.writeRepositoryConfigAsPrettyTurtleToFile(
-            storage.getObjectStorage(), storage.getPlatformStorage().getDefaultMetadata(), repConfig, false);
+        MpAssert.assertThrows("No Sail implementation specified for Sail repository", RepositoryConfigException.class,
+                () -> {
+                    RepositoryConfigUtils.writeRepositoryConfigAsPrettyTurtleToFile(storage.getObjectStorage(),
+                            storage.getPlatformStorage().getDefaultMetadata(), repConfig, false);
+                });
     }
 
     @Test
@@ -331,20 +335,22 @@ public class RepositoryConfigUtilsTest extends AbstractIntegrationTest {
     public void testFailReadRepositoryConfigurationFile() throws Exception {
         URL fileUrl = RepositoryConfigUtilsTest.class.getResource(MEMORY_STORE_CONFIG_FILE);
         writeConfigToStorage("not-valid-config-id", fileUrl.openStream());
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Repository configuration for \"test-sail-memory-repository\" does not exist.");
-        RepositoryConfigUtils.readRepositoryConfigurationFile(
-            storage.getPlatformStorage(), "test-sail-memory-repository");
+        MpAssert.assertThrows("Repository configuration for \"test-sail-memory-repository\" does not exist.",
+                IllegalArgumentException.class, () -> {
+                    RepositoryConfigUtils.readRepositoryConfigurationFile(storage.getPlatformStorage(),
+                            "test-sail-memory-repository");
+                });
     }
 
     @Test
     public void testFailReadRepositoryConfigurationFileIdDoesNotMatch() throws Exception {
         URL fileUrl = RepositoryConfigUtilsTest.class.getResource(MEMORY_STORE_CONFIG_FILE);
         writeConfigToStorage("not-valid-config-id", fileUrl.openStream());
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Repository configuration for \"test-sail-memory-repository\" does not exist.");
-        RepositoryConfigUtils.readRepositoryConfigurationFile(
-            storage.getPlatformStorage(), "test-sail-memory-repository");
+        MpAssert.assertThrows("Repository configuration for \"test-sail-memory-repository\" does not exist.",
+                IllegalArgumentException.class, () -> {
+                    RepositoryConfigUtils.readRepositoryConfigurationFile(storage.getPlatformStorage(),
+                            "test-sail-memory-repository");
+                });
     }
 
     @Test

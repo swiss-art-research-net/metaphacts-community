@@ -15,6 +15,8 @@
     <p>In the following we describe how a GIT repository can be configured as <semantic-link title="Help" data-uri="http://help.metaphacts.com/resource/Storage">runtime storage</semantic-link> for the platform. This allows for version control of modified application content such as templates or configuration. Optionally a remote GIT endpoint can be configured to automatically push changes to a shared repository.
     </p>
 
+    <bs-alert variant="info">Note: instead of using the built-in configuration which relies on the openssh configuration in the host's filesystem, as of 4.0 the Git Storage supports different authentication modes as part of the configuration. See <semantic-link iri='[[resolvePrefix "Help:Storage"]]'>here</semantic-link> for further details on the options.</bs-alert>
+
     <br/>
     <h3>Step 1: Setup GIT SSH keys (required only if a remote is configured)</h3>
 

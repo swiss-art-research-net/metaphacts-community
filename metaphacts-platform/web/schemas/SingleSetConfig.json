@@ -1,0 +1,194 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        },
+        "ItemConfig": {
+            "additionalProperties": {
+                "properties": {
+                    "gridTemplate": {
+                        "description": "Custom template for rendering item in grid mode.",
+                        "type": "string"
+                    },
+                    "isSet": {
+                        "description": "`true` if element is a set; otherwise `false`.",
+                        "type": "boolean"
+                    },
+                    "listTemplate": {
+                        "description": "Custom template for rendering item in list mode.",
+                        "type": "string"
+                    }
+                },
+                "propertyOrder": [
+                    "isSet",
+                    "gridTemplate",
+                    "listTemplate"
+                ],
+                "required": [
+                    "gridTemplate",
+                    "isSet",
+                    "listTemplate"
+                ],
+                "type": "object"
+            },
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "ItemViewMode": {
+            "enum": [
+                "grid",
+                "list"
+            ],
+            "type": "string"
+        },
+        "KeywordFilter": {
+            "properties": {
+                "minSearchTermLength": {
+                    "description": "Minimal number of characters of the text input to begin the search.",
+                    "type": "number"
+                },
+                "placeholder": {
+                    "description": "Placeholder text for search term input.",
+                    "type": "string"
+                },
+                "placeholderInSet": {
+                    "description": "Placeholder text for search term input when a set is open.\nIf not specified `placeholder` will be used instead.",
+                    "type": "string"
+                },
+                "queryPattern": {
+                    "description": "SPARQL query pattern inserted into search query to search for items.\n\nQuery bindings:\n   - `?__token__` (inside string literals) refers to the search input text;",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "placeholder",
+                "placeholderInSet",
+                "queryPattern",
+                "minSearchTermLength"
+            ],
+            "required": [
+                "placeholder",
+                "queryPattern"
+            ],
+            "type": "object"
+        },
+        "SetFilter": {
+            "properties": {
+                "placeholder": {
+                    "description": "Placeholder text for suggestion term input.",
+                    "type": "string"
+                },
+                "queryPattern": {
+                    "description": "SPARQL query pattern inserted into search query to filter items.\n\nQuery bindings:\n   - `?__value__` refers to filter's selected value;",
+                    "type": "string"
+                },
+                "suggestionsQuery": {
+                    "description": "SPARQL SELECT query for filter value autosuggestion.\n\nQuery bindings:\n   - `?token` (inside string literals) refers to filter input text;",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "placeholder",
+                "queryPattern",
+                "suggestionsQuery"
+            ],
+            "required": [
+                "placeholder",
+                "queryPattern",
+                "suggestionsQuery"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "acceptResourceQuery": {
+            "description": "SPARQL ASK query to check whether it's allowed to add item to the set.\n\nQuery bindings:\n   - `?value` refers to the added item;",
+            "type": "string"
+        },
+        "defaultSetIri": {
+            "description": "IRI of a default set (which contains uncategorized items).",
+            "type": "string"
+        },
+        "defaultViewMode": {
+            "$ref": "#/definitions/ItemViewMode",
+            "default": "list",
+            "description": "Default view mode for set items."
+        },
+        "filters": {
+            "description": "Configuration for additional filters in search.",
+            "items": {
+                "$ref": "#/definitions/SetFilter"
+            },
+            "type": "array"
+        },
+        "id": {
+            "description": "Suffix for local storage ID.",
+            "type": "string"
+        },
+        "itemConfig": {
+            "$ref": "#/definitions/ItemConfig",
+            "description": "Mapping from item kind to it's metadata."
+        },
+        "keywordFilter": {
+            "$ref": "#/definitions/KeywordFilter",
+            "description": "Configuration for text search."
+        },
+        "openedSet": {
+            "description": "IRI of displayed set.",
+            "type": "string"
+        },
+        "persistViewMode": {
+            "default": true,
+            "description": "Whether should persist view mode to local storage.",
+            "type": "boolean"
+        },
+        "readonly": {
+            "description": "Disallow addition, deletion or changes of sets and set items.",
+            "type": "boolean"
+        },
+        "rootSetIri": {
+            "description": "IRI of a top-level set container.",
+            "type": "string"
+        },
+        "setCountQuery": {
+            "description": "SPARQL SELECT query to fetch set item counts.\n\nQuery bindings:\n   - `?__rootSet__` refers to a set or the set container;\n\nResult tuple:\n   - `set` refers to set IRI;\n   - `count` refers to set item count;\n\n**Default**:\n```\n   PREFIX ldp: <http://www.w3.org/ns/ldp#>\n   SELECT ?set (COUNT(?item) as ?count) WHERE {\n      ?__rootSet__ ldp:contains ?set .\n      OPTIONAL { ?set ldp:contains ?item }\n   } GROUP BY ?set\n```",
+            "type": "string"
+        },
+        "setItemsMetadataQuery": {
+            "description": "SPARQL SELECT query parametrized by results of `set-items-query` and used to\nretrieve additional metadata for sets or set items that can be used in\nvisualization templates.\n\n`VALUES()` bindings:\n   - `?item` refers to set or set item;\n   - `?kind` refers to item kind (set or set item, see `item-config`);\n\nResult tuple:\n   - `item` refers to set IRI or set item IRI;\n\n**Default**:\n```\n   SELECT ?item WHERE { }\n```",
+            "type": "string"
+        },
+        "setItemsQuery": {
+            "description": "SPARQL SELECT query to fetch sets and set items, perform search.\n\nQuery bindings:\n   - `?__rootSet__` refers to a set or the set container;\n   - `?__isSearch__` is `true` when performing search otherwise false;\n   - `?__setToSearch__` refers to a set to perform search within;\n   - `FILTER(?__filterPatterns__)` is replaced by keyword and additional\n     filter patterns when performing search;\n   `?__preferredLabel__` refers to preferred label predicate for elements.\n\nResult tuple:\n   - `item` refers to set IRI or set item IRI;\n   - `itemHolder` refers to set item holder IRI which can be used to remove the item from set;\n   - `parent` refers to IRI of set's container or item's parent set;\n   - `kind` refers to item kind (set or set item, see `item-config`);\n\n**Default**:\n```\n   PREFIX ldp: <http://www.w3.org/ns/ldp#>\n   PREFIX prov: <http://www.w3.org/ns/prov#>\n   PREFIX platform: <http://www.metaphacts.com/ontologies/platform#>\n   PREFIX bds: <http://www.bigdata.com/rdf/search#>\n   SELECT ?item ?itemHolder ?parent ?modificationDate ?kind WHERE {\n     {\n       FILTER(!(?__isSearch__)) .\n       ?__rootSet__ ldp:contains ?itemHolder .\n       BIND(?__rootSet__ as ?parent) .\n       OPTIONAL { ?itemHolder platform:setItem ?setItem }\n       BIND(COALESCE(?setItem, ?itemHolder) AS ?item) .\n     } UNION {\n       FILTER(?__isSearch__) .\n       ?__rootSet__ ldp:contains ?__setToSearch__ .\n       ?__setToSearch__ ldp:contains ?itemHolder.\n       BIND(?__setToSearch__ as ?parent) .\n       ?itemHolder platform:setItem ?item .\n       FILTER(?__filterPatterns__)\n     }\n\n     OPTIONAL {\n       ?itemHolder prov:generatedAtTime ?modificationDate .\n     }\n\n     OPTIONAL {\n       ?item a platform:Set .\n       BIND(platform:Set as ?type)\n     }\n     BIND(COALESCE(?type, platform:SetItem) AS ?kind) .\n   } ORDER BY DESC(?modificationDate)\n```",
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Additional styles for component."
+        }
+    },
+    "propertyOrder": [
+        "openedSet",
+        "setItemsQuery",
+        "setItemsMetadataQuery",
+        "setCountQuery",
+        "acceptResourceQuery",
+        "itemConfig",
+        "keywordFilter",
+        "filters",
+        "rootSetIri",
+        "defaultSetIri",
+        "readonly",
+        "id",
+        "defaultViewMode",
+        "persistViewMode",
+        "style"
+    ],
+    "required": [
+        "openedSet"
+    ],
+    "type": "object"
+}
+

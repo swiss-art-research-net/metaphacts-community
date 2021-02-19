@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,7 +55,7 @@ import { SetManagementContextTypes, SetManagementContext } from './SetManagement
 import { SetManagementEventType } from 'platform/api/services/ldp-set/SetManagementEvents';
 
 import * as Defaults from './Defaults';
-import { SetManagementProps } from './Configuration';
+import { SetManagementConfig } from './Configuration';
 import { ViewState, ViewModel } from './ViewModel';
 
 import { SearchAndFilters } from './views/SearchAndFilters';
@@ -66,9 +66,10 @@ import './set-management.scss';
 
 export const CLASS_NAME = 'set-management';
 
-type Props = SetManagementProps & ComponentProps;
-export class SetManagement extends Component<Props, ViewState> {
-  static readonly defaultProps: Partial<Props> = Defaults.ForAllProps;
+export interface SetManagementProps extends SetManagementConfig, ComponentProps {}
+
+export class SetManagement extends Component<SetManagementProps, ViewState> {
+  static readonly defaultProps = Defaults.ForAllProps;
 
   static readonly childContextTypes = {
     ...Component.childContextTypes,
@@ -92,7 +93,7 @@ export class SetManagement extends Component<Props, ViewState> {
   private model: ViewModel;
   private pendingState: ViewState;
 
-  constructor(props: Props, context: any) {
+  constructor(props: SetManagementProps, context: any) {
     super(props, context);
 
     this.state = this.pendingState = ViewModel.loadState(this.props);

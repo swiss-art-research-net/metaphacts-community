@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,17 +43,16 @@ import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 import javax.ws.rs.core.UriInfo;
 
-import com.github.jknack.handlebars.Context;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.repository.Repository;
 
+import com.github.jknack.handlebars.Context;
 import com.google.common.collect.Maps;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.config.NamespaceRegistry;
 
 /**
@@ -73,7 +72,7 @@ public class TemplateContext {
 
     private Map<String, Value> params = Maps.newHashMap();
 
-    private LabelCache labelCache;
+    private LabelService labelCache;
     private NamespaceRegistry namespaceRegistry;
 
     public TemplateContext(
@@ -120,7 +119,7 @@ public class TemplateContext {
         this.namespaceRegistry = ns;
     }
 
-    public void setLabelCache(LabelCache labelCache) {
+    public void setLabelCache(LabelService labelCache) {
         this.labelCache = labelCache;
     }
 
@@ -129,7 +128,7 @@ public class TemplateContext {
             IRI iri = (IRI) this.value;
             Optional<Literal> label = labelCache.getLabel(
                 iri, this.repository, this.preferredLanguage);
-            return LabelCache.resolveLabelWithFallback(label, iri);
+            return LabelService.resolveLabelWithFallback(label, iri);
         }
         return "";
     }

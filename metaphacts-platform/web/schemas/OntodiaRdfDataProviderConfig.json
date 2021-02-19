@@ -2,6 +2,48 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "description": "Allows displaying data in `ontodia` that don't exist in the database.",
     "properties": {
+        "acceptBlankNodes": {
+            "default": false,
+            "type": "boolean"
+        },
+        "acceptLinkProperties": {
+            "default": true,
+            "type": "boolean"
+        },
+        "datatypePredicates": {
+            "default": [
+            ],
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "guessLabelPredicate": {
+            "default": true,
+            "type": "boolean"
+        },
+        "imagePredicates": {
+            "default": [
+            ],
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "labelPredicates": {
+            "default": "[rdf:label, foaf:name, schema:name, skos:prefLabel, skos:label, skos:altLabel]",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "linkSupertypes": {
+            "default": "[rdf:Property, owl:ObjectProperty]",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "provisionGraph": {
             "description": "Graph data to display result of the query.",
             "type": "string"
@@ -13,12 +55,34 @@
         "provisionRepository": {
             "description": "Repository ID.",
             "type": "string"
+        },
+        "subtypePredicate": {
+            "default": "rdfs:subClassOf",
+            "type": "string"
+        },
+        "transformRdfList": {
+            "default": false,
+            "type": "boolean"
+        },
+        "typePredicate": {
+            "default": "rdf:type",
+            "type": "string"
         }
     },
     "propertyOrder": [
         "provisionQuery",
         "provisionGraph",
-        "provisionRepository"
+        "provisionRepository",
+        "acceptBlankNodes",
+        "transformRdfList",
+        "acceptLinkProperties",
+        "typePredicate",
+        "subtypePredicate",
+        "linkSupertypes",
+        "labelPredicates",
+        "guessLabelPredicate",
+        "imagePredicates",
+        "datatypePredicates"
     ],
     "type": "object"
 }

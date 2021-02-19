@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -83,7 +83,7 @@ export interface SemanticSimpleSearchBaseConfig {
 
 export interface SemanticSimpleSearchConfig extends SemanticSimpleSearchBaseConfig {
   /**
-   * SPARQL SELECT query string or <semantic-link uri='http://help.metaphacts.com/resource/DataClient'>DataClient</semantic-link> query.
+   * SPARQL SELECT query string or Data Client query.
    *
    * Needs to have a variable `?__token__` serving as placeholder for the user input.
    * Note that the name of this variable can be customized using `searchTermVariable`.
@@ -97,12 +97,22 @@ export interface SemanticSimpleSearchConfig extends SemanticSimpleSearchBaseConf
    *    }
    * }
    * ```
+   *
+   * @mpSeeResource {
+   *   "name": "Data Client",
+   *   "iri": "http://help.metaphacts.com/resource/DataClient"
+   * }
    */
   query?: string | DataQuery;
 
   /**
-   * SPARQL SELECT query string or <semantic-link uri='http://help.metaphacts.com/resource/DataClient'>DataClient</semantic-link> query to show default
+   * SPARQL SELECT query string or Data Client query to show default
    * suggestions without the need for the user to type anything if specified.
+   *
+   * @mpSeeResource {
+   *   "name": "Data Client",
+   *   "iri": "http://help.metaphacts.com/resource/DataClient"
+   * }
    */
   defaultQuery?: string | DataQuery;
 
@@ -112,7 +122,12 @@ export interface SemanticSimpleSearchConfig extends SemanticSimpleSearchBaseConf
   resourceBindingName?: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for suggestion item.
+   * Template for suggestion item.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   template?: string;
 }

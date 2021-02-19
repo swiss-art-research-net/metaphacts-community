@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -81,7 +81,7 @@ export class RepositoryConfigInitializer extends Component<{}, State> {
     const {loadingError, repositoryTemplates} = this.state;
 
     if (loadingError) {
-      return <Alert bsStyle='info'> {loadingError} </Alert>;
+      return <Alert variant='info'> {loadingError} </Alert>;
     }
     return (
       <div data-flex-layout='row top-center'>
@@ -115,7 +115,7 @@ export class RepositoryConfigInitializer extends Component<{}, State> {
               </Col>
 
             </Row>
-             <Alert bsStyle='info'>
+             <Alert variant='info'>
                 In the template, please replace all placeholders marked with {'{'}% and %{'} '}
                 with your actual values.
              </Alert>

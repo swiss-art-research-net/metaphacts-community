@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -93,16 +93,25 @@ export interface SemanticTreeConfig {
   query: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>
-   * which is used to render every tree node. Template has access to all projection
-   * variables for a single result tuple.
+   * Template which is used to render every tree node.
+   *
+   * Template has access to all projection variables for a single result tuple.
    * By default `<semantic-link>` component is used for node visualization.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   tupleTemplate?: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link>
-   * which is applied when the query returns no results.
+   * Template which is applied when the query returns no results.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   noResultTemplate?: string;
 
@@ -181,9 +190,13 @@ interface State {
   errorMessage?: Data.Maybe<string>;
 }
 
+type DefaultProps = Required<Pick<Props,
+  'provider' | 'parentBindingName' | 'nodeBindingName' | 'roots' | 'keysOpened'
+>>;
+
 export class SemanticTree extends Component<Props, State> {
   private fetchOperation = Cancellation.cancelled;
-  static readonly defaultProps: Partial<Props> = {
+  static readonly defaultProps: DefaultProps = {
     provider: 'html',
     parentBindingName: 'parent',
     nodeBindingName: 'node',

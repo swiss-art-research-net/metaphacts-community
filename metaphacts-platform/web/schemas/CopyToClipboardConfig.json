@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "**Example**:\n```\n<mp-copy-to-clipboard text='text'>\n   <button class='btn btn-secondary'>\n     <i class='fa fa-copy'></i>\n   </button>\n</mp-copy-to-clipboard>\n```",
+    "properties": {
+        "message": {
+            "default": "The content has been copied!",
+            "description": "The message that will be displayed in the notification when the text has been copied.",
+            "type": "string"
+        },
+        "text": {
+            "description": "The text that will be copied to clipboard.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "text",
+        "message"
+    ],
+    "required": [
+        "text"
+    ],
+    "type": "object"
+}
+

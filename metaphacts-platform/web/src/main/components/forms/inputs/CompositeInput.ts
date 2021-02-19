@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,7 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import * as Kefir from 'kefir';
+import * as classnames from 'classnames';
 
 import { Cancellation } from 'platform/api/async';
 import { Rdf } from 'platform/api/rdf';
@@ -47,8 +48,8 @@ import { Rdf } from 'platform/api/rdf';
 import { Spinner } from 'platform/components/ui/spinner';
 
 import {
-  FieldDefinitionProp, FieldDefinition, FieldDependency, MultipleFieldConstraint, FieldConstraint,
-  normalizeFieldDefinition, hasBindingNameForField,
+  FieldDefinition, FieldDefinitionConfig, FieldDefinitionProp, FieldDependency,
+  MultipleFieldConstraint, FieldConstraint, normalizeFieldDefinition, hasBindingNameForField,
 } from '../FieldDefinition';
 import { DependencyContext, makeDependencyContext } from '../FieldDependencies';
 import {
@@ -57,29 +58,63 @@ import {
 import {
   FieldMappingContext, InputMapping, validateFieldConfiguration, renderFields,
 } from '../FieldMapping';
-import { fieldInitialState, generateSubjectByTemplate, loadDefaults } from '../FormModel';
+import {
+  CompositeChange, fieldInitialState, generateSubjectByTemplate, wasSubjectGeneratedByTemplate,
+  loadDefaults,
+} from '../FormModel';
 import {
   ValidationResult, findChangedValues, clearConstraintErrors, tryValidateSingleField,
-  tryValidateMultipleFields,
+  tryValidateMultipleFields, clearSubjectErrors,
 } from '../FormValidation';
 
 import { CardinalitySupport } from './CardinalitySupport';
 import {
-  SingleValueInput, SingleValueInputProps, SingleValueHandler, SingleValueHandlerProps,
+  SingleValueInput, SingleValueInputConfig, SingleValueInputProps,
+  SingleValueHandler, SingleValueHandlerProps,
 } from './SingleValueInput';
 import {
   MultipleValuesInput, MultipleValuesProps, MultipleValuesHandler, ValuesWithErrors,
 } from './MultipleValuesInput';
 
-export interface CompositeInputProps extends SingleValueInputProps {
-  fields: ReadonlyArray<FieldDefinitionProp>;
+interface BaseCompositeInputConfig extends SingleValueInputConfig {
+  className?: string;
   fieldConstraints?: ReadonlyArray<MultipleFieldConstraint>;
   fieldDependencies?: ReadonlyArray<FieldDependency>;
   newSubjectTemplate?: string;
-  children?: React.ReactNode;
 }
 
-type ComponentProps = CompositeInputProps & React.ClassAttributes<CompositeInput>;
+// TODO: move into base config
+interface ExperimentalCompositeInputConfig {
+  /**
+   * **Experimental**: allows to edit form subject IRI using `<semantic-form-subject-input>`
+   * component.
+   *
+   * @default false
+   */
+  defaultEditSubject?: boolean;
+  /**
+   * **Experimental**: automatically rewrites subject IRI using provided `new-subject-template`.
+   * Has no effect if `default-edit-subject` is `false`.
+   *
+   * @default false
+   */
+  defaultSuggestSubject?: boolean;
+}
+
+interface SemanticFormCompositeInputConfig extends BaseCompositeInputConfig {
+  fields: ReadonlyArray<FieldDefinitionConfig>;
+  children?: {};
+}
+
+export interface CompositeInputProps
+  extends BaseCompositeInputConfig, ExperimentalCompositeInputConfig, SingleValueInputProps {
+  fields: ReadonlyArray<FieldDefinitionProp>;
+  children?: React.ReactNode;
+  /**
+   * Asynchronously validates subject IRI with specified callback.
+   */
+  onValidateSubject?: (model: CompositeValue) => Kefir.Property<CompositeChange>;
+}
 
 interface ValidationState {
   /** Set of {fieldId} */
@@ -95,16 +130,19 @@ const MAPPING_CONTEXT: FieldMappingContext = {
   cardinalitySupport: CardinalitySupport,
 };
 
-export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
-  private compositeOperations = Cancellation.cancelled;
+export class CompositeInput extends SingleValueInput<CompositeInputProps, {}> {
+  private compositeLoading = Cancellation.cancelled;
+  private isCompositeLoading = false;
 
-  private shouldReload = true;
-  private compositeState: DataState.Loading | DataState.Ready = DataState.Ready;
+  private subjectValidating = Cancellation.cancelled;
+  private isSubjectValidating = false;
+
+  private onValueChangeLoader = new OnValueChangeLoader();
   private inputRefs = new Map<string, Array<ChildInput | null>>();
   private validations = new Map<FieldConstraint, ValidationState>();
   private dependencyContexts = new Map<string, DependencyContext | undefined>();
 
-  constructor(props: ComponentProps, context: any) {
+  constructor(props: CompositeInputProps, context: any) {
     super(props, context);
   }
 
@@ -120,11 +158,11 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
     this.tryLoadComposite(this.props);
   }
 
-  componentWillReceiveProps(props: ComponentProps) {
+  componentWillReceiveProps(props: CompositeInputProps) {
     if (props.value !== this.props.value) {
       // track reload requests separately to be able to suspend
       // composite load until `props.dataState` becomes `DataState.Ready`
-      this.shouldReload = true;
+      this.onValueChangeLoader.markChanged();
     }
     this.tryLoadComposite(props);
   }
@@ -133,25 +171,24 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
     this.cancelCompositeOperations();
   }
 
-  private tryLoadComposite(props: ComponentProps) {
-    if (!(this.shouldReload && props.dataState === DataState.Ready)) {
-      return;
-    }
-    const shouldLoad = !FieldValue.isComposite(props.value) || (
-      // composite value requires to load definitions and defaults
-      // (e.g. when value is restored from local storage)
-      props.value.fields.size > 0 &&
-      props.value.definitions.size === 0
-    );
-    if (shouldLoad) {
-      this.shouldReload = false;
-      this.loadComposite(props);
+  private tryLoadComposite(props: CompositeInputProps) {
+    if (this.onValueChangeLoader.shouldLoadInState(props.dataState)) {
+      const shouldLoad = !FieldValue.isComposite(props.value) || (
+        // composite value requires to load definitions and defaults
+        // (e.g. when value is restored from local storage)
+        props.value.fields.size > 0 &&
+        props.value.definitions.size === 0
+      );
+      if (shouldLoad) {
+        this.onValueChangeLoader.markLoaded();
+        this.loadComposite(props);
+      }
     }
   }
 
-  private loadComposite(props: ComponentProps) {
+  private loadComposite(props: CompositeInputProps) {
     this.cancelCompositeOperations();
-    this.compositeOperations = new Cancellation();
+    this.compositeLoading = new Cancellation();
     const handler = this.getHandler();
 
     // filter model from unused field definitions
@@ -160,17 +197,27 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
       items.filter((item, fieldId) => handler.inputs.has(fieldId)).toMap();
 
     const definitions = filterUnusedFields(handler.definitions);
-    const rawComposite = createRawComposite(
+    let rawComposite = createRawComposite(
       props.value,
       definitions,
       handler.constraints,
       handler.configurationErrors
     );
+    if (props.defaultEditSubject) {
+      const subject = generateSubjectByTemplate(
+        props.newSubjectTemplate, undefined, rawComposite
+      );
+      rawComposite = CompositeValue.set(rawComposite, {
+        subject,
+        editableSubject: true,
+        suggestSubject: Boolean(props.defaultSuggestSubject),
+      });
+    }
 
-    this.compositeState = DataState.Loading;
+    this.isCompositeLoading = true;
 
     props.updateValue(() => rawComposite);
-    this.compositeOperations.map(
+    this.compositeLoading.map(
       // add zero delay to force asynchronous observer call
       loadDefaults(rawComposite, handler.inputs)
         .flatMap(v => Kefir.later(0, v))
@@ -180,14 +227,17 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
         if (FieldValue.isComposite(props.value)) {
           loaded = mergeInitialValues(loaded, props.value);
         }
-        this.compositeState = DataState.Ready;
+        this.isCompositeLoading = false;
         this.props.updateValue(() => loaded);
       },
     });
   }
 
   private cancelCompositeOperations() {
-    this.compositeOperations.cancelAll();
+    this.compositeLoading.cancelAll();
+    this.isCompositeLoading = false;
+    this.subjectValidating.cancelAll();
+    this.isSubjectValidating = false;
     this.validations.forEach(state => {
       state.cancellation.cancelAll();
     });
@@ -207,10 +257,16 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
     reducer: (previous: ValuesWithErrors) => ValuesWithErrors
   ): FieldValue {
     if (!FieldValue.isComposite(oldValue)) { return; }
-    const handler = this.getHandler();
 
     let newValue = reduceFieldValue(def.id, oldValue, reducer);
     newValue = clearConstraintErrors(newValue, def.id);
+    newValue = setSuggestedSubject(newValue, this.props.newSubjectTemplate);
+
+    if (newValue.subject.value !== oldValue.subject.value) {
+      if (this.tryStartValidatingSubject(newValue)) {
+        newValue = clearSubjectErrors(newValue);
+      }
+    }
 
     this.cancelFieldValidation(def.id);
     if (!this.isInputLoading(def.id)) {
@@ -242,6 +298,32 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
         this.validations.delete(constraint);
       }
     });
+  }
+
+  private tryStartValidatingSubject(model: CompositeValue): boolean {
+    const {onValidateSubject} = this.props;
+    if (!onValidateSubject) {
+      return false;
+    }
+
+    this.subjectValidating.cancelAll();
+    const cancellation = new Cancellation();
+    this.subjectValidating = cancellation;
+    this.isSubjectValidating = true;
+
+    cancellation.map(
+      Kefir.later(VALIDATION_DEBOUNCE_DELAY, model)
+        .flatMap(onValidateSubject)
+    ).observe({
+      value: compositeChange => {
+        this.isSubjectValidating = false;
+        this.props.updateValue(value =>
+          FieldValue.isComposite(value) ? compositeChange(value) : value
+        );
+      }
+    });
+
+    return true;
   }
 
   private startValidatingField(
@@ -302,14 +384,16 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
   dataState(): DataState {
     if (!FieldValue.isComposite(this.props.value)) {
       return DataState.Loading;
-    } else if (this.compositeState !== DataState.Ready) {
-      return this.compositeState;
+    } else if (this.isCompositeLoading) {
+      return DataState.Loading;
+    } else if (this.isSubjectValidating) {
+      return DataState.Verifying;
     }
 
     let result = DataState.Ready;
 
     const validatingFields = computeValidatingFields(this.validations);
-    const fieldIds = this.props.value.definitions.map(def => def.id).toArray();
+    const fieldIds = this.getHandler().inputs.keySeq().toArray();
     for (const fieldId of fieldIds) {
       const refs = this.inputRefs.get(fieldId);
       if (!refs) {
@@ -342,24 +426,25 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
     const handler = this.getHandler();
     const validatingFields = computeValidatingFields(this.validations);
     const dataStateForField = (fieldId: string): DataState => {
-      if (this.compositeState !== DataState.Ready) {
-        return this.compositeState;
+      if (this.isCompositeLoading) {
+        return DataState.Loading;
       }
       return validatingFields.has(fieldId) ? DataState.Verifying : DataState.Ready;
     };
     const dependencyContexts = this.updateDependencyContexts(composite);
-    const children = renderFields(
-      this.props.children,
-      composite,
-      handler.handlers,
-      dataStateForField,
-      this.onFieldValuesChanged,
-      this.onMountInput,
+    const children = renderFields(this.props.children, composite, {
+      inputHandlers: handler.handlers,
+      getDataState: dataStateForField,
+      updateField: this.onFieldValuesChanged,
+      onInputMounted: this.onMountInput,
       dependencyContexts,
-      MAPPING_CONTEXT
-    );
+      mappingContext: MAPPING_CONTEXT,
+      setSuggestSubject: this.setSuggestSubject,
+      updateSubject: this.updateSubject,
+    });
 
-    return React.createElement('div', {className: 'composite-input'}, children);
+    const className = classnames('composite-input', this.props.className);
+    return React.createElement('div', {className}, children);
   }
 
   private onMountInput = (
@@ -373,6 +458,41 @@ export class CompositeInput extends SingleValueInput<ComponentProps, {}> {
       this.inputRefs.set(inputId, refs);
     }
     refs[inputIndex] = inputRef;
+  }
+
+  private setSuggestSubject = (suggest: boolean) => {
+    this.props.updateValue(model => {
+      if (!(FieldValue.isComposite(model))) { return model; }
+      if (model.editableSubject) {
+        if (suggest) {
+          const subject = generateSubjectByTemplate(
+            this.props.newSubjectTemplate,
+            undefined,
+            {...model, subject: Rdf.iri('')}
+          );
+          let newModel = CompositeValue.set(model, {subject, suggestSubject: true});
+          if (this.tryStartValidatingSubject(newModel)) {
+            newModel = clearSubjectErrors(newModel);
+          }
+          return newModel;
+        }
+      }
+      return CompositeValue.set(model, {suggestSubject: suggest});
+    });
+  }
+
+  private updateSubject = (newSubject: Rdf.Iri) => {
+    this.props.updateValue(model => {
+      if (!(FieldValue.isComposite(model) && model.editableSubject)) { return model; }
+      let newModel = CompositeValue.set(model, {
+        subject: newSubject,
+        suggestSubject: false,
+      });
+      if (this.tryStartValidatingSubject(newModel)) {
+        newModel = clearSubjectErrors(newModel);
+      }
+      return newModel;
+    });
   }
 
   static get inputGroupType(): 'composite' {
@@ -403,7 +523,7 @@ class CompositeHandler implements SingleValueHandler {
     const {inputs, errors} = validateFieldConfiguration(
       this.definitions,
       this.constraints,
-      baseInputProps.fieldDependencies || [],
+      this.dependencies,
       baseInputProps.children,
       MAPPING_CONTEXT
     );
@@ -438,6 +558,25 @@ class CompositeHandler implements SingleValueHandler {
     });
   }
 
+  discard(value: FieldValue): void {
+    if (!FieldValue.isComposite(value)) { return; }
+    value.fields.forEach((state, fieldId) => {
+      const handlers = this.handlers.get(fieldId);
+      if (!handlers) { return; }
+      for (const handler of handlers) {
+        handler.discard?.(state);
+      }
+    });
+  }
+
+  beforeFinalize(): void {
+    this.handlers.forEach(handlers => {
+      for (const handler of handlers) {
+        handler.beforeFinalize?.();
+      }
+    });
+  }
+
   finalize(value: FieldValue, owner: EmptyValue | CompositeValue): Kefir.Property<CompositeValue> {
     const finalizedComposite = this.finalizeSubject(value, owner);
 
@@ -468,6 +607,22 @@ class CompositeHandler implements SingleValueHandler {
     return CompositeValue.set(sourceValue, {
       subject: generateSubjectByTemplate(this.newSubjectTemplate, ownerSubject, sourceValue),
     });
+  }
+}
+
+export class OnValueChangeLoader {
+  private shouldReload = true;
+
+  markChanged() {
+    this.shouldReload = true;
+  }
+
+  markLoaded() {
+    this.shouldReload = false;
+  }
+
+  shouldLoadInState(dataState: DataState): boolean {
+    return this.shouldReload && dataState === DataState.Ready;
   }
 }
 
@@ -558,6 +713,36 @@ function computeValidatingFields(validations: ReadonlyMap<FieldConstraint, Valid
     state.fields.forEach(fieldId => validatingFields.add(fieldId));
   });
   return validatingFields;
+}
+
+function setSuggestedSubject(model: CompositeValue, newSubjectTemplate: string): CompositeValue {
+  if (!(model.editableSubject && model.suggestSubject)) {
+    return model;
+  }
+  if (doesSubjectEqualToSuggested(model, newSubjectTemplate)) {
+    return model;
+  }
+  const subject = generateSubjectByTemplate(
+    newSubjectTemplate,
+    undefined,
+    {...model, subject: Rdf.iri('')}
+  );
+  if (Rdf.equalTerms(model.subject, subject)) {
+    return model;
+  }
+  return CompositeValue.set(model, {subject});
+}
+
+function doesSubjectEqualToSuggested(model: CompositeValue, newSubjectTemplate: string): boolean {
+  if (CompositeValue.isPlaceholder(model.subject)) {
+    return true;
+  }
+  return wasSubjectGeneratedByTemplate(
+    model.subject.value,
+    newSubjectTemplate,
+    undefined,
+    {...model, subject: Rdf.iri('')}
+  );
 }
 
 SingleValueInput.assertStatic(CompositeInput);

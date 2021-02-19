@@ -1,0 +1,106 @@
+/*
+ * "Commons Clause" License Condition v1.0
+ *
+ * The Software is provided to you by the Licensor under the
+ * License, as defined below, subject to the following condition.
+ *
+ * Without limiting other conditions in the License, the grant
+ * of rights under the License will not include, and the
+ * License does not grant to you, the right to Sell the Software.
+ *
+ * For purposes of the foregoing, "Sell" means practicing any
+ * or all of the rights granted to you under the License to
+ * provide to third parties, for a fee or other consideration
+ * (including without limitation fees for hosting or
+ * consulting/ support services related to the Software), a
+ * product or service whose value derives, entirely or substantially,
+ * from the functionality of the Software. Any
+ * license notice or attribution required by the License must
+ * also include this Commons Clause License Condition notice.
+ *
+ * License: LGPL 2.1 or later
+ * Licensor: metaphacts GmbH
+ *
+ * Copyright (C) 2015-2021, metaphacts GmbH
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, you can receive a copy
+ * of the GNU Lesser General Public License from http://www.gnu.org/
+ */
+.component {/* nothing */}
+
+.validationLayer {/* nothing */}
+
+.stateLabel {
+  font-weight: bold;
+  margin-right: 5px;
+}
+.stateCancel {
+  color: #3f87a6;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.stateIndicator {
+  position: absolute;
+}
+.stateIndicatorContainer {
+  position: relative;
+}
+.stateIndicatorBody {
+  position: absolute;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+}
+
+.itemError {
+  align-self: flex-end;
+  margin: 0px 5px;
+  display: flex;
+  align-items: center;
+  cursor: help;
+}
+.itemErrorIcon {
+  background: url("../../../images/font-awesome/exclamation-triangle.svg");
+  height: 15px;
+  width: 17px;
+}
+
+@mixin linkOverlay {
+  fill: none;
+  stroke-width: 5;
+  stroke-opacity: 0.5;
+}
+.temporaryLink {
+  @include linkOverlay;
+  stroke: gray;
+  stroke-dasharray: 8 8;
+}
+.newLink {
+  @include linkOverlay;
+  stroke: #7dd87d
+}
+.changedLink {
+  @include linkOverlay;
+  stroke: #c4a9ff;
+}
+.deletedLink {
+  @include linkOverlay;
+  stroke: #ff4646;
+}

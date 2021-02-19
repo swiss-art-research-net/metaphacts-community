@@ -1,5 +1,11 @@
 {
-  "rs-iiif-image-thumbnail": "researchspace/components/iiif/ImageThumbnail.ts",
+  "$schema": "../../project/jsonSchemas/ComponentJson.schema.json",
+
+  "rs-iiif-image-thumbnail": {
+    "path": "researchspace/components/iiif/ImageThumbnail.ts",
+    "propsSchema": "ImageThumbnailConfig",
+    "helpResource": "http://help.metaphacts.com/resource/IIIFComponents"
+  },
   "rs-image-upload": "researchspace/widgets/image-upload-widget.ts",
   "rs-annotation": {
     "path": "researchspace/components/annotations/AnnotationComponent.ts",
@@ -10,13 +16,25 @@
     }
   },
 
-  "rs-iiif-overlay": "researchspace/components/iiif/OverlayComparison.ts",
-  "rs-iiif-side-by-side": "researchspace/components/iiif/SideBySideComparison.ts",
+  "rs-iiif-overlay": {
+    "path": "researchspace/components/iiif/OverlayComparison.ts",
+    "propsSchema": "OverlayComparisonConfig",
+    "helpResource": "http://help.metaphacts.com/resource/IIIFComponents"
+  },
+  "rs-iiif-side-by-side": {
+    "path": "researchspace/components/iiif/SideBySideComparison.ts",
+    "propsSchema": "SideBySideComparisonConfig",
+    "helpResource": "http://help.metaphacts.com/resource/IIIFComponents"
+  },
 
   "rs-iiif-overlay-action": "researchspace/components/iiif/actions/OverlayComparisonActionComponent.tsx",
   "rs-iiif-side-by-side-action": "researchspace/components/iiif/actions/SideBySideComparisonActionComponent.tsx",
 
-  "rs-iiif-mirador": "researchspace/components/iiif/ImageRegionEditor.ts",
+  "rs-iiif-mirador": {
+    "path": "researchspace/components/iiif/ImageRegionEditor.ts",
+    "propsSchema": "ImageRegionEditorConfig",
+    "helpResource": "http://help.metaphacts.com/resource/IIIFComponents"
+  },
 
   "rs-argument-simple-belief-selector": "researchspace/components/arguments/Belief.tsx",
   "rs-quick-assertion": {
@@ -97,9 +115,14 @@
       "value-relations": {
         "tupleTemplate": true
       }
-    }
+    },
+    "propsSchema": "SemanticFacetConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
   },
-  "semantic-search-facet-breadcrumbs": "researchspace/components/search/web-components/SemanticSearchFacetBreadcrumbs.tsx",
+  "semantic-search-facet-breadcrumbs": {
+    "path": "researchspace/components/search/web-components/SemanticSearchFacetBreadcrumbs.tsx",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
+  },
   "semantic-search-query-builder": {
     "path": "researchspace/components/search/query-builder/QueryBuilder.tsx",
     "deferAttributes": {
@@ -123,7 +146,9 @@
         "suggestionTupleTemplate": true,
         "noSuggestionsTemplate": true
       }
-    }
+    },
+    "propsSchema": "SemanticQueryBuilderConfig",
+    "helpResource": "http://help.metaphacts.com/resource/StructuredSearch"
   },
   "semantic-search-action-use-result-in-extended-search": "researchspace/components/search/web-components/SemanticSearchUseResultInExtendedSearchAction.tsx",
   "semantic-search-action-use-result-item-in-extended-search": "researchspace/components/search/web-components/SemanticSearchUseResultItemInExtendedSearchAction.tsx",
@@ -141,7 +166,9 @@
       "options": {
         "groupTemplate": true
       }
-    }
+    },
+    "propsSchema": "SemanticTimelineConfig",
+    "helpResource": "http://help.metaphacts.com/resource/SemanticTimeline"
   },
 
   "rs-guided-tour": "researchspace/components/guided-tour/GuidedTour.tsx",
@@ -157,13 +184,17 @@
     "deferAttributes": {
       "annotation-tooltip": true,
       "fallback-template": true
-    }
+    },
+    "propsSchema": "TextAnnotationWorkspaceProps",
+    "helpResource": "http://help.metaphacts.com/resource/TextAnnotation"
   },
   "rs-text-annotation-type": {
     "path": "researchspace/components/text-annotation/components/TextAnnotationType.tsx",
     "deferAttributes": {
       "template": true
-    }
+    },
+    "propsSchema": "TextAnnotationTypeOptions",
+    "helpResource": "http://help.metaphacts.com/resource/TextAnnotation"
   },
 
   "rs-dashboard": {
@@ -174,7 +205,12 @@
         "itemLabelTemplate": true,
         "itemBodyTemplate": true
       }
-    }
+    },
+    "helpResource": "http://help.metaphacts.com/resource/Dashboard"
   },
-  "rs-image-graph-authoring": "researchspace/components/iiif/image-graph-authoring/ImageGraphAuthoring.tsx"
+  "rs-image-graph-authoring": {
+    "path": "researchspace/components/iiif/image-graph-authoring/ImageGraphAuthoring.tsx",
+    "propsSchema": "ImageGraphAuthoringConfig",
+    "helpResource": "http://help.metaphacts.com/resource/ImageGraphAuthoring"
+  }
 }

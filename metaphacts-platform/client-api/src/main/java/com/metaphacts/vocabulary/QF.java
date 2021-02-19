@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,7 +45,7 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.SP;
 import org.eclipse.rdf4j.model.vocabulary.SPIN;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 
 public class QF {
     /**
@@ -117,7 +117,7 @@ public class QF {
      * <dt>Domain</dt>
      * <dd>{@link QUERY_FORM_ELEMENT_CLASS}</dd>
      * <dt>Range</dt>
-     * <dd>{@link XMLSchema#INT}</dd>
+     * <dd>{@link XSD#INT}</dd>
      * </dl>
      */
     public static IRI ELEMENT_ORDER_PROPERTY;

@@ -16,7 +16,7 @@
             "type": "number"
         },
         "defaultQuery": {
-            "description": "SPARQL SELECT query string to show default suggestions without the need for the user\nto type anything if specified.",
+            "description": "SPARQL SELECT query string to show default suggestions without the need for the user\nto type anything if specified.\n\nNeeds to define `?subject` as projection variable.",
             "type": "string"
         },
         "domain": {

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,26 +39,27 @@
  */
 import * as React from 'react';
 
+import { Cancellation } from 'platform/api/async';
 import { Component } from 'platform/api/components';
-import { trigger, registerEventSource, unregisterEventSource } from 'platform/api/events';
-import { ResourceLinkComponent } from "platform/components/navigation";
+import { registerEventSource, trigger } from 'platform/api/events';
+
+import { ResourceLinkComponent } from 'platform/components/navigation';
+import { ResourceLabel } from 'platform/components/ui/resource-label';
 
 import * as KnowledgePanelEvents from './KnowledgePanelEvents';
-
 import './KnowledgePanelTrigger.scss';
-import ResourceLabel from "platform/components/ui/resource-label";
 
-export interface KnowledgePanelTriggerConfig {
+interface KnowledgePanelTriggerConfig {
   /**
    * Resource IRI.
    */
   iri: string;
   /**
-   * Unique ID to be used in the event system. Default value is `undefined`.
+   * Unique ID to be used in the event system.
    */
   id?: string;
   /**
-   * Knowledge Panel Frame component ID. Default value is `undefined`.
+   * Knowledge Panel Frame component ID.
    */
   target?: string;
   /**
@@ -84,24 +85,24 @@ export interface KnowledgePanelTriggerConfig {
   /**
    * Inner markup that should be used instead of the default modes. Will override 'modes' parameter.
    */
-  children: JSX.Element;
+  children: {};
 }
 
-type Props = KnowledgePanelTriggerConfig;
+export type KnowledgePanelTriggerProps = KnowledgePanelTriggerConfig;
 
-export class KnowledgePanelTrigger extends Component<Props, {}> {
+export class KnowledgePanelTrigger extends Component<KnowledgePanelTriggerProps, {}> {
+  private readonly cancellation = new Cancellation();
+
   componentDidMount() {
     registerEventSource({
       source: this.props.id,
       eventType: KnowledgePanelEvents.Open,
+      cancellation: this.cancellation,
     });
   }
 
   componentWillUnmount() {
-    unregisterEventSource({
-      source: this.props.id,
-      eventType: KnowledgePanelEvents.Open,
-    });
+    this.cancellation.cancelAll();
   }
 
   render() {
@@ -118,27 +119,27 @@ export class KnowledgePanelTrigger extends Component<Props, {}> {
           <ResourceLinkComponent iri={iri} />
           {' '}
           <button onClick={this.onClick}
-                  className='btn btn-link btn-xs knowledge-panel-trigger__button'
-                  style={style}>
+            className='btn btn-link btn-sm knowledge-panel-trigger__button'
+            style={style}>
             <i className='fa fa-info-circle'></i>
           </button>
         </span>
-      )
+      );
     } else {
       return (
         <a
           className={`knowledge-panel-trigger ${this.props.className}`}
           data-knowledge-panel-iri={iri}
           onClick={this.onClick}>
-            <ResourceLabel iri={iri} />
-            {' '}
-            <button
-                    className='btn btn-link btn-xs knowledge-panel-trigger__button'
-                    style={style}>
-                <i className='fa fa-info-circle'></i>
-              </button>
-            </a>
-      )
+          <ResourceLabel iri={iri} />
+          {' '}
+          <button
+            className='btn btn-link btn-sm knowledge-panel-trigger__button'
+            style={style}>
+            <i className='fa fa-info-circle'></i>
+          </button>
+        </a>
+      );
     }
   }
 
@@ -148,7 +149,7 @@ export class KnowledgePanelTrigger extends Component<Props, {}> {
     trigger({
       source: id,
       eventType: KnowledgePanelEvents.Open,
-      targets: [target],
+      targets: target ? [target] : [],
       data: {iri, additionalData: data},
     });
   }

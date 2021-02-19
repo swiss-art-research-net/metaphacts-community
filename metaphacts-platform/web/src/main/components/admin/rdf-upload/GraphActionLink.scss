@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,10 +48,11 @@
     display: block;
   }
 
-  &__download-dropdown{
+  &__download-dropdown button{
     margin-top: -4px;
     border: none;
     color: $link-color;
+    background-color: unset;
     @include fa-icon();
     &:before {
         content: $fa-var-download;

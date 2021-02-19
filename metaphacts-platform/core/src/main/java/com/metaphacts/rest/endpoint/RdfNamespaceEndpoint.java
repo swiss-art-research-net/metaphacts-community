@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -70,7 +70,6 @@ import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.google.common.base.Throwables;
 import com.metaphacts.config.NamespaceRecord;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.NamespaceRegistry.ProtectedNamespaceDeletionException;
@@ -109,7 +108,7 @@ public class RdfNamespaceEndpoint {
                   .writeStringField(input, ns.resolveToIRI(input).map(iri -> iri.stringValue())
                   .orElse(vf.createIRI(ns.getDefaultNamespace(), input).stringValue()));
             } catch(IOException e) {
-               throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         };
         final StreamingOutput stream = JsonUtil.processJsonMap(jp, processor);
@@ -133,7 +132,7 @@ public class RdfNamespaceEndpoint {
             try {
                 jGenerator.writeStringField(input, ns.getPrefixedIRI(vf.createIRI(input)).orElse(null));
             } catch(IOException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         };
         final StreamingOutput stream = JsonUtil.processJsonMap(jp, processor);

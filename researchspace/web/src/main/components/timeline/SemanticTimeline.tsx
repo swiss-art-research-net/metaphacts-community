@@ -59,7 +59,7 @@ export interface TimelineFormatLabelsOption {
 export interface TimelineFormatOption {
   /**
    * Custom date format for the minor labels. Default value:
-   * <pre>
+   * ```
    * {
    *     millisecond:'SSS',
    *     second:     's',
@@ -71,12 +71,12 @@ export interface TimelineFormatOption {
    *     month:      'MMM',
    *     year:       'YYYY'
    * }
-   * </pre>
+   * ```
    */
   minorLabels?: TimelineFormatLabelsOption;
   /**
    * Custom date format for the major labels. Default value:
-   * <pre>
+   * ```
    * {
    *     millisecond:'HH:mm:ss',
    *     second:     'D MMMM HH:mm',
@@ -88,18 +88,18 @@ export interface TimelineFormatOption {
    *     month:      'YYYY',
    *     year:       ''
    * }
-   * </pre>
+   * ```
    */
   majorLabels?: TimelineFormatLabelsOption;
 }
 
 export interface TimelineHiddenDateOption {
   /**
-   * The start date
+   * The start date.
    */
   start: string;
   /**
-   * The end date
+   * The end date.
    */
   end: string;
   repeat?: 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -107,11 +107,15 @@ export interface TimelineHiddenDateOption {
 
 export interface TimelineItemsAlwaysDraggableOption {
   /**
-   * If true, all items in the Timeline are draggable without being selected. If false, only the selected item(s) are draggable.
+   * If true, all items in the Timeline are draggable without being selected.
+   * If false, only the selected item(s) are draggable.
    */
   item?: boolean;
   /**
-   * If true, range of all items in the Timeline is draggable without being selected. If false, range is only draggable for the selected item(s). Only applicable when option <code>itemsAlwaysDraggable.item</code> is set <code>true</code>.
+   * If true, range of all items in the Timeline is draggable without being selected.
+   * If false, range is only draggable for the selected item(s).
+   *
+   * Only applicable when option `itemsAlwaysDraggable.item` is set `true`.
    */
   range?: boolean;
 }
@@ -142,22 +146,35 @@ export type TimelineOrientationType = 'top' | 'bottom' | 'both' | 'none';
 
 export interface TimelineOrientationOption {
   /**
-   * Orientation of the timeline axis. If orientation is <code>bottom</code>, the time axis is drawn at the bottom. When <code>top</code>, the axis is drawn on top. When <code>both</code>, two axes are drawn, both on top and at the bottom. In case of <code>none</code>, no axis is drawn at all.
+   * Orientation of the timeline axis.
+   *
+   * If orientation is `bottom`, the time axis is drawn at the bottom.
+   * When `top`, the axis is drawn on top. When `both`, two axes are drawn,
+   * both on top and at the bottom. In case of `none`, no axis is drawn at all.
    */
   axis?: TimelineOrientationType;
   /**
-   * Orientation of the timeline items. Determines whether items are aligned to the top or bottom of the Timeline.
+   * Orientation of the timeline items.
+   *
+   * Determines whether items are aligned to the top or bottom of the Timeline.
    */
   item?: 'top' | 'bottom';
 }
 
 export interface TimelineRollingModeOption {
   /**
-   * If true, the timeline will initial in a rolling mode - the current time will always be centered. I the user drags the timeline, the timeline will go out of rolling mode and a toggle button will appear. Clicking that button will go back to rolling mode. Zooming in rolling mode will zoom in to the center without consideration of the mouse position.
+   * If true, the timeline will initial in a rolling mode -
+   * the current time will always be centered.
+   *
+   * When the user drags the timeline, the timeline will go out of rolling mode
+   * and a toggle button will appear. Clicking that button will go back to rolling mode.
+   * Zooming in rolling mode will zoom in to the center without consideration of the mouse position.
    */
   follow?: boolean;
   /**
-   * Set how far from the left the rolling mode is implemented from. A percentage (i.e. a decimal between 0 and 1). Defaults to the middle or 0.5 (50%)
+   * Set how far from the left the rolling mode is implemented from.
+   *
+   * A percentage (i.e. a decimal between 0 and 1). Defaults to the middle or 0.5 (50%)
    */
   offset?: number;
 }
@@ -168,7 +185,10 @@ export interface TimelineTimeAxisOption {
    */
   scale?: TimelineTimeAxisScaleType;
   /**
-   * Set a fixed step size for the time axis. Only applicable when used together with <code>timeAxis.scale</code>. Choose for example 1, 2, 5, or 10.
+   * Set a fixed step size for the time axis.
+   *
+   * Only applicable when used together with `timeAxis.scale`.
+   * Choose for example `1`, `2`, `5`, or `10`.
    */
   step?: number;
 }
@@ -179,7 +199,11 @@ export interface TimelineTooltipOption {
    */
   followMouse: boolean;
   /**
-   * Set how the tooltip should act if it is about to overflow out of the timeline. If it is set to <code>cap</code>, the tooltip will just cap its position to inside to timeline. While if it is set to <code>flip</code>, the position of the tooltip will flip around the cursor so that a corner is at the cursor, and the rest of it is visible.
+   * Set how the tooltip should act if it is about to overflow out of the timeline.
+   *
+   * If it is set to `cap`, the tooltip will just cap its position to inside to timeline.
+   * While if it is set to `flip`, the position of the tooltip will flip around the cursor
+   * so that a corner is at the cursor, and the rest of it is visible.
    */
   overflowMethod: 'cap' | 'flip';
 }
@@ -188,27 +212,44 @@ export type TimelineZoomKey = '' | 'altKey' | 'ctrlKey' | 'metaKey';
 
 export interface TimelineOptions {
   /**
-   * Alignment of items with type <code>box</code>, <code>range</code>, and <code>background</code>. For <code>box</code> items, the <code>auto</code> alignment is <code>center</code>. For <code>range</code> items, the auto alignment is dynamic: positioned left and shifted such that the contents is always visible on screen.
+   * Alignment of items with type `box`, `range`, and `background`.
+   *
+   * For `box` items, the `auto` alignment is `center`.
+   * For `range` items, the auto alignment is dynamic: positioned left and shifted
+   * such that the contents is always visible on screen.
    */
   align?: TimelineAlignType;
   /**
-   * If true, the Timeline will automatically detect when its container is resized, and redraw itself accordingly. If false, the Timeline can be forced to repaint after its container has been resized using the function <code>redraw()</code>.
+   * If true, the Timeline will automatically detect when its container is resized,
+   * and redraw itself accordingly. If false, the Timeline can be forced to repaint
+   * after its container has been resized using the function `redraw()`.
    */
   autoResize?: boolean;
   /**
-   * When a Timeline is configured to be <code>clickToUse</code>, it will react to mouse and touch events only when active. When active, a blue shadow border is displayed around the Timeline. The Timeline is set active by clicking on it, and is changed to inactive again by clicking outside the Timeline or by pressing the ESC key.
+   * When a Timeline is configured to be `clickToUse`,
+   * it will react to mouse and touch events only when active.
+   * When active, a blue shadow border is displayed around the Timeline.
+   *
+   * The Timeline is set active by clicking on it, and is changed to inactive again
+   * by clicking outside the Timeline or by pressing the ESC key.
    */
   clickToUse?: boolean;
   /**
-   * When true, a configurator is loaded where all configuration options of the Timeline can be changed live.
+   * When `true`, a configurator is loaded where all configuration options
+   * of the Timeline can be changed live.
    */
   configure?: boolean;
   /**
-   * An array of fields optionally defined on the timeline items that will be appended as <code>data-</code> attributes to the DOM element of the items. If value is <code>'all'</code> then each field defined on the timeline item will become a <code>data-</code> attribute.
+   * An array of fields optionally defined on the timeline items that will be appended as
+   * `data-` attributes to the DOM element of the items.
+   *
+   * If value is `all` then each field defined on the timeline item will become a `data-` attribute.
    */
   dataAttributes?: TimelineOptionsDataAttributesType;
   /**
-   * The initial end date for the axis of the timeline. If not provided, the latest date present in the items set is taken as end date.
+   * The initial end date for the axis of the timeline.
+   *
+   * If not provided, the latest date present in the items set is taken as end date.
    */
   end?: string;
   /**
@@ -216,13 +257,17 @@ export interface TimelineOptions {
    */
   format?: TimelineFormatOption;
   /**
-   * Order the groups by a field name. By default, groups are ordered by a property <code>order</code> (if set). If no <code>order</code> properties are provided, the order will be undetermined.
+   * Order the groups by a field name.
+   *
+   * By default, groups are ordered by a property `order` (if set).
+   * If no `order` properties are provided, the order will be undetermined.
    */
   groupOrder?: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the groups contents.
+   * Template for the groups contents.
+   *
    * The variables that available in the template are following:
-   * <pre>
+   * ```
    * {
    *     className?: string;
    *     content: string;
@@ -234,23 +279,48 @@ export interface TimelineOptions {
    *     nestedGroups?: string[];
    *     showNested?: boolean;
    * }
-   * </pre>
+   * ```
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   groupTemplate?: string;
   /**
-   * 	The height of the timeline in pixels or as a percentage. When height is undefined or null, the height of the timeline is automatically adjusted to fit the contents. It is possible to set a maximum height using option maxHeight to prevent the timeline from getting too high in case of automatically calculated height.
+   * The height of the timeline in pixels or as a percentage.
+   *
+   * When height is undefined or null, the height of the timeline is automatically
+   * adjusted to fit the contents. It is possible to set a maximum height using
+   * option maxHeight to prevent the timeline from getting too high in case of
+   * automatically calculated height.
    */
   height?: HeightWidthType;
   /**
-   * This option allows you to hide specific timespans from the time axis. The dates can be supplied as an object: <code>{start: '2014-03-21 00:00:00', end: '2014-03-28 00:00:00', [repeat:'daily']}</code> or as an Array of these objects. The repeat argument is optional. The possible values are (case-sensitive): <code>daily, weekly, monthly, yearly</code>. To hide a weekend, pick any Saturday as start and the following Monday as end and set repeat to weekly.
+   * This option allows you to hide specific timespans from the time axis.
+   *
+   * The dates can be supplied as an object or as an Array of these objects:
+   * ```
+   * {
+   *   "start": "2014-03-21 00:00:00",
+   *   "end": "2014-03-28 00:00:00",
+   *   "repeat": "daily"
+   * }
+   * ```
+   * The repeat argument is optional.
+   * The possible values are (case-sensitive): `daily`, `weekly`, `monthly`, `yearly`.
+   *
+   * To hide a weekend, pick any Saturday as start and the following
+   * Monday as end and set repeat to weekly.
    */
   hiddenDates?: TimelineHiddenDateOption | TimelineHiddenDateOption[];
   /**
-   * This option allows you to scroll horizontally to move backwards and forwards in the time range. Only applicable when option <code>zoomCtrl</code> is defined or <code>zoomable</code> is <code>false</code>.
+   * This option allows you to scroll horizontally to move backwards and forwards in the time range.
+   * Only applicable when option `zoomCtrl` is defined or `zoomable` is `false`.
    */
   horizontalScroll?: boolean;
   /**
-   * When a boolean, applies the value only to <code>itemsAlwaysDraggable.item</code>.
+   * When a boolean, applies the value only to `itemsAlwaysDraggable.item`.
    */
   itemsAlwaysDraggable?: boolean | TimelineItemsAlwaysDraggableOption;
   /**
@@ -262,7 +332,8 @@ export interface TimelineOptions {
    */
   locales?: any;
   /**
-   * When a number, applies the margin to <code>margin.axis</code>, <code>margin.item.horizontal</code>, and <code>margin.item.vertical</code>.
+   * When a number, applies the margin to `margin.axis`, `margin.item.horizontal`
+   * and `margin.item.vertical`.
    */
   margin?: number | TimelineMarginOption;
   /**
@@ -274,7 +345,8 @@ export interface TimelineOptions {
    */
   maxHeight?: HeightWidthType;
   /**
-   * Specifies the maximum number of characters that should fit in minor grid labels. If larger, less and wider grids will be drawn.
+   * Specifies the maximum number of characters that should fit in minor grid labels.
+   * If larger, less and wider grids will be drawn.
    */
   maxMinorChars?: number;
   /**
@@ -290,15 +362,22 @@ export interface TimelineOptions {
    */
   moveable?: boolean;
   /**
-   * If true, multiple items can be selected using ctrl+click, shift+click, or by holding items. Only applicable when option <code>selectable</code> is <code>true</code>.
+   * If true, multiple items can be selected using ctrl+click,
+   * shift+click, or by holding items.
+   *
+   * Only applicable when option `selectable` is `true`.
    */
   multiselect?: boolean;
   /**
-   * If true, selecting multiple items using shift+click will only select items residing in the same group as the first selected item. Only applicable when option <code>selectable</code> and <code>multiselect</code> are <code>true</code>.
+   * If true, selecting multiple items using shift+click will only select items residing
+   * in the same group as the first selected item.
+   *
+   * Only applicable when option `selectable` and `multiselect` are `true`.
    */
   multiselectPerGroup?: boolean;
   /**
-   * Orientation of the timelines axis and items. When orientation is a string, the value is applied to both items and axis.
+   * Orientation of the timelines axis and items.
+   * When orientation is a string, the value is applied to both items and axis.
    */
   orientation?: TimelineOrientationType | TimelineOrientationOption;
   /**
@@ -310,7 +389,8 @@ export interface TimelineOptions {
    */
   rtl?: boolean;
   /**
-   * If true, the items on the timeline can be selected. Multiple items can be selected by long pressing them, or by using ctrl+click or shift+click.
+   * If true, the items on the timeline can be selected.
+   * Multiple items can be selected by long pressing them, or by using ctrl+click or shift+click.
    */
   selectable?: boolean;
   /**
@@ -318,15 +398,24 @@ export interface TimelineOptions {
    */
   showCurrentTime?: boolean;
   /**
-   * By default, the timeline shows both minor and major date labels on the time axis. For example the minor labels show minutes and the major labels show hours. When <code>showMajorLabels</code> is <code>false</code>, no major labels are shown.
+   * By default, the timeline shows both minor and major date labels on the time axis.
+   *
+   * For example the minor labels show minutes and the major labels show hours.
+   * When `showMajorLabels` is `false`, no major labels are shown.
    */
   showMajorLabels?: boolean;
   /**
-   * By default, the timeline shows both minor and major date labels on the time axis. For example the minor labels show minutes and the major labels show hours. When <code>showMinorLabels</code> is <code>false</code>, no minor labels are shown. When both <code>showMajorLabels</code> and <code>showMinorLabels</code> are false, no horizontal axis will be visible.
+   * By default, the timeline shows both minor and major date labels on the time axis.
+   * For example the minor labels show minutes and the major labels show hours.
+   *
+   * When `showMinorLabels` is `false`, no minor labels are shown.
+   * When both `showMajorLabels` and `showMinorLabels` are `false`,
+   * no horizontal axis will be visible.
    */
   showMinorLabels?: boolean;
   /**
-   * If true, items with titles will display a tooltip. If false, item tooltips are prevented from showing.
+   * If true, items with titles will display a tooltip.
+   * If false, item tooltips are prevented from showing.
    */
   showTooltips?: boolean;
   /**
@@ -334,11 +423,14 @@ export interface TimelineOptions {
    */
   stack?: boolean;
   /**
-   * If true (default), subgroups will be stacked on top of each other such that they do not overlap.
+   * If true (default), subgroups will be stacked on top of each other
+   * such that they do not overlap.
    */
   stackSubgroups?: boolean;
   /**
-   * The initial start date for the axis of the timeline. If not provided, the earliest date present in the events is taken as start date.
+   * The initial start date for the axis of the timeline.
+   *
+   * If not provided, the earliest date present in the events is taken as start date.
    */
   start?: string;
   /**
@@ -346,7 +438,11 @@ export interface TimelineOptions {
    */
   timeAxis?: TimelineTimeAxisOption;
   /**
-   * Specifies the default type for the timeline items. Note that individual items can override this default type. If undefined, the Timeline will auto detect the type from the items data: if a start and end date is available, a 'range' will be created, and else, a 'box' is created.
+   * Specifies the default type for the timeline items.
+   *
+   * Note that individual items can override this default type.
+   * If undefined, the Timeline will auto detect the type from the items data:
+   * if a start and end date is available, a 'range' will be created, and else, a 'box' is created.
    */
   type?: TimelineItemType;
   /**
@@ -354,7 +450,11 @@ export interface TimelineOptions {
    */
   tooltip?: TimelineTooltipOption;
   /**
-   * Show a vertical scroll on the side of the group list and link it to the scroll event when zoom is not triggered. Notice that defining this option as <code>true</code> will NOT override <code>horizontalScroll</code>. The scroll event will be vertically ignored, but a vertical scrollbar will be visible.
+   * Show a vertical scroll on the side of the group list and link it to the scroll event
+   * when zoom is not triggered.
+   *
+   * Notice that defining this option as `true` will NOT override `horizontalScroll`.
+   * The scroll event will be vertically ignored, but a vertical scrollbar will be visible.
    */
   verticalScroll?: boolean;
   /**
@@ -362,19 +462,25 @@ export interface TimelineOptions {
    */
   width?: HeightWidthType;
   /**
-   * Specifies whether the Timeline can be zoomed by pinching or scrolling in the window. Only applicable when option <code>moveable</code> is set <code>true</code>.
+   * Specifies whether the Timeline can be zoomed by pinching or scrolling in the window.
+   * Only applicable when option `moveable` is set `true`.
    */
   zoomable?: boolean;
   /**
-   * Specifies whether the Timeline is only zoomed when an additional key is down. Only applicable when option <code>moveable</code> is set <code>true</code>.
+   * Specifies whether the Timeline is only zoomed when an additional key is down.
+   * Only applicable when option `moveable` is set `true`.
    */
   zoomKey?: TimelineZoomKey;
   /**
-   * Set a maximum zoom interval for the visible range in milliseconds. It will not be possible to zoom out further than this maximum. Default value equals about 10000 years.
+   * Set a maximum zoom interval for the visible range in milliseconds.
+   * It will not be possible to zoom out further than this maximum.
+   *
+   * Default value equals about 10000 years.
    */
   zoomMax?: number;
   /**
-   * Set a minimum zoom interval for the visible range in milliseconds. It will not be possible to zoom in further than this minimum.
+   * Set a minimum zoom interval for the visible range in milliseconds.
+   * It will not be possible to zoom in further than this minimum.
    */
   zoomMin?: number;
 }
@@ -395,11 +501,13 @@ export interface TimelineItem {
    */
   content?: string;
   /**
-   * When the group column is provided, all items with the same group are placed on one line. A vertical axis is displayed showing the groups.
+   * When the group column is provided, all items with the same group are placed on one line.
+   * A vertical axis is displayed showing the groups.
    */
   group?: any;
   /**
-   * An id for the item. Using an id is not required but highly recommended. An id is needed when dynamically adding, updating, and removing items in a DataSet.
+   * An id for the item. Using an id is not required but highly recommended.
+   * An id is needed when dynamically adding, updating, and removing items in a DataSet.
    */
   id?: string;
   /**
@@ -407,19 +515,26 @@ export interface TimelineItem {
    */
   style?: string;
   /**
-   * The id of a subgroup. Groups all items within a group per subgroup, and positions them on the same height instead of staking them on top of each other. can be ordered by specifying the option 'subgroupOrder' of a group.
+   * The id of a subgroup. Groups all items within a group per subgroup,
+   * and positions them on the same height instead of staking them on top of each other.
+   * Can be ordered by specifying the option 'subgroupOrder' of a group.
    */
   subgroup?: string;
   /**
-   * Add a title for the item, displayed when holding the mouse on the item. The title can be an HTML element or a string containing plain text or HTML.
+   * Add a title for the item, displayed when holding the mouse on the item.
+   * The title can be an HTML element or a string containing plain text or HTML.
    */
   title?: string;
   /**
-   * The type of the item. Can be 'box' (default), 'point', 'range', or 'background'. Types 'box' and 'point' need a start date, the types 'range' and 'background' needs both a start and end date.
+   * The type of the item. Can be 'box' (default), 'point', 'range', or 'background'.
+   * Types 'box' and 'point' need a start date,
+   * the types 'range' and 'background' needs both a start and end date.
    */
   type?: TimelineItemType;
   /**
-   * Some browsers cannot handle very large DIVs so by default range DIVs can be truncated outside the visible area. Setting this to 'false' will cause the creation of full-size DIVs.
+   * Some browsers cannot handle very large `<div>`s so by default range `<div>`s
+   * can be truncated outside the visible area.
+   * Setting this to 'false' will cause the creation of full-size `<div>`s.
    */
   limitSize?: boolean;
 }
@@ -434,7 +549,8 @@ export interface TimelineGroup {
    */
   content: string;
   /**
-   * An id for the group. The group will display all items having a property group which matches the id of the group.
+   * An id for the group. The group will display all items having a property group
+   * which matches the id of the group.
    */
   id: string;
   /**
@@ -442,11 +558,13 @@ export interface TimelineGroup {
    */
   style?: string;
   /**
-   * Order the subgroups by a field name or custom sort function. By default, groups are ordered by first-come, first-show.
+   * Order the subgroups by a field name or custom sort function.
+   * By default, groups are ordered by first-come, first-show.
    */
   subgroupOrder?: string;
   /**
-   * A title for the group, displayed when holding the mouse on the groups label. The title can only contain plain text.
+   * A title for the group, displayed when holding the mouse on the groups label.
+   * The title can only contain plain text.
    */
   title?: string;
   /**
@@ -458,23 +576,36 @@ export interface TimelineGroup {
    */
   nestedGroups?: string[];
   /**
-   * Assuming the group has nested groups, this will set the initial state of the group - shown or collapsed. The 'showNested' is defaulted to 'true'.
+   * Assuming the group has nested groups, this will set the initial state of the group -
+   * shown or collapsed. The 'showNested' is defaulted to 'true'.
    */
   showNested?: boolean;
 }
 
 interface SemanticTimelineConfigBase {
   /**
-   * SPARQL select query. The required variables are <code>?start</code> and <code>?end</code>. The expected date formats are <code>YYYY-MM-DD</code>, <code>YYYY-MM-DDTHH:mm:ss</code> and <code>HH:mm:ss</code>.
+   * SPARQL select query. The required variables are `?start` and `?end`.
+   * The expected date formats are `YYYY-MM-DD`, `YYYY-MM-DDTHH:mm:ss` and `HH:mm:ss`.
    */
   query: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.
+   * Template which is applied when query returns no results.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   noResultTemplate?: string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the items contents.
-   * @default {{start.value}} - {{end.value}}
+   * Template for the items contents.
+   *
+   * @default "{{start.value}} - {{end.value}}"
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   tupleTemplate?: string;
   /**
@@ -482,7 +613,12 @@ interface SemanticTimelineConfigBase {
    */
   tupleTemplateHeight?: number | string;
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> of a loading which is applied when items are drawn.
+   * Template of a loading which is applied when items are drawn.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   loadingTemplate?: string;
   /**
@@ -490,12 +626,14 @@ interface SemanticTimelineConfigBase {
    */
   options?: TimelineOptions;
   /**
-   * Default options of the items
+   * Default options of the items.
    */
   defaultItemOptions?: TimelineItem;
   /**
    * Groups that are used for the items grouping.
-   * If an item has a group which is not defined in the <code>groups</code>, that group will be created automatically.
+   *
+   * If an item has a group which is not defined in the `groups`,
+   * that group will be created automatically.
    */
   groups: Array<TimelineGroup>;
   /**
@@ -504,9 +642,9 @@ interface SemanticTimelineConfigBase {
   className?: string;
   /**
    * Parsing format.
-   * By default, the <code>Y-MM-DD</code> format is used.
-   * If dates have type <code>xsd:dateTime</code>, the <code>Y-MM-DDTHH:mm:ss</code> format will be used.
-   * If dates have type <code>xsd:time</code>, the <code>HH:mm:ss</code> format will be used.
+   * By default, the `Y-MM-DD` format is used.
+   * If dates have type `xsd:dateTime`, the `Y-MM-DDTHH:mm:ss` format will be used.
+   * If dates have type `xsd:time`, the `HH:mm:ss` format will be used.
    */
   dateFormat?: string;
 }
@@ -535,7 +673,8 @@ export interface SemanticTimelineConfigProps extends SemanticTimelineConfigBase 
 }
 
 
-export type SemanticTimelineProps = SemanticTimelineConfigProps & React.Props<SemanticTimeline>;
+export type SemanticTimelineProps =
+  SemanticTimelineConfigProps & React.ClassAttributes<SemanticTimeline>;
 
 export type TimelineDataSet = DataSet<DataItem & any>;
 
@@ -727,7 +866,7 @@ export class SemanticTimeline extends Component<SemanticTimelineProps, SemanticT
     if (this.state.isDrawing) { return null; }
 
     return (
-      <button className={`btn btn-default ${styles.fitButton}`} onClick={() => this.timeline.fit()}>
+      <button className={`btn btn-secondary ${styles.fitButton}`} onClick={() => this.timeline.fit()}>
         <i className='fa fa-expand' />
       </button>
     );

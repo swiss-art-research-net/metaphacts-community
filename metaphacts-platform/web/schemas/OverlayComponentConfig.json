@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Component that displays it's contents in page-wide lightbox or overlay.\n\n**Example**:\n```\n<overlay-dialog title='Title here' type='modal'>\n   <overlay-trigger>\n     <button class='btn btn-primary'>Open in modal</button>\n   </overlay-trigger>\n   <overlay-content>\n     Content here\n   </overlay-content>\n</overlay-dialog>\n```",
+    "properties": {
+        "bsSize": {
+            "description": "Size of dialog; used only when `type='modal'`.\n\nDefault width of the dialog is `600px`.\n\nWidth is `900px` when `bsSize` is equal to `lg` or `large`\nand `300px` when `bsSize` is equal to `sm` or `small`.",
+            "enum": [
+                "large",
+                "lg",
+                "sm",
+                "small"
+            ],
+            "type": "string"
+        },
+        "className": {
+            "description": "What dialog css class to use.\n\nDefaults to `overlay-modal` when `type='modal'` and\n`overlay-lightbox` when `type=lightbox`.",
+            "type": "string"
+        },
+        "title": {
+            "description": "Title to render",
+            "type": "string"
+        },
+        "type": {
+            "description": "Overlay type:\n   - `dialog` will be small;\n   - `lightbox` will span over all space;",
+            "enum": [
+                "dialog",
+                "lightbox"
+            ],
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "title",
+        "type",
+        "className",
+        "bsSize"
+    ],
+    "required": [
+        "title"
+    ],
+    "type": "object"
+}
+

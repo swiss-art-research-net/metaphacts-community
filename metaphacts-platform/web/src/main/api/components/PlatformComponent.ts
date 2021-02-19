@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, ValidationMap } from 'react';
+import { Component, ComponentClass, ValidationMap } from 'react';
 import * as PropTypes from 'prop-types';
 
 import * as TemplateService from 'platform/api/services/template';
@@ -67,7 +67,7 @@ export interface ComponentProps {
   readonly markupDataContext?: TemplateService.DataContext;
 }
 
-const ComponentPropTypes: { [K in keyof ComponentProps]?: any } = {
+export const ComponentPropTypes: { [K in keyof ComponentProps]?: any } = {
   markupTemplateScope: PropTypes.object,
 };
 
@@ -75,8 +75,6 @@ const ComponentPropTypes: { [K in keyof ComponentProps]?: any } = {
  * @author Alexey Morozov
  */
 export abstract class PlatformComponent<P, S> extends Component<P, S> {
-  static propTypes: any = ComponentPropTypes;
-
   static childContextTypes: any = TemplateContextTypes;
 
   static readonly contextTypes: any = ContextTypes;
@@ -89,6 +87,11 @@ export abstract class PlatformComponent<P, S> extends Component<P, S> {
     }
     const inheritedScope = this.context.templateScope;
     return inheritedScope || TemplateService.TemplateScope.empty();
+  }
+
+  get appliedDataContext(): TemplateService.DataContext | undefined {
+    const {markupDataContext} = this.props as ComponentProps;
+    return markupDataContext ?? this.context.templateDataContext;
   }
 
   constructor(props: P, context: any) {
@@ -105,3 +108,7 @@ export abstract class PlatformComponent<P, S> extends Component<P, S> {
     };
   }
 }
+
+// workaround for JSX typing: assign propTypes for base class without using
+// `static` keyword otherwise TypeScript does not warn on unknown component properties
+(PlatformComponent as unknown as ComponentClass).propTypes = ComponentPropTypes;

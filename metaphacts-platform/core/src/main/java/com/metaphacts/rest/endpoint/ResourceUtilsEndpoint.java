@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,18 +44,24 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-import com.metaphacts.cache.LabelCache;
-import com.metaphacts.cache.DescriptionCache;
-import com.metaphacts.thumbnails.ThumbnailServiceRegistry;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Value;
@@ -69,8 +75,17 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.metaphacts.cache.DescriptionService;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.resource.TypeService;
 import com.metaphacts.rest.feature.CacheControl.NoCache;
+import com.metaphacts.thumbnails.ThumbnailServiceRegistry;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
@@ -81,18 +96,44 @@ import com.metaphacts.rest.feature.CacheControl.NoCache;
 @Path("data/rdf/utils")
 public class ResourceUtilsEndpoint {
     @Inject
-    private LabelCache labelCache;
+    private LabelService labelCache;
 
     @Inject
-    private DescriptionCache descriptionCache;
+    private DescriptionService descriptionCache;
 
     @Inject
     private ThumbnailServiceRegistry thumbnailServiceRegistry;
 
     @Inject
+    private TypeService typeService;
+
+    @Inject
     private RepositoryManager repositoryManager;
 
+    /**
+     * Fetch a label for each provided IRI.
+     * 
+     * @param repositoryId      repository from which to read types. If not provided
+     *                          the default repository is used.
+     * @param preferredLanguage language tag (or comma-separated list of language
+     *                          tags with decreasing order of preference) of the
+     *                          preferred language(s) (optional). A language tag
+     *                          consists of the language and optionally variant,
+     *                          e.g. <code>de</code> or <code>de-CH</code>. See
+     *                          <a href=
+     *                          "https://tools.ietf.org/html/rfc4647">RFC4647</a>
+     *                          for details.<br>
+     *                          Examples: <code>en</code>,
+     *                          <code>en,fr-CH,de,ru</code></li>
+     * @param jp                JSON Parser (injected from the framework)
+     * @return JSON object with one entry per IRI. Each entries value is a label
+     *         string
+     * @throws IOException
+     * @throws RepositoryException
+     */
     @POST
+    @Operation(summary = "Returns the label for each provided IRI", responses = {
+            @ApiResponse(description = "object with IRI-label pairs", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))) })
     @Path("getLabelsForRdfValue")
     @Produces(APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
@@ -122,7 +163,7 @@ public class ResourceUtilsEndpoint {
                         Optional<Literal> label = labelMap.get(iri);
                         output.writeStringField(
                             iriToUriString.get(iri),
-                            LabelCache.resolveLabelWithFallback(label, iri)
+                            LabelService.resolveLabelWithFallback(label, iri)
                         );
                     }
 
@@ -134,7 +175,81 @@ public class ResourceUtilsEndpoint {
         return Response.ok(stream).build();
     }
 
+    /**
+     * Fetch a list of types for each provided IRI.
+     * 
+     * @param repositoryId repository from which to read types. If not provided the
+     *                     default repository is used.
+     * @param jp           JSON Parser (injected from the framework)
+     * @return JSON object with one entry per IRI. Each entries value is a list of
+     *         IRIs
+     * @throws IOException
+     * @throws RepositoryException
+     */
     @POST
+    @Operation(summary = "Returns the list of types for each provided IRI", responses = {
+            @ApiResponse(description = "object with IRI-list-of-types pairs", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))) })
+    @Path("getTypesForRdfValue")
+    @Produces(APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    public Response getTypesForRdfValue(@QueryParam("repository") final Optional<String> repositoryId,
+            final JsonParser jp) throws IOException, RepositoryException {
+        Repository repo = repositoryManager.getRepository(repositoryId).orElse(repositoryManager.getDefault());
+        StreamingOutput stream = new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                JsonFactory jsonFactory = new JsonFactory();
+                try (JsonGenerator output = jsonFactory.createGenerator(os)) {
+                    output.writeStartObject();
+
+                    Map<IRI, String> iriToUriString = readResourceIris(jp);
+
+                    Map<IRI, Optional<Iterable<IRI>>> typesMap = typeService.getAllTypes(iriToUriString.keySet(), repo);
+                    // write final bulk
+                    for (IRI iri : typesMap.keySet()) {
+                        Optional<Iterable<IRI>> types = typesMap.get(iri);
+                        output.writeArrayFieldStart(iriToUriString.get(iri));
+                        if (types.isPresent()) {
+                            for (IRI typeIRI : types.get()) {
+                                output.writeString(typeIRI.stringValue());
+                            }
+                        }
+                        
+                        output.writeEndArray();
+                    }
+
+                    // clear temp data structures
+                    output.writeEndObject();
+                }
+            }
+        };
+        return Response.ok(stream).build();
+    }
+
+    /**
+     * Fetch a description for each provided IRI.
+     * 
+     * @param repositoryId      repository from which to read types. If not provided
+     *                          the default repository is used.
+     * @param preferredLanguage language tag (or comma-separated list of language
+     *                          tags with decreasing order of preference) of the
+     *                          preferred language(s) (optional). A language tag
+     *                          consists of the language and optionally variant,
+     *                          e.g. <code>de</code> or <code>de-CH</code>. See
+     *                          <a href=
+     *                          "https://tools.ietf.org/html/rfc4647">RFC4647</a>
+     *                          for details.<br>
+     *                          Examples: <code>en</code>,
+     *                          <code>en,fr-CH,de,ru</code></li>
+     * @param jp                JSON Parser (injected from the framework)
+     * @return JSON object with one entry per IRI. Each entries value is a label
+     *         string
+     * @throws IOException
+     * @throws RepositoryException
+     */
+    @POST
+    @Operation(summary = "Returns the description for each provided IRI", responses = {
+            @ApiResponse(description = "object with IRI-description pairs", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Map.class))) })
     @Path("getDescriptionForRdfValue")
     @Produces(APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)

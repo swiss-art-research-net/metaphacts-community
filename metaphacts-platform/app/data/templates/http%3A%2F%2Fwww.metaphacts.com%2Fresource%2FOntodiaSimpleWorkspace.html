@@ -15,27 +15,25 @@
           [[/if]]
 
           <div class='btn-group btn-group-sm' style='margin-right: 10px;'>
-            <button name='zoomIn' class='btn btn-default' title='Zoom in'><i class='fa fa-search-plus'></i></button>
-            <button name='zoomOut' class='btn btn-default' title='Zoom out'><i class='fa fa-search-minus'></i></button>
-            <button name='zoomToFit' class='btn btn-default' title='Fit to screen'><i class='fa fa-arrows-alt'></i></button>
+            <button name='zoomIn' class='btn btn-secondary' title='Zoom in'><i class='fa fa-search-plus'></i></button>
+            <button name='zoomOut' class='btn btn-secondary' title='Zoom out'><i class='fa fa-search-minus'></i></button>
+            <button name='zoomToFit' class='btn btn-secondary' title='Fit to screen'><i class='fa fa-arrows-alt'></i></button>
           </div>
 
           <div class='btn-group btn-group-sm' style='margin-right: 10px;'>
-            <button name='forceLayout' class='btn btn-default'>
+            <button name='forceLayout' class='btn btn-secondary'>
               <i class='fa fa-snowflake-o'></i> Force layout
             </button>
           </div>
 
-          <div class='btn-group btn-group-sm' style='margin-right: 10px;'>
-            <bs-dropdown bs-size='sm' dropup=true>
-              <bs-dropdown-toggle>Export</bs-dropdown-toggle>
-              <bs-dropdown-menu>
-                <bs-menu-item name='exportPng'><i class='fa fa-picture-o'></i> Export PNG</bs-menu-item>
-                <bs-menu-item name='exportSvg'><i class='fa fa-picture-o'></i> Export SVG</bs-menu-item>
-                <bs-menu-item name='print'><i class='fa fa-print'></i> Print</bs-menu-item>
-              </bs-dropdown-menu>
-            </bs-dropdown>
-          </div>
+          <bs-dropdown size='sm' drop='up' class='btn-group btn-group-sm' style='margin-right: 10px;'>
+            <bs-dropdown-toggle variant='secondary'>Export</bs-dropdown-toggle>
+            <bs-dropdown-menu>
+              <bs-menu-item name='exportPng'><i class='fa fa-picture-o'></i> Export PNG</bs-menu-item>
+              <bs-menu-item name='exportSvg'><i class='fa fa-picture-o'></i> Export SVG</bs-menu-item>
+              <bs-menu-item name='print'><i class='fa fa-print'></i> Print</bs-menu-item>
+            </bs-dropdown-menu>
+          </bs-dropdown>
         </ontodia-toolbar>
       </ontodia-canvas>
     </mp-workspace-item>

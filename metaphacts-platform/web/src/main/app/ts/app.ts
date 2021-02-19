@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,9 @@ import '../scss/help.scss';
 import { initModuleRegistry } from './bootstrap';
 initModuleRegistry();
 
-import { ModuleRegistry, ComponentsLoader } from 'platform/api/module-loader';
+import {
+  ModuleRegistry, ComponentsLoader, registerNativeComponent,
+} from 'platform/api/module-loader';
 import BrowserDetector from './BrowserDetector';
 
 import {
@@ -438,12 +440,22 @@ window.addEventListener('DOMContentLoaded', function () {
 });
 
 function loadExtensions(): Kefir.Property<void> {
+  const loadScriptOnce = makeOnlyOnceLoader(loadScript);
+  const loadStyleOnce = makeOnlyOnceLoader(loadStyle);
   return getExtensionScripts().flatMap(extensions => {
+    for (const tagName of Object.keys(extensions.components)) {
+      const {loadScripts, loadStyles} = extensions.components[tagName];
+      registerNativeComponent(tagName, () => {
+        const scriptTasks = (loadScripts ?? []).map(loadScriptOnce);
+        const styleTasks = (loadStyles ?? []).map(loadStyleOnce);
+        return Promise.all([...scriptTasks, ...styleTasks]).then(() => {/* void */});
+      });
+    }
     if (extensions.extensions.length === 0) {
       return Kefir.constant(undefined);
     }
     const tasks = extensions.extensions.map(ext =>
-      Kefir.fromPromise(loadScript(ext)).flatMapErrors(err => {
+      Kefir.fromPromise(loadScriptOnce(ext)).flatMapErrors(err => {
         // an extension failing to load shouldn't break the platform init, so resolve
         console.warn(`Failed to load extension ${ext}: `, err);
         return Kefir.constant(undefined);
@@ -453,6 +465,20 @@ function loadExtensions(): Kefir.Property<void> {
   }).toProperty();
 }
 
+function makeOnlyOnceLoader(
+  loader: (url: string) => Promise<unknown>
+): (url: string) => Promise<unknown> {
+  const cache = new Map<string, Promise<unknown>>();
+  return url => {
+    if (cache.has(url)) {
+      return cache.get(url);
+    }
+    const task = loader(url);
+    cache.set(url, task);
+    return task;
+  };
+}
+
 function loadScript(scriptUrl: string): Promise<unknown> {
   return new Promise<unknown>((resolve, reject) => {
     const script = document.createElement('script');
@@ -460,5 +486,17 @@ function loadScript(scriptUrl: string): Promise<unknown> {
     script.onload = resolve;
     script.onerror = reject;
     document.head.appendChild(script);
+  });
+}
+
+function loadStyle(styleUrl: string): Promise<unknown> {
+  return new Promise<unknown>((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = styleUrl;
+    link.onload = resolve;
+    link.onerror = reject;
+    document.head.appendChild(link);
   });
 }

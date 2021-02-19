@@ -35,7 +35,7 @@
                     "additionalProperties": {
                         "anyOf": [
                             {
-                                "$ref": "#/definitions/Literal_1"
+                                "$ref": "#/definitions/Literal"
                             },
                             {
                                 "$ref": "#/definitions/BNode"
@@ -117,7 +117,7 @@
             ],
             "type": "object"
         },
-        "Literal_1": {
+        "Literal": {
             "properties": {
                 "datatype": {
                     "$ref": "#/definitions/NamedNode<string>",

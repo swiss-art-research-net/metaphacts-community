@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -166,6 +166,8 @@ function createSearchQuery({relation, scheme}: TreePatterns) {
     SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
       SERVICE Repository:lookup {
         ?item lookup:token ?__token__;
+          lookup:name ?label ;
+          lookup:score ?score ;
           lookup:limit 400 .
       }
       FILTER(?__scheme__)

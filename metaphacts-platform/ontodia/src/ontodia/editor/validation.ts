@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,7 @@
  */
 import { ElementIri, LinkModel, hashLink, sameLink } from '../data/model';
 import { ValidationApi, ValidationEvent, ElementError, LinkError } from '../data/validationApi';
+import { DiagramModel } from '../diagram/model';
 import { CancellationToken } from '../viewUtils/async';
 import { cloneMap } from '../viewUtils/collections';
 import { ReadonlyHashMap, HashMap } from '../viewUtils/hashMap';
@@ -99,10 +100,9 @@ export namespace ValidationState {
 
 export function changedElementsToValidate(
     previousAuthoring: AuthoringState,
-    editor: EditorController,
-) {
-    const currentAuthoring = editor.authoringState;
-
+    currentAuthoring: AuthoringState,
+    diagramModel: DiagramModel
+): Set<ElementIri> {
     const links = new HashMap<LinkModel, true>(hashLink, sameLink);
     previousAuthoring.links.forEach((e, model) => links.set(model, true));
     currentAuthoring.links.forEach((e, model) => links.set(model, true));
@@ -116,7 +116,7 @@ export function changedElementsToValidate(
         }
     });
 
-    for (const element of editor.model.elements) {
+    for (const element of diagramModel.elements) {
         const current = currentAuthoring.elements.get(element.iri);
         const previous = previousAuthoring.elements.get(element.iri);
         const currentOrPrevious = current || previous;
@@ -139,14 +139,18 @@ export function changedElementsToValidate(
 
 export function validateElements(
     targets: ReadonlySet<ElementIri>,
-    validationApi: ValidationApi,
+    model: DiagramModel,
     editor: EditorController,
     cancellationToken: CancellationToken
-) {
+): void {
+    const validationApi = editor.validationApi;
+    if (!validationApi) {
+        return;
+    }
     const previousState = editor.validationState;
     const newState = ValidationState.createMutable();
 
-    for (const element of editor.model.elements) {
+    for (const element of model.elements) {
         if (newState.elements.has(element.iri)) {
             continue;
         }
@@ -163,7 +167,7 @@ export function validateElements(
                 target: element.data,
                 outboundLinks,
                 state: editor.authoringState,
-                model: editor.model,
+                model,
                 cancellation: cancellationToken,
             };
             const result = CancellationToken.mapCancelledToNull(

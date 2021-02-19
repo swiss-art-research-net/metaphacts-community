@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,11 +39,6 @@
  */
 package com.metaphacts.services.storage.file;
 
-import com.metaphacts.services.storage.api.*;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.Resource;
-import io.github.classgraph.ScanResult;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -54,14 +49,23 @@ import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.common.collect.ImmutableList;
+import com.metaphacts.services.storage.api.ObjectMetadata;
+import com.metaphacts.services.storage.api.ObjectRecord;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PathMapping;
+import com.metaphacts.services.storage.api.SizedStream;
+import com.metaphacts.services.storage.api.StorageConfig;
+import com.metaphacts.services.storage.api.StorageConfigException;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StorageLocation;
+import com.metaphacts.services.storage.api.StoragePath;
+
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.Resource;
+import io.github.classgraph.ScanResult;
 
 public class ClassPathStorage implements ObjectStorage {
-    private static final Logger logger = LogManager.getLogger(ClassPathStorage.class);
 
     public final static String STORAGE_TYPE = "classpath";
     private static final String FIXED_REVISION = "";
@@ -96,11 +100,6 @@ public class ClassPathStorage implements ObjectStorage {
 
         public void setClasspathLocation(String classpathLocation) {
             this.classpathLocation = classpathLocation;
-        }
-
-        @Override
-        public ClassPathStorage createStorage(StorageCreationParams params) {
-            return new ClassPathStorage(params.getPathMapping(), params.getClassLoader(), this);
         }
 
         @Override

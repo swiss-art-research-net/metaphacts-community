@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,53 +46,25 @@ import { ElementModel, LinkModel, ElementIri, sameLink } from '../data/model';
 import { setElementData, setLinkData } from '../diagram/commands';
 import { DiagramModel, CreateLinkProps } from '../diagram/model';
 import { Element, Link, LinkVertex, ElementRedrawMode } from '../diagram/elements';
-import { Size, Vector, boundsOf } from '../diagram/geometry';
+import { Vector, boundsOf } from '../diagram/geometry';
 import { Command } from '../diagram/history';
-import { PointerUpEvent, PaperWidgetProps } from '../diagram/paperArea';
+import { PointerUpEvent } from '../diagram/paperArea';
 import { RenderingState } from '../diagram/renderingState';
-import { DiagramView, WidgetAttachment, assertWidgetComponent } from '../diagram/view';
-
-import { Events, EventSource, EventObserver, PropertyChange } from '../viewUtils/events';
-
-import { Dialog, DialogProps } from '../widgets/dialog';
-import { ConnectionsMenu, PropertySuggestionHandler } from '../widgets/connectionsMenu';
-import { EditEntityForm } from '../forms/editEntityForm';
-import { EditElementTypeForm } from '../forms/editElementTypeForm';
-import { EditLinkForm } from '../forms/editLinkForm';
-import { EditLinkLabelForm } from '../forms/editLinkLabelForm';
-import { LinkStateWidget } from './linkStateWidget';
-import { ElementDecorator } from './elementDecorator';
-
-import { Spinner, SpinnerProps } from '../viewUtils/spinner';
-
-import { AsyncModel, requestElementData, restoreLinksBetweenElements } from './asyncModel';
-import {
-    AuthoringState, AuthoringKind, AuthoringEvent, TemporaryState, ElementChange,
-} from './authoringState';
-import { EditLayer, EditLayerMode } from './editLayer';
-import { ValidationState, changedElementsToValidate, validateElements } from './validation';
+import { DiagramView } from '../diagram/view';
 
 import { Cancellation } from '../viewUtils/async';
 import { makeMoveComparator, MoveDirection } from '../viewUtils/collections';
+import { Events, EventSource, EventObserver, PropertyChange } from '../viewUtils/events';
 
-export interface PropertyEditorOptions {
-    elementData: ElementModel;
-    onSubmit: (newData: ElementModel) => void;
-    onCancel?: () => void;
-}
-export type PropertyEditor = (options: PropertyEditorOptions) => React.ReactElement<any>;
+import { AsyncModel, requestElementData, restoreLinksBetweenElements } from './asyncModel';
+import { AuthoringState, AuthoringEvent, TemporaryState } from './authoringState';
+import { ValidationState, changedElementsToValidate, validateElements } from './validation';
 
 export type SelectionItem = Element | Link;
 
-export interface EditorProps extends EditorOptions {
+export interface EditorProps {
     model: AsyncModel;
     view: DiagramView;
-}
-
-export interface EditorOptions {
-    suggestProperties?: PropertySuggestionHandler;
-    validationApi?: ValidationApi;
-    propertyEditor?: PropertyEditor;
 }
 
 export interface EditorEvents {
@@ -101,13 +73,15 @@ export interface EditorEvents {
     changeAuthoringState: PropertyChange<EditorController, AuthoringState>;
     changeValidationState: PropertyChange<EditorController, ValidationState>;
     changeTemporaryState: PropertyChange<EditorController, TemporaryState>;
-    toggleDialog: { isOpened: boolean };
+    itemClickCapture: ItemClickEvent & { cancel(): void };
+    itemClick: ItemClickEvent;
     addElements: { elements: ReadonlyArray<Element> };
 }
 
-interface OpenedDialog {
-    target: SelectionItem;
-    allowClickOnPaper: boolean;
+export interface ItemClickEvent {
+    sourceEvent: MouseEvent;
+    target: Element | Link | LinkVertex | undefined;
+    triggerAsClick: boolean;
 }
 
 export class EditorController {
@@ -115,25 +89,24 @@ export class EditorController {
     private readonly source = new EventSource<EditorEvents>();
     readonly events: Events<EditorEvents> = this.source;
 
-    readonly model: AsyncModel;
+    private readonly model: AsyncModel;
     private readonly view: DiagramView;
-    private readonly options: EditorOptions;
 
+    private _inAuthoringMode = false;
     private _metadataApi: MetadataApi | undefined;
+    private _validationApi: ValidationApi | undefined;
     private _authoringState = AuthoringState.empty;
     private _validationState = ValidationState.empty;
     private _temporaryState = TemporaryState.empty;
     private _selection: ReadonlyArray<SelectionItem> = [];
 
-    private openedDialog: OpenedDialog | undefined;
-
     private readonly cancellation = new Cancellation();
+    private validation = new Cancellation();
 
     constructor(props: EditorProps) {
-        const {model, view, ...options} = props;
+        const {model, view} = props;
         this.model = model;
         this.view = view;
-        this.options = options;
 
         this.listener.listen(this.model.events, 'changeCells', () => this.onCellsChanged());
         this.listener.listen(this.model.events, 'elementEvent', ({data}) => {
@@ -142,22 +115,12 @@ export class EditorController {
             }
         });
 
-        this.listener.listen(this.model.events, 'loadingStart', () => this.setSpinner({}));
-        this.listener.listen(this.model.events, 'loadingSuccess', () => {
-            this.setSpinner(undefined);
-
-            const widget = <LinkStateWidget view={this.view} editor={this} />;
-            this.view.setWidget(LinkStateWidget.key, widget);
-        });
-        this.listener.listen(this.model.events, 'loadingError', ({error}) => {
-            const statusText = error ? error.message : undefined;
-            this.setSpinner({statusText, errorOccured: true});
-        });
-
         this.handleSelectionEvent();
-        document.addEventListener('keyup', this.onKeyUp);
-        this.listener.listen(this.view.events, 'dispose', () => {
-            document.removeEventListener('keyup', this.onKeyUp);
+
+        this.listener.listen(this.events, 'changeMode', () => {
+            for (const element of this.model.elements) {
+                element.redraw(ElementRedrawMode.RedrawTemplate);
+            }
         });
 
         this.listener.listen(this.events, 'changeValidationState', e => {
@@ -170,14 +133,11 @@ export class EditorController {
             }
         });
         this.listener.listen(this.events, 'changeAuthoringState', e => {
-            if (this.options.validationApi) {
-                const changedElements = changedElementsToValidate(e.previous, this);
-                validateElements(
-                    changedElements,
-                    this.options.validationApi,
-                    this,
-                    this.cancellation.signal
+            if (this.validationApi) {
+                const changedElements = changedElementsToValidate(
+                    e.previous, this.authoringState, this.model
                 );
+                validateElements(changedElements, this.model, this, this.validation.signal);
             }
         });
 
@@ -187,18 +147,22 @@ export class EditorController {
                 this.onDragDrop(iris, e.paperPosition, e._renderingState);
             }
         });
-        this.view._setElementDecorator((element, renderingState) =>
-            <ElementDecorator model={element}
-                view={this.view}
-                renderingState={renderingState}
-                editor={this}
-                position={element.position}
-            />
-        );
+
+        document.addEventListener('keyup', this.onKeyUp);
     }
 
-    get inAuthoringMode(): boolean {
-        return Boolean(this._metadataApi);
+    dispose() {
+        document.removeEventListener('keyup', this.onKeyUp);
+        this.cancellation.abort();
+        this.validation.abort();
+    }
+
+    get inAuthoringMode(): boolean { return this._inAuthoringMode; }
+    setAuthoringMode(value: boolean) {
+        const previous = this._inAuthoringMode;
+        if (value === previous) { return; }
+        this._inAuthoringMode = value;
+        this.source.trigger('changeMode', {source: this});
     }
 
     get metadataApi() { return this._metadataApi; }
@@ -206,9 +170,20 @@ export class EditorController {
         const previous = this._metadataApi;
         if (value === previous) { return; }
         this._metadataApi = value;
-        if (Boolean(value) !== Boolean(previous)) {
-            // authoring mode changed
-            this.source.trigger('changeMode', {source: this});
+    }
+
+    get validationApi() { return this._validationApi; }
+    setValidationApi(value: ValidationApi | undefined) {
+        const previous = this._validationApi;
+        if (value === previous) { return; }
+        this._validationApi = value;
+        if (this._validationApi) {
+            this.validation.abort();
+            this.validation = new Cancellation();
+            const allElements = changedElementsToValidate(
+                AuthoringState.empty, this.authoringState, this.model
+            );
+            validateElements(allElements, this.model, this, this.validation.signal);
         }
     }
 
@@ -294,21 +269,33 @@ export class EditorController {
         }
 
         if (deletedElementIris.size > 0) {
-            const newState = AuthoringState.deleteNewLinksConnectedToElements(this.authoringState, deletedElementIris);
+            const newState = AuthoringState.deleteNewLinksConnectedToElements(
+                this.authoringState, deletedElementIris
+            );
             this.setAuthoringState(newState);
         }
 
         batch.store();
     }
 
-    handlePaperPointerUp(event: PointerUpEvent) {
+    _handlePaperPointerUp(event: PointerUpEvent) {
         const {sourceEvent, target, triggerAsClick} = event;
 
         if (sourceEvent.ctrlKey || sourceEvent.shiftKey || sourceEvent.metaKey) { return; }
-
-        if (this.openedDialog && this.openedDialog.allowClickOnPaper) { return; }
-
         if (isButtonOrAnchorClickEvent(event)) { return; }
+
+        let cancelled = false;
+        const clickEvent: ItemClickEvent & { cancel(): void } = {
+            sourceEvent: sourceEvent as MouseEvent,
+            target,
+            triggerAsClick,
+            cancel: () => { cancelled = true; },
+        };
+
+        this.source.trigger('itemClickCapture', clickEvent);
+        if (cancelled) {
+            return;
+        }
 
         if (target instanceof Element) {
             this.setSelection([target]);
@@ -319,11 +306,9 @@ export class EditorController {
             this.setSelection([target.link]);
         } else if (!target && triggerAsClick) {
             this.setSelection([]);
-            this.hideDialog();
-            if (document.activeElement) {
-                (document.activeElement as HTMLElement).blur();
-            }
         }
+
+        this.source.trigger('itemClick', clickEvent);
     }
 
     private onCellsChanged() {
@@ -338,18 +323,10 @@ export class EditorController {
         }
     }
 
-    setSpinner(props: SpinnerProps | undefined) {
-        const widget = props ? <LoadingWidget spinnerProps={props} /> : undefined;
-        this.view.setWidget(LoadingWidget.key, widget);
-    }
-
     private handleSelectionEvent() {
         this.listener.listen(this.events, 'changeSelection', event => {
             const previouslySelected = event.previous.length === 1 ? event.previous[0] : undefined;
             const selected = this.selection.length === 1 ? this.selection[0] : undefined;
-            if (this.openedDialog && this.openedDialog.target !== selected) {
-                this.hideDialog();
-            }
 
             if (previouslySelected && previouslySelected instanceof Element) {
                 previouslySelected.redraw(ElementRedrawMode.RedrawTemplate);
@@ -369,244 +346,6 @@ export class EditorController {
             this.selection.filter(item => item instanceof Element),
             MoveDirection.ToEnd,
         ));
-
-    }
-
-    showConnectionsMenu(target: Element) {
-        const onClose = () => this.hideDialog();
-        const content = (
-            <ConnectionsMenu view={this.view}
-                editor={this}
-                target={target}
-                onElementsAdded={elements => {
-                    this.source.trigger('addElements', {elements});
-                }}
-                onClose={onClose}
-                suggestProperties={this.options.suggestProperties}
-            />
-        );
-        this.showDialog({target, content, onClose});
-    }
-
-    showEditEntityForm(target: Element) {
-        const {propertyEditor} = this.options;
-        const onSubmit = (newData: ElementModel) => {
-            this.hideDialog();
-            this.changeEntityData(target.data.id, newData);
-        };
-        let modelToEdit: ElementModel;
-        const modifiedIri = AuthoringState.getElementModifiedIri(this.authoringState, target.data.id);
-        if (typeof modifiedIri === 'string') {
-            modelToEdit = {...target.data, id: modifiedIri};
-        } else {
-            modelToEdit = target.data;
-        }
-        const onCancel = () => this.hideDialog();
-        const content = propertyEditor ? propertyEditor({elementData: target.data, onSubmit, onCancel}) : (
-            <EditEntityForm
-                view={this.view}
-                entity={modelToEdit}
-                onApply={onSubmit}
-                onCancel={onCancel}/>
-        );
-        this.showDialog({target, content, allowClickOnPaper: true, onClose: onCancel});
-    }
-
-    showEditElementTypeForm({link, source, target, targetIsNew}: {
-        link: Link;
-        source: Element;
-        target: Element;
-        targetIsNew: boolean;
-    }) {
-        const onCancel = () => {
-            this.removeTemporaryElement(target);
-            this.removeTemporaryLink(link);
-            this.hideDialog();
-        };
-        const content = (
-            <EditElementTypeForm editor={this}
-                view={this.view}
-                metadataApi={this.metadataApi}
-                link={link.data}
-                source={source.data}
-                target={{value: target.data, isNew: targetIsNew}}
-                onChangeElement={(data: ElementModel) => {
-                    const previous = target.data;
-                    this.setTemporaryState(TemporaryState.deleteElement(this.temporaryState, previous));
-                    target.setData(data);
-                    this.setTemporaryState(TemporaryState.addElement(this.temporaryState, data));
-                }}
-                onChangeLink={(data: LinkModel) => {
-                    this.removeTemporaryLink(link);
-                    const newLink = makeLinkWithDirection(
-                        new Link({
-                            sourceId: source.id,
-                            targetId: target.id,
-                            data: {
-                                ...data,
-                                sourceId: source.iri,
-                                targetId: target.iri,
-                            }
-                        }),
-                        data
-                    );
-                    link = this.createNewLink({link: newLink, temporary: true});
-                }}
-                onApply={(elementData: ElementModel, isNewElement: boolean, linkData: LinkModel) => {
-                    this.removeTemporaryElement(target);
-                    this.removeTemporaryLink(link);
-
-                    const batch = this.model.history.startBatch(
-                        isNewElement ? 'Create new entity' : 'Link to entity'
-                    );
-
-                    this.model.addElement(target);
-                    if (isNewElement) {
-                        target.setExpanded(true);
-                        this.setAuthoringState(
-                            AuthoringState.addElement(this._authoringState, target.data)
-                        );
-                    } else {
-                        this.model.requestLinksOfType();
-                    }
-
-                    const newLink = makeLinkWithDirection(
-                        new Link({
-                            sourceId: source.id,
-                            targetId: target.id,
-                            data: {
-                                ...link.data,
-                                sourceId: source.iri,
-                                targetId: target.iri,
-                            },
-                            vertices: link.vertices,
-                            linkState: link.linkState,
-                        }),
-                        linkData
-                    );
-                    this.createNewLink({link: newLink});
-
-                    batch.store();
-
-                    this.hideDialog();
-                    if (isNewElement) {
-                        this.showEditEntityForm(target);
-                    }
-                }}
-                onCancel={onCancel}
-            />
-        );
-        this.showDialog({target, content, caption: 'Establish New Connection', onClose: onCancel});
-    }
-
-    showEditLinkForm(link: Link) {
-        const source = this.model.getElement(link.sourceId);
-        const target = this.model.getElement(link.targetId);
-        if (!(source && target)) {
-            return;
-        }
-        const onCancel = () => {
-            if (this.temporaryState.links.has(link.data)) {
-                this.removeTemporaryLink(link);
-            }
-            this.hideDialog();
-        };
-        const content = (
-            <EditLinkForm editor={this}
-                view={this.view}
-                metadataApi={this.metadataApi}
-                link={link.data}
-                source={source.data}
-                target={target.data}
-                onChange={(data: LinkModel) => {
-                    if (this.temporaryState.links.has(link.data)) {
-                        this.removeTemporaryLink(link);
-                        const newLink = makeLinkWithDirection(link, data);
-                        this.showEditLinkForm(
-                            this.createNewLink({link: newLink, temporary: true})
-                        );
-                    }
-                }}
-                onApply={(data: LinkModel) => {
-                    if (this.temporaryState.links.has(link.data)) {
-                        this.removeTemporaryLink(link);
-                        const newLink = makeLinkWithDirection(link, data);
-                        this.createNewLink({link: newLink});
-                    } else {
-                        this.changeLink(link.data, data);
-                    }
-                    this.hideDialog();
-                }}
-                onCancel={onCancel}/>
-        );
-        const caption = this.temporaryState.links.has(link.data) ? 'Establish New Connection' : 'Edit Connection';
-        this.showDialog({
-            target: link,
-            content,
-            size: {width: 300, height: 160},
-            caption,
-            onClose: onCancel,
-        });
-    }
-
-    // Link editing implementation could be rethought in the future.
-    showEditLinkLabelForm(link: Link) {
-        const size = {width: 300, height: 145};
-        const closeDialog = () => this.hideDialog();
-        this.showDialog({
-            target: link,
-            content: (
-                <EditLinkLabelForm view={this.view}
-                    link={link}
-                    onDone={closeDialog} />
-            ),
-            size,
-            caption: 'Edit Link Label',
-            offset: {x: 25, y: - size.height / 2},
-            calculatePosition: renderingState => {
-                const bounds = renderingState.getLinkLabelBounds(link);
-                if (!bounds) { return undefined; }
-                const {x, y, width, height} = bounds;
-                return {x: x + width, y: y + height / 2};
-            },
-            onClose: closeDialog,
-        });
-    }
-
-    showDialog(params: {
-        target: SelectionItem;
-        content: React.ReactElement<PaperWidgetProps>;
-        allowClickOnPaper?: boolean;
-        size?: Size;
-        caption?: string;
-        offset?: Vector;
-        calculatePosition?: DialogProps['calculatePosition'];
-        onClose: DialogProps['onClose'];
-    }) {
-        const {target, content, allowClickOnPaper = false, size, caption, offset, calculatePosition, onClose} = params;
-
-        this.openedDialog = {target, allowClickOnPaper};
-
-        const dialog = (
-            <Dialog view={this.view} target={target} size={size} caption={caption}
-                offset={offset} calculatePosition={calculatePosition} onClose={onClose}>{content}</Dialog>
-        );
-        this.view.setWidget(Dialog.key, dialog);
-        this.source.trigger('toggleDialog', {isOpened: true});
-    }
-
-    hideDialog() {
-        if (this.openedDialog) {
-            const {target} = this.openedDialog;
-            const isTemporaryElement = target instanceof Element && this.temporaryState.elements.has(target.iri);
-            const isTemporaryLink = target instanceof Link && this.temporaryState.links.has(target.data);
-            if (isTemporaryElement || isTemporaryLink) {
-                this.resetTemporaryState();
-            }
-            this.openedDialog = undefined;
-            this.view.setWidget(Dialog.key, undefined);
-            this.source.trigger('toggleDialog', {isOpened: false});
-        }
     }
 
     private onDragDrop(
@@ -615,7 +354,7 @@ export class EditorController {
         renderingState: RenderingState
     ) {
         const batch = this.model.history.startBatch('Drag and drop onto diagram');
-        const placedElements = placeElements(this.view.model, renderingState, dragged, paperPosition);
+        const placedElements = placeElements(this.model, renderingState, dragged, paperPosition);
         const irisToLoad = placedElements.map(elem => elem.iri);
         batch.history.execute(requestElementData(this.model, irisToLoad));
         batch.history.execute(restoreLinksBetweenElements(this.model));
@@ -626,8 +365,11 @@ export class EditorController {
         }
 
         this.setSelection(placedElements);
+        this._triggerAddElements(placedElements);
+    }
 
-        this.source.trigger('addElements', { elements: placedElements });
+    _triggerAddElements(elements: ReadonlyArray<Element>) {
+        this.source.trigger('addElements', {elements});
     }
 
     private loadGroupContent(element: Element): Promise<void> {
@@ -670,21 +412,22 @@ export class EditorController {
         return element;
     }
 
-    changeEntityData(targetIri: ElementIri, newData: ElementModel) {
+    changeEntityData(targetIri: ElementIri, newData: ElementModel): ElementIri {
         const elements = this.model.elements.filter(el => el.iri === targetIri);
         if (elements.length === 0) {
-            return;
+            return targetIri;
         }
         const oldData = elements[0].data;
         const batch = this.model.history.startBatch('Edit entity');
 
         const newState = AuthoringState.changeElement(this._authoringState, oldData, newData);
         // get created authoring event by either old or new IRI (in case of new entities)
-        const event = newState.elements.get(targetIri) || newState.elements.get(newData.id);
-        this.model.history.execute(setElementData(this.model, targetIri, event!.after));
+        const event = (newState.elements.get(targetIri) || newState.elements.get(newData.id))!;
+        this.model.history.execute(setElementData(this.model, targetIri, event.after));
         this.setAuthoringState(newState);
 
         batch.store();
+        return event.after.id;
     }
 
     deleteEntity(elementIri: ElementIri) {
@@ -721,7 +464,9 @@ export class EditorController {
         temporary?: boolean;
     }): Link {
         const {link: base, temporary} = params;
-        const existingLink = this.model.findLink(base.typeId, base.sourceId, base.targetId);
+        const existingLink = this.model.findLink(
+            base.data.linkTypeId, base.sourceId, base.targetId, base.data.linkIri
+        );
         if (existingLink) {
             throw Error('The link already exists');
         }
@@ -730,7 +475,7 @@ export class EditorController {
 
         const addedLink = this.model.createLink(base);
         if (!addedLink) {
-            throw new Error(`Failed to create new link with type <${base.typeId}>`);
+            throw new Error(`Failed to create new link with type <${base.data.linkTypeId}>`);
         }
         if (!temporary) {
             this.model.createLinks(addedLink.data);
@@ -786,7 +531,9 @@ export class EditorController {
         }
         const batch = this.model.history.startBatch('Move link to another element');
         this.changeLink(link.data, {...link.data, sourceId: newSource.iri});
-        const newLink = this.model.findLink(link.typeId, newSource.id, link.targetId)!;
+        const newLink = this.model.findLink(
+            link.typeId, newSource.id, link.targetId, link.data.linkIri
+        )!;
         newLink.setVertices(link.vertices);
         newLink.setLinkState(link.linkState);
         batch.store();
@@ -800,7 +547,9 @@ export class EditorController {
         }
         const batch = this.model.history.startBatch('Move link to another element');
         this.changeLink(link.data, {...link.data, targetId: newTarget.iri});
-        const newLink = this.model.findLink(link.typeId, link.sourceId, newTarget.id)!;
+        const newLink = this.model.findLink(
+            link.typeId, link.sourceId, newTarget.id, link.data.linkIri
+        )!;
         newLink.setVertices(link.vertices);
         newLink.setLinkState(link.linkState);
         batch.store();
@@ -823,119 +572,86 @@ export class EditorController {
         batch.store();
     }
 
-    startEditing(params: { target: Element | Link; mode: EditLayerMode; point: Vector }) {
-        const {target, mode, point} = params;
-        const onFinishEditing = () => {
-            this.view.setWidget(EditLayer.key, undefined);
-        };
-        const editLayer = (
-            <EditLayer view={this.view}
-                editor={this}
-                metadataApi={this.metadataApi}
-                mode={mode}
-                target={target}
-                point={point}
-                onFinishEditing={onFinishEditing}
-            />
-        );
-        this.view.setWidget(EditLayer.key, editLayer);
+    commitLink(linkModel: LinkModel) {
+        if (this.temporaryState.links.has(linkModel)) {
+            const batch = this.model.history.startBatch('Commit link changes');
+            const links = this.model.links.filter(link => sameLink(linkModel, link.data));
+            for (const link of links) {
+                this.model.removeLink(link.id);
+            }
+            this.setTemporaryState(
+                TemporaryState.deleteLink(this.temporaryState, linkModel)
+            );
+            this.model.createLinks(linkModel);
+            this.setAuthoringState(AuthoringState.addLink(this.authoringState, linkModel));
+            batch.store();
+        }
     }
 
-    private resetTemporaryState() {
+    discardChange(event: AuthoringEvent): void {
+        this.discardChanges([event]);
+    }
+
+    discardChanges(events: ReadonlyArray<AuthoringEvent>): void {
+        const newState = AuthoringState.discard(this._authoringState, events);
+        if (newState === this._authoringState) { return; }
+
+        const batch = this.model.history.startBatch('Discard changes');
+        for (const event of events) {
+            switch (event.type) {
+                case 'element': {
+                    if (event.deleted) {
+                        /* nothing */
+                    } else if (event.before) {
+                        this.model.history.execute(
+                            setElementData(this.model, event.after.id, event.before)
+                        );
+                    } else {
+                        this.model.elements
+                            .filter(el => el.iri === event.after.id)
+                            .forEach(el => this.model.removeElement(el.id));
+                    }
+                    break;
+                }
+                case 'link': {
+                    if (event.deleted) {
+                        /* nothing */
+                    } else if (event.before) {
+                        this.model.history.execute(
+                            setLinkData(this.model, event.after, event.before)
+                        );
+                    } else {
+                        this.model.links
+                            .filter(({data}) => sameLink(data, event.after))
+                            .forEach(link => this.model.removeLink(link.id));
+                    }
+                    break;
+                }
+            }
+        }
+        this.setAuthoringState(newState);
+        batch.store();
+    }
+
+    discardTemporaryState() {
+        const batch = this.model.history.startBatch('Discard temporary state');
         if (this.temporaryState.elements.size) {
             this.model.elements.forEach(element => {
                 if (this.temporaryState.elements.has(element.iri)) {
-                    this.removeTemporaryElement(element);
+                    this.model.removeElement(element.id);
                 }
             });
         }
         if (this.temporaryState.links.size) {
             this.model.links.forEach(link => {
                 if (this.temporaryState.links.get(link.data)) {
-                    this.removeTemporaryLink(link);
+                    this.model.removeLink(link.id);
                 }
             });
         }
-    }
-
-    private removeTemporaryElement(element: Element) {
-        const batch = this.model.history.startBatch();
-        this.model.removeElement(element.id);
         batch.discard();
-        this.setTemporaryState(
-            TemporaryState.deleteElement(this.temporaryState, element.data)
-        );
-    }
-
-    private removeTemporaryLink(link: Link) {
-        this.model.removeLink(link.id);
-        this.setTemporaryState(
-            TemporaryState.deleteLink(this.temporaryState, link.data)
-        );
-    }
-
-    discardChange(event: AuthoringEvent) {
-        const newState = AuthoringState.discard(this._authoringState, event);
-        if (newState === this._authoringState) { return; }
-
-        const batch = this.model.history.startBatch('Discard change');
-        if (event.type === AuthoringKind.ChangeElement) {
-            if (event.deleted) {
-                /* nothing */
-            } else if (event.before) {
-                this.model.history.execute(
-                    setElementData(this.model, event.after.id, event.before)
-                );
-            } else {
-                this.model.elements
-                    .filter(el => el.iri === event.after.id)
-                    .forEach(el => this.model.removeElement(el.id));
-            }
-        } else if (event.type === AuthoringKind.ChangeLink) {
-            if (event.deleted) {
-                /* nothing */
-            } else if (event.before) {
-                this.model.history.execute(
-                    setLinkData(this.model, event.after, event.before)
-                );
-            } else {
-                this.model.links
-                    .filter(({data}) => sameLink(data, event.after))
-                    .forEach(link => this.model.removeLink(link.id));
-            }
-        }
-        this.setAuthoringState(newState);
-        batch.store();
     }
 }
-
-interface LoadingWidgetProps extends PaperWidgetProps {
-    spinnerProps: Partial<SpinnerProps>;
-}
-
-class LoadingWidget extends React.Component<LoadingWidgetProps, {}> {
-    static readonly attachment = WidgetAttachment.Viewport;
-    static readonly key = 'loadingWidget';
-
-    render() {
-        const {spinnerProps, paperArea} = this.props as LoadingWidgetProps & Required<PaperWidgetProps>;
-        const areaMetrics = paperArea.getAreaMetrics();
-        const paneWidth = areaMetrics.clientWidth;
-        const paneHeight = areaMetrics.clientHeight;
-
-        const x = spinnerProps.statusText ? paneWidth / 3 : paneWidth / 2;
-        const position = {x, y: paneHeight / 2};
-        return (
-            <div className='ontodia-loading-widget'>
-                <svg width={paneWidth} height={paneHeight}>
-                    <Spinner position={position} {...spinnerProps} />
-                </svg>
-            </div>
-        );
-    }
-}
-
-assertWidgetComponent(LoadingWidget);
 
 export function isButtonOrAnchorClickEvent(event: PointerUpEvent) {
     let target = event.sourceEvent.target;
@@ -956,7 +672,7 @@ function placeElements(
 ): Element[] {
     const elements = dragged.map(item => model.createElement(item));
     for (const element of elements) {
-        // intialally anchor element at top left corner to preserve canvas scroll state,
+        // initially anchor element at top left corner to preserve canvas scroll state,
         // measure it and only then move to center-anchored position
         element.setPosition(position);
     }
@@ -981,27 +697,6 @@ function placeElements(
     }
 
     return elements;
-}
-
-function makeLinkWithDirection(original: Link, data: LinkModel): CreateLinkProps {
-    if (!(data.sourceId === original.data.sourceId || data.sourceId === original.data.targetId)) {
-        throw new Error('New link source IRI is unrelated to original link');
-    }
-    if (!(data.targetId === original.data.sourceId || data.targetId === original.data.targetId)) {
-        throw new Error('New link target IRI is unrelated to original link');
-    }
-    const sourceId = data.sourceId === original.data.sourceId
-        ? original.sourceId : original.targetId;
-    const targetId = data.targetId === original.data.targetId
-        ? original.targetId : original.sourceId;
-    return {
-        typeId: data.linkTypeId,
-        sourceId,
-        targetId,
-        data: {...data, properties: original.data.properties},
-        vertices: original.vertices,
-        linkState: original.linkState,
-    };
 }
 
 function tryParseDefaultDragAndDropData(e: DragEvent): ElementIri[] {

@@ -37,31 +37,29 @@
           [[/if]]
 
           <div class='btn-group btn-group-sm' style='margin-right: 10px;'>
-            <button name='zoomIn' class='btn btn-default' title='Zoom in'><i class='fa fa-search-plus'></i></button>
-            <button name='zoomOut' class='btn btn-default' title='Zoom out'><i class='fa fa-search-minus'></i></button>
-            <button name='zoomToFit' class='btn btn-default' title='Fit to screen'><i class='fa fa-arrows-alt'></i></button>
+            <button name='zoomIn' class='btn btn-secondary' title='Zoom in'><i class='fa fa-search-plus'></i></button>
+            <button name='zoomOut' class='btn btn-secondary' title='Zoom out'><i class='fa fa-search-minus'></i></button>
+            <button name='zoomToFit' class='btn btn-secondary' title='Fit to screen'><i class='fa fa-arrows-alt'></i></button>
           </div>
 
           <div class='btn-group btn-group-sm' style='margin-right: 10px;'>
-            <button name='clearAll' class='btn btn-default'><i class='fa fa-trash'></i> Clear All</button>
+            <button name='clearAll' class='btn btn-secondary'><i class='fa fa-trash'></i> Clear All</button>
           </div>
 
           <div class='btn-group btn-group-sm' style='margin-right: 10px;'>
-            <button name='forceLayout' class='btn btn-default'>
+            <button name='forceLayout' class='btn btn-secondary'>
               <i class='fa fa-snowflake-o'></i> Force layout
             </button>
           </div>
 
-          <div class='btn-group btn-group-sm' style='margin-right: 10px;'>
-            <bs-dropdown bs-size='sm' dropup="true">
-              <bs-dropdown-toggle>Export</bs-dropdown-toggle>
-              <bs-dropdown-menu>
-                <bs-menu-item name='exportPng'><i class='fa fa-picture-o'></i> Export PNG</bs-menu-item>
-                <bs-menu-item name='exportSvg'><i class='fa fa-picture-o'></i> Export SVG</bs-menu-item>
-                <bs-menu-item name='print'><i class='fa fa-print'></i> Print</bs-menu-item>
-              </bs-dropdown-menu>
-            </bs-dropdown>
-          </div>
+          <bs-dropdown size='sm' drop='up' class='btn-group btn-group-sm' style='margin-right: 10px;'>
+            <bs-dropdown-toggle variant='secondary'>Export</bs-dropdown-toggle>
+            <bs-dropdown-menu>
+              <bs-menu-item name='exportPng'><i class='fa fa-picture-o'></i> Export PNG</bs-menu-item>
+              <bs-menu-item name='exportSvg'><i class='fa fa-picture-o'></i> Export SVG</bs-menu-item>
+              <bs-menu-item name='print'><i class='fa fa-print'></i> Print</bs-menu-item>
+            </bs-dropdown-menu>
+          </bs-dropdown>
 
           </ontodia-toolbar>
           <ontodia-halo></ontodia-halo>
@@ -70,33 +68,35 @@
       </ontodia-canvas>
     </mp-workspace-item>
       <mp-workspace-item default-size=275 id='tabs-item'>
-        <bs-tabs id="tabs"
-        [[#if focusView]]
-          default-active-key="contents"
-        [[else]][[#if focusCreate]]
-          default-active-key="database"
-        [[else]]
-          default-active-key="contents"
-        [[/if]] [[/if]]
+        <div class='ontodia-advanced-tabs'>
+          <bs-tabs id="tabs"
+          [[#if focusView]]
+            default-active-key="contents"
+          [[else]][[#if focusCreate]]
+            default-active-key="database"
+          [[else]]
+            default-active-key="contents"
+          [[/if]] [[/if]]
 
-         	class='ontodia-advanced-tabs'
-         >
-          <bs-tab event-key="contents" title='Contents'>
-            <ontodia-element-search></ontodia-element-search>
-          </bs-tab>
-          <bs-tab event-key="database" title='[[#if databaseTabTitle]][[databaseTabTitle]][[else]]Database[[/if]]'>
-            <mp-workspace-layout>
-            	<mp-workspace-column undocked=true>
-              	<mp-workspace-item heading="Classes" id="classes">
-                	<ontodia-class-tree></ontodia-class-tree>
-                </mp-workspace-item>
-                <mp-workspace-item heading="Instances" id="instances">
-                	<ontodia-instances-search></ontodia-instances-search>
-                </mp-workspace-item>
-            	</mp-workspace-column>
-          	</mp-workspace-layout>
-          </bs-tab>
-        </bs-tabs>
+            class='ontodia-advanced-tabs'
+          >
+            <bs-tab event-key="contents" title='Contents'>
+              <ontodia-element-search></ontodia-element-search>
+            </bs-tab>
+            <bs-tab event-key="database" title='[[#if databaseTabTitle]][[databaseTabTitle]][[else]]Database[[/if]]'>
+              <mp-workspace-layout>
+                <mp-workspace-column undocked=true>
+                  <mp-workspace-item heading="Classes" id="classes">
+                    <ontodia-class-tree></ontodia-class-tree>
+                  </mp-workspace-item>
+                  <mp-workspace-item heading="Instances" id="instances">
+                    <ontodia-instances-search></ontodia-instances-search>
+                  </mp-workspace-item>
+                </mp-workspace-column>
+              </mp-workspace-layout>
+            </bs-tab>
+          </bs-tabs>
+        </div>
       </mp-workspace-item>
   </mp-workspace-row>
 </mp-workspace-layout>

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,6 +61,7 @@ export interface ReconciliationQuery {
   type?: string;
   type_strict?: string;
   properties?: ReconciliationProperty[];
+  preferredLanguage?: string;
 }
 
 export type ReconciliationRequest = {[requestId: string]: ReconciliationQuery};
@@ -89,10 +90,12 @@ export type ReconciliationResponse = {[requestId: string]: {result: Reconciliati
 
 class Reconciliation {
   public reconcile(
-    reconciliationRequest: ReconciliationRequest
+    reconciliationRequest: ReconciliationRequest, lookupServiceName?: string
   ): Kefir.Property<ReconciliationResponse> {
-    const req = request.post(RECONCILIATION_SERVICE_URL)
-      .accept('application/json')
+    const req = request.post(
+      lookupServiceName ?
+        `${RECONCILIATION_SERVICE_URL}/${lookupServiceName}` : RECONCILIATION_SERVICE_URL
+    ).accept('application/json')
       .type('application/json')
       .send(reconciliationRequest);
     return requestAsProperty(req).map(response => response.body);

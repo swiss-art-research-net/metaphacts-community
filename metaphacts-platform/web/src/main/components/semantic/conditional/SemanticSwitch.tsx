@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,23 +47,14 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
 
-export interface SemanticSwitchProps extends ComponentProps {
-  query: string;
-  cases?: { [caseKey: string]: string };
-}
-
-interface State {
-  readonly loading?: boolean;
-  readonly error?: any;
-  readonly selectedCase?: string;
-}
-
 /**
- * @example
- * <semantic-switch query='SELECT (?color) ...' cases='{
- *   "blue": "{{> purple}}",
- *   "http://dbpedia.org/resource/Egyptian_blue": "{{> blue}}",
- * }'>
+ * **Example**:
+ * ```
+ * <semantic-switch query='SELECT (?color) ...'
+ *   cases='{
+ *     "blue": "{{> purple}}",
+ *     "http://dbpedia.org/resource/Egyptian_blue": "{{> blue}}",
+ *   }'>
  *   <template id='blue'>...</template>
  *   <template id='purple'>...</template>
  *   <template id='default'>...</template>
@@ -77,14 +68,36 @@ interface State {
  * </semantic-switch>
  *
  * // inline templates in cases
- * <semantic-switch query='SELECT (?color) ...' cases='{
- *   "red": "<!-- markup -->"
- *   "blue": "<!-- markup -->",
- *   "http://dbpedia.org/resource/Egyptian_blue": "<!-- markup -->",
- * }'></semantic-switch>
+ * <semantic-switch query='SELECT (?color) ...'
+ *   cases='{
+ *     "red": "<!-- markup -->"
+ *     "blue": "<!-- markup -->",
+ *     "http://dbpedia.org/resource/Egyptian_blue": "<!-- markup -->",
+ *   }'>
+ * </semantic-switch>
+ * ```
  */
+interface SemanticSwitchConfig {
+  /**
+   * SPARQL SELECT query which return the result binding to switch on.
+   *
+   * Only the first variable in the first result tuple will be used as
+   * a string key to switch on.
+   */
+  query: string;
+  cases?: { [caseKey: string]: string };
+}
+
+export interface SemanticSwitchProps extends SemanticSwitchConfig, ComponentProps {}
+
+interface State {
+  readonly loading?: boolean;
+  readonly error?: any;
+  readonly selectedCase?: string;
+}
+
 export class SemanticSwitch extends Component<SemanticSwitchProps, State> {
-  static readonly defaultProps: Partial<SemanticSwitchProps> = {
+  static readonly defaultProps: Required<Pick<SemanticSwitchProps, 'cases'>> = {
     cases: {},
   };
 

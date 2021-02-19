@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -96,7 +96,7 @@ export class AppUpload extends Component<{}, State> {
 
     private appendUploadMessage(message: string, uploadError?: any) {
         const RestartButton = <RestartWrapper><Button
-        bsStyle='primary'>Restart Now</Button></RestartWrapper>;
+        variant='primary'>Restart Now</Button></RestartWrapper>;
         this.setState((state: State): State => {
             return {
                 messages: [...state.messages, {

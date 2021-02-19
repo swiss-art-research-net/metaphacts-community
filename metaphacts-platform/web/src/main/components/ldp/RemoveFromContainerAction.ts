@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,27 +37,26 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import {
-  ReactElement, cloneElement, Children, Props as ReactProps, createFactory,
-} from 'react';
+import { ReactElement, cloneElement, Children } from 'react';
 
 import { Component } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
 import { LdpService } from 'platform/api/services/ldp';
 import { refresh, navigateToResource } from 'platform/api/navigation';
 
-interface Props  extends ReactProps<RemoveFromContainerComponent> {
+interface LdpRemoveFromContainerActionConfig {
   container: string;
   iri: string;
-
   /**
-   * @default 'reload'
+   * @default "reload"
    */
   postAction?: 'reload' | string;
 }
 
-class RemoveFromContainerComponent extends Component<Props, {}>  {
-  public static defaultProps = {
+export interface RemoveFromContainerProps extends LdpRemoveFromContainerActionConfig {}
+
+export class RemoveFromContainer extends Component<RemoveFromContainerProps, {}>  {
+  public static defaultProps: Required<Pick<RemoveFromContainerProps, 'postAction'>> = {
     postAction: 'reload',
   };
 
@@ -84,8 +83,4 @@ class RemoveFromContainerComponent extends Component<Props, {}>  {
   }
 }
 
-
-export type component = RemoveFromContainerComponent;
-export const component = RemoveFromContainerComponent;
-export const factory = createFactory(component);
-export default component;
+export default RemoveFromContainer;

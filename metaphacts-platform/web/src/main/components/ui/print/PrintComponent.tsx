@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,7 +62,41 @@ import { extractParams } from 'platform/api/navigation/NavigationUtils';
 
 const DEFAULT_CLASS = 'mp-print';
 
-export interface Props {
+/**
+ * This component finds print sections in pages and renders them into a iframe.
+ * Iframe content is exported to PDF by the browsers print functionality.
+ *
+ * Component can be used together with semantic-context, to specify the repository
+ * that should be used for evaluation of `pages`.
+ *
+ * **Example**:
+ * ```
+ * <mp-print-section id="1" label="First Section">
+ *     Section 1
+ * </mp-print-section>
+ * <mp-print-section id="1" label="Second Section">
+ *     Section 2<br>
+ *     This will be merged for printing with section one.
+ * </mp-print-section>
+ * <mp-print-section id="3" label="Third Section">
+ *     Section 3
+ * </mp-print-section>
+ *
+ * <mp-overlay-dialog title="Print Preview" type="lightbox">
+ *     <mp-overlay-dialog-trigger>
+ *         <button>Print Page</button>
+ *     </mp-overlay-dialog-trigger>
+ *     <mp-overlay-dialog-content>
+ *         <mp-print pages='["[[this]]"]'></mp-print>
+ *     </mp-overlay-dialog-content>
+ * </mp-overlay-dialog>
+ * ```
+ *
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
+ */
+export interface PrintComponentConfig {
   /**
    * Array of page IRIs
    */
@@ -93,7 +127,9 @@ export interface Props {
    htmlToPdf: object;
 }
 
-export interface State {
+export type PrintComponentProps = PrintComponentConfig;
+
+interface State {
   sections?: ReadonlyArray<Section>;
   styles?: ReadonlyArray<ReactElement<any>>;
   html2pdfLoaded: boolean;
@@ -104,42 +140,14 @@ interface Section {
   readonly isSelected: boolean;
 }
 
-/**
- * This component finds print sections in pages and renders them into a iframe.
- * Iframe content is exported to PDF by the browsers print functionality.
- *
- * Component can be used together with semantic-context, to specify the repository
- * that should be used for evaluation of `pages`.
- *
- * @example
- * <mp-print-section id="1" label="First Section">
- *     Section 1
- * </mp-print-section>
- * <mp-print-section id="1" label="Second Section">
- *     Section 2<br>
- *     This will be merged for printing with section one.
- * </mp-print-section>
- * <mp-print-section id="3" label="Third Section">
- *     Section 3
- * </mp-print-section>
- *
- * <mp-overlay-dialog title="Print Preview" type="lightbox">
- *     <mp-overlay-dialog-trigger>
- *         <button>Print Page</button>
- *     </mp-overlay-dialog-trigger>
- *     <mp-overlay-dialog-content>
- *         <mp-print pages='["[[this]]"]'></mp-print>
- *     </mp-overlay-dialog-content>
- * </mp-overlay-dialog>
- */
-export class PrintComponent extends Component<Props, State> {
+export class PrintComponent extends Component<PrintComponentProps, State> {
   // c.f. comment in componentDidMount
   observer = new MutationObserver(_.debounce(() => this.setStyles(), 500));
   private html2pdf: typeof import('html2pdf.js');
 
   private frameRef?: Frame | null;
 
-  constructor(props: Props, context: any) {
+  constructor(props: PrintComponentProps, context: any) {
     super(props, context);
     this.state = {
       sections: [],
@@ -167,7 +175,7 @@ export class PrintComponent extends Component<Props, State> {
   private loadHtml2Pdf = () => {
     if (this.props.htmlToPdf) {
       import('html2pdf.js').then(
-        library => {
+        ({ default: library }) => {
           this.html2pdf = library;
           this.setState({html2pdfLoaded: true});
         });

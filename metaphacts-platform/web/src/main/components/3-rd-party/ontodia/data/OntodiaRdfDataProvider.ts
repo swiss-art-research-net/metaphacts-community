@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,18 +38,22 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import { Component } from 'react';
-import { RdfDataProvider, parseTurtleText } from 'ontodia';
+import { RdfDataProvider, RdfDataProviderOptions, parseTurtleText } from 'ontodia';
 import * as Kefir from 'kefir';
+import * as SparqlJs from 'sparqljs';
 
+import { WrappingError } from 'platform/api/async';
 import { Rdf } from 'platform/api/rdf';
-import { SparqlClient } from 'platform/api/sparql';
+import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
 import { DataProviderComponent } from './OntodiaDataProviders';
+
+type BaseRdfProviderOptions = Omit<RdfDataProviderOptions, 'factory' | 'data' | 'parsers'>;
 
 /**
  * Allows displaying data in `ontodia` that don't exist in the database.
  */
-export interface OntodiaRdfDataProviderConfig {
+export interface OntodiaRdfDataProviderConfig extends BaseRdfProviderOptions {
   /**
    * SPARQL query to store data that do not exist in the database.
    */
@@ -68,7 +72,7 @@ export type OntodiaRdfDataProviderProps = OntodiaRdfDataProviderConfig;
 
 export class OntodiaRdfDataProvider extends Component<OntodiaRdfDataProviderProps, {}>
   implements DataProviderComponent {
-  static defaultProps: Partial<OntodiaRdfDataProviderProps> = {
+  static defaultProps: Pick<OntodiaRdfDataProviderProps, 'provisionRepository'> = {
     provisionRepository: 'default',
   };
 
@@ -77,7 +81,31 @@ export class OntodiaRdfDataProvider extends Component<OntodiaRdfDataProviderProp
   }
 
   createDataProvider(): RdfDataProvider {
-    return new RdfDataProvider({factory: Rdf.DATA_FACTORY, data: [], parsers: {}});
+    const {
+      acceptBlankNodes,
+      transformRdfList,
+      acceptLinkProperties,
+      typePredicate,
+      subtypePredicate,
+      linkSupertypes,
+      labelPredicates,
+      guessLabelPredicate,
+      imagePredicates,
+    } = this.props;
+    return new RdfDataProvider({
+      factory: Rdf.DATA_FACTORY,
+      data: [],
+      parsers: {},
+      acceptBlankNodes,
+      transformRdfList,
+      acceptLinkProperties,
+      typePredicate,
+      subtypePredicate,
+      linkSupertypes,
+      labelPredicates,
+      guessLabelPredicate,
+      imagePredicates,
+    });
   }
 
   initializeDataProvider(dataProvider: RdfDataProvider): Kefir.Property<void> {
@@ -105,7 +133,18 @@ export class OntodiaRdfDataProvider extends Component<OntodiaRdfDataProviderProp
       })
       .flatMap(() => {
         if (provisionQuery) {
-          return SparqlClient.construct(provisionQuery,
+          let parsedQuery: SparqlJs.Query;
+          try {
+            parsedQuery = SparqlUtil.parseQuery(provisionQuery);
+            if (parsedQuery.queryType !== 'CONSTRUCT') {
+              throw new Error(`"provisionQuery" is not a CONSTRUCT SPARQL query`);
+            }
+          } catch (err) {
+            return Kefir.constantError(new WrappingError(
+              'Failed to prepare "provisionQuery"', err
+            ));
+          }
+          return SparqlClient.construct(parsedQuery,
             {context: {repository: provisionRepository}})
             .map(graph => {
               rdfDataProvider.addGraph(graph);

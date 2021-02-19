@@ -1,12 +1,14 @@
 import * as React from 'react';
 
 import {
-    DefaultWorkspaceLayout, DefaultWorkspaceLayoutProps, WorkspaceContextTypes, WorkspaceContextWrapper,
+    DefaultWorkspaceLayout, DefaultWorkspaceLayoutProps, DefaultWorkspaceLayoutCommands,
+    WorkspaceContextTypes, WorkspaceContextWrapper,
 } from '../../src/ontodia/index';
 
 import { saveLayoutToLocalStorage } from './common';
 
 export type ExampleWorkspaceLayoutProps = DefaultWorkspaceLayoutProps;
+export type ExampleWorkspaceLayoutCommands = DefaultWorkspaceLayoutCommands;
 
 export class ExampleWorkspaceLayout extends React.Component<ExampleWorkspaceLayoutProps> {
     static contextTypes = WorkspaceContextTypes;
@@ -17,8 +19,8 @@ export class ExampleWorkspaceLayout extends React.Component<ExampleWorkspaceLayo
             <DefaultWorkspaceLayout {...this.props}
                 toolbarProps={{
                     onSaveDiagram: () => {
-                        const {editor} = this.context.ontodiaWorkspace;
-                        const diagram = editor.model.exportLayout();
+                        const {model} = this.context.ontodiaWorkspace;
+                        const diagram = model.exportLayout();
                         window.location.hash = saveLayoutToLocalStorage(diagram);
                         window.location.reload();
                     },

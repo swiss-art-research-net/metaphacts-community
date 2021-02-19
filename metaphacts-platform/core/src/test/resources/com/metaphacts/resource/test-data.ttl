@@ -1,0 +1,38 @@
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex: <http://example.org/> .
+
+ex:Alice a ex:Person ;
+    rdfs:label "Alice", "Alice (en)"@en, "Alice (ru)"@ru, 
+               "Alice (de)"@de, "Alice (de-ch)"@de-ch, "Alice (de-de)"@de-de, "Alice (de-at)"@de-at ;
+    rdfs:comment "Don't ask her about wonderland" ;
+    rdfs:comment "Don't ask her about wonderland (it)"@it ;
+    rdfs:comment "Don't ask her about wonderland (ru)"@ru ;
+    foaf:based_near "Munich", "München"@de ;
+    ex:dateOfBirth "1980-06-14"^^xsd:date ;
+    ex:occupation "Researcher" ;
+    ex:hasHobby "skating" ;
+    ex:hasPreferredIcecreamFlavor "vanilla"@en, "Vanille"@de ;
+    ex:marriedTo ex:Charlie ;.
+          
+ex:Bob a ex:Person, foaf:Person ;
+    rdfs:label "Bob" ;
+    rdfs:comment "Bob is a nice guy" ;
+    foaf:knows ex:Alice ;
+    foaf:based_near "Walldorf" ;
+    ex:hasProject ex:HomeRenovation ;
+    ex:occupation "Gardener"@en, "Gärtner"@de ;
+    ex:dateOfBirth "1970-04-25"^^xsd:date ;
+    ex:dateOfDeath "1980-02-23"^^xsd:date ;
+    ex:hasHobby "reading", "dancing" ; 
+    ex:hasPreferredIcecreamFlavor "chocolate"@en, "Schokolade"@de .
+
+ex:HomeRenovation a ex:Project ;
+    rdfs:label "Home Renovation"@en, "Wohnungsumbau"@de .
+
+    
+ex:Charlie a ex:Person ;
+    rdfs:label "Charlie", "Charlie (en)"@en, "Charlie (ru)"@ru, 
+               "Charlie (de)"@de, "Charlie (de-ch)"@de-ch, "Charlie (de-de)"@de-de, "Charlie (de-at)"@de-at .

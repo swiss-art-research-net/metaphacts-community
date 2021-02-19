@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,8 +39,15 @@
  */
 package com.metaphacts.di;
 
+import javax.inject.Inject;
+
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.metaphacts.cache.CacheManager;
+import com.metaphacts.config.Configuration;
+import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.plugin.PlatformPluginManager;
 import com.metaphacts.sail.rest.sql.MpJDBCDriverManager;
 import com.metaphacts.secrets.DefaultSecretsStore;
@@ -49,9 +56,6 @@ import com.metaphacts.secrets.SecretsStore;
 import com.metaphacts.services.storage.MainPlatformStorage;
 import com.metaphacts.services.storage.api.PlatformStorage;
 import com.metaphacts.services.storage.api.StorageRegistry;
-import com.metaphacts.cache.CacheManager;
-import com.metaphacts.config.Configuration;
-import com.metaphacts.config.NamespaceRegistry;
 
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
@@ -60,7 +64,6 @@ public class ConfigurationModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(CacheManager.class).in(Singleton.class);
-        bind(StorageRegistry.class).in(Singleton.class);
         bind(PlatformPluginManager.class).in(Singleton.class);
         bind(PlatformStorage.class).to(MainPlatformStorage.class).in(Singleton.class);
         bind(Configuration.class).in(Singleton.class);
@@ -69,5 +72,15 @@ public class ConfigurationModule extends AbstractModule {
         bind(NamespaceRegistry.class).in(Singleton.class);
         bind(SecretsStore.class).to(DefaultSecretsStore.class).in(Singleton.class);
         bind(SecretResolver.class).to(SecretsStore.class).in(Singleton.class);
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    public StorageRegistry provideStorageRegistry(Injector injector) {
+        StorageRegistry registry = new StorageRegistry();
+        // dependency injection for storage factories
+        registry.getAll().forEach(storageFactory -> injector.injectMembers(storageFactory));
+        return registry;
     }
 }

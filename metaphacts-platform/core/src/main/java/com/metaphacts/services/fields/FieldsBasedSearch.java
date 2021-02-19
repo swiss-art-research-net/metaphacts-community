@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,13 +65,13 @@ import org.eclipse.rdf4j.query.algebra.UpdateExpr;
 import org.eclipse.rdf4j.query.algebra.ValueExpr;
 import org.eclipse.rdf4j.query.algebra.Var;
 import org.eclipse.rdf4j.query.parser.QueryParserUtil;
-import org.eclipse.rdf4j.rio.ntriples.NTriplesUtil;
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.sparql.visitors.VarRenameVisitor;
@@ -83,13 +83,13 @@ public class FieldsBasedSearch {
 
     private final NamespaceRegistry namespaceRegistry;
     private final RepositoryManager repositoryManager;
-    private final LabelCache labelCache;
+    private final LabelService labelCache;
 
     @Inject
     public FieldsBasedSearch(
         NamespaceRegistry namespaceRegistry,
         RepositoryManager repositoryManager,
-        LabelCache labelCache
+        LabelService labelCache
     ) {
         this.namespaceRegistry = namespaceRegistry;
         this.repositoryManager = repositoryManager;
@@ -141,7 +141,7 @@ public class FieldsBasedSearch {
 
         List<Object> profileCategories = categoryIris.stream()
             .map(category -> {
-                String label = LabelCache.resolveLabelWithFallback(
+                String label = LabelService.resolveLabelWithFallback(
                     categoryLabels.get(category), category);
                 return ImmutableMap.of(
                     "iri", NTriplesUtil.toNTriplesString(category),
@@ -278,7 +278,8 @@ public class FieldsBasedSearch {
         try {
             return QueryUtil.toSPARQL(expr);
         } catch (Exception ex) {
-            throw Throwables.propagate(ex);
+            Throwables.throwIfUnchecked(ex);
+            throw new RuntimeException(ex);
         }
     }
 }

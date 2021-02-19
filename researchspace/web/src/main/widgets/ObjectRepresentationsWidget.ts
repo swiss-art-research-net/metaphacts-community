@@ -35,7 +35,6 @@ import { Spinner } from 'platform/components/ui/spinner';
 
 
 const Modal = createFactory(ReactBootstrap.Modal);
-const ModalHeader = createFactory(ReactBootstrap.Modal.Header);
 const ModalTitle = createFactory(ReactBootstrap.Modal.Title);
 const ModalBody = createFactory(ReactBootstrap.Modal.Body);
 
@@ -343,7 +342,7 @@ export class ObjectRepresentationsWidget extends Component<ObjectRepsWidgetProps
         onMouseLeave: this.hideModalNav,
         onKeyUp: this.handleModalKeyEvents,
       },
-      ModalHeader(
+      createElement(ReactBootstrap.Modal.Header,
         { closeButton: true},
         ModalTitle({}, this.entityLabel)
       ),

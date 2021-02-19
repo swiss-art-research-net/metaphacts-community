@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,7 @@ export class SemanticChartTypeSelector extends Component<Props, State> {
     };
   }
 
-  static defaultProps: Partial<Props> = {
+  static defaultProps: Required<Pick<Props, 'types'>> = {
     types: ['line', 'bar', 'radar', 'pie', 'donut'],
   };
 

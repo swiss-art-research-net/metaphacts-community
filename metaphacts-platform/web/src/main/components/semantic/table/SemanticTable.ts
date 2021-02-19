@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,9 @@ import * as _ from 'lodash';
 
 import { Cancellation } from 'platform/api/async';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
-import { Component, ComponentProps, ComponentContext } from 'platform/api/components';
+import {
+  Component, ComponentProps, ComponentPropTypes, ComponentContext,
+} from 'platform/api/components';
 import { BuiltInEvents, trigger } from 'platform/api/events';
 
 import { Spinner } from 'platform/components/ui/spinner';
@@ -93,7 +95,10 @@ export interface Options {
 
 /**
  * The simplest table configuration can be used to show all SPARQL result set projection variables.
- * The SPARQL projection variable name is used as column header. IRIs will be rendered as resolvable links using the `<semantic-link>` component or as a simple string otherwise.
+ *
+ * The SPARQL projection variable name is used as column header.
+ * IRIs will be rendered as resolvable links using the `<semantic-link>` component
+ * or as a simple string otherwise.
  */
 export interface BaseConfig extends ControlledProps {
   /**
@@ -109,9 +114,14 @@ export interface BaseConfig extends ControlledProps {
   numberOfDisplayedRows?: number
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when the query returns no results.
+   * Template which is applied when the query returns no results.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
-  noResultTemplate?: string
+  noResultTemplate?: string;
 
   /**
    * various ui options.
@@ -139,7 +149,10 @@ export interface BaseConfig extends ControlledProps {
   prefetchLabels?: boolean;
 
   /**
-   * Enable displaying datatypes of literals. This option is applicable only to default cell templates.
+   * Enable displaying datatypes of literals.
+   *
+   * This option is applicable only to default cell templates.
+   *
    * @default false
    */
   showLiteralDatatype?: boolean;
@@ -151,24 +164,35 @@ export interface BaseConfig extends ControlledProps {
 }
 
 /**
- * More advanced configuration that can be used to restrict the set of columns to be visualized, to modify the column headings or to provide custom cell visualization templates
+ * More advanced configuration that can be used to restrict the set of columns to be visualized,
+ * to modify the column headings or to provide custom cell visualization templates.
  */
 export interface ColumnConfig extends BaseConfig {
   /**
-   * List of columns to display. If specified table shows only columns explicitly specified in the configuration
+   * List of columns to display.
+   *
+   * If specified table shows only columns explicitly specified in the configuration.
    */
-  columnConfiguration: Array<ColumnConfiguration>
+  columnConfiguration: Array<ColumnConfiguration>;
 }
 
 /**
- * The most advanced table configuration that provides the ability to customize the rendering of an entire table row via tuple templates.
+ * The most advanced table configuration that provides the ability to customize
+ * the rendering of an entire table row via tuple templates.
  */
 export interface RowConfig extends BaseConfig {
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for the whole table row. Can be used to have visualizations different from the standard, e.g grid of thumbnails.
+   * Template for the whole table row.
+   *
+   * Can be used to have visualizations different from the standard, e.g grid of thumbnails.
    * The template has access to all projection variables for a single result tuple.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
-  tupleTemplate: string
+  tupleTemplate: string;
 }
 export function isRowConfig(config: SemanticTableConfig): config is RowConfig {
   return _.has(config, 'tupleTemplate');
@@ -183,7 +207,7 @@ export type SemanticTableProps =
 
 export class SemanticTable extends Component<SemanticTableProps, TableState> {
   static propTypes: Partial<Record<keyof SemanticTableProps, any>> = {
-    ...Component.propTypes,
+    ...ComponentPropTypes,
     onControlledPropChange: PropTypes.func,
   };
 

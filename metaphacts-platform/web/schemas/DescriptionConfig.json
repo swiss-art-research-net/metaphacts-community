@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "**Example**:\n```\n<mp-description iri=\"http://www.wikidata.org/entity/Q937\"\n   inline-html=true>\n</mp-description>\n```",
+    "properties": {
+        "className": {
+            "description": "Additional class names for component root element",
+            "type": "string"
+        },
+        "inlineHtml": {
+            "description": "Tells whether description can contain inline html or not.\nOnly used if no custom template has been provided.",
+            "type": "boolean"
+        },
+        "iri": {
+            "description": "IRI of resource to fetch description for",
+            "type": "string"
+        },
+        "noResultTemplate": {
+            "description": "Template which is applied when there is no description.",
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Additional styles for description element"
+        },
+        "template": {
+            "description": "Template that gets the description as a parameter. Can be used with `{{description}}`.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "iri",
+        "className",
+        "style",
+        "inlineHtml",
+        "template",
+        "noResultTemplate"
+    ],
+    "required": [
+        "iri"
+    ],
+    "type": "object"
+}
+

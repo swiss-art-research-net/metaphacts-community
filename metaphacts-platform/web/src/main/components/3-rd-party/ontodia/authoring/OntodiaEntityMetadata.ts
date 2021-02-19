@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,16 +43,51 @@ import * as Immutable from 'immutable';
 import { ElementTypeIri, CancellationToken } from 'ontodia';
 
 import { Rdf } from 'platform/api/rdf';
-import {
-  FieldDefinition, FieldMapping, CardinalitySupport, mapChildToComponent
-} from 'platform/components/forms';
+import { FieldDefinition } from 'platform/components/forms';
 
 import {
-  FieldConfigurationContext, EntityMetadata, assertFieldConfigurationItem, isObjectProperty
+  FieldConfigurationContext, EntityMetadata,
+  assertFieldConfigurationItem, validateFormFieldsDatatype,
 } from './FieldConfigurationCommon';
 
-export interface OntodiaEntityMetadataProps {
-
+/**
+ * **Example**:
+ * ```
+ * <!-- entity with auto-generated form -->
+ * <ontodia-entity-metadata
+ *   entity-type-iri='http://example.com/Person'
+ *   fields='["field-iri-1", "field-iri-2", ...]'
+ *   label-iri='http://www.example.com/fields/personName'
+ *   new-subject-template='http://www.example.com/person/{{UUID}}'>
+ * </ontodia-entity-metadata>
+ * ```
+ *
+ * **Example**:
+ * ```
+ * <ontodia-entity-metadata
+ *   entity-type-iri='http://example.com/Company'
+ *   fields='["field-iri-1", "field-iri-2", ...]'
+ *   label-iri='http://www.example.com/fields/companyName'
+ *   image-iri='http://www.example.com/fields/hasType'
+ *   new-subject-template='http://www.example.com/company/{{UUID}}'
+ *   force-iris='["datatype-field-1", ...]'>
+ *
+ *   <semantic-form-text-input for='http://www.example.com/fields/companyName'>
+ *   </semantic-form-text-input>
+ *
+ *   <semantic-form-composite-input
+ *     for='http://www.example.com/fields/companyAddress'
+ *     fields='...'>
+ *     <!-- inputs for addressCountry, addressCity, etc) -->
+ *   </semantic-form-composite-input>
+ *
+ *   <semantic-form-errors></semantic-form-errors>
+ *   <button name="submit" class="btn btn-secondary">Save</button>
+ *   <button name="reset" class="btn btn-secondary">Reset</button>
+ * </ontodia-entity-metadata>
+ * ```
+ */
+interface OntodiaEntityMetadataConfig {
   /**
    * Iri of the type to be configured. For example, 'http://xmlns.com/foaf/0.1/person'
    */
@@ -75,41 +110,26 @@ export interface OntodiaEntityMetadataProps {
   imageIri?: string;
 
   /**
-   * Subject template override for generating Iri of new entities
+   * Subject template override for generating IRIs for new entities of this type.
    */
   newSubjectTemplate?: string;
 
   /**
-   * Semantic form override. If developer wants to override auto-generated form,
-   * it should be placed inside <ontodia-entity-metadata>.
+   * Entity properties required for the entity to be editable
    */
-  children?: JSX.Element;
+  editableWhen?: { [property: string]: string };
+
+  /**
+   * Semantic form override. If developer wants to override auto-generated form,
+   * it should be placed inside `<ontodia-entity-metadata>`.
+   */
+  children?: {};
 }
 
-/**
- * @example
- * <ontodia-entity-metadata
- *   entity-type-iri='http://example.com/Company'
- *   fields='["field-iri-1", "field-iri-2", ...]'
- *   label-iri='http://www.example.com/fields/companyName'
- *   image-iri='http://www.example.com/fields/hasType'
- *   new-subject-template='http://www.example.com/company/{{UUID}}'
- *   force-iris='["datatype-field-1", ...]'>
- *
- *   <semantic-form-text-input for='http://www.example.com/fields/companyName'>
- *   </semantic-form-text-input>
- *
- *   <semantic-form-composite-input
- *     for='http://www.example.com/fields/companyAddress'
- *     fields='...'>
- *     <!-- inputs for addressCountry, addressCity, etc) -->
- *   </semantic-form-composite-input>
- *
- *   <semantic-form-errors></semantic-form-errors>
- *   <button name="submit" class="btn btn-default">Save</button>
- *   <button name="reset" class="btn btn-default">Reset</button>
- * </ontodia-entity-metadata>
- */
+export interface OntodiaEntityMetadataProps extends OntodiaEntityMetadataConfig {
+  children?: ReactNode;
+}
+
 export class OntodiaEntityMetadata extends React.Component<OntodiaEntityMetadataProps, {}> {
   render(): null { return null; }
 
@@ -124,10 +144,8 @@ export class OntodiaEntityMetadata extends React.Component<OntodiaEntityMetadata
     if (props.imageIri) {
       fieldIris.push(Rdf.iri(props.imageIri));
     }
-    if (props.fields) {
-      for (const otherField of props.fields) {
-        fieldIris.push(Rdf.iri(otherField));
-      }
+    for (const otherField of props.fields) {
+      fieldIris.push(Rdf.iri(otherField));
     }
     return Promise.resolve(fieldIris);
   }
@@ -145,11 +163,12 @@ assertFieldConfigurationItem(OntodiaEntityMetadata);
 function extractAuthoringMetadata(
   props: OntodiaEntityMetadataProps,
   context: FieldConfigurationContext
-) {
+): void {
   const {fieldByIri: allFieldByIri, typeIri, datatypeFields} = context;
   const {
     entityTypeIri,
     fields,
+    editableWhen,
     labelIri = context.defaultLabelIri,
     imageIri = context.defaultImageIri,
     newSubjectTemplate = context.defaultSubjectTemplate,
@@ -161,22 +180,14 @@ function extractAuthoringMetadata(
   if (!fields) {
     throw new Error(`Missing 'fields' property for <ontodia-entity-metadata>`);
   }
-  if (typeof labelIri !== 'string') {
-    throw new Error(`Missing 'label-iri' property for <ontodia-entity-metadata>`);
-  }
 
-  const labelField = allFieldByIri.get(labelIri);
   const typeField = allFieldByIri.get(typeIri);
-  const imageField = allFieldByIri.get(imageIri);
+  const labelField = labelIri ? allFieldByIri.get(labelIri) : null;
+  const imageField = imageIri ? allFieldByIri.get(imageIri) : null;
 
   if (!typeField) {
     throw new Error(
       `<ontodia-entity-metadata> for <${entityTypeIri}>: missing type field <${typeIri}>`
-    );
-  }
-  if (!labelField) {
-    throw new Error(
-      `<ontodia-entity-metadata> for <${entityTypeIri}>: missing label field <${labelIri}>`
     );
   }
 
@@ -184,13 +195,16 @@ function extractAuthoringMetadata(
     const field = allFieldByIri.get(fieldIri);
     if (!field) {
       throw new Error(
-        `<ontodia-entity-metadata> for <${entityTypeIri}>: missing field <${labelIri}>`
+        `<ontodia-entity-metadata> for <${entityTypeIri}>: missing field <${fieldIri}>`
       );
     }
     return field;
   });
 
-  const headFields = [typeField, labelField];
+  const headFields = [typeField];
+  if (labelField) {
+    headFields.push(labelField);
+  }
   if (imageField) {
     headFields.push(imageField);
   }
@@ -201,7 +215,9 @@ function extractAuthoringMetadata(
   );
 
   const metadata: EntityMetadata = {
+    type: 'entity',
     entityType: entityTypeIri as ElementTypeIri,
+    editableWhen,
     fields: entityFields,
     fieldByIri,
     datatypeFields: Immutable.Set<string>(
@@ -216,25 +232,7 @@ function extractAuthoringMetadata(
 
   validateFormFieldsDatatype(metadata.formChildren, metadata);
 
-  context.collectedMetadata.set(metadata.entityType, metadata);
-}
-
-function validateFormFieldsDatatype(children: ReactNode | undefined, metadata: EntityMetadata) {
-  if (!children) { return; }
-  React.Children.forEach(children, child => {
-    const mapping = mapChildToComponent(child, {
-      cardinalitySupport: CardinalitySupport,
-    });
-    if (!mapping || FieldMapping.isInputGroup(mapping, 'composite')) { return; }
-    if (FieldMapping.isInput(mapping)) {
-      const field = metadata.fieldByIri.get(mapping.element.props.for);
-      if (isObjectProperty(field, metadata)) {
-        throw new Error(`XSD Datatype of the field <${field.iri}> isn't literal`);
-      }
-    } else if (FieldMapping.isOtherElement(mapping)) {
-      validateFormFieldsDatatype(mapping.children, metadata);
-    }
-  });
+  context.collectedEntities.set(metadata.entityType, metadata);
 }
 
 export default OntodiaEntityMetadata;

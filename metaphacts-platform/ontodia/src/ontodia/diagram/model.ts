@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +38,8 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import {
-    ElementModel, LinkModel, ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri, isEncodedBlank,
+    ElementModel, LinkModel, ElementIri, ElementTypeIri, LinkIri, LinkTypeIri, PropertyTypeIri,
+    isEncodedBlank,
 } from '../data/model';
 import { Rdf } from '../data/rdf';
 import { GenerateID } from '../data/schema';
@@ -47,7 +48,7 @@ import { EventSource, Events, EventObserver, AnyEvent } from '../viewUtils/event
 
 import {
     Element, ElementEvents, Link, LinkEvents, LinkType, LinkTypeEvents, LinkTemplateState,
-    RichClass, RichClassEvents, RichProperty,
+    RichClass, RichClassEvents, RichProperty, RichPropertyEvents,
 } from './elements';
 import { Vector } from './geometry';
 import { Graph, CellsChangedEvent } from './graph';
@@ -59,16 +60,16 @@ export interface DiagramModelEvents {
     linkEvent: AnyEvent<LinkEvents>;
     linkTypeEvent: AnyEvent<LinkTypeEvents>;
     classEvent: AnyEvent<RichClassEvents>;
+    propertyEvent: AnyEvent<RichPropertyEvents>;
     layoutGroupContent: { readonly group: string };
     changeGroupContent: { readonly group: string };
 }
 
 export interface CreateLinkProps {
     id?: string;
-    typeId: LinkTypeIri;
     sourceId: string;
     targetId: string;
-    data?: LinkModel;
+    data: LinkModel;
     vertices?: ReadonlyArray<Vector>;
     linkState?: LinkTemplateState;
 }
@@ -103,8 +104,13 @@ export class DiagramModel {
         return this.graph.getLinks().filter(link => link.typeId === linkTypeId);
     }
 
-    findLink(linkTypeId: LinkTypeIri, sourceId: string, targetId: string): Link | undefined {
-        return this.graph.findLink(linkTypeId, sourceId, targetId);
+    findLink(
+        linkTypeId: LinkTypeIri,
+        sourceId: string,
+        targetId: string,
+        linkIri?: LinkIri
+    ): Link | undefined {
+        return this.graph.findLink(linkTypeId, sourceId, targetId, linkIri);
     }
 
     sourceOf(link: Link) { return this.getElement(link.sourceId); }
@@ -136,6 +142,9 @@ export class DiagramModel {
         });
         this.graphListener.listen(this.graph.events, 'classEvent', e => {
             this.source.trigger('classEvent', e);
+        });
+        this.graphListener.listen(this.graph.events, 'propertyEvent', e => {
+            this.source.trigger('propertyEvent', e);
         });
 
         this.source.trigger('changeCells', {updateAll: true});
@@ -180,21 +189,15 @@ export class DiagramModel {
     }
 
     createLink(props: CreateLinkProps): Link | undefined {
-        const {id, typeId, sourceId, targetId, data, vertices, linkState} = props;
-        if (data && data.linkTypeId !== typeId) {
-            throw new Error('linkTypeId must match linkType.id');
-        }
-
-        const existingLink = this.findLink(typeId, sourceId, targetId);
+        const {id, sourceId, targetId, data, vertices, linkState} = props;
+        const existingLink = this.findLink(data.linkTypeId, sourceId, targetId, data.linkIri);
         if (existingLink) {
-            if (data) {
-                existingLink.setLayoutOnly(false);
-                existingLink.setData(data);
-            }
+            existingLink.setLayoutOnly(false);
+            existingLink.setData(data);
             return existingLink;
         }
 
-        const linkType = this.createLinkType(typeId);
+        const linkType = this.createLinkType(data.linkTypeId);
         const source = this.getElement(sourceId);
         const target = this.getElement(targetId);
         if (!(linkType.visible && source && target)) {
@@ -206,12 +209,7 @@ export class DiagramModel {
             id,
             sourceId,
             targetId,
-            data: data || {
-                linkTypeId: typeId,
-                sourceId: source.iri,
-                targetId: target.iri,
-                properties: {},
-            },
+            data,
             vertices,
             linkState,
         });

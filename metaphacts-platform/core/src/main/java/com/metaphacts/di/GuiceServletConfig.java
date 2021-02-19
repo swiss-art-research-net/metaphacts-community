@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,6 +61,7 @@ import com.metaphacts.config.Configuration;
 import com.metaphacts.data.rdf.container.LDPAssetsLoader;
 import com.metaphacts.lookup.api.LookupServiceManager;
 import com.metaphacts.plugin.PlatformPluginManager;
+import com.metaphacts.querycatalog.QueryCatalogRESTServiceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.ShiroGuiceModule;
 import com.metaphacts.services.storage.MainPlatformStorage;
@@ -129,6 +130,7 @@ public class GuiceServletConfig extends GuiceServletContextListener {
         // initialize the lookup service manager explicitly during startup
         injector.getInstance(LookupServiceManager.class).getDefaultLookupService();
 
+
         try {
             injector.getInstance(LDPAssetsLoader.class).load();
         } catch (Exception e) {
@@ -155,6 +157,15 @@ public class GuiceServletConfig extends GuiceServletContextListener {
             logger.warn("Error while shutting down main platform storage: " + t.getMessage());
             logger.debug("Details:", t);
         }
+        
+        try {
+            logger.debug("Shutting down query catalog registry");
+            injector.getInstance(QueryCatalogRESTServiceRegistry.class).shutdown();
+        } catch (Throwable t) {
+            logger.warn("Error while shutting down query catalog registry: " + t.getMessage());
+            logger.debug("Details:", t);
+        }
+
 
         super.contextDestroyed(sce);
     }

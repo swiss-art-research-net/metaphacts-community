@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,11 +54,12 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
-import org.eclipse.rdf4j.query.QueryLanguage;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
+import org.eclipse.rdf4j.query.BindingSet;
+import org.eclipse.rdf4j.query.impl.MapBindingSet;
 import org.eclipse.rdf4j.query.parser.ParsedQuery;
-import org.eclipse.rdf4j.query.parser.QueryParserUtil;
-import org.eclipse.rdf4j.rio.ntriples.NTriplesUtil;
+import org.eclipse.rdf4j.repository.sparql.query.QueryStringUtil;
+import org.eclipse.rdf4j.rio.helpers.NTriplesUtil;
 
 import com.github.jknack.handlebars.Options;
 import com.metaphacts.api.dto.querytemplate.QueryArgument;
@@ -68,6 +69,9 @@ import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.sparql.visitors.ParametrizeVisitor;
 import com.metaphacts.util.QueryUtil;
 
+/**
+ * Handlebars backend helper to interact with the query catalog
+ */
 public class SparqlHelperSource {
 
     private static final Logger logger = LogManager.getLogger(SparqlHelperSource.class);
@@ -93,13 +97,24 @@ public class SparqlHelperSource {
      *       predicate='<some:iri>' obj='"OBJ"']]
      * </code>
      * </pre>
+     * 
+     * @deprecated scheduled for removal without replacement
      */
+    @Deprecated
     public String setQueryBindings(String param0, Options options) throws Exception {
         String query = checkNotNull(param0, "Query string must not be null.");
-        ParsedQuery parsedQuery = QueryParserUtil.parseQuery(QueryLanguage.SPARQL, query, null);
 
         Map<String, Value> parameters = retrieveParameters(options.hash);
-        return renderWithParameters(parsedQuery, parameters);
+        return setQueryBindingsInternal(query, parameters);
+    }
+
+    protected String setQueryBindingsInternal(String query, Map<String, Value> params) {
+
+        MapBindingSet bindings = new MapBindingSet();
+        params.forEach((p, v) -> bindings.addBinding(p, v));
+
+        // Note: the RDF4J method also works correctly for CONSTRUCT
+        return QueryStringUtil.getTupleQueryString(query, bindings);
     }
 
     protected Map<String, Value> retrieveParameters(Map<String, Object> queryParams) {
@@ -112,13 +127,6 @@ public class SparqlHelperSource {
             }
         }
         return parameters;
-    }
-
-    protected String renderWithParameters(ParsedQuery parsedQuery, Map<String, Value> parameters)
-            throws Exception {
-        parsedQuery.getTupleExpr().visit(new ParametrizeVisitor(parameters));
-        String renderedQuery = QueryUtil.toSPARQL(parsedQuery);
-        return renderedQuery;
     }
 
     /**
@@ -144,22 +152,29 @@ public class SparqlHelperSource {
             throw new IllegalArgumentException("Update operations are not supported");
         }
 
-        List<QueryArgument> args = queryTemplate.getArguments();
         Map<String, Value> passedParams = retrieveParameters(options.hash);
+        return getQueryStringInternal(queryTemplate, passedParams);
+    }
 
+    protected String getQueryStringInternal(QueryTemplate<?> queryTemplate, Map<String, Value> passedParams)
+            throws Exception {
+        List<QueryArgument> args = queryTemplate.getArguments();
+
+        BindingSet bindings;
         try {
-            interpretParameters(args, passedParams);
+            bindings = interpretParameters(args, passedParams);
         } catch (IllegalArgumentException e) {
             logger.warn("Illegal assignment of query template parameters: " + e.getMessage());
             throw e;
         }
 
-        ParsedQuery parsedQuery = (ParsedQuery) queryTemplate.getQuery().getQuery();
-        return renderWithParameters(parsedQuery, passedParams);
+        // Note: the RDF4J method also works correctly for CONSTRUCT
+        return QueryStringUtil.getTupleQueryString(queryTemplate.getQuery().getQueryString(), bindings);
     }
 
-    private void interpretParameters(List<QueryArgument> args, Map<String, Value> parameters)
+    private BindingSet interpretParameters(List<QueryArgument> args, Map<String, Value> parameters)
             throws IllegalArgumentException {
+        MapBindingSet res = new MapBindingSet();
         for (QueryArgument arg : args) {
             String predicate = arg.getPredicate();
             if (arg.isRequired()) {
@@ -172,9 +187,9 @@ public class SparqlHelperSource {
             Value val = parameters.get(predicate);
             if (val != null) {
                 if (arg.getValueType() != null) {
-                    if (arg.getValueType().equals(XMLSchema.ANYURI) || arg.getValueType().equals(RDFS.RESOURCE)) {
+                    if (arg.getValueType().equals(XSD.ANYURI) || arg.getValueType().equals(RDFS.RESOURCE)) {
                         val = (val instanceof IRI) ? val : VF.createIRI(val.stringValue());
-                        parameters.put(predicate, VF.createIRI(val.stringValue()));
+                        res.addBinding(predicate, VF.createIRI(val.stringValue()));
                     } else {
                         if (val instanceof Literal) {
                             Literal litVal = (Literal) val;
@@ -187,7 +202,7 @@ public class SparqlHelperSource {
                                     litVal = VF.createLiteral(litVal.stringValue(), arg.getValueType());
                                 }
                             }
-                            parameters.put(predicate, litVal);
+                            res.addBinding(predicate, litVal);
                         } else {
                             throw new IllegalArgumentException(
                                     "Incompatible parameter type: a resource " + val.stringValue()
@@ -197,12 +212,13 @@ public class SparqlHelperSource {
                     }
                 } else {
                     // No value type in the argument: we can pass anything "as is".
-                    parameters.put(predicate, val);
+                    res.addBinding(predicate, val);
                 }
             } else if (arg.getDefaultValue().isPresent()) {
-                parameters.put(predicate, arg.getDefaultValue().get());
+                res.addBinding(predicate, arg.getDefaultValue().get());
             }
         }
+        return res;
 
     }
 }

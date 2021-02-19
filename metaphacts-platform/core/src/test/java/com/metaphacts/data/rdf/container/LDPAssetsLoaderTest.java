@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,7 @@ import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.model.vocabulary.FOAF;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
+import org.eclipse.rdf4j.model.vocabulary.XSD;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
@@ -155,18 +155,18 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
     public void testStatementKey() throws Exception {
         
        StatementKey st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
-               VF.createStatement(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               VF.createStatement(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XSD.DATETIME), null)
                );
        StatementKey st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
-               VF.createStatement(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               VF.createStatement(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XSD.DATETIME), null)
                );
        Assert.assertTrue(st1.equals(st2));
 
        st1 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
-               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XSD.DATETIME), null)
                );
        st2 = new LDPAssetsLoader.LDPModelComparator.StatementKey(
-               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME), null)
+               VF.createStatement(VF.createBNode(), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XSD.DATETIME), null)
                );
        Assert.assertTrue(st1.equals(st2));
 
@@ -211,7 +211,7 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
         Model modelExisting = new LinkedHashModel();
         modelExisting.add(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral(new Date()));
         Model modelLoaded = new LinkedHashModel();
-        modelLoaded.add(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XMLSchema.DATETIME));
+        modelLoaded.add(VF.createIRI("http://example1"), PROV.generatedAtTime, VF.createLiteral("2019-07-25T14:59:37", XSD.DATETIME));
         //dataTimes are being ignored during comparison, since database may store double numbers differently
         Assert.assertTrue(LDPAssetsLoader.compareModelsWithoutDates(modelExisting, modelLoaded));
 
@@ -294,7 +294,7 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
         Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(null));
         Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createIRI("http://a")));
         Assert.assertFalse(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral(5.0003)));
-        Assert.assertFalse(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral("5.00000000E",XMLSchema.DOUBLE)));
+        Assert.assertFalse(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral("5.00000000E",XSD.DOUBLE)));
         Assert.assertFalse(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral(new Date())));
         Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral(5)));
         Assert.assertTrue(LDPAssetsLoader.resourceIsNotDateTimeOrDouble(VF.createLiteral("test")));
@@ -331,9 +331,9 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
 
     private Model getRandomSortedModelFromFile(String fileId) {
         Repository db = new SailRepository(new MemoryStore());
-        db.initialize();
+        db.init();
 
-        ArrayList<Statement> arrayList = new ArrayList();
+        ArrayList<Statement> arrayList = new ArrayList<>();
         try (RepositoryConnection con = db.getConnection()) {
             con.add(LDPApiInternal.class.getResourceAsStream(fileId), "", RDFFormat.TRIG);
             RepositoryResult<Statement> result = con.getStatements(null, null, null);
@@ -345,8 +345,8 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
         }
 
         for (int i = 0; i < arrayList.size(); i++) {
-            int index1 = new Long(Math.round(Math.random() * (arrayList.size() - 1))).intValue();
-            int index2 = new Long(Math.round(Math.random() * (arrayList.size() - 1))).intValue();
+            int index1 = Long.valueOf(Math.round(Math.random() * (arrayList.size() - 1))).intValue();
+            int index2 = Long.valueOf(Math.round(Math.random() * (arrayList.size() - 1))).intValue();
             Statement st = arrayList.get(index1);
             arrayList.set(index1, arrayList.get(index2));
             arrayList.set(index2, st);

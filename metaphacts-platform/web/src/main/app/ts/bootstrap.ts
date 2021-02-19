@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,9 +46,8 @@ import 'core-js';
 // see https://github.com/webcomponents/webcomponentsjs#custom-elements-es5-adapterjs
 import '@webcomponents/webcomponentsjs/custom-elements-es5-adapter.js';
 
-import { ReactErrorCatcher, ModuleRegistry } from 'platform/api/module-loader';
+import { ModuleRegistry } from 'platform/api/module-loader';
 
 export function initModuleRegistry() {
-  ReactErrorCatcher.initReactErrorCatcher();
   ModuleRegistry.init();
 }

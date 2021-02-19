@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,16 +39,14 @@
  */
 import * as React from 'react';
 
-import { EditorController } from '../editor/editorController';
-import { DiagramView } from '../diagram/view';
 import { ElementModel, LinkModel } from '../data/model';
-import { MetadataApi } from '../data/metadataApi';
-import { LinkDirection } from '../diagram/elements';
 
-import { Cancellation } from '../viewUtils/async';
+import { Cancellation, CancellationToken } from '../viewUtils/async';
 import { HtmlSpinner } from '../viewUtils/spinner';
 
 import { ProgressBar, ProgressState } from '../widgets/progressBar';
+
+import { WorkspaceContextWrapper, WorkspaceContextTypes } from '../workspace/workspaceContext';
 
 import { ElementTypeSelector, ElementValue, validateElementType } from './elementTypeSelector';
 import { LinkTypeSelector, LinkValue, validateLinkType } from './linkTypeSelector';
@@ -56,9 +54,6 @@ import { LinkTypeSelector, LinkValue, validateLinkType } from './linkTypeSelecto
 const CLASS_NAME = 'ontodia-edit-form';
 
 export interface EditElementTypeFormProps {
-    editor: EditorController;
-    view: DiagramView;
-    metadataApi?: MetadataApi;
     link: LinkModel;
     source: ElementModel;
     target: {
@@ -78,6 +73,9 @@ interface State {
 }
 
 export class EditElementTypeForm extends React.Component<EditElementTypeFormProps, State> {
+    static contextTypes = WorkspaceContextTypes;
+    declare readonly context: WorkspaceContextWrapper;
+
     private validationCancellation = new Cancellation();
 
     constructor(props: EditElementTypeFormProps) {
@@ -92,7 +90,8 @@ export class EditElementTypeForm extends React.Component<EditElementTypeFormProp
                 allowChange: true,
             },
             linkValue: {
-                value: {link, direction: LinkDirection.out},
+                link,
+                generated: !target.isNew,
                 validated: true,
                 allowChange: true,
             },
@@ -123,13 +122,15 @@ export class EditElementTypeForm extends React.Component<EditElementTypeFormProp
                 this.props.onChangeElement(elementValue.value);
             }
             if (linkValue && linkValue.validated && linkValue.allowChange) {
-                this.props.onChangeLink(linkValue.value.link);
+                this.props.onChangeLink(linkValue.link);
             }
         });
     }
 
-    private validate() {
-        const {editor, link: originalLink} = this.props;
+    private async validate() {
+        const {model, editor} = this.context.ontodiaWorkspace;
+        const {metadataApi} = editor;
+        const {source, link: originalLink} = this.props;
         const {elementValue, linkValue} = this.state;
         this.setState({isValidating: true});
 
@@ -137,29 +138,52 @@ export class EditElementTypeForm extends React.Component<EditElementTypeFormProp
         this.validationCancellation = new Cancellation();
         const signal = this.validationCancellation.signal;
 
-        const validateElement = validateElementType(elementValue.value);
-        const validateLink = validateLinkType(editor, linkValue.value.link, originalLink);
-        Promise.all([validateElement, validateLink]).then(([elementError, linkError]) => {
-            if (signal.aborted) { return; }
-            this.setState({isValidating: false});
-            this.setElementOrLink({
-                elementValue: {...elementValue, ...elementError, validated: true},
-                linkValue: {...linkValue, ...linkError, validated: true},
-            });
+        let regeneratedLink = linkValue.link;
+        if (metadataApi && !linkValue.generated) {
+            let generateSource = source;
+            let generateTarget = elementValue.value;
+            if (linkValue.link.sourceId !== source.id) {
+                [generateSource, generateTarget] = [generateTarget, generateSource];
+            }
+            const generatedLink = await CancellationToken.mapCancelledToNull(
+                signal,
+                metadataApi.generateNewLink(
+                    generateSource,
+                    generateTarget,
+                    linkValue.link.linkTypeId,
+                    signal
+                )
+            );
+            if (generatedLink === null) { return; }
+            regeneratedLink = generatedLink;
+        }
+
+        const [elementError, linkError] = await Promise.all([
+            validateElementType(elementValue.value),
+            validateLinkType(regeneratedLink, model, editor.temporaryState, originalLink)
+        ]);
+        if (signal.aborted) { return; }
+        this.setState({isValidating: false});
+        this.setElementOrLink({
+            elementValue: {...elementValue, ...elementError, validated: true},
+            linkValue: {
+                ...linkValue,
+                ...linkError,
+                link: regeneratedLink,
+                generated: true,
+                validated: true,
+            },
         });
     }
 
     render() {
-        const {editor, view, metadataApi, source, link: originalLink} = this.props;
+        const {source, link: originalLink} = this.props;
         const {elementValue, linkValue, isValidating} = this.state;
         const isValid = !elementValue.error && !linkValue.error;
         return (
             <div className={CLASS_NAME}>
                 <div className={`${CLASS_NAME}__body`}>
-                    <ElementTypeSelector editor={editor}
-                        view={view}
-                        metadataApi={metadataApi}
-                        source={source}
+                    <ElementTypeSelector source={source}
                         elementValue={elementValue}
                         onChange={newState => {
                             this.setElementOrLink({
@@ -172,10 +196,8 @@ export class EditElementTypeForm extends React.Component<EditElementTypeFormProp
                                     allowChange: false,
                                 },
                                 linkValue: {
-                                    value: {
-                                        link: {...originalLink, targetId: newState.value.id},
-                                        direction: LinkDirection.out,
-                                    },
+                                    link: {...originalLink, targetId: newState.value.id},
+                                    generated: false,
                                     validated: false,
                                     allowChange: false,
                                 },
@@ -186,14 +208,11 @@ export class EditElementTypeForm extends React.Component<EditElementTypeFormProp
                             <HtmlSpinner width={20} height={20} />&nbsp;Loading entity...
                         </div>
                     ) : (
-                        <LinkTypeSelector editor={editor}
-                            view={view}
-                            metadataApi={metadataApi}
-                            linkValue={linkValue}
+                        <LinkTypeSelector linkValue={linkValue}
                             source={source}
                             target={elementValue.value}
                             onChange={value => this.setElementOrLink({
-                                linkValue: {value, error: undefined, validated: false, allowChange: false},
+                                linkValue: {...value, error: undefined, validated: false, allowChange: false},
                             })}
                             disabled={elementValue.error !== undefined}
                         />
@@ -209,7 +228,7 @@ export class EditElementTypeForm extends React.Component<EditElementTypeFormProp
                         onClick={() => this.props.onApply(
                             elementValue.value,
                             elementValue.isNew,
-                            linkValue.value.link
+                            linkValue.link
                         )}
                         disabled={elementValue.loading || !isValid || isValidating}>
                         Apply

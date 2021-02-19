@@ -18,7 +18,7 @@
           <template id='statistics'>
             {{#each bindings}}
             {{#ifCond number.value ">=" 1000000}}
-            <bs-alert bs-style="warning">
+            <bs-alert variant="warning">
               Statics are only available for named graph with less than 1.000.000 statements.
               However, the absolute number of statements in the graph seems to be larger.
             </bs-alert>

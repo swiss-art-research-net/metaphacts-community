@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "className": {
+            "description": "CSS class",
+            "type": "string"
+        },
+        "id": {
+            "description": "id prop is required to make dropdown available to screen reader software",
+            "type": "string"
+        },
+        "selection": {
+            "description": "Action group name",
+            "type": "string"
+        },
+        "style": {
+            "description": "CSS style"
+        },
+        "title": {
+            "description": "Dropdown caption",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "id",
+        "selection",
+        "title",
+        "style",
+        "className"
+    ],
+    "required": [
+        "id",
+        "selection",
+        "title"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -135,7 +135,7 @@ export class AsyncModel extends DiagramModel {
     importLayout(params: {
         dataProvider: DataProvider;
         preloadedElements?: Dictionary<ElementModel>;
-        validateLinks?: boolean;
+        validateLinks?: boolean | 'dismiss';
         diagram?: Partial<SerializedDiagram>;
         hideUnusedLinkTypes?: boolean;
     }): Promise<void> {
@@ -152,7 +152,7 @@ export class AsyncModel extends DiagramModel {
             const loadingModels = this.loadAndRenderLayout({
                 layoutData: diagram.layoutData,
                 preloadedElements: params.preloadedElements || {},
-                markLinksAsLayoutOnly: params.validateLinks || false,
+                markLinksAsLayoutOnly: Boolean(params.validateLinks),
                 allLinkTypes,
                 hideUnusedLinkTypes: params.hideUnusedLinkTypes,
             });
@@ -160,6 +160,10 @@ export class AsyncModel extends DiagramModel {
                 ? this.requestLinksOfType() : Promise.resolve();
             return Promise.all([loadingModels, requestingLinks]);
         }).then(() => {
+            if (params.validateLinks === 'dismiss') {
+                this.removeLayoutOnlyLinks();
+            }
+            this.history.reset();
             this.asyncSource.trigger('loadingSuccess', {source: this});
         }).catch(error => {
             // tslint:disable-next-line:no-console
@@ -230,14 +234,23 @@ export class AsyncModel extends DiagramModel {
         }
 
         for (const layoutLink of layoutData.links) {
-            const {'@id': id, property, source, target, vertices, linkState} = layoutLink;
+            const {'@id': id, iri, property, source, target, vertices, linkState} = layoutLink;
             const linkType = this.createLinkType(property);
             usedLinkTypes[linkType.id] = linkType;
+            const sourceElement = this.getElement(source['@id']);
+            const targetElement = this.getElement(target['@id']);
+            if (!(sourceElement && targetElement)) { continue; }
             const link = this.createLink({
                 id,
-                typeId: linkType.id,
-                sourceId: source['@id'],
-                targetId: target['@id'],
+                sourceId: sourceElement.id,
+                targetId: targetElement.id,
+                data: {
+                    linkTypeId: linkType.id,
+                    sourceId: sourceElement.iri,
+                    targetId: targetElement.iri,
+                    linkIri: iri,
+                    properties: {},
+                },
                 vertices,
                 linkState,
             });
@@ -254,6 +267,14 @@ export class AsyncModel extends DiagramModel {
         }
 
         return requestingModels;
+    }
+
+    private removeLayoutOnlyLinks() {
+        for (const link of [...this.links]) {
+            if (link.layoutOnly) {
+                this.removeLink(link.id);
+            }
+        }
     }
 
     private hideUnusedLinkTypes(
@@ -342,27 +363,30 @@ export class AsyncModel extends DiagramModel {
     createLinks(data: LinkModel) {
         const sources = this.graph.getElements().filter(el => el.iri === data.sourceId);
         const targets = this.graph.getElements().filter(el => el.iri === data.targetId);
-        const typeId = data.linkTypeId;
-
         for (const source of sources) {
             for (const target of targets) {
-                this.createLink({typeId, sourceId: source.id, targetId: target.id, data});
+                this.createLink({sourceId: source.id, targetId: target.id, data});
             }
         }
     }
 
     loadEmbeddedElements(elementIri: ElementIri): Promise<Dictionary<ElementModel>> {
         const elements = this.groupByProperties.map(groupBy =>
-            this.dataProvider.linkElements({
-                elementId: elementIri,
-                linkId: groupBy.linkType as LinkTypeIri,
-                offset: 0,
-                direction: groupBy.linkDirection,
+            this.dataProvider.filter({
+                refElementId: elementIri,
+                refElementLinkId: groupBy.linkType as LinkTypeIri,
+                linkDirection: groupBy.linkDirection,
             })
         );
-        return Promise.all(elements).then(res =>
-            res.reduce((memo, current) => Object.assign(memo, current), {})
-        );
+        return Promise.all(elements).then(res => {
+            const models: Dictionary<ElementModel> = {};
+            for (const items of res) {
+                for (const {element} of items) {
+                    models[element.id] = element;
+                }
+            }
+            return models;
+        });
     }
 }
 

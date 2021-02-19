@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,39 +37,43 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, Children, createFactory} from 'react';
+import { Component, Children } from 'react';
 
 import { Cancellation } from 'platform/api/async';
 import { Util as Security } from 'platform/api/services/security';
 
-interface HasPermisssionProps {
+/**
+ * Displays child component if user has the required permission; otherwise displays nothing.
+ *
+ * **Example**:
+ * ```
+ * <mp-has-permission permission='delete:all:data'></mp-has-permission>
+ * ```
+ */
+interface HasPermissionConfig {
   /**
    * Required permission key to display a child component.
    */
   permission: string;
 }
 
+export type HasPermissionProps = HasPermissionConfig;
+
 interface State {
   readonly allowedToSee?: boolean;
 }
 
-/**
- * Displays child component if user has the required permission; otherwise displays nothing.
- *
- * @example
- * <mp-has-permission permission='delete:all:data'></mp-has-permission>
- */
-export class HasPermission extends Component<HasPermisssionProps, State> {
+export class HasPermission extends Component<HasPermissionProps, State> {
   private readonly cancellation = new Cancellation();
 
-  constructor(props: HasPermisssionProps) {
+  constructor(props: HasPermissionProps) {
     super(props);
     this.state = {allowedToSee: false};
   }
 
   componentWillMount() {
     this.cancellation.map(
-      Security.isPermitted(this.props.permission),
+      Security.isPermitted(this.props.permission)
     ).onValue(allowedToSee => this.setState({allowedToSee}));
   }
 

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,16 +42,8 @@ package com.metaphacts.shacl;
 import org.eclipse.rdf4j.common.lang.service.ServiceRegistry;
 
 public class ShaclEngineRegistry extends ServiceRegistry<String, ShaclEngineFactory> {
-    
-    private static class ShaclEngineRegistryHolder {
-        public static final ShaclEngineRegistry instance = new ShaclEngineRegistry();
-    }
-    
-    public static ShaclEngineRegistry getInstance() {
-        return ShaclEngineRegistryHolder.instance;
-    }
 
-    protected ShaclEngineRegistry() {
+    public ShaclEngineRegistry() {
         super(ShaclEngineFactory.class);
     }
 

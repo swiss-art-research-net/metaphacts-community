@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,11 +39,17 @@
  */
 package com.metaphacts.junit;
 
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.Rio;
+
+import com.github.jsonldjava.shaded.com.google.common.base.Throwables;
 
 /**
  * Base class for tests that require a backing repository. For now, the class
@@ -76,4 +82,36 @@ public abstract class AbstractRepositoryBackedIntegrationTest extends AbstractIn
             con.add(Arrays.asList(statements));
         }
     }
+
+	/**
+	 * Load a RDF file from a named resource
+	 * 
+	 * @param resources array of resource names. Each resource name may be relative
+	 *                  to the current class or absolute
+	 */
+	public void addStatementsFromResources(String... resources) {
+        addStatementsFromResources(repositoryRule.getRepository(), getClass(), resources);
+	}
+
+    /**
+     * Load a RDF file from a named resource
+     * 
+     * @param repository    repository to which to add statements
+     * @param resourceClass class which is used to load specified resource
+     * @param resources     array of resource names. Each resource name may be
+     *                      relative to {@code resourceClass} or absolute
+     */
+    public static void addStatementsFromResources(Repository repository, Class<?> resourceClass, String... resources) {
+		try (RepositoryConnection connection = repository.getConnection()) {
+			Arrays.asList(resources).forEach(file -> {
+				RDFFormat format = Rio.getParserFormatForFileName(file).orElse(RDFFormat.TURTLE);
+                try (InputStream data = resourceClass.getResourceAsStream(file)) {
+					connection.add(data, format);
+				} catch (Exception e) {
+					Throwables.throwIfUnchecked(e);
+					throw new RuntimeException(e);
+				}
+			});
+		}
+	}
 }

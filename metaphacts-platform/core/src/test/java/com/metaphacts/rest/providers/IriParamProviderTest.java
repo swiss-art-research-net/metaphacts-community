@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,8 +48,8 @@ import javax.ws.rs.core.Response;
 
 import org.eclipse.rdf4j.model.IRI;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.JerseyTestNg;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -116,7 +116,7 @@ public class IriParamProviderTest extends JerseyTestNg.ContainerPerClassTest {
             .queryParam("iri", "http://this:is:not:valid.com/abc")
             .request().get();
         Assert.assertEquals(HttpServletResponse.SC_BAD_REQUEST, response.getStatus());
-        Assert.assertThat(
+        MatcherAssert.assertThat(
             response.readEntity(String.class),
             Matchers.containsString("absolute or empty path expected")
         );
@@ -143,7 +143,7 @@ public class IriParamProviderTest extends JerseyTestNg.ContainerPerClassTest {
         @GET
         @Path("/default-iri")
         public String getDefaultString(@DefaultValue("http://metaphacts.com/defaultIRI") @QueryParam("iri") IRI iri) {
-            return iri.toString();
+            return iri.stringValue();
         }
     }
 

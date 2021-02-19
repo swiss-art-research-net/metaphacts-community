@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Form input to select different nested forms depending on the one type of an entity.\n\nEach `<semantic-form-switch-case>` child is required to have a single\n`<semantic-form-hidden-input>` input with `for` attribute equal to `switch-on-field`\nand `default-value` attribute set to entity type IRI for that case.\n\n**Example**:\n```\n<semantic-form-switch for='factoryHasOwner'\n  switch-on-field='ownerType'>\n    <semantic-form-switch-case label='Person'>\n      <semantic-form-composite-input for='factoryHasOwner' fields='[...]'>\n        <semantic-form-hidden-input for='ownerType'\n          default-value='http://www.example.com/Person'>\n        </semantic-form-hidden-input>\n        ... Person field inputs ...\n      </semantic-form-composite-input>\n    </semantic-form-switch-case>\n    <semantic-form-switch-case label='Organization'>\n      <semantic-form-composite-input for='factoryHasOwner' fields='[...]'>\n        <semantic-form-hidden-input for='ownerType'\n          default-value='http://www.example.com/Organization'>\n        </semantic-form-hidden-input>\n          ... Organization field inputs ...\n        </semantic-form-composite-input>\n      </semantic-form-switch-case>\n  </semantic-form-switch>\n```",
+    "properties": {
+        "switchOnField": {
+            "description": "Hidden field ID to determine entity type IRI from its default value for each case.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "switchOnField"
+    ],
+    "required": [
+        "switchOnField"
+    ],
+    "type": "object"
+}
+

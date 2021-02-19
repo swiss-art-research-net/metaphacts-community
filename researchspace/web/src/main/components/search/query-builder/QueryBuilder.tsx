@@ -598,9 +598,9 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
   }
 
   private placeTermSelector = (searchState: RelationTermSelection) => {
-    const tooltip = <Tooltip>Search for places by map region</Tooltip>;
+    const tooltip = <Tooltip id='place-term-tooltip'>Search for places by map region</Tooltip>;
     return <OverlayTrigger placement='bottom' overlay={tooltip}>
-      <button className={classnames('btn btn-default', styles.mapSelectionButton)}
+      <button className={classnames('btn btn-secondary', styles.mapSelectionButton)}
               onClick={this.showMapSelection}></button>
     </OverlayTrigger>;
   }
@@ -866,9 +866,11 @@ class QueryBuilderInner extends React.Component<InnerProps, State> {
 
   private nestedSearchButton = (category: Model.Category) => {
     const tooltip =
-      <Tooltip>Search for {nlp.noun(category.label).pluralize()} related to...</Tooltip>;
+      <Tooltip id='nested-search-tooltip'>
+        Search for {nlp.noun(category.label).pluralize()} related to...
+        </Tooltip>;
     return <OverlayTrigger placement='bottom' overlay={tooltip}>
-      <button className={classnames('btn btn-default', styles.nestedSearchButton)}
+      <button className={classnames('btn btn-secondary', styles.nestedSearchButton)}
                    onClick={this.state.store.selectSubSearchTerm}>
         <span style={{position: category.thumbnail ? 'absolute' : 'relative'}} className={styles.magnifierIcon}/>
         {category.thumbnail ? <img src={category.thumbnail} /> : null}

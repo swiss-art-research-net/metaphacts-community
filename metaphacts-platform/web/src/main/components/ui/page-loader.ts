@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,31 +46,41 @@ import { NavigationUtils, getCurrentResource, getCurrentUrl } from 'platform/api
 import PageViewer from '../../app/ts/page/PageViewer';
 import {Alert, AlertType} from 'platform/components/ui/alert';
 
-interface PageLoaderProps {
-  readonly iri: string;
-}
-
 /**
- * Simple wrapper around {@PageViewer} component to be invoked from HTML code.
- * Takes a simple iri string as input parameter and passes it on as {@Rdf.Iri} to the {@PageViewer}
+ * Simple wrapper around `PageViewer` component to be invoked from HTML code.
+ * Takes a simple IRI string as input parameter and passes it on to the `PageViewer`
  * in order to load and render the requested page.
  *
- * The context of the requested page will be set to the current {@ResourceContext.resource}.
+ * The context of the requested page will be set to the current `ResourceContext.resource`.
  * By design the context is not supposed to be re-written to a different resource
  * (i.e. by providing an additional input parameter to this component).
  *
  * Component inherits all query parameters from the current page.
  *
- * @example
- * 	<mp-page-loader iri="http://www.metaphacts.com/resource/Start"></mp-page-loader>
+ * **Example**:
+ * ```
+ * <mp-page-loader iri="http://www.metaphacts.com/resource/Start"></mp-page-loader>
+ * ```
  *
- * @example
- * 	With additional URL parameter(s).
- * 	<mp-page-loader
- * 		iri="http://www.metaphacts.com/resource/Start"
- * 	 	urlqueryparam-param1="hello world"
- * 	></mp-page-loader>
+ * **Example**:
+ * ```
+ * <!-- with additional URL parameter(s) -->
+ * <mp-page-loader
+ *   iri="http://www.metaphacts.com/resource/Start"
+ *   urlqueryparam-param1="hello world">
+ * </mp-page-loader>
+ * ```
+ *
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
  */
+interface PageLoaderConfig {
+  readonly iri: string;
+}
+
+export type PageLoaderProps = PageLoaderConfig;
+
 class PageLoaderComponent extends Component<PageLoaderProps, {}> {
 
   public shouldComponentUpdate(nextProps: PageLoaderProps) {

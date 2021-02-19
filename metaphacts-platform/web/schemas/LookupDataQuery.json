@@ -14,8 +14,16 @@
             "description": "Tells for how much results we are looking for",
             "type": "number"
         },
+        "lookupServiceName": {
+            "description": "Direct query to a specific implementation of the lookup service.\nIf not specified the default lookup service is used.",
+            "type": "string"
+        },
+        "preferredLanguage": {
+            "description": "Language tag (or comma-separated list of language tags with decreasing order of preference)\nof the preferred language(s) (optional). A language tag consists of the language and\noptionally variant, e.g. `de` or `de-CH`.\nSee <a href=\"https://tools.ietf.org/html/rfc4647\">RFC4647</a> for details.\nExamples: `ru`, `ru,fr-CH,de,en`\nThe default value is the user selected preferred language.\nSo the default language can be changed using dedicated switched in the toolbar\n(if provided more then one preferred language, otherwise the switch is hidden).",
+            "type": "string"
+        },
         "type": {
-            "description": "Type of the query. Should be always \"<b>lookup</b>\" in order to be of a type LookupDataQuery",
+            "description": "Type of the query. Should be always `lookup` in order to be of a type LookupDataQuery",
             "enum": [
                 "lookup"
             ],
@@ -26,7 +34,9 @@
         "type",
         "defaultTerm",
         "limit",
-        "entityType"
+        "entityType",
+        "lookupServiceName",
+        "preferredLanguage"
     ],
     "required": [
         "type"

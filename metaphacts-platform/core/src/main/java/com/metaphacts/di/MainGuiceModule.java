@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,10 +41,12 @@ package com.metaphacts.di;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -74,9 +76,13 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.DescriptionCache;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.DelegatingDescriptionService;
+import com.metaphacts.cache.DelegatingLabelService;
+import com.metaphacts.cache.DescriptionService;
+import com.metaphacts.cache.ExternalLabelDescriptionService;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.cache.QueryTemplateCache;
+import com.metaphacts.cache.ResourceDescriptionCache;
 import com.metaphacts.cache.ResourceDescriptionCacheHolder;
 import com.metaphacts.cache.TemplateIncludeCache;
 import com.metaphacts.config.Configuration;
@@ -92,6 +98,14 @@ import com.metaphacts.plugin.PlatformPluginManager;
 import com.metaphacts.querycatalog.QueryCatalogRESTServiceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.RepositoryManagerInterface;
+import com.metaphacts.resource.DefaultResourceDescriptionService;
+import com.metaphacts.resource.DelegatingDescriptionPropertiesProvider;
+import com.metaphacts.resource.DelegatingDescriptionRenderer;
+import com.metaphacts.resource.DelegatingTypeService;
+import com.metaphacts.resource.DescriptionPropertiesProvider;
+import com.metaphacts.resource.DescriptionRenderer;
+import com.metaphacts.resource.ResourceDescriptionService;
+import com.metaphacts.resource.TypeService;
 import com.metaphacts.rest.swagger.SwaggerRegistry;
 import com.metaphacts.security.ShiroTextRealm;
 import com.metaphacts.services.fields.FieldDefinitionGenerator;
@@ -104,6 +118,7 @@ import com.metaphacts.servlet.SparqlRequestHandler;
 import com.metaphacts.servlet.SparqlRequestHandlerProvider;
 import com.metaphacts.servlet.SparqlServlet;
 import com.metaphacts.templates.MetaphactsHandlebars;
+import com.metaphacts.templates.PageViewConfigManager;
 import com.metaphacts.templates.PageViewConfigSettings;
 import com.metaphacts.templates.index.TemplateIndexManager;
 import com.metaphacts.thumbnails.DefaultThumbnailService;
@@ -151,9 +166,13 @@ public class MainGuiceModule extends AbstractModule {
         bind(PermissionsAwareLDPApiRegistry.class).in(Singleton.class);
         bind(QueryTemplateCache.class).in(Singleton.class);
         bind(QueryCatalogRESTServiceRegistry.class).in(Singleton.class);
+        bind(ExternalLabelDescriptionService.class).in(Singleton.class);
         bind(ResourceDescriptionCacheHolder.class).in(Singleton.class);
-        bind(LabelCache.class).to(ResourceDescriptionCacheHolder.class);
-        bind(DescriptionCache.class).to(ResourceDescriptionCacheHolder.class);
+        bind(LabelService.class).to(DelegatingLabelService.class).in(Singleton.class);
+        bind(DescriptionService.class).to(DelegatingDescriptionService.class).in(Singleton.class);
+        bind(DefaultResourceDescriptionService.class).in(Singleton.class);
+        bind(ResourceDescriptionService.class).to(DefaultResourceDescriptionService.class).in(Singleton.class);
+        bind(ResourceDescriptionCache.class).in(Singleton.class);
         bind(TemplateIncludeCache.class).in(Singleton.class);
         bind(SparqlRequestHandler.class).toProvider(SparqlRequestHandlerProvider.class).in(Singleton.class);
         bind(SparqlServlet.class).in(Singleton.class);
@@ -170,6 +189,7 @@ public class MainGuiceModule extends AbstractModule {
         bind(MetaphactsHandlebars.class).in(Singleton.class);
         bind(Handlebars.class).to(MetaphactsHandlebars.class);
         bind(HelperRegistry.class).to(Handlebars.class);
+        bind(PageViewConfigManager.class).in(Singleton.class);
 
         bind(DefaultLookupServiceManager.class).in(Singleton.class);
         bind(LookupServiceManager.class).to(DefaultLookupServiceManager.class);
@@ -185,6 +205,103 @@ public class MainGuiceModule extends AbstractModule {
     }
 
     /**
+     * Create Composite LabelService implementation which delegates to a set of
+     * other implementations until a valid value is provided.
+     * <p>
+     * Labels are queried in a well-defined order which balances
+     * priority of sources and performance of the actual retrieval.
+     * </p>
+     * 
+     * @param descriptionCacheHolder                implementation based on fetching
+     *                                              properties for configured
+     *                                              predicates/expressions
+     * @param lookupCandidateDescriptionCacheHolder implementation which provides
+     *                                              values from injected
+     *                                              LookupService response
+     * @return
+     */
+    @Inject
+    @Provides
+    @Singleton
+    public DelegatingLabelService getLabelService(
+        ResourceDescriptionCacheHolder descriptionCacheHolder,
+        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder
+    ) {
+        final List<LabelService> labelServices = Arrays.asList(descriptionCacheHolder, lookupCandidateDescriptionCacheHolder);
+        return new DelegatingLabelService(labelServices);
+    }
+    
+    /**
+     * Create Composite DescriptionService implementation which delegates to a set
+     * of other implementations until a valid value is provided.
+     * <p>
+     * Descriptions are queried in a well-defined order which balances priority of
+     * sources and performance of the actual retrieval.
+     * </p>
+     * 
+     * @param descriptionCacheHolder                implementation based on fetching
+     *                                              properties for configured
+     *                                              predicates/expressions
+     * @param lookupCandidateDescriptionCacheHolder implementation which provides
+     *                                              values from injected
+     *                                              LookupService response
+     * @param resourceDescriptionCache              implementation which is based on
+     *                                              the ResourceDescriptionService
+     * @return
+     */
+    @Inject
+    @Provides
+    @Singleton
+    public DelegatingDescriptionService getDescriptionService(
+        ResourceDescriptionCacheHolder descriptionCacheHolder,
+        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder,
+        ResourceDescriptionCache resourceDescriptionCache
+    ) {
+        final List<DescriptionService> descriptionServices = Arrays.asList(resourceDescriptionCache,
+                descriptionCacheHolder,
+                lookupCandidateDescriptionCacheHolder);
+        return new DelegatingDescriptionService(descriptionServices);
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    public TypeService getTypeService(PlatformPluginManager platformPluginManager) {
+        List<TypeService> delegates = loadServiceInstancesIncludingApps(platformPluginManager, TypeService.class);
+        if (delegates.size() == 1) {
+            // if there's only one instance, return that directly
+            return delegates.get(0);
+        }
+        return new DelegatingTypeService(delegates);
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    public DescriptionPropertiesProvider getRelevantPropertiesProvider(PlatformPluginManager platformPluginManager) {
+        List<DescriptionPropertiesProvider> delegates = loadServiceInstancesIncludingApps(platformPluginManager,
+                DescriptionPropertiesProvider.class);
+        if (delegates.size() == 1) {
+            // if there's only one instance, return that directly
+            return delegates.get(0);
+        }
+        return new DelegatingDescriptionPropertiesProvider(delegates);
+    }
+
+    @Inject
+    @Provides
+    @Singleton
+    public DescriptionRenderer getDescriptionRenderer(PlatformPluginManager platformPluginManager) {
+        List<DescriptionRenderer> delegates = loadServiceInstancesIncludingApps(platformPluginManager,
+                DescriptionRenderer.class);
+        if (delegates.size() == 1) {
+            // if there's only one instance, return that directly
+            return delegates.get(0);
+        }
+        return new DelegatingDescriptionRenderer(delegates);
+    }
+
+    /**
      * When bundling client-side assets with webpack we attach bundle hash to
      * every file to make sure that browser cache is reset when we deploy new version.
      * see webpack.dll.prod.js and webpack.prod.config.js for more details.
@@ -194,6 +311,8 @@ public class MainGuiceModule extends AbstractModule {
     @Named("ASSETS_MAP")
     public Map<String, String> getAssetsMap() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+        // TODO: use generated manifest files even in local dev builds
+        // (i.e. "/project/webpack/assets/bundle-manifest.json")
         JsonNode dllManifest = mapper.readTree(
             this.servletContext.getResourceAsStream("/assets/dll-manifest.json")
         );
@@ -219,15 +338,86 @@ public class MainGuiceModule extends AbstractModule {
 
         return Collections.unmodifiableMap(map);
     }
-    
+
     @Provides
     protected RDFWriterRegistry getRDFWriterRegistry() {
         return RDFWriterRegistry.getInstance();
     }
-    
+
     @Provides
     protected RDFParserRegistry getRDFParserRegistry() {
         return RDFParserRegistry.getInstance();
+    }
+
+    /**
+     * Load services from the main class path as well as apps.
+     * 
+     * <p>
+     * The loaded service instances will be subjected to dependency injection, but
+     * only after instantiation, i.e. they need a parameter-less constructor and
+     * cannot use constructor injection.
+     * </p>
+     * 
+     * @param <T>           type of service to load
+     * @param pluginManager plugin manager to load app classes from
+     * @param serviceClass  service class for which to load service instances
+     * @return list of instances
+     */
+    public static <T> List<T> loadServiceInstancesIncludingApps(
+            PlatformPluginManager pluginManager, Class<T> serviceClass) {
+        // dependency injection happens in PlatformPluginManager
+        List<T> extensions = pluginManager.getExtensions(serviceClass);
+        // copy list as we are going to change it (by sorting)
+        List<T> services = new ArrayList<>(extensions);
+        // sort the generators defined from the service loader in a deterministic order
+        Collections.sort(services, OrderableComparator.INSTANCE);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("loading services of type {} from main classpath and apps: {}", serviceClass.getSimpleName(),
+                    services.stream().map(g -> g.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+        }
+
+        return services;
+    }
+
+    /**
+     * Load services from the main class path.
+     * 
+     * <p>
+     * The loaded service instances will be subjected to dependency injection, but
+     * only after instantiation, i.e. they need a parameter-less constructor and
+     * cannot use constructor injection.
+     * </p>
+     * 
+     * <p>
+     * Note: this method will NOT load classes froms apps, see
+     * {@link #loadServiceInstancesIncludingApps(Injector, PlatformPluginManager, Class)}
+     * for a method to also load classes from apps.
+     * </p>
+     * 
+     * @param <T>          type of service to load
+     * @param injector     Guice injector for dependency injection
+     * @param classLoader  class loader from which to load the service classes
+     * @param serviceClass service class for which to load service instances
+     * @return list of instances
+     */
+    public static <T> List<T> loadServiceInstances(Injector injector, ClassLoader classLoader,
+            Class<T> serviceClass) {
+        List<T> services = new ArrayList<>();
+        ServiceLoader<T> loader = java.util.ServiceLoader.load(serviceClass, classLoader);
+        for (T service : loader) {
+            injector.injectMembers(service);
+            services.add(service);
+        }
+        // sort the generators defined from the service loader in a deterministic order
+        Collections.sort(services, OrderableComparator.INSTANCE);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("loading services of type {} from main classpath: {}", serviceClass.getSimpleName(),
+                    services.stream().map(g -> g.getClass().getSimpleName()).collect(Collectors.joining(", ")));
+        }
+
+        return services;
     }
 
     @Inject
@@ -235,17 +425,12 @@ public class MainGuiceModule extends AbstractModule {
     @Singleton
     public SimpleFieldDefinitionGeneratorChain provideGeneratorChain(PlatformPluginManager pluginManager,
             FieldDefinitionManager fdManager, CacheManager cacheManager, Configuration config) {
-        List<FieldDefinitionGenerator> generators = pluginManager.getExtensions(FieldDefinitionGenerator.class);
-
-
-        List<FieldDefinitionGenerator> newGenerators = new ArrayList<>(generators);
-
-        // sort the generators defined from the service loader in a deterministic order
-        Collections.sort(newGenerators, OrderableComparator.INSTANCE);
+        List<FieldDefinitionGenerator> newGenerators = loadServiceInstancesIncludingApps(pluginManager,
+                FieldDefinitionGenerator.class);
 
         // hard-code FieldDefinitionManager as the first generator to use.
         newGenerators.add(0, fdManager);
-        
+
         if (logger.isTraceEnabled()) {
             logger.trace("Initializing field generators: {}",
                 newGenerators.stream().map(g -> g.getClass().getSimpleName()).collect(Collectors.joining(", ")));

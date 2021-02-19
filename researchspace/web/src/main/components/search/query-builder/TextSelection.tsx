@@ -67,7 +67,7 @@ export class TextSelection extends React.PureComponent<Props, State> {
           placeholder='text'
         />
       </FormGroup>
-      <Button bsStyle='primary'
+      <Button variant='primary'
               disabled={this.isButtonDisabled()}
               onClick={this.submitText}
       >

@@ -1,8 +1,9 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false,
     "properties": {
         "autosuggestionPattern": {
-            "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependend field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
+            "description": "SPARQL SELECT query to generate a dynamic suggestion list based on\ntext index or regex search. The value of the dependent field\nis injected as additional binding as defined in the dependencies\nmapping.\n\nQuery bindings:\n   * `?token` - text token the user is typing;\n   * `?(dependentOnFieldVariable)` - value for each depended on field;\n\nExposed projection variables:\n   * `?value` - suggested value for the field;\n   * (optional) `?label` - label for `?value`; further projection variables might be exposed\n     to format the rendering within the input element;",
             "type": "string"
         },
         "dependencies": {

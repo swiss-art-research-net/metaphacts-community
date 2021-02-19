@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -67,8 +67,28 @@ interface FileVisualizerState {
   resource?: FileResource;
 }
 
-interface FileVisualizerProps {
-  /** IRI of the file resource to generate a visual representation for. */
+/**
+ * Visualizer for uploaded files.
+ *
+ * Requires dedicated ACL permissions to access the REST file upload endpoint.
+ *
+ * **Example**:
+ * ```
+ * <mp-file-visualizer
+ *  iri='someIri...'
+ *  storage='storage-id'
+ *  name-predicate-iri='{some-iri}'
+ *  media-type-predicate-iri='{some-iri}'>
+ * </mp-file-visualizer>
+ * ```
+ */
+interface FileVisualizerConfig {
+  /**
+   * IRI of the file resource to generate a visual representation for.
+   *
+   * Visualized resource is usually an LDP resource created by either
+   * the `<semantic-form-file-input>` or `<mp-file-uploader>`.
+   */
   iri: string;
   /** Additional class names for component root element. */
   className?: string;
@@ -80,22 +100,12 @@ interface FileVisualizerProps {
   storage: string;
   /** Use in case of custom resource definition */
   namePredicateIri?: string;
+  /** Use in case of custom resource definition */
   mediaTypePredicateIri?: string;
 }
 
-/**
- * Visualizer for uploaded files.
- * @example:
- * <mp-file-visualizer
- *  iri='someIri...'
- *  storage='storage-id'
- *  name-predicate-iri='{some-iri}'
- *  media-type-predicate-iri='{some-iri}'>
- * </mp-file-visualizer>
- * where 'iri' is an IRI of a LDP resource created by either the <semantic-form-file-input/> or <mp-file-uploader/>.
- *
- * Requires dedicated ACL permissions to access the REST file upload endpoint.
- */
+export type FileVisualizerProps = FileVisualizerConfig;
+
 export class FileVisualizer extends Component<FileVisualizerProps, FileVisualizerState> {
   private readonly cancellation = new Cancellation();
 

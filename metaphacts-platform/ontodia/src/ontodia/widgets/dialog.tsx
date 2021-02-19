@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import * as React from 'react';
 
-import { DiagramView, WidgetAttachment, assertWidgetComponent } from '../diagram/view';
+import { WidgetAttachment, assertWidgetComponent } from '../diagram/view';
 import { Element, Link } from '../diagram/elements';
 import { EventObserver, Unsubscribe } from '../viewUtils/events';
 import { PaperWidgetProps } from '../diagram/paperArea';
@@ -54,57 +54,80 @@ import {
 import { RenderingState } from '../diagram/renderingState';
 import { DraggableHandle } from '../workspace/draggableHandle';
 
-const DEFAULT_WIDTH = 300;
-const DEFAULT_HEIGHT = 300;
-const MIN_WIDTH = 250;
-const MIN_HEIGHT = 250;
-const MAX_WIDTH = 800;
-const MAX_HEIGHT = 800;
-
 const ELEMENT_OFFSET = 40;
 const LINK_OFFSET = 20;
 const FOCUS_OFFSET = 20;
 
 const CLASS_NAME = 'ontodia-dialog';
 
-export interface DialogProps extends PaperWidgetProps {
-    view: DiagramView;
+export interface DialogProps extends SizeBounds, PaperWidgetProps {
     target: Element | Link;
-    size?: Size;
     caption?: string;
     offset?: Vector;
+    /**
+     * @default undefined
+     */
+    defaultSize?: Size;
     calculatePosition?: (renderingState: RenderingState) => Vector | undefined;
     onClose: () => void;
-    children: JSX.Element;
+    children: React.ReactElement<any>;
 }
 
-export interface State {
-    width?: number;
-    height?: number;
+interface SizeBounds {
+    /**
+     * @default 250
+     */
+    minWidth?: number;
+    /**
+     * @default 200
+     */
+    minHeight?: number;
+    /**
+     * Maximum dialog width.
+     *
+     * Default is 0.6*(viewport width).
+     */
+    maxWidth?: number;
+    /**
+     * Maximum dialog height.
+     *
+     * Default is 0.8*(viewport height).
+     */
+    maxHeight?: number;
 }
 
-type RequiredProps = DialogProps & Required<PaperWidgetProps> & {
-    readonly size: Size;
-};
+interface State {
+    computedSize?: Size;
+    resizedSize?: Size;
+}
+
+type RequiredProps = DialogProps & Required<PaperWidgetProps>;
 
 export class Dialog extends React.Component<DialogProps, State> {
     static readonly attachment = WidgetAttachment.OverElements;
     static readonly key = 'dialog';
-    static defaultProps: Partial<DialogProps> = {
-        size: {width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT},
-    };
 
     private unsubscribeFromTarget: Unsubscribe | undefined = undefined;
     private readonly handler = new EventObserver();
 
-    private updateAll = () => this.forceUpdate();
-
+    private container: HTMLElement | null = null;
+    private bounds: Required<SizeBounds>;
     private startSize: Vector | undefined;
 
     constructor(props: DialogProps) {
         super(props);
+        const {paperArea} = this.props as RequiredProps;
+        const {clientWidth, clientHeight} = paperArea.getAreaMetrics();
+        this.bounds = {
+            minWidth: this.props.minWidth ?? 250,
+            minHeight: this.props.minHeight ?? 200,
+            maxWidth: this.props.maxWidth ?? 0.6 * clientWidth,
+            maxHeight: this.props.maxHeight ?? 0.8 * clientHeight,
+        };
         this.state = {};
     }
+
+    private updateAll = () => this.forceUpdate();
 
     componentDidMount() {
         this.listenToTarget(this.props.target);
@@ -168,8 +191,8 @@ export class Dialog extends React.Component<DialogProps, State> {
         });
     }
 
-    private calculatePositionForElement(element: Element): Vector {
-        const {paperArea, renderingState, size} = this.props as RequiredProps;
+    private calculatePositionForElement(element: Element, effectiveSize: Size): Vector {
+        const {paperArea, renderingState} = this.props as RequiredProps;
 
         const bbox = boundsOf(element, renderingState);
         const {y: y0} = paperArea.paperToScrollablePaneCoords(bbox.x, bbox.y);
@@ -180,7 +203,7 @@ export class Dialog extends React.Component<DialogProps, State> {
 
         return {
             x: x1 + ELEMENT_OFFSET,
-            y: (y0 + y1) / 2 - (size.height / 2),
+            y: (y0 + y1) / 2 - effectiveSize.height / 2,
         };
     }
 
@@ -207,7 +230,7 @@ export class Dialog extends React.Component<DialogProps, State> {
         return {y: y + LINK_OFFSET, x: x + LINK_OFFSET};
     }
 
-    private calculatePosition(): Vector {
+    private calculatePosition(effectiveSize: Size): Vector {
         const {
             target, paperArea, renderingState, offset = {x: 0, y: 0}, calculatePosition
         } = this.props as RequiredProps;
@@ -221,7 +244,7 @@ export class Dialog extends React.Component<DialogProps, State> {
         }
 
         if (target instanceof Element) {
-            return this.calculatePositionForElement(target);
+            return this.calculatePositionForElement(target, effectiveSize);
         } else if (target instanceof Link) {
             return this.calculatePositionForLink(target);
         }
@@ -237,16 +260,15 @@ export class Dialog extends React.Component<DialogProps, State> {
         return {min, max};
     }
 
-    private getDialogScrollablePoints(): {min: Vector; max: Vector} {
-        const {size} = this.props as RequiredProps;
-        const {x, y} = this.calculatePosition();
+    private getDialogScrollablePoints(effectiveSize: Size): {min: Vector; max: Vector} {
+        const {x, y} = this.calculatePosition(effectiveSize);
         const min = {
             x: x - FOCUS_OFFSET,
             y: y - FOCUS_OFFSET,
         };
         const max = {
-            x: min.x + size.width + FOCUS_OFFSET * 2,
-            y: min.y + size.height + FOCUS_OFFSET * 2,
+            x: min.x + effectiveSize.width + FOCUS_OFFSET * 2,
+            y: min.y + effectiveSize.height + FOCUS_OFFSET * 2,
         };
         return {min, max};
     }
@@ -254,7 +276,8 @@ export class Dialog extends React.Component<DialogProps, State> {
     private focusOn() {
         const {paperArea} = this.props as RequiredProps;
         const {min: viewPortMin, max: viewPortMax} = this.getViewPortScrollablePoints();
-        const {min, max} = this.getDialogScrollablePoints();
+        const bbox = this.container!.getBoundingClientRect();
+        const {min, max} = this.getDialogScrollablePoints({width: bbox.width, height: bbox.height});
 
         let xOffset = 0;
         if (min.x < viewPortMin.x) {
@@ -274,91 +297,108 @@ export class Dialog extends React.Component<DialogProps, State> {
             x: viewPortMin.x + (viewPortMax.x - viewPortMin.x) / 2,
             y: viewPortMin.y + (viewPortMax.y - viewPortMin.y) / 2,
         };
-        const newScrollabalCenter = {
+        const newScrollableCenter = {
             x: curScrollableCenter.x + xOffset,
             y: curScrollableCenter.y + yOffset,
         };
         const paperCenter = paperArea.scrollablePaneToPaperCoords(
-            newScrollabalCenter.x, newScrollabalCenter.y,
+            newScrollableCenter.x, newScrollableCenter.y,
         );
         paperArea.centerTo(paperCenter);
     }
 
     private onStartDragging = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
-        const {size} = this.props as RequiredProps;
-        this.startSize = {x: this.state.width || size.width, y: this.state.height || size.height};
+        const {resizedSize} = this.state;
+        const measuredSize = this.container?.getBoundingClientRect();
+        const size = measuredSize ?? resizedSize ?? {width: 0, height: 0};
+        this.startSize = {x: size.width, y: size.height};
     }
 
-    private calculateHeight(height: number) {
-        const {size} = this.props as RequiredProps;
-        const minHeight = Math.min(size.height, MIN_HEIGHT);
-        const maxHeight = Math.max(size.height, MAX_HEIGHT);
-        return Math.max(minHeight, Math.min(maxHeight, height));
-    }
-
-    private calculateWidth(width: number) {
-        const {size} = this.props as RequiredProps;
-        const minWidth = Math.min(size.width, MIN_WIDTH);
-        const maxWidth = Math.max(size.width, MAX_WIDTH);
-        return Math.max(minWidth, Math.min(maxWidth, width));
-    }
-
-    private onDragHandleBottom = (e: MouseEvent, dx: number, dy: number) => {
-        const height = this.calculateHeight(this.startSize!.y + dy);
-        this.setState({height});
-    }
-
-    private onDragHandleRight = (e: MouseEvent, dx: number) => {
-        const width = this.calculateWidth(this.startSize!.x + dx);
-        this.setState({width});
-    }
-
-    private onDragHandleBottomRight = (e: MouseEvent, dx: number, dy: number) => {
-        const width = this.calculateWidth(this.startSize!.x + dx);
-        const height = this.calculateHeight(this.startSize!.y + dy);
-        this.setState({width, height});
+    private onDragHandle = (e: MouseEvent, dx: number, dy: number) => {
+        const {x: startWidth, y: startHeight} = this.startSize!;
+        const resizedSize = getBoundedSize(
+            {width: startWidth + dx, height: startHeight + dy},
+            this.bounds
+        );
+        this.setState({resizedSize});
     }
 
     render() {
-        const {size, caption, paperArea, paperTransform, renderingState, children} = this.props as RequiredProps;
-        const {x, y} = this.calculatePosition();
-        const width = this.state.width || size.width;
-        const height = this.state.height || size.height;
-        const style = {
+        const {
+            defaultSize, caption, view, paperArea, paperTransform, renderingState, children,
+        } = this.props as RequiredProps;
+        const {computedSize, resizedSize} = this.state;
+        const {x, y} = this.calculatePosition(computedSize ?? defaultSize ?? {width: 0, height: 0});
+        const effectiveSize = resizedSize ?? defaultSize;
+        const boundedSize = effectiveSize ? getBoundedSize(effectiveSize, this.bounds) : undefined;
+        const style: React.CSSProperties = {
             top: y,
             left: x,
-            width,
-            height,
+            width: boundedSize ? boundedSize.width : 'auto',
+            height: boundedSize ? boundedSize.height : 'auto',
+            minWidth: this.bounds.minWidth,
+            minHeight: this.bounds.minHeight,
+            maxWidth: this.bounds.maxWidth,
+            maxHeight: this.bounds.maxHeight,
         };
-        const paperWidgetProps: PaperWidgetProps = {
+        let className = CLASS_NAME;
+        if (resizedSize) {
+            className += ` ${CLASS_NAME}--resized`;
+        }
+        const paperWidgetProps: Required<PaperWidgetProps> = {
+            view,
             paperArea,
             paperTransform,
             renderingState
         };
         return (
-            <div className={CLASS_NAME} style={style}>
+            <div ref={this.onContainerMount} className={className} style={style}>
                 <button className={`${CLASS_NAME}__close-button`} onClick={() => this.props.onClose()} />
                 {caption ? <div className='ontodia-dialog__caption'>{caption}</div> : null}
                 {React.cloneElement(children, paperWidgetProps)}
                 <DraggableHandle
                     className={`${CLASS_NAME}__bottom-handle`}
                     onBeginDragHandle={this.onStartDragging}
-                    onDragHandle={this.onDragHandleBottom}>
+                    onDragHandle={this.onDragHandle}>
                 </DraggableHandle>
                 <DraggableHandle
                     className={`${CLASS_NAME}__right-handle`}
                     onBeginDragHandle={this.onStartDragging}
-                    onDragHandle={this.onDragHandleRight}>
+                    onDragHandle={this.onDragHandle}>
                 </DraggableHandle>
                 <DraggableHandle
                     className={`${CLASS_NAME}__bottom-right-handle`}
                     onBeginDragHandle={this.onStartDragging}
-                    onDragHandle={this.onDragHandleBottomRight}>
+                    onDragHandle={this.onDragHandle}>
                 </DraggableHandle>
             </div>
         );
     }
+
+    private onContainerMount = (container: HTMLElement | null) => {
+        this.container = container;
+        this.recomputeBounds();
+    }
+
+    private recomputeBounds() {
+        if (this.container && !this.state.resizedSize) {
+            const {width, height} = this.container.getBoundingClientRect();
+            this.setState({computedSize: {width, height}});
+        }
+    }
+}
+
+function getBoundedSize(size: Size, props: Required<SizeBounds>): Size {
+    let width = size.width;
+    width = Math.min(width, props.maxWidth);
+    width = Math.max(width, props.minWidth);
+
+    let height = size.height;
+    height = Math.min(height, props.maxHeight);
+    height = Math.max(height, props.minHeight);
+
+    return {width, height};
 }
 
 assertWidgetComponent(Dialog);

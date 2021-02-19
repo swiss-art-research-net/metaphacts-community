@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,12 +53,14 @@ import { HtmlSpinner } from '../viewUtils/spinner';
 
 import { WorkspaceContextWrapper, WorkspaceContextTypes } from '../workspace/workspaceContext';
 
-const CLASS_NAME = 'ontodia-halo-link';
-const BUTTON_SIZE = 20;
-const BUTTON_MARGIN = 5;
+import * as styles from './haloLink.scss';
 
 export interface HaloLinkProps extends PaperWidgetProps {
     id?: string;
+    editProperties?: boolean;
+    editType?: boolean;
+    buttonSize?: number;
+    buttonMargin?: number;
 }
 
 export interface State {
@@ -67,11 +69,15 @@ export interface State {
     canEdit?: boolean;
 }
 
-type RequiredProps = HaloLinkProps & Required<PaperWidgetProps>;
+
+type RequiredProps = HaloLinkProps & Required<PaperWidgetProps> & DefaultProps;
+type DefaultProps = Required<Pick<HaloLinkProps, 'id' | 'buttonSize' | 'buttonMargin'>>;
 
 export class HaloLink extends React.Component<HaloLinkProps, State> {
-    static defaultProps: Partial<HaloLinkProps> = {
+    static defaultProps: DefaultProps = {
         id: 'halo-link',
+        buttonSize: 20,
+        buttonMargin: 5,
     };
 
     static contextTypes = WorkspaceContextTypes;
@@ -93,6 +99,9 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
 
     componentDidMount() {
         const {editor} = this.context.ontodiaWorkspace;
+        this.listener.listen(editor.events, 'changeMode', () => {
+            this.forceUpdate();
+        });
         this.listener.listen(editor.events, 'changeAuthoringState', () => {
             this.queryAllowedActions();
         });
@@ -120,15 +129,16 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
     }
 
     private queryAllowedActions() {
+        this.queryCancellation.abort();
         this.queryDebouncer.call(() => {
-            this.queryCancellation.abort();
             this.queryCancellation = new Cancellation();
-            this.queryCanDelete(this.state.target);
-            this.queryCanEdit(this.state.target);
+            const signal = this.queryCancellation.signal;
+            this.queryCanDelete(this.state.target, signal);
+            this.queryCanEdit(this.state.target, signal);
         });
     }
 
-    private queryCanDelete(link: Link | undefined) {
+    private queryCanDelete(link: Link | undefined, ct: CancellationToken) {
         if (!link) { return; }
 
         const {editor} = this.context.ontodiaWorkspace;
@@ -144,10 +154,9 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
             this.setState({canDelete: undefined});
             const source = view.model.getElement(link.sourceId)!;
             const target = view.model.getElement(link.targetId)!;
-            const signal = this.queryCancellation.signal;
             CancellationToken.mapCancelledToNull(
-                signal,
-                metadataApi.canDeleteLink(link.data, source.data, target.data, signal)
+                ct,
+                metadataApi.canDeleteLink(link.data, source.data, target.data, ct)
             ).then(canDelete => {
                 if (canDelete === null) { return; }
                 if (this.state.target!.id === link.id) {
@@ -157,7 +166,7 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
         }
     }
 
-    private queryCanEdit(link: Link | undefined) {
+    private queryCanEdit(link: Link | undefined, ct: CancellationToken) {
         if (!link) { return; }
 
         const {editor} = this.context.ontodiaWorkspace;
@@ -173,10 +182,9 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
             this.setState({canEdit: undefined});
             const source = view.model.getElement(link.sourceId)!;
             const target = view.model.getElement(link.targetId)!;
-            const signal = this.queryCancellation.signal;
             CancellationToken.mapCancelledToNull(
-                signal,
-                metadataApi.canEditLink(link.data, source.data, target.data, signal)
+                ct,
+                metadataApi.canEditLink(link.data, source.data, target.data, ct)
             ).then(canEdit => {
                 if (canEdit === null) { return; }
                 if (this.state.target!.id === link.id) {
@@ -235,37 +243,42 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
     private calculateDegree(source: Vector, target: Vector): number {
         const x = target.x - source.x;
         const y = target.y - source.y;
-        const r = Math.sqrt(x * x + y * y);
-        const unit = {x: x / r, y: y / r};
-        return Math.atan2(unit.y, unit.x) * (180 / Math.PI);
+        return Math.atan2(y, x) * (180 / Math.PI);
     }
 
     private onSourceMove = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault();
         if (e.button !== 0 /* left button */) { return; }
-        const {editor} = this.context.ontodiaWorkspace;
+        const {overlayController} = this.context.ontodiaWorkspace;
         const {paperArea} = this.props as RequiredProps;
         const target = this.state.target!;
         const point = paperArea.pageToPaperCoords(e.pageX, e.pageY);
-        editor.startEditing({target, mode: EditLayerMode.moveLinkSource, point});
+        overlayController.startEditing({target, mode: EditLayerMode.moveLinkSource, point});
     }
 
     private renderSourceButton(polyline: ReadonlyArray<Vector>) {
+        const {buttonSize} = this.props as RequiredProps;
         const {editor} = this.context.ontodiaWorkspace;
         const target = this.state.target!;
+        const enabled = (
+            editor.inAuthoringMode &&
+            !editor.temporaryState.links.has(target.data) &&
+            !isDeletedLink(editor.authoringState, target) &&
+            this.state.canDelete
+        );
+
         const point = getPointAlongPolyline(polyline, 0);
         const {x, y} = this.paperToScrollablePaneCoords(point);
-
-        const top = y - BUTTON_SIZE / 2;
-        const left = x - BUTTON_SIZE / 2;
+        const top = y - buttonSize / 2;
+        const left = x - buttonSize / 2;
 
         return (
-            <button className={`${CLASS_NAME}__button`}
-                style={{top, left, cursor: editor.inAuthoringMode ? undefined : 'default'}}
-                disabled={isDeletedLink(editor.authoringState, target)}
-                onMouseDown={editor.inAuthoringMode ? this.onSourceMove : undefined}>
-                <svg width={BUTTON_SIZE} height={BUTTON_SIZE}>
-                    <g transform={`scale(${BUTTON_SIZE})`}>
+            <button className={styles.button}
+                style={{top, left, cursor: enabled ? undefined : 'default'}}
+                disabled={!enabled}
+                onMouseDown={enabled ? this.onSourceMove : undefined}>
+                <svg width={buttonSize} height={buttonSize}>
+                    <g transform={`scale(${buttonSize})`}>
                         <circle r={0.5} cx={0.5} cy={0.5} fill='#198AD3' />
                     </g>
                 </svg>
@@ -276,35 +289,42 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
     private onTargetMove = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault();
         if (e.button !== 0 /* left button */) { return; }
-        const {editor} = this.context.ontodiaWorkspace;
+        const {overlayController} = this.context.ontodiaWorkspace;
         const {paperArea} = this.props as RequiredProps;
         const target = this.state.target!;
         const point = paperArea.pageToPaperCoords(e.pageX, e.pageY);
-        editor.startEditing({target, mode: EditLayerMode.moveLinkTarget, point});
+        overlayController.startEditing({target, mode: EditLayerMode.moveLinkTarget, point});
     }
 
     private getButtonPosition(polyline: ReadonlyArray<Vector>, index: number): { top: number; left: number } {
+        const {buttonSize, buttonMargin} = this.props as RequiredProps;
         const polylineLength = computePolylineLength(polyline);
-        const point = getPointAlongPolyline(polyline, polylineLength - (BUTTON_SIZE + BUTTON_MARGIN) * index);
+        const point = getPointAlongPolyline(polyline, polylineLength - (buttonSize + buttonMargin) * index);
         const {x, y} = this.paperToScrollablePaneCoords(point);
-
-        return {top: y - BUTTON_SIZE / 2, left: x - BUTTON_SIZE / 2};
+        return {top: y - buttonSize / 2, left: x - buttonSize / 2};
     }
 
     private renderTargetButton(target: Link, polyline: ReadonlyArray<Vector>) {
+        const {buttonSize} = this.props as RequiredProps;
         const {editor} = this.context.ontodiaWorkspace;
-        const {top, left} = this.getButtonPosition(polyline, 0);
+        const enabled = (
+            editor.inAuthoringMode &&
+            !editor.temporaryState.links.has(target.data) &&
+            !isDeletedLink(editor.authoringState, target) &&
+            this.state.canDelete    
+        );
 
+        const {top, left} = this.getButtonPosition(polyline, 0);
         const {length} = polyline;
         const degree = this.calculateDegree(polyline[length - 1], polyline[length - 2]);
 
         return (
-            <button className={`${CLASS_NAME}__button`}
-                style={{top, left, cursor: editor.inAuthoringMode ? undefined : 'default'}}
-                disabled={isDeletedLink(editor.authoringState, target)}
-                onMouseDown={editor.inAuthoringMode ? this.onTargetMove : undefined}>
-                <svg width={BUTTON_SIZE} height={BUTTON_SIZE} style={{transform: `rotate(${degree}deg)`}}>
-                    <g transform={`scale(${BUTTON_SIZE})`}>
+            <button className={styles.button}
+                style={{top, left, cursor: enabled ? undefined : 'default'}}
+                disabled={!enabled}
+                onMouseDown={enabled ? this.onTargetMove : undefined}>
+                <svg width={buttonSize} height={buttonSize} style={{transform: `rotate(${degree}deg)`}}>
+                    <g transform={`scale(${buttonSize})`}>
                         <polygon points={'0,0.5 1,1 1,0'} fill='#198AD3' />
                     </g>
                 </svg>
@@ -312,36 +332,66 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
         );
     }
 
-    private renderEditButton(polyline: ReadonlyArray<Vector>) {
-        const {canEdit} = this.state;
+    private renderEditTypeButton(polyline: ReadonlyArray<Vector>) {
+        const {editType} = this.props;
+        if (editType === false) {
+            return null;
+        }
+        // changing type depends on ability to delete original link
+        const {canDelete: canChangeType} = this.state;
         const style = this.getButtonPosition(polyline, 1);
-        if (canEdit === undefined) {
+        if (canChangeType === undefined) {
             return (
-                <div className={`${CLASS_NAME}__spinner`} style={style}>
+                <div className={styles.spinner} style={style}>
                     <HtmlSpinner width={20} height={20} />
                 </div>
             );
         }
-        const title = canEdit ? 'Edit link' : 'Editing is unavailable for the selected link';
+        const title = canChangeType ? 'Edit relation type' : 'Editing is unavailable for the selected relation';
         return (
-            <button className={`${CLASS_NAME}__button ${CLASS_NAME}__edit`} style={style} title={title}
-                onClick={this.onEdit} disabled={!canEdit} />
+            <button className={`${styles.button} ${styles.editTypeButton}`}
+                style={style} title={title}
+                onClick={this.onEditType} disabled={!canChangeType} />
+        );
+    }
+
+    private renderEditPropertiesButton(polyline: ReadonlyArray<Vector>) {
+        const {editProperties} = this.props;
+        if (!editProperties) {
+            return null;
+        }
+        const {canEdit} = this.state;
+        const style = this.getButtonPosition(polyline, 2);
+        if (canEdit === undefined) {
+            return (
+                <div className={styles.spinner} style={style}>
+                    <HtmlSpinner width={20} height={20} />
+                </div>
+            );
+        }
+        const title = canEdit ? 'Edit relation properties' : 'Editing is unavailable for the selected relation';
+        return (
+            <button className={`${styles.button} ${styles.editPropertiesButton}`}
+                style={style} title={title}
+                onClick={this.onEditProperties} disabled={!canEdit} />
         );
     }
 
     private renderDeleteButton(polyline: ReadonlyArray<Vector>) {
+        const {editProperties} = this.props;
         const {canDelete} = this.state;
-        const style = this.getButtonPosition(polyline, 2);
+        const style = this.getButtonPosition(polyline, editProperties ? 3 : 2);
         if (canDelete === undefined) {
             return (
-                <div className={`${CLASS_NAME}__spinner`} style={style}>
+                <div className={styles.spinner} style={style}>
                     <HtmlSpinner width={20} height={20} />
                 </div>
             );
         }
-        const title = canDelete ? 'Delete link' : 'Deletion is unavailable for the selected link';
+        const title = canDelete ? 'Delete relation from data' : 'Deletion is unavailable for the selected relation';
         return (
-            <button className={`${CLASS_NAME}__button ${CLASS_NAME}__delete`} style={style} title={title}
+            <button className={`${styles.button} ${styles.deleteButton}`}
+                style={style} title={title}
                 onClick={this.onDelete} disabled={!canDelete} />
         );
     }
@@ -362,8 +412,13 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
         const {x: left, y: top} = paperArea.paperToScrollablePaneCoords(x + width, y + height / 2);
         const size = {width: 15, height: 17};
         const style = {width: size.width, height: size.height, top: top - size.height / 2, left};
-        return <button className={`${CLASS_NAME}__edit-label-button`} style={style} onClick={this.onEditLabel}
-            title={'Edit Link Label'} />;
+        return (
+            <button className={`${styles.editLabelButton}`}
+                style={style}
+                title={'Edit relation label'}
+                onClick={this.onEditLabel}
+            />
+        );
     }
 
     private renderLabelHighlighter(target: Link) {
@@ -376,7 +431,7 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
         const {x: x0} = paperArea.paperToScrollablePaneCoords(x, y);
         const {x: x1, y: y1} = paperArea.paperToScrollablePaneCoords(x + width, y + height);
         return <div
-            className={`${CLASS_NAME}__label-highlighter`}
+            className={styles.labelHighlighter}
             style={{width: (x1 - x0), left: x0, top: y1}}
         />;
     }
@@ -391,19 +446,20 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
         const polyline = this.computePolyline(target);
         if (!polyline) { return null; }
 
-        const isAuthoringMode = Boolean(metadataApi);
-        const deleteButton = (
-            isDeletedByItself(editor.authoringState, target) ||
-            isSourceOrTargetDeleted(editor.authoringState, target) ? null : this.renderDeleteButton(polyline)
+        const isAuthoringMode = Boolean(editor.inAuthoringMode && editor.metadataApi);
+        const showEditOrDeleteButtons = (
+            isAuthoringMode &&
+            !editor.temporaryState.links.has(target.data) &&
+            !isDeletedLink(editor.authoringState, target)
         );
 
         return (
-            <div className={`${CLASS_NAME}`}>
+            <div className={styles.component}>
                 {this.renderTargetButton(target, polyline)}
                 {this.renderSourceButton(polyline)}
-                {!isAuthoringMode || isDeletedLink(editor.authoringState, target)
-                    ? null : this.renderEditButton(polyline)}
-                {isAuthoringMode ? deleteButton : null}
+                {showEditOrDeleteButtons ? this.renderEditTypeButton(polyline) : null}
+                {showEditOrDeleteButtons ? this.renderEditPropertiesButton(polyline) : null}
+                {showEditOrDeleteButtons ? this.renderDeleteButton(polyline) : null}
                 {this.renderEditLabelButton(target)}
                 {this.renderLabelHighlighter(target)}
             </div>
@@ -416,16 +472,22 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
         editor.deleteLink(target.data);
     }
 
-    private onEdit = () => {
-        const {editor} = this.context.ontodiaWorkspace;
+    private onEditType = () => {
+        const {overlayController} = this.context.ontodiaWorkspace;
         const target = this.state.target!;
-        editor.showEditLinkForm(target);
+        overlayController.showEditLinkTypeForm(target);
+    }
+
+    private onEditProperties = () => {
+        const {overlayController} = this.context.ontodiaWorkspace;
+        const target = this.state.target!;
+        overlayController.showEditLinkPropertiesForm(target);
     }
 
     private onEditLabel = () => {
-        const {editor} = this.context.ontodiaWorkspace;
+        const {overlayController} = this.context.ontodiaWorkspace;
         const target = this.state.target!;
-        editor.showEditLinkLabelForm(target);
+        overlayController.showEditLinkLabelForm(target);
     }
 }
 

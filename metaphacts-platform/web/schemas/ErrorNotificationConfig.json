@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "className": {
+            "type": "string"
+        },
+        "defaultExpanded": {
+            "type": "boolean"
+        },
+        "errorMessage": {
+        },
+        "title": {
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "title",
+        "errorMessage",
+        "className",
+        "defaultExpanded"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,6 +47,9 @@ import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.metaphacts.services.storage.api.ObjectMetadata;
@@ -54,11 +57,15 @@ import com.metaphacts.services.storage.api.ObjectRecord;
 import com.metaphacts.services.storage.api.ObjectStorage;
 import com.metaphacts.services.storage.api.PathMapping;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.StorageConfigException;
 import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.services.storage.file.InMemoryStorage;
 
 public class TestPlatformStorage implements PlatformStorage {
+
+    private static final Logger logger = LogManager.getLogger(TestPlatformStorage.class);
+
     public static final String STORAGE_ID = PlatformStorage.DEVELOPMENT_RUNTIME_STORAGE_KEY;
 
     private final PathMapping paths = new PathMapping.Default();
@@ -80,7 +87,11 @@ public class TestPlatformStorage implements PlatformStorage {
     }
 
     public void addStorage(String storageId) {
-        storages.put(storageId, new InMemoryStorage());
+        addStorage(storageId, new InMemoryStorage());
+    }
+
+    public void addStorage(String storageId, ObjectStorage storage) {
+        storages.put(storageId, storage);
         if (!searchOrder.contains(storageId)) {
             searchOrder = Lists.newArrayList(searchOrder);
             searchOrder.add(storageId);
@@ -138,7 +149,7 @@ public class TestPlatformStorage implements PlatformStorage {
     public ObjectStorage getStorage(String appId) {
         ObjectStorage storage = storages.get(appId);
         if (storage == null) {
-            throw new RuntimeException("Cannot get storage for unknown appId = \"" + appId + "\"");
+            throw new IllegalArgumentException("Cannot get storage for unknown appId = \"" + appId + "\"");
         }
         return storage;
     }
@@ -153,5 +164,10 @@ public class TestPlatformStorage implements PlatformStorage {
         return ImmutableList.of(
             new PlatformStorage.StorageStatus(STORAGE_ID, true)
         );
+    }
+
+    @Override
+    public void refreshDynamicStorages() throws StorageConfigException, StorageException {
+        logger.warn("Refreshing dynamic storages is not implemented in TestPlatformStorage");
     }
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -206,7 +206,7 @@ const PLACEHOLDER_SUBJECT = Rdf.iri(vocabularies.VocabPlatform._NAMESPACE + 'For
  *    ]'>
  *      <semantic-form-select-input for="type"></semantic-form-select-input>
  *      <semantic-form-text-input for="label"></semantic-form-text-input>
- *      <button type='button' name='submit' className='btn btn-default'>Search</button>
+ *      <button type='button' name='submit' className='btn btn-secondary'>Search</button>
  *  </semantic-search-form-query>
  */
 export class FormQuery extends React.Component<SemanticFormBasedQueryConfig> {

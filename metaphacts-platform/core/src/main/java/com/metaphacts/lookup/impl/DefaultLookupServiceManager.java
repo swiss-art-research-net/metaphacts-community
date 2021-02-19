@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -58,6 +57,7 @@ import org.eclipse.rdf4j.repository.config.RepositoryConfig;
 import org.eclipse.rdf4j.repository.config.RepositoryImplConfig;
 
 import com.github.jsonldjava.shaded.com.google.common.base.Throwables;
+import com.google.common.base.Strings;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -125,6 +125,15 @@ public class DefaultLookupServiceManager implements LookupServiceManager, Lookup
         
         // use companion LookupService for the default repository 
         return getLookupServiceByName(RepositoryManager.DEFAULT_REPOSITORY_ID);
+    }
+
+    @Override
+    public Optional<LookupService> getDefaultExternalLookupService() {
+        String defaultLookupServiceName = config.getDefaultExternalLookupServiceName();
+        if (!Strings.isNullOrEmpty(defaultLookupServiceName)) {
+            return getLookupServiceByName(defaultLookupServiceName);
+        }
+        return getDefaultLookupService();
     }
     
     @Override
@@ -332,8 +341,8 @@ public class DefaultLookupServiceManager implements LookupServiceManager, Lookup
     
     protected void cleanupLookupServices() {
         try {
-            Map<String, LookupService> lookupServices = this.cache.get(CACHE_ENTRY).getLookupServices();
-            if (lookupServices != null) {
+            Optional.ofNullable(this.cache.getIfPresent(CACHE_ENTRY)).map(map -> map.getLookupServices())
+                    .ifPresent(lookupServices -> {
                 logger.debug("Cleaning up " + lookupServices.size() + " LookupServices");
                 lookupServices.forEach((id, service) -> {
                     if (service instanceof Closeable) {
@@ -347,8 +356,8 @@ public class DefaultLookupServiceManager implements LookupServiceManager, Lookup
                         }
                     }
                 });
-            }
-        } catch (ExecutionException e) {
+                    });
+        } catch (Exception e) {
             logger.warn("Failed to cleanup LookupServices: " + e.getMessage());
             logger.debug("Details: ", e);
         }

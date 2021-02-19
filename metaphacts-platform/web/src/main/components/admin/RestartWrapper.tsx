@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -101,7 +101,7 @@ export class RestartWrapper extends React.Component {
     const {children} = this.props;
     const childrenNumber = React.Children.count(children);
     if (childrenNumber !== 1) {
-      return <Alert bsStyle='warning'>
+      return <Alert variant='warning'>
         <ErrorPresenter error={new Error(
           `Expected children number is 1, but provided ${childrenNumber}`
         )}/>

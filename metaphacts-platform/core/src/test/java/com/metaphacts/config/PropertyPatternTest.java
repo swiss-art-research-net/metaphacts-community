@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,17 +39,19 @@
  */
 package com.metaphacts.config;
 
-import com.google.inject.Inject;
-import com.metaphacts.junit.AbstractIntegrationTest;
-import com.metaphacts.junit.NamespaceRule;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+
 import org.eclipse.rdf4j.query.MalformedQueryException;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
+import com.google.inject.Inject;
+import com.metaphacts.junit.AbstractIntegrationTest;
+import com.metaphacts.junit.NamespaceRule;
 
 /**
  * Test cases for {@link PropertyPattern}
@@ -128,7 +130,7 @@ public class PropertyPatternTest extends AbstractIntegrationTest {
 
     private void checkIfPatternRenders(PropertyPattern pattern) {
         String formatted = pattern.format(TEST_SUBJECT_NAME, TEST_VALUE_NAME);
-        Assert.assertThat(
+        MatcherAssert.assertThat(
             "Pattern.format should replace ?subject -> ?testSub and ?value -> ?testPropVal",
             formatted,
             allOf(

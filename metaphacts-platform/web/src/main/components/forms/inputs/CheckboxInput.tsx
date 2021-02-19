@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,21 +39,43 @@
  */
 import * as React from 'react';
 import * as Kefir from 'kefir';
-import * as Immutable from 'immutable';
 import * as classnames from 'classnames';
 
 import { Rdf } from 'platform/api/rdf';
 
 import { FieldDefinition } from '../FieldDefinition';
 import {
-  FieldState, FieldValue, ErrorKind, LabeledValue, EmptyValue, CompositeValue, FieldError,
+  FieldState, FieldValue, ErrorKind, EmptyValue, CompositeValue, FieldError,
 } from '../FieldValues';
 import {
-  MultipleValuesInput, MultipleValuesProps, MultipleValuesHandler, MultipleValuesHandlerProps,
-  ValuesWithErrors
+  MultipleValuesInput, MultipleValuesConfig, MultipleValuesProps, MultipleValuesHandler,
+  MultipleValuesHandlerProps, ValuesWithErrors
 } from './MultipleValuesInput';
 
-const CHECKBOX_CLASS = 'semantic-form-checkbox-input';
+/**
+ * Form input displayed as a single checkbox with binary status to exclusively handle
+ * `xsd:boolean` values.
+ *
+ * If the checkbox is checked it will persist `"true"^^xsd:boolean` literal value,
+ * otherwise `"false"^^xsd:boolean`.
+ *
+ * Missing or non-boolean value is represented as checkbox in "indeterminate" state.
+ *
+ * **Example**:
+ * ```
+ * <semantic-form-checkbox-input for='field-name'>
+ * </semantic-form-checkbox-input>
+ * ```
+ */
+interface SemanticFormCheckboxInputConfig extends MultipleValuesConfig {
+  /**
+   * Adds custom CSS class to checkbox.
+   */
+  className?: string;
+}
+
+export interface CheckboxInputProps
+  extends SemanticFormCheckboxInputConfig, MultipleValuesProps {}
 
 enum CheckboxState {
   Unchecked = 0,
@@ -61,26 +83,11 @@ enum CheckboxState {
   Indeterminate,
 }
 
-export interface CheckboxInputProps extends MultipleValuesProps {
-  /**
-   * Allow to add custom css-class of Checkbox.
-   */
-  className?: string;
-}
-
 const TRUE_VALUE = Rdf.literal(true);
 const FALSE_VALUE = Rdf.literal(false);
 
-/**
- * The component renders as a single checkbox with binary status, i.e. to exclusively handle
- * xsd:boolean values. If the checkbox is checked will persist true^^xsd:boolean
- * and if it is unchecked it will persist to false^^xsd:boolean.
- *
- * @example
- * // default using, set type='checkbox' by default
- * <semantic-form-checkbox-input for='field-name'></semantic-form-checkbox-input>
- *
- */
+const CHECKBOX_CLASS = 'semantic-form-checkbox-input';
+
 export class CheckboxInput extends MultipleValuesInput<CheckboxInputProps, {}> {
   constructor(props: CheckboxInputProps, context: any) {
     super(props, context);

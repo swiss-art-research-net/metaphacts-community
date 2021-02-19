@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,7 @@ import { OrderedMap } from 'immutable';
 import * as Maybe from 'data.maybe';
 
 import { SemanticContext, SemanticContextProvider } from 'platform/api/components';
+import { BuiltInEvents, listen } from 'platform/api/events';
 
 interface Props extends ReactProps<OverlaySystem> {
 
@@ -70,6 +71,14 @@ export class OverlaySystem extends Component<Props, State> {
     this.state = {
       dialogs: OrderedMap<string, StateItem>(),
     };
+  }
+
+  componentDidMount() {
+    listen({
+      eventType: BuiltInEvents.DialogHideAll,
+    }).observe({
+      value: () => this.hideAll()
+    });
   }
 
   render() {

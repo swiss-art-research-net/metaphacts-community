@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -206,10 +206,11 @@ export function saveDiagram(
   metadata: ReadonlyArray<Rdf.Triple>
 ): Kefir.Property<Rdf.Iri> {
   const jsonldDiagram = makeDiagramResource(diagram, name, metadata);
+  const slug = name.toLowerCase().replace(/ /g, '_').replace(/\W/g, '');
   return new LdpService(VocabPlatform.OntodiaDiagramContainer.value).createResourceRequest(
     VocabPlatform.OntodiaDiagramContainer,
     {data: JSON.stringify(jsonldDiagram), format: 'application/ld+json'},
-    maybe.Just(name)
+    slug.replace(/_/g, '') ? maybe.Just(slug) : maybe.Nothing()
   ).map(iri => Rdf.iri(iri));
 }
 

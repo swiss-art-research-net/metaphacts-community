@@ -23,14 +23,19 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const resolveTheme = require('./theme');
 
-const devMode = process.env.NODE_ENV !== 'production';
+/**
+ * @typedef {Object} PlatformWebpackOptions
+ * @property {'dev' | 'prod'} buildMode
+ */
 
 /**
  * @param {ReturnType<import('./defaults')>} defaults
+ * @param {PlatformWebpackOptions} platformOptions
  * @returns {import('webpack').Configuration}
  */
-module.exports = function(defaults) {
+module.exports = function(defaults, platformOptions) {
     const {themeDir} = resolveTheme(defaults);
+  const {buildMode} = platformOptions;
     return {
         entry: {
             'basic_styling': ['basic-styles.scss'],
@@ -126,8 +131,8 @@ module.exports = function(defaults) {
         },
         plugins: [
           new MiniCssExtractPlugin({
-            filename: devMode ? 'basic-styles.css' : 'basic-styles.[hash].css',
-            chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
+            filename: buildMode === 'dev' ? 'basic-styles.css' : 'basic-styles.[hash].css',
+            chunkFilename: buildMode === 'dev' ? '[id].css' : '[id].[hash].css',
           }),
           new webpack.DllPlugin({
             path: path.join(__dirname, "assets/dll-manifest/[name]-manifest.json"),

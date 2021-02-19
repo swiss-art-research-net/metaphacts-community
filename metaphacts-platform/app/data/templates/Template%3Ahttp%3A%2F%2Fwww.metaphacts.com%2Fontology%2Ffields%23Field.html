@@ -22,7 +22,7 @@
     <div class='pull-right'>
       [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#fieldDefinitionContainer>:export:any")]]
         <mp-ldp-export-resource iri='[[this]]'>
-          <button class="btn btn-default" style='margin-left: 10px'>
+          <button class="btn btn-secondary" style='margin-left: 10px'>
             <i class='fa fa-download' aria-hidden='true'></i> Export
           </button>
         </mp-ldp-export-resource>
@@ -30,7 +30,7 @@
       
       [[#if (hasPermission "api:ldp:container:<http://www.metaphacts.com/ontologies/platform#fieldDefinitionContainer>:create:any")]]
         <mp-ldp-duplicate-resource-action iri="[[this]]" container="http://www.metaphacts.com/ontologies/platform#fieldDefinitionContainer">
-          <button class="btn btn-default" style="margin-right:8px;"><i class="fa fa-files-o" aria-hidden="true"></i> Duplicate</button>
+          <button class="btn btn-secondary" style="margin-right:8px;"><i class="fa fa-files-o" aria-hidden="true"></i> Duplicate</button>
         </mp-ldp-duplicate-resource-action>
       [[/if]]
       

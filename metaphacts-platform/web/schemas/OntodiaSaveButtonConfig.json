@@ -13,12 +13,17 @@
         "saveDiagramLabel": {
             "description": "Custom label for \"Save diagram\" button.",
             "type": "string"
+        },
+        "template": {
+            "description": "Provide a custom template. Requires the ID to be set.\n\n**Example**:\n```\n<mp-event-trigger id='event-trigger'\n   type='Ontodia.Save'\n   data='{\"persistChanges\": true, \"saveDiagram\": true}'\n   targets='[\"{{eventTarget}}\"]'>\n   <button>Save changes and diagram</button>\n</mp-event-trigger>\n```",
+            "type": "string"
         }
     },
     "propertyOrder": [
         "saveDiagramLabel",
         "persistChangesLabel",
-        "dropup"
+        "dropup",
+        "template"
     ],
     "type": "object"
 }

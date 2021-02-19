@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,26 +43,26 @@ $metaphacts-color-gray: #D2CDC8;
 $metaphacts-color-darkblue: #142948;
 $metaphacts-color-lightpurple: #D2D3E1;
 
-$color-verylightgrey: #FAFAFA;
-$color-lightgrey: #DDD;
-$color-lightmediumgrey: #888;
-$color-mediumgrey: #666;
-$color-darkgrey: #2F323B;
-
 $font-family-sans-serif:  "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
-$font-size-base: 15px;
+// global font-size other sizes are based on, i.e. 1rem == font-size-global
+$font-size-global: 15px;
+$font-size-base: 1rem;
 $line-height-base: 1.428571429; // 20/14
 $line-height-computed: floor(($font-size-base * $line-height-base));
-$padding-base-vertical: 10px;
-$padding-base-horizontal: 12px;
 
-$border-radius-base: 0;
-$border-radius-large: 0;
+$navbar-dark-color: #ffffff;
+$navbar-nav-link-padding-x: 1rem;
 
-$input-height-base: ($line-height-computed + ($padding-base-vertical * 2));
-$input-border-radius: 0;
-$input-border-radius-large: 0;
-$input-border-radius-small: 0;
+// Not a bootstrap variable with bootstrap 4, but kept here because it's commonly used.
+// Instead of this, more specialized variables from bootstrap should be used.
+$padding-base-vertical: 0.7rem;
+$padding-base-horizontal: 0.9rem;
+
+$input-border-radius: 4px;
+$input-border-radius-lg: 4px;
+$input-border-radius-sm: 2px;
+
+$badge-border-radius: 0.5rem;
 
 /* key page element dimensions */
 $breadcrumb-bar-height: 44px;

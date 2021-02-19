@@ -1,7 +1,7 @@
 buildscript {
 	dependencies {
 		classpath "gradle.plugin.org.gretty:gretty:3.0.3"
-		classpath "gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:4.4.4"
+		classpath "gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:4.5.0"
 	}
 	repositories {
 		maven {
@@ -18,13 +18,13 @@ project.ext {
 	buildJsonPath = setting('buildjson', 'BUILD_JSON', null)
 	
 	if (buildJsonPath == null) {
-		throw new GradleException("Cannot find build configuration file. Please specify it by system property -Dbuildjson=<path-to-config>");
+		throw new GradleException("Cannot find build configuration file. Please specify its location using the system property 'buildjson'.\n\nHint: this is easiest done by creating 'gradle.properties' in the project root from 'gradle.properties.template'");
 	}
 
 	buildConfig = parseBuildConfig(project.file(buildJsonPath))
 }
 
-version = '3.6.0'
+version = '4.0.0'
 group = 'com.metaphacts'
 project.ext.vendor = 'metaphacts GmbH'
 project.ext.buildDate = new Date()
@@ -37,6 +37,14 @@ logger.lifecycle("Run 'gradlew help' to get further help")
 
 apply plugin: 'java'
 
+// determine types of sub projects for specific configurations
+def javaProjects = subprojects.findAll { it.parent != null && (it.name == 'core' || it.name == 'client-api') }
+def webProjects = subprojects.findAll { it.parent != null && (it.name == 'web' || it.name == 'webpack' || it.name == 'ontodia') }
+def appProjects = subprojects.findAll { it.parent != null && it.parent.name == 'apps' }
+def selectedRuntimeApps = findRuntimeAppProjects()
+
+// expose app projects for sub scripts
+project.ext.allAppProjects = appProjects;
 
 apply from: 'project/build.license.gradle'
 apply from: 'project/build.checks.gradle'
@@ -49,25 +57,21 @@ allprojects {
 	buildDir 'target'
 }
 
-def javaProjects = subprojects.findAll { it.parent != null && (it.name == 'core' || it.name == 'client-api') }
-def webProjects = subprojects.findAll { it.parent != null && (it.name == 'web' || it.name == 'webpack' || it.name == 'ontodia') }
-def appProjects = subprojects.findAll { it.parent != null && it.parent.name == 'apps' }
-def selectedRuntimeApps = findRuntimeAppProjects()
-
 logger.lifecycle("Runtime apps: " + selectedRuntimeApps);
 
 configure(allprojects) {
 	
 	// version constants
 	project.ext {
-		RDF4J_VERSION = "3.4.2"
+		RDF4J_VERSION = "3.5.0"
 		LOG4J_VERSION = "2.13.3"
- 		JERSEY_VERSION = "2.22.2"
-		JACKSON_VERSION = "2.10.1"
-		GUICE_VERSION = "4.2.2"
-		GUAVA_VERSION = "28.2-jre"
-		SHIRO_VERSION = "1.6.0"
-		PAC4J_VERSION = "4.0.0"
+ 		JERSEY_VERSION = "2.33"
+		JACKSON_VERSION = "2.11.4"
+		GUICE_VERSION = "4.2.3"
+		GUAVA_VERSION = "30.1-jre"
+		SHIRO_VERSION = "1.7.0"
+		PAC4J_VERSION = "4.3.0"
+		JGIT_VERSION = "5.9.0.202009080501-r"
 	}
 }
 
@@ -83,8 +87,12 @@ def javaProjectDefinitionCommon = {
 	apply plugin: 'license'
 	apply plugin: 'com.github.spotbugs'
 	
-	sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+	sourceCompatibility = 11
+	targetCompatibility = 11
+	
+	// specifically also set java version on the root project
+	rootProject.sourceCompatibility = 11
+	rootProject.targetCompatibility = 11
 	
 	configurations {
 	
@@ -122,18 +130,15 @@ def javaProjectDefinitionCommon = {
 		compileOnly "com.github.spotbugs:spotbugs-annotations:${spotbugs.toolVersion.get()}"
 		
 		// test dependencies
-		testImplementation group: 'junit', name: 'junit', version: '4.10'
-		testImplementation group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'
-		testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
-		testImplementation group: 'com.novocode', name: 'junit-interface', version: '0.11'
-		testImplementation group: 'org.mockito', name: 'mockito-core', version: '1.9.5'
-		testImplementation group: 'org.jukito', name: 'jukito', version: '1.5'
+		testImplementation group: 'junit', name: 'junit', version: '4.13.1'
+		testImplementation group: 'org.hamcrest', name: 'hamcrest-library', version: '2.2'
+		testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.6.28'
 		
 		testImplementation group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-inmemory', version: JERSEY_VERSION
 		testImplementation group: 'com.github.sdorra', name: 'shiro-unit', version: '1.0.1', transitive: false
 		testImplementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: JERSEY_VERSION
 		
-		testImplementation('org.jukito:jukito:1.4.1') {
+		testImplementation('org.jukito:jukito:1.5') {
 			exclude group: 'commons-beanutils', module: 'commons-beanutils'
 			exclude group: 'com.google.inject', module: 'guice'
 		}
@@ -159,7 +164,8 @@ def javaProjectDefinitionCommon = {
 		reports {
 			junitXml.enabled = true
 			junitXml.destination = rootProject.file('target/reports/test/' + project.parent.name + '-' + project.name)
-			html.enabled = false
+			html.enabled = true
+			html.destination = rootProject.file('target/reports/test/' + project.parent.name + '-' + project.name)
 		}
 	}
 	
@@ -196,6 +202,9 @@ def javaProjectDefinitionCommon = {
 					// remove compiled test classes and resources from target folders 
 					// => this is already contained via the direct project import on the classpath
 					classpath.entries.removeAll { it.path.contains('target/classes/') || it.path.contains('target/resources/') }
+					// workaround for Gradle 6.7 (see https://github.com/gradle/gradle/issues/12354#issuecomment-717181881)
+					classpath.entries.findAll { it instanceof org.gradle.plugins.ide.eclipse.model.ProjectDependency }
+						.each { it.entryAttributes['without_test_code'] = 'false' }
 				}
 			}
 		}
@@ -241,6 +250,28 @@ configure(webProjects) {
 				// use --mutex to avoid race-condition in parallel build on CI
 				// see https://github.com/yarnpkg/yarn/issues/683
 				commandLine generateCmdForOS(['yarn', '--mutex', 'network'])
+			}
+		}
+	}
+	
+	task yarnAudit {
+	
+		def outputFile = rootProject.file('target/reports/dependencies/yarn-audit-' + project.parent.name + '-' + project.name + '.html')
+		
+		outputs.file outputFile
+				
+		// uses https://www.npmjs.com/package/yarn-audit-html
+		// make sure to install using "yarn global add yarn-audit-html"
+		// manual command: yarn audit --json | yarn-audit-html
+		
+		doLast {
+			
+			outputFile.parentFile.mkdirs();
+			def res = project.exec {
+				commandLine generateCmdForOS(['bash', '-c', 'yarn audit --json | yarn-audit-html --output "' + outputFile.absolutePath + '"'])
+			}
+			if(res.getExitValue() != 0) {
+				project.logger.lifecycle('Failed to generate yarn audit. Hint: requires bash and yarn-audit-htm (install using "yarn global add yarn-audit-html")')
 			}
 		}
 	}
@@ -350,9 +381,10 @@ configure(appProjects) {
 	def appsTargetFolder = rootProject.file("target/apps")
 	def deployFolder = project.file("target/deploy");
 
-	task deploy(type: Copy) {
+	task deploy(type: Copy, dependsOn: 'generateLicenseReport') {
 		into deployFolder;
 		with appCopySpec;
+		from 'target/reports/licenses/THIRDPARTY.html'
 	}
 
 	task appZip(type: Zip, dependsOn: 'deploy') {
@@ -417,6 +449,9 @@ configure(project(':jetty')) {
 		implementation project(':' + rootProject.ext.buildConfig.distribution + ':core')
 	}
 	
+	sourceCompatibility = 11
+	targetCompatibility = 11
+	
 	buildDir = rootProject.file('target/jetty/')
 	webAppDirName = rootProject.file(rootProject.ext.buildConfig.mainWebapp ?: 'metaphacts-platform/webapp')
 	
@@ -428,6 +463,7 @@ configure(project(':jetty')) {
 		
 		// external configurations
 		def runtimeDir = rootProject.file(setting('runtimeDirectory', 'RUNTIME_DIRECTORY', 'runtime'))
+		def storageDir = rootProject.file(setting('storageDirectory', 'STORAGE_DIRECTORY', runtimeDir.toString()))
 		def logProfile = setting('log', 'LOG', 'log4j2-debug')
 		def shiroFolder = rootProject.ext.buildConfig.defaultShiroIniFolder ?: 'metaphacts-platform/app/config'
 		
@@ -435,6 +471,7 @@ configure(project(':jetty')) {
 		
 		// dev environment settings
 		jvmArgs << "-DruntimeDirectory=" + runtimeDir
+		jvmArgs << "-DstorageDirectory=" + storageDir
 		jvmArgs << "-Dcom.metaphacts.config.baselocation=" + (new File(runtimeDir, 'config'))
 		jvmArgs << "-Dconfig.mutablePluginApps=true"	// TODO check if this is actually applicable
 		jvmArgs << "-Dlog4j.configurationFile=" + rootProject.file('metaphacts-platform/webapp/etc/' + logProfile + '.xml').toURI().toString()

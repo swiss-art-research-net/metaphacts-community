@@ -1,0 +1,208 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "BindSparqlParam": {
+            "description": "Defines a binding input parameters, tells if the parameter is optional or not\nand what datatype the parameter should have.",
+            "properties": {
+                "datatype": {
+                    "description": "Defines xsd datatype of the parameter",
+                    "type": "string"
+                },
+                "required": {
+                    "description": "Tells whether the token is required parameter or not",
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "Defines the type of parameter",
+                    "enum": [
+                        "bind"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "required",
+                "datatype"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
+        "LookupDataQuery": {
+            "description": "Queries of this type are processed using Reconciliation Service.",
+            "properties": {
+                "defaultTerm": {
+                    "description": "Provides a default query term for the case when keyword is not provided via arguments",
+                    "type": "string"
+                },
+                "entityType": {
+                    "description": "Filter result by specified entityType. See documentation for Reconciliation API.",
+                    "type": "string"
+                },
+                "limit": {
+                    "description": "Tells for how much results we are looking for",
+                    "type": "number"
+                },
+                "lookupServiceName": {
+                    "description": "Direct query to a specific implementation of the lookup service.\nIf not specified the default lookup service is used.",
+                    "type": "string"
+                },
+                "preferredLanguage": {
+                    "description": "Language tag (or comma-separated list of language tags with decreasing order of preference)\nof the preferred language(s) (optional). A language tag consists of the language and\noptionally variant, e.g. `de` or `de-CH`.\nSee <a href=\"https://tools.ietf.org/html/rfc4647\">RFC4647</a> for details.\nExamples: `ru`, `ru,fr-CH,de,en`\nThe default value is the user selected preferred language.\nSo the default language can be changed using dedicated switched in the toolbar\n(if provided more then one preferred language, otherwise the switch is hidden).",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of the query. Should be always `lookup` in order to be of a type LookupDataQuery",
+                    "enum": [
+                        "lookup"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "defaultTerm",
+                "limit",
+                "entityType",
+                "lookupServiceName",
+                "preferredLanguage"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
+        "SparqlDataQuery": {
+            "description": "Queries of this types are processed using SparqlClient the same way as ordinary SPARQL queries.",
+            "properties": {
+                "params": {
+                    "additionalProperties": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/BindSparqlParam"
+                            },
+                            {
+                                "$ref": "#/definitions/TokenSparqlParam"
+                            }
+                        ]
+                    },
+                    "description": "Dictionary of input parameters where for each defined input variable\nthere is a corresponding definition.",
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "query": {
+                    "description": "SPARQL SELECT query.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of the query. Should be always `sparql` in order to be of a type SparqlQuery",
+                    "enum": [
+                        "sparql"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "query",
+                "params"
+            ],
+            "required": [
+                "query",
+                "type"
+            ],
+            "type": "object"
+        },
+        "TokenSparqlParam": {
+            "description": "Defines a token input parameters and tells whether it should be escaped and tokenized or not.\nAlso here it's possible to specify if the parameter is optional or not.\nIt's expected that token is always of `xsd:string` datatype.",
+            "properties": {
+                "escapeLuceneSyntax": {
+                    "description": "Tells whether SparqlClient should escape the search string or not.\n\nDeprecated: escaping will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
+                "required": {
+                    "description": "Tells whether the token is required parameter or not",
+                    "type": "boolean"
+                },
+                "tokenizeLuceneQuery": {
+                    "description": "Tells whether SparqlClient should tokenize lucene query or not.\n\nDeprecated: tokenization will be applied automatically based on SPARQL query.",
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "Defines the type of parameter",
+                    "enum": [
+                        "token"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "required",
+                "escapeLuceneSyntax",
+                "tokenizeLuceneQuery"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "lookupQuery": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/SparqlDataQuery"
+                },
+                {
+                    "$ref": "#/definitions/LookupDataQuery"
+                }
+            ]
+        },
+        "placeholder": {
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        },
+        "template": {
+            "type": "string"
+        },
+        "valueBindingName": {
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "template",
+        "placeholder",
+        "lookupQuery",
+        "valueBindingName",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,13 +48,28 @@ import { Component } from 'platform/api/components';
 import { Spinner } from 'platform/components/ui/spinner';
 import * as _ from 'lodash';
 
-interface State {
-  isLoading: boolean;
-  data?: any;
-  loadingError?: any
-}
-
-interface Props {
+/**
+ * Renders a JSON result from a GET REST request as table or
+ * according to the specified handlebars template.
+ *
+ * **Example**:
+ * ```
+ * <mp-json-renderer
+ *   get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'
+ *   template='{{> t}}'>
+ *   <template id='t'>
+ *     <ul>{{#each this as |e|}}<li>{{@index}} : {{e}}</li> {{/each}}</ul>
+ *   </template>
+ * </mp-json-renderer>
+ * ```
+ * With default table rendering:
+ * ```
+ * <mp-json-renderer
+ *   get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'>
+ * </mp-json-renderer>
+ * ```
+ */
+interface JsonRendererConfig {
   /**
    * A handlebars template. The json object retrieved from the getUrl
    *  will be set as handlebars context if a custom template is provided
@@ -70,26 +85,18 @@ interface Props {
   getUrl: string;
 }
 
-/**
- * Renders a JSON result from a GET REST request as table or
- * according to the specified handlebars template.
- * @see Props
- * @example
- *  <mp-json-renderer
- *      get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'
- *      template='<ul>{{#each this as |e|}}<li>{{@index}} : {{e}}</li> {{/each}}</ul>'
- *  ></mp-json-renderer>
- *
- *  With default table rendering:
- *  <mp-json-renderer
- *      get-url='/rest/data/rdf/namespace/getRegisteredPrefixes'
- *  ></mp-json-renderer>
- */
-export class GenericJsonRenderer<T> extends Component<Props, State> {
+export type JsonRendererProps = JsonRendererConfig;
 
+interface State {
+  isLoading: boolean;
+  data?: any;
+  loadingError?: any
+}
+
+export class JsonRenderer extends Component<JsonRendererProps, State> {
   private readonly cancellation = new Cancellation();
 
-  constructor(props: Props, state: State) {
+  constructor(props: JsonRendererProps, state: State) {
     super(props, state);
     this.state = {
       isLoading: true
@@ -99,10 +106,10 @@ export class GenericJsonRenderer<T> extends Component<Props, State> {
   public render() {
     const {loadingError, isLoading, data} = this.state;
     const {getUrl, template} = this.props;
-    if (loadingError){
-      return <Alert bsStyle='warning'>
+    if (loadingError) {
+      return <Alert variant='warning'>
         <ErrorPresenter error={loadingError} />
-      </Alert>
+      </Alert>;
     }
     if (isLoading) {
         return <Spinner />;
@@ -125,18 +132,18 @@ export class GenericJsonRenderer<T> extends Component<Props, State> {
 
   public componentDidMount() {
     const  {getUrl} = this.props;
-    this.cancellation.map(GenericRestService.getJson<T[] | T>(getUrl)).observe({
+    this.cancellation.map(GenericRestService.getJson(getUrl)).observe({
       value: value => {
         this.setState({
           isLoading: false,
           data: value,
-        })
+        });
       },
       error: error => {
         this.setState({
           isLoading: false,
           loadingError: error
-        })
+        });
       }
     });
   }
@@ -161,7 +168,7 @@ export class GenericJsonRenderer<T> extends Component<Props, State> {
     // we check whether the array of is of flat objects / primitives only,
     // i.e. _.some checks whether function / predicate return true for element in the array
     if (data.every(isPrimitive)) {
-      return data.map(obj => this.renderData(obj, arrayKey))
+      return data.map(obj => this.renderData(obj, arrayKey));
     }
 
     // get unique list of keys
@@ -185,7 +192,9 @@ export class GenericJsonRenderer<T> extends Component<Props, State> {
             <tr key={`${arrayKey}-row-${i}`}>
               <td key={`${arrayKey}-column-key-${i}`}>{i}</td>
               {keys.map(key => (
-                <td key={`${arrayKey}-column-value-${i}-${key}`}>{this.renderData(object[key], i)}</td>
+                <td key={`${arrayKey}-column-value-${i}-${key}`}>
+                  {this.renderData(object[key], i)}
+                </td>
               ))}
             </tr>
           ))}
@@ -203,7 +212,7 @@ export class GenericJsonRenderer<T> extends Component<Props, State> {
               {key}
             </td>
             <td key={`${objectKey}-column-value-${key}`}>
-              {this.renderData(data[key],`${objectKey}-column-nested-value-${key}`)}
+              {this.renderData(data[key], `${objectKey}-column-nested-value-${key}`)}
             </td>
           </tr>
         ))}
@@ -219,4 +228,4 @@ function isPrimitive(val: any) {
   return typeof val !== 'function';
 }
 
-export default GenericJsonRenderer;
+export default JsonRenderer;

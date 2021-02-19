@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,8 +54,8 @@ public class OrderableComparatorTest {
 
         Object o1 = new OrderableElement(OrderableComparator.EARLY);
         Object o2 = new OrderableElement(OrderableComparator.VERY_END);
-        Object o3 = new Integer(42); // sort by number value
-        Object o3a = new Double(12); // sort by number value
+        Object o3 = Integer.valueOf(42); // sort by number value
+        Object o3a = Double.valueOf(12d); // sort by number value
         Object o4 = new String("Hello World"); // sort by class name
         Object o5 = new ABCDEF();
         Object o6 = new AABC();

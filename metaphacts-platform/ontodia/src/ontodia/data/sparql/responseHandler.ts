@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,7 @@ import {
 } from './sparqlModels';
 import {
     Dictionary, LinkTypeModel, ClassModel, ElementModel, LinkModel, Property, PropertyModel, LinkCount,
-    ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri, sameLink, hashLink
+    LinkedElement, ElementIri, ElementTypeIri, LinkIri, LinkTypeIri, PropertyTypeIri, sameLink, hashLink,
 } from '../model';
 
 import { getOrCreateSetInMap } from '../../viewUtils/collections';
@@ -411,6 +411,7 @@ export function getLinksInfo(
             sourceId: binding.source.value as ElementIri,
             linkTypeId: binding.type.value as LinkTypeIri,
             targetId: binding.target.value as ElementIri,
+            linkIri: binding.linkIri ? binding.linkIri.value as LinkIri : undefined,
             properties: {},
         };
         if (links.has(model)) {
@@ -479,11 +480,12 @@ export function getFilteredData(
     sourceTypes?: ReadonlySet<ElementTypeIri>,
     linkByPredicateType: ReadonlyMap<string, readonly LinkConfiguration[]> = EMPTY_MAP,
     openWorldLinks: boolean = true
-): Dictionary<ElementModel> {
+): LinkedElement[] {
+    const instances: ElementIri[] = [];
     const instancesMap: Dictionary<ElementModel> = {};
     const resultTypes = new Map<ElementIri, Set<ElementTypeIri>>();
-    const outPredicates = new Map<ElementIri, Set<string>>();
-    const inPredicates = new Map<ElementIri, Set<string>>();
+    const outPredicates = new Map<ElementIri, Set<LinkTypeIri>>();
+    const inPredicates = new Map<ElementIri, Set<LinkTypeIri>>();
 
     for (const binding of response.results.bindings) {
         if (!isRdfIri(binding.inst)) {
@@ -494,6 +496,7 @@ export function getFilteredData(
         let model = instancesMap[iri];
         if (!model) {
             model = emptyElementInfo(iri);
+            instances.push(iri);
             instancesMap[iri] = model;
         }
         enrichElement(model, binding);
@@ -502,15 +505,18 @@ export function getFilteredData(
             getOrCreateSetInMap(resultTypes, iri).add(binding.classAll.value as ElementTypeIri);
         }
 
-        if (!openWorldLinks && binding.link && binding.direction) {
+        if (binding.link && binding.direction) {
             const predicates = binding.direction.value === 'out' ? outPredicates : inPredicates;
-            getOrCreateSetInMap(predicates, model.id).add(binding.link.value);
+            getOrCreateSetInMap(predicates, model.id).add(binding.link.value as LinkTypeIri);
         }
     }
 
     if (!openWorldLinks) {
-        for (const id of Object.keys(instancesMap)) {
-            const model = instancesMap[id]!;
+        for (const id of instances) {
+            const model = instancesMap[id];
+            if (!model) {
+                continue;
+            }
             const targetTypes = resultTypes.get(model.id);
             const doesMatchesDomain = (
                 matchesDomainForLink(sourceTypes, outPredicates.get(model.id), linkByPredicateType) &&
@@ -522,7 +528,23 @@ export function getFilteredData(
         }
     }
 
-    return instancesMap;
+    const result: LinkedElement[] = [];
+    for (const instanceIri of instances) {
+        const element = instancesMap[instanceIri];
+        if (element) {
+            const item: LinkedElement = {element, inLinks: [], outLinks: []};
+            const inLinks = inPredicates.get(instanceIri);
+            if (inLinks) {
+                inLinks.forEach(link => item.inLinks.push(link));
+            }
+            const outLinks = outPredicates.get(instanceIri);
+            if (outLinks) {
+                outLinks.forEach(link => item.outLinks.push(link));
+            }
+            result.push(item);
+        }
+    }
+    return result;
 }
 
 function matchesDomainForLink(

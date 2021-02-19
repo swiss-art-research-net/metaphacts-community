@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,26 +39,77 @@
  */
 package com.metaphacts.cache;
 
-import org.eclipse.rdf4j.model.IRI;
-
+import java.util.List;
 import java.util.Objects;
 
-public class LiteralCacheKey {
-    public final IRI iri;
-    public final String languageTag;
+import javax.validation.constraints.NotNull;
 
-    public LiteralCacheKey(IRI iri, String languageTag) {
+import org.eclipse.rdf4j.model.IRI;
+
+public class LiteralCacheKey {
+    private final IRI iri;
+    /**
+     * The non-null language tag which is used for cache lookups
+     * 
+     * @see #equals(Object)
+     * @see #hashCode()
+     */
+    private final @NotNull String languageTag;
+
+    /**
+     * The list of language tags in preference order
+     * 
+     * This list is expected to have a least one preferred language tag.
+     */
+    private final @NotNull List<String> preferredLanguages;
+
+    /**
+     * 
+     * @param iri
+     * @param preferredLanguages list of resolved language tags, must have at least
+     *                           one preferred language
+     * @throws IllegalArgumentException if the preferredLanguage parameter does not
+     *                                  have at least one language tag
+     */
+    public LiteralCacheKey(IRI iri, List<String> preferredLanguages) {
+        if (preferredLanguages == null || preferredLanguages.isEmpty()) {
+            throw new IllegalArgumentException("Expected at least one preferred language");
+        }
         this.iri = iri;
-        this.languageTag = languageTag;
+        this.preferredLanguages = preferredLanguages;
+        this.languageTag = preferredLanguages.get(0);
+    }
+
+    /**
+     * 
+     * @return the resource IRI
+     */
+    public IRI getIri() {
+        return this.iri;
+    }
+
+    /**
+     * 
+     * @return the language tag that is used for caching this entry
+     */
+    public String getLanguageTag() {
+        return this.languageTag;
+    }
+
+    /**
+     * 
+     * @return the non-null list of preferred language tags with at least one item
+     */
+    public List<String> getPreferredLanguages() {
+        return this.preferredLanguages;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LiteralCacheKey cacheKey = (LiteralCacheKey) o;
-        return Objects.equals(iri, cacheKey.iri) &&
-                Objects.equals(languageTag, cacheKey.languageTag);
+        LiteralCacheKey that = (LiteralCacheKey) o;
+        return Objects.equals(iri, that.iri) && Objects.equals(languageTag, that.languageTag);
     }
 
     @Override

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,16 @@ import * as N3 from 'n3';
 import type * as RdfJs from 'rdf-js';
 
 import * as Rdf from '../core/Rdf';
+
+// HACK: produce blank nodes with `_:` prefix as a workaround for old JSON-LD version
+// Should be fixed by updating JSON-LD.js library
+const WORKAROUND_DATA_FACTORY: RdfJs.DataFactory<any, any> = {
+  ...Rdf.DATA_FACTORY,
+  blankNode: (value?: string) => {
+    const original = Rdf.DATA_FACTORY.blankNode(value);
+    return original.value.startsWith('_:') ? original : Rdf.bnode('_:' + original.value);
+  }
+};
 
 registerTtlParser();
 registerGraphParser();
@@ -109,7 +119,7 @@ export function fromRdf(
 
 function registerTtlParser() {
   JsonLd.registerRDFParser('text/turtle', (input, callback) => {
-    const parser = new N3.Parser({factory: Rdf.DATA_FACTORY as RdfJs.DataFactory<any, any>});
+    const parser = new N3.Parser({factory: WORKAROUND_DATA_FACTORY});
     try {
       const quads = parser.parse(input);
       callback(undefined, quads as JsonLd.Quad[]);

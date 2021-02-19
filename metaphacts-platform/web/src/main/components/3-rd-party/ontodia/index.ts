@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,8 +45,9 @@ export { Canvas, subscribeOnCanvasCommands } from './Canvas';
 export { ToolbarComponent } from './ToolbarComponent';
 export { ClassTree, ClassTreeProps } from './ClassTree';
 export { InstancesSearch, InstancesSearchProps } from './InstancesSearch';
-export { Halo } from './Halo';
-export { HaloLink } from './HaloLink';
+export { Halo, HaloProps } from './Halo';
+export { HaloLink, HaloLinkProps } from './HaloLink';
+export { NavigationMenu, NavigationMenuProps } from './NavigationMenu';
 export { Navigator } from './Navigator';
 export { LinkTypesToolbox } from './LinkTypesToolbox';
 

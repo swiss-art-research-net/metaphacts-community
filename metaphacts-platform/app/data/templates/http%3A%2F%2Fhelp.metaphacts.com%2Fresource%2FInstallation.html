@@ -34,7 +34,7 @@
       <li>Login into docker hub with the account that has been activated for the private repository: <code>docker login</code></li>
       <li>Pull latest platform (and Blazegraph image)</li>
       <ul>
-        <li><code>docker pull metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.18-jre8-alpine-0b8d0de</code></li>
+        <li><code>docker pull metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.35-jre8-a53ba9b</code></li>
         <li><code>docker pull metaphacts/metaphacts-platform:3.4.0</code></li>
       </ul>
       <li>Create network for container interconnect</li>
@@ -44,7 +44,7 @@
       <li>(Optional) Prepare and run Blazegraph container</li>
       <ul>
         <li>Run Blazegraph container
-          <code>docker run --name blazegraph -d --restart=always --network=metaphacts_platform_network --env JAVA_OPTS="" -v /blazegraph-data metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.18-jre8-alpine-0b8d0de</code>
+          <code>docker run --name blazegraph -d --restart=always --network=metaphacts_platform_network --env JAVA_OPTS="" -v /blazegraph-data metaphacts/blazegraph-basic:2.2.0-20160908.003514-6-jetty9.4.35-jre8-a53ba9b</code>
         </li>
       </ul>
       <li>Prepare and Run Platform container</li>

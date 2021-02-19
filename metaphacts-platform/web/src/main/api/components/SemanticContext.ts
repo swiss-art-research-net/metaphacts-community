@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@ import * as PropTypes from 'prop-types';
 import { Rdf, turtle } from 'platform/api/rdf';
 import { QueryContext } from 'platform/api/sparql';
 
-export interface SemanticConfigProps {
+export interface SemanticContextProps {
   /**
    * Repository ID as registered in the platform repository manager.
    * Queries will be executed/evaluated against this repository.
@@ -53,29 +53,29 @@ export interface SemanticConfigProps {
   repository?: string;
   /**
    * Specifies the default graph, i.e. will be translated into a FROM <graphiri> clause.
-   * Several default graphs will be interpreted as a single merge graph, i.e. according to the SPARQL 1.1 standard: 
+   * Several default graphs will be interpreted as a single merge graph, i.e. according to the SPARQL 1.1 standard:
    * "A default graph consisting of the RDF merge of the graphs referred to in the FROM clauses."
-   * 
+   *
    * Defaults to an empty array, which usually means all graphs.
    * However, this may differ across database vendors (for example, in Stardog you will have to configure the database with query.all.graphs=true )
-   * 
+   *
    * See <a href='https://www.w3.org/TR/rdf-sparql-query/#unnamedGraph' target='_blank'> https://www.w3.org/TR/rdf-sparql-query/#unnamedGraph </a> for details.
-   * 
+   *
    * This functionality is still beta and not yet well tested.
    */
   defaultGraphs?: Array<string>;
   /**
    * List of named graphs that will restrict any GRAPH ?g{} clause within the query body to the enumerated graphs.
-   * 
+   *
    * See <a href='https://www.w3.org/TR/rdf-sparql-query/#namedGraphs' target='_blank'>https://www.w3.org/TR/rdf-sparql-query/#namedGraphs</a> for details.
-   * 
+   *
    * This functionality is still beta and not yet well tested.
    */
   namedGraphs?: Array<string>;
   /**
    * A string indexed map (object), of key value pairs to inject into queries.
    * The key is the plain binding name (without ? or $) and the value is the plain IRI or literal value to be injected.
-   * 
+   *
    * The interface and implementation is not yet stable and might be changed or even be removed in the future without notice.
    */
   bindings?: { [binding: string]: string | Rdf.Node };
@@ -105,7 +105,7 @@ export const SemanticContextTypes: { [K in keyof SemanticContext]: any } = {
  *
  * @author Alexey Morozov
  */
-export class SemanticContextProvider extends Component<SemanticConfigProps, {}> {
+export class SemanticContextProvider extends Component<SemanticContextProps, {}> {
   static childContextTypes = SemanticContextTypes;
   static contextTypes = SemanticContextTypes;
 
@@ -123,7 +123,7 @@ export class SemanticContextProvider extends Component<SemanticConfigProps, {}> 
   }
 
   render() {
-    return Children.only(this.props.children);
+    return this.props.children;
   }
 }
 
@@ -134,7 +134,7 @@ export class BaseSemanticContextProvider extends SemanticContextProvider {
   }
 }
 
-function deserializeContext(props: SemanticConfigProps): QueryContext {
+function deserializeContext(props: SemanticContextProps): QueryContext {
   const bindings: { [binding: string]: Rdf.Node } = {};
   let hasAnyBinding = false;
 

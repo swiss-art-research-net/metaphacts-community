@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,22 +44,27 @@ import { DiagramView } from '../diagram/view';
 import { cloneSet } from '../viewUtils/collections';
 import { ListElementView, startDragElements } from './listElementView';
 
-const CLASS_NAME = 'ontodia-search-results';
+import * as styles from './searchResults.scss';
 
 export interface SearchResultProps {
     view: DiagramView;
-    items: ReadonlyArray<ElementModel>;
+    items: ReadonlyArray<SearchResultsItem>;
     selection: ReadonlySet<ElementIri>;
     onSelectionChanged: (newSelection: ReadonlySet<ElementIri>) => void;
     highlightText?: string;
     /** @default true */
     useDragAndDrop?: boolean;
+    renderItemContent?: (item: SearchResultsItem) => React.ReactNode;
+}
+
+export interface SearchResultsItem {
+    readonly model: ElementModel;
 }
 
 const enum Direction { Up, Down }
 
 export class SearchResults extends React.Component<SearchResultProps, {}> {
-    static defaultProps: Partial<SearchResultProps> = {
+    static defaultProps: Pick<SearchResultProps, 'useDragAndDrop'> = {
         useDragAndDrop: true,
     };
 
@@ -76,7 +81,7 @@ export class SearchResults extends React.Component<SearchResultProps, {}> {
     }
 
     render(): React.ReactElement<any> {
-        return <ul className={CLASS_NAME}
+        return <ul className={styles.component}
             ref={this.onRootMount}
             tabIndex={-1}
             onFocus={this.addKeyListener}
@@ -89,9 +94,10 @@ export class SearchResults extends React.Component<SearchResultProps, {}> {
         this.root = root;
     }
 
-    private renderResultItem = (model: ElementModel) => {
-        const {useDragAndDrop} = this.props;
-        const canBeSelected = this.canBeSelected(model);
+    private renderResultItem = (item: SearchResultsItem) => {
+        const {useDragAndDrop, renderItemContent} = this.props;
+        const canBeSelected = this.canBeSelected(item);
+        const {model} = item;
         return (
             <ListElementView
                 key={model.id}
@@ -109,8 +115,9 @@ export class SearchResults extends React.Component<SearchResultProps, {}> {
                         iris.push(model.id);
                     }
                     return startDragElements(e, iris);
-                } : undefined}
-            />
+                } : undefined}>
+                {renderItemContent ? renderItemContent(item) : null}
+            </ListElementView>
         );
     }
 
@@ -164,9 +171,9 @@ export class SearchResults extends React.Component<SearchResultProps, {}> {
                 }
                 this.endSelection = this.startSelection;
 
-                const focusElement = items[this.startSelection];
+                const focusItem = items[this.startSelection];
                 const newSelection = new Set<ElementIri>();
-                newSelection.add(focusElement.id);
+                newSelection.add(focusItem.model.id);
 
                 this.updateSelection(newSelection);
                 this.focusOn(this.startSelection);
@@ -179,8 +186,7 @@ export class SearchResults extends React.Component<SearchResultProps, {}> {
         event.preventDefault();
 
         const {items, selection, onSelectionChanged} = this.props;
-        const previouslySelected = selection.has(model.id);
-        const modelIndex = items.indexOf(model);
+        const modelIndex = items.findIndex(item => item.model === model);
 
         let newSelection: Set<ElementIri>;
 
@@ -212,9 +218,9 @@ export class SearchResults extends React.Component<SearchResultProps, {}> {
         const {items} = this.props;
         const selection = new Set<ElementIri>();
         for (let i = start; i <= end; i++) {
-            const selectedModel = items[i];
-            if (this.canBeSelected(selectedModel)) {
-                selection.add(selectedModel.id);
+            const selectedItem = items[i];
+            if (this.canBeSelected(selectedItem)) {
+                selection.add(selectedItem.model.id);
             }
         }
         return selection;
@@ -237,9 +243,9 @@ export class SearchResults extends React.Component<SearchResultProps, {}> {
         return startIndex;
     }
 
-    private canBeSelected(model: ElementModel) {
+    private canBeSelected(item: SearchResultsItem) {
         const alreadyOnDiagram = this.props.view.model.elements.findIndex(
-            element => element.iri === model.id && element.group === undefined
+            element => element.iri === item.model.id && element.group === undefined
         ) >= 0;
         return !this.props.useDragAndDrop || !alreadyOnDiagram;
     }

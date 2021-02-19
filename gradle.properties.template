@@ -1,2 +1,5 @@
 # location of build json
 #systemProp.buildjson=path/to/build-configs/root-build.json
+
+# Jetty version used during development
+jetty94Version = 9.4.33.v20201020

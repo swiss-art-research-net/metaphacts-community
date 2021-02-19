@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,8 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import * as Maybe from 'data.maybe';
-
 import {
   LightweightTreePatterns, ComplexTreePatterns,
 } from 'platform/components/semantic/lazy-tree';
@@ -103,11 +101,11 @@ export interface QuerySearchProfileConfig {
    * grouped by corresponding search profile.
    *
    * Expected projection variables:
-   *   category - IRI of the category
-   *   profile - search profile IRI that a given category belongs to
-   *   thumbnail - URL of the category thumbnail
-   *   label - category label
-   *   description - detailed description of the category
+   *   * `?category` - IRI of the category
+   *   * `?profile` - search profile IRI that a given category belongs to
+   *   * `?thumbnail` - URL of the category thumbnail
+   *   * `?label` - category label
+   *   * `?description` - detailed description of the category
    */
   categoriesQuery: string
 
@@ -116,11 +114,11 @@ export interface QuerySearchProfileConfig {
    * grouped by corresponding search profile.
    *
    * Expected projection variables:
-   *   relation- relation IRI
-   *   label - relation label
-   *   description - detailed description of the relation
-   *   hasDomain - relation domain IRI
-   *   hasRange - relation range IRI
+   *   * `?relation` - relation IRI
+   *   * `?label` - relation label
+   *   * `?description` - detailed description of the relation
+   *   * `?hasDomain` - relation domain IRI
+   *   * `?hasRange` - relation range IRI
    */
   relationsQuery: string
 
@@ -263,14 +261,14 @@ export interface ResourceSelectorConfig {
    * SPARQL Select query that is used for autosuggestion.
    *
    * Mandatory projection variables:
-   *   suggestion - should contain suggestion item IRI
-   *   label - should contain suggestion item label
+   *   * `?suggestion` - should contain suggestion item IRI
+   *   * `?label` - should contain suggestion item label
    *
    * Variables that will be substituted with user selected value:
-   *   __token__ - user input represented as string literal
-   *   __domain__ - search domain category IRI
-   *   __range__ - conjunct range category IRI
-   *   __relation__ - conjunct relation IRI
+   *   * `?__token__` - user input represented as string literal
+   *   * `?__domain__` - search domain category IRI
+   *   * `?__range__` - conjunct range category IRI
+   *   * `?__relation__` - conjunct relation IRI
    */
   query: string | DataQuery;
 
@@ -294,15 +292,15 @@ export interface ResourceSelectorConfig {
    * SPARQL Select query that is used for default autosuggestions.
    *
    * Mandatory projection variables:
-   *   suggestion - should contain suggestion item IRI
+   *   * `?suggestion` - should contain suggestion item IRI
    *    (can be redefined by "suggestionVariable" parameter)
-   *   label - should contain suggestion item label
+   *   * `?label` - should contain suggestion item label
    *
    * Variables that will be substituted with user selected value:
-   *   __token__ - user input represented as string literal
-   *   __domain__ - search domain category IRI
-   *   __range__ - conjunct range category IRI
-   *   __relation__ - conjunct relation IRI
+   *   * `?__token__` - user input represented as string literal
+   *   * `?__domain__` - search domain category IRI
+   *   * `?__range__` - conjunct range category IRI
+   *   * `?__relation__` - conjunct relation IRI
    */
   defaultQuery?: string
 
@@ -325,7 +323,7 @@ export interface ResourceSelectorConfig {
 
 export interface SearchDatasetConfig {
   /**
-   * The IRI that will be injected as `__dataset__` variable into the datasetPattern.
+   * The IRI that will be injected as `?__dataset__` variable into the datasetPattern.
    */
   iri?: string;
 
@@ -445,8 +443,8 @@ export interface SemanticSearchConfig {
 
   /**
    * Specifies a mode for category and relation selectors to operate in:
-   *   `stack` - vertical stack of buttons.
-   *   `dropdown` - dropdown field.
+   *   * `stack` - vertical stack of buttons.
+   *   * `dropdown` - dropdown field.
    */
   selectorMode?: 'stack' | 'dropdown';
 
@@ -476,10 +474,10 @@ export interface SemanticSearchConfig {
  * 8) `numeric-range`
  *
  * Special variable, common to all patterns, that are substituted with user selected values:
- *   * `__domain__` - search domain category IRI
- *   * `__range__` - conjunct range category IRI
- *   * `__relation__` - conjunct relation IRI
- *   * `__relationPattern__` - conjunct relation query pattern
+ *   * `?__domain__` - search domain category IRI
+ *   * `?__range__` - conjunct range category IRI
+ *   * `?__relation__` - conjunct relation IRI
+ *   * `?__relationPattern__` - conjunct relation query pattern
  *
  * In all query patterns ?subject variable refers to result projection variable,
  * and should be always present in the query pattern. All other free variables except ?subject,
@@ -509,7 +507,7 @@ export interface Resource {
 
   /**
    * Injected variables:
-   *  * `__value__` - user selected value IRI
+   *  * `?__value__` - user selected value IRI
    *
    * @default `$subject ?__relation__ ?__value__ .`
    */
@@ -521,8 +519,8 @@ export interface DateRange {
 
   /**
    * Injected variables:
-   *   * `__dateBeginValue__` - xsd:date literal
-   *   * `__dateEndValue__` - xsd:date literal
+   *   * `?__dateBeginValue__` - `xsd:date` literal
+   *   * `?__dateEndValue__` - `xsd:date` literal
    *
    * Keep in mind that there is no default query pattern for `date-range` kind,
    * because date representation is always domain specific.
@@ -549,7 +547,7 @@ export interface Hierarchy {
 
   /**
    * Injected variables:
-   *  * `__value__` - user selected value IRI
+   *  * `?__value__` - user selected value IRI
    *
    * @default `$subject ?__relation__ ?__value__ .`
    */
@@ -561,7 +559,7 @@ export interface Text {
 
   /**
    * Injected variables:
-   *   * `__value__` - string literal with user input. User input is split into words and interleaved with `*`. E.g for the user input "Hello World", injected literal will be "Hello* World*"
+   *   * `?__value__` - string literal with user input. User input is split into words and interleaved with `*`. E.g for the user input "Hello World", injected literal will be "Hello* World*"
    *
    * @default `$subject ?__relation__ ?__value__ .`
    */
@@ -598,21 +596,21 @@ export interface Place {
 
   /**
    * Injected variables:
-   *   * `__geoCenter__` - coordinates of the circle center, default is xsd:string literal in the `lat#long` format
-   *   * `__geoCenterLat__` - xsd:string literal with the latitude of the circle center
-   *   * `__geoCenterLong__` - xsd:string literal with the longitude of the circle center
-   *   * `__geoDistance__` - xsd:string literal with radius of the circle in km
+   *   * `?__geoCenter__` - coordinates of the circle center, default is xsd:string literal in the `lat#long` format
+   *   * `?__geoCenterLat__` - xsd:string literal with the latitude of the circle center
+   *   * `?__geoCenterLong__` - xsd:string literal with the longitude of the circle center
+   *   * `?__geoDistance__` - xsd:string literal with radius of the circle in km
    */
   distanceQueryPattern: string;
 
   /**
    * Injected variables:
-   *   `__geoSouthWest__` - coordinates of the south-west bounding-box corner, default is xsd:string literal in the `lat#long` format
-   *   `__geoSouthWestLat__` - xsd:string literal with the latitude of the south-west bounding-box corner
-   *   `__geoSouthWestLong__` - xsd:string literal with the longitude of the south-west bounding-box corner
-   *   `__geoNorthEast__` - coordinates of the north-east bounding-box corner, default is xsd:string literal in the `lat#long` format
-   *   `__geoNorthEastLat__` - xsd:string literal with the latitude of the north-east bounding-box corner
-   *   `__geoNorthEastLong__` - xsd:string literal with the longitude of the north-east bounding-box corner
+   *   `?__geoSouthWest__` - coordinates of the south-west bounding-box corner, default is xsd:string literal in the `lat#long` format
+   *   `?__geoSouthWestLat__` - xsd:string literal with the latitude of the south-west bounding-box corner
+   *   `?__geoSouthWestLong__` - xsd:string literal with the longitude of the south-west bounding-box corner
+   *   `?__geoNorthEast__` - coordinates of the north-east bounding-box corner, default is xsd:string literal in the `lat#long` format
+   *   `?__geoNorthEastLat__` - xsd:string literal with the latitude of the north-east bounding-box corner
+   *   `?__geoNorthEastLong__` - xsd:string literal with the longitude of the north-east bounding-box corner
    */
   boundingBoxQueryPattern: string;
 

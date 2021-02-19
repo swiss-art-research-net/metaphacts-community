@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,6 @@ import java.util.Collection;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.pf4j.Plugin;
 import org.pf4j.PluginDescriptor;
@@ -58,6 +57,7 @@ import org.pf4j.PluginRuntimeException;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.metaphacts.junit.AbstractIntegrationTest;
+import com.metaphacts.junit.MpAssert;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -66,9 +66,6 @@ import com.metaphacts.junit.AbstractIntegrationTest;
 public class PlatformPluginDescriptorFinderTest extends AbstractIntegrationTest{
     @Rule
     public TemporaryFolder tempFolderRule = new TemporaryFolder();
-    
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
     
     @Inject
     public PlatformPluginManager manager;
@@ -81,9 +78,9 @@ public class PlatformPluginDescriptorFinderTest extends AbstractIntegrationTest{
         pluginProperties.createNewFile();
         
         PluginDescriptorFinder finder = manager.createPluginDescriptorFinder();
-        exception.expect(PluginRuntimeException.class);
-        exception.expectMessage("Field 'id' cannot be empty");
-        manager.validatePluginDescriptor(finder.find(pulginDirectory.toPath()));
+        MpAssert.assertThrows("Field 'id' cannot be empty", PluginRuntimeException.class, () -> {
+            manager.validatePluginDescriptor(finder.find(pulginDirectory.toPath()));
+        });
     }
 
     @Test
@@ -96,9 +93,9 @@ public class PlatformPluginDescriptorFinderTest extends AbstractIntegrationTest{
         FileUtils.writeLines(new File(pulginDirectory, "plugin.properties"), lines);
         
         PluginDescriptorFinder finder = manager.createPluginDescriptorFinder();
-        exception.expect(PluginRuntimeException.class);
-        exception.expectMessage("Field 'version' cannot be empty");
-        manager.validatePluginDescriptor(finder.find(pulginDirectory.toPath()));
+        MpAssert.assertThrows("Field 'version' cannot be empty", PluginRuntimeException.class, () -> {
+            manager.validatePluginDescriptor(finder.find(pulginDirectory.toPath()));
+        });
     }
     
     @Test

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -113,6 +113,7 @@ export class SparqlEditorResultTable extends Component<SparqlEditorResultTablePr
         <div className={styles.titlePanel}>
           <div className={styles.title}>Table</div>
           <Button className={styles.downloadButton}
+            variant='secondary'
             onClick={() => exportData('text/csv', [exportResults], 'results.csv')}>
             <i className={'fa fa-download'}></i>
           </Button>

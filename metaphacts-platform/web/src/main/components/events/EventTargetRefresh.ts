@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,36 @@ import * as D from 'react-dom-factories';
 import { BuiltInEvents, listen } from 'platform/api/events';
 import { Cancellation } from 'platform/api/async';
 
+/**
+ * Refresh child when receiving Component.Refresh event.
+ *
+ * **Example**:
+ *
+ * There are many ways in which one can trigger refresh on this component.
+ * For example one can manually trigger the event wit `<mp-event-trigger-component>`:
+ * ```
+ * <mp-event-target-refresh id='some-element'>
+ *   <div></div>
+ * </mp-event-target-refresh>
+ *
+ * <mp-event-trigger id='dom-refresh' type='Component.Refresh' targets='["some-element"]'>
+ *   <button>Refresh</button>
+ * </mp-event-trigger>
+ * ```
+ * In this example as soon as Refresh button is clicked content of corresponding
+ * `<mp-event-target-refresh>` component will be re-mounted
+ *
+ * Alternatively the target refresh can also be triggered by specifying a time interval:
+ * ```
+ * <mp-event-target-refresh id='some-element' refresh-interval=5>
+ *   <div></div>
+ * </mp-event-target-refresh>
+ *
+ * <mp-event-trigger id='dom-refresh' type='Component.Refresh' targets='["some-element"]'>
+ *   <button>Refresh</button>
+ * </mp-event-trigger>
+ * ```
+ */
 interface EventTargetRefreshConfig {
   /**
    * Unique id of the component that can be used by event emitters as a target.
@@ -55,38 +85,13 @@ interface EventTargetRefreshConfig {
    */
   refreshInterval?: number;
 }
+
 type EventTargetRefreshProps = EventTargetRefreshConfig;
 
 interface EventTargetState {
   refresh: boolean;
 }
 
-/**
- * Refresh child when receiving Component.Refresh event.
- *
- * There are many ways in which one can trigger refresh on this component.
- * For example one can manually trigger the event wit <mp-event-trigger-component>:
- *
- *   <mp-event-target-refresh id='some-element'><div></div></mp-event-target-refresh>
- *
- *   <mp-event-trigger id='dom-refresh' type='Component.Refresh' targets='["some-element"]'>
- *     <button>Refresh</button>
- *   </mp-event-trigger>
- *
- * In this example as soon as Refresh button is clicked content of corresponding
- * <mp-event-target-refresh> component will be re-mounted.
- *
- * Alternatively the target-refresh can also be triggered by specifying a time interval:
- *
- *   <mp-event-target-refresh id='some-element' refresh-interval=5>
- *    <div></div>
- *   </mp-event-target-refresh>
- *
- *   <mp-event-trigger id='dom-refresh' type='Component.Refresh' targets='["some-element"]'>
- *     <button>Refresh</button>
- *   </mp-event-trigger>
- *
- */
 export class EventTargetRefresh extends Component<EventTargetRefreshProps, EventTargetState> {
   private cancelation = new Cancellation();
   private timer: ReturnType<typeof setInterval>;

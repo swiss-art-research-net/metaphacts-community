@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "**Example**:\n```\n<mp-popover title=\"my popover\">\n   <mp-popover-trigger placement=\"left\"\n     trigger='[\"click\", \"hover\", \"focus\"]'\n     root-close='false'>\n     <i class=\"fa fa-question-circle\" aria-hidden=\"true\"></i>\n   </mp-popover-trigger>\n   <mp-popover-content>Content</mp-popover-content>\n</mp-popover>\n```",
+    "properties": {
+        "title": {
+            "description": "Popover title.\n\nIf empty or `undefined` no title will be visible in the popover.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "title"
+    ],
+    "type": "object"
+}
+

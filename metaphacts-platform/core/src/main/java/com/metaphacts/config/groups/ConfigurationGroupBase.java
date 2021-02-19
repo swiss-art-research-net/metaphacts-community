@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +146,8 @@ public abstract class ConfigurationGroupBase implements ConfigurationGroup {
 
     private void reloadConfig() throws InvalidConfigurationException {
         try {
-            config = ConfigurationUtil.readConfigFromStorageOverrides(platformStorage, getObjectId());
+            config = ConfigurationUtil.readConfigFromStorageOverrides(platformStorage, getObjectId(),
+                    Collections.emptySet());
         } catch (IOException | ConfigurationException e) {
             throw new InvalidConfigurationException(e);
         }

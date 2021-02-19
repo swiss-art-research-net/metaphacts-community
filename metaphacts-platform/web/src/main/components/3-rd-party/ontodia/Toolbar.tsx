@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,7 +77,7 @@ export interface ToolbarConfig {
   canvasId?: string;
   /**
    * Position on the canvas.
-   * @default 'nw'
+   * @default "nw"
    */
   dock?: WidgetDock;
   /**
@@ -85,14 +85,14 @@ export interface ToolbarConfig {
    * @default 10
    */
   margin?: number;
-  /**
-   * Custom controls.
-   */
-  children?: JSX.Element | ReadonlyArray<JSX.Element>;
 }
 
 export interface ToolbarProps extends ToolbarConfig {
- paperArea?: InternalApi.PaperArea;
+  paperArea?: InternalApi.PaperArea;
+  /**
+   * Custom controls.
+   */
+  children?: React.ReactNode;
 }
 
 export interface ToolbarCommand {
@@ -135,6 +135,10 @@ export class Toolbar<P extends ToolbarProps = ToolbarProps, S = {}> extends Comp
     }
   }
 
+  componentWillUnmount() {
+    this.listener.stopListening();
+  }
+
   render() {
     const {view} = this.context.ontodiaWorkspace;
     const {children} = this.props;
@@ -153,12 +157,12 @@ export class Toolbar<P extends ToolbarProps = ToolbarProps, S = {}> extends Comp
           <HasPermission permission={
               Permissions.toLdp('container', VocabPlatform.OntodiaDiagramContainer, 'create', 'any')
             }>
-            <ButtonGroup bsSize='small' className={styles.group}>
+            <ButtonGroup size='sm' className={styles.group}>
               <SaveButton />
             </ButtonGroup>
           </HasPermission>
           {undo && redo ? (
-            <ButtonGroup bsSize='small' className={styles.group}>
+            <ButtonGroup size='sm' className={styles.group}>
                 <Button className='ontodia-btn ontodia-btn-default' title={undo.title}
                         disabled={!undo.enabled} onClick={undo.invoke}>
                     <span className='fa fa-undo' aria-hidden='true'/>
@@ -169,7 +173,7 @@ export class Toolbar<P extends ToolbarProps = ToolbarProps, S = {}> extends Comp
                 </Button>
             </ButtonGroup>
           ) : null}
-          <ButtonGroup bsSize='small' className={styles.group}>
+          <ButtonGroup size='sm' className={styles.group}>
             <Button type='button' className='ontodia-btn ontodia-btn-default'
                     onClick={this.onForceLayout}>
                 <span title='Force layout' className='fa fa-snowflake-o' aria-hidden='true' />
@@ -210,15 +214,15 @@ export class Toolbar<P extends ToolbarProps = ToolbarProps, S = {}> extends Comp
         if (button) {
           return button;
         }
-        return cloneElement(child, {children: this.mapChildren(child.props.children)})
+        return cloneElement(child, {children: this.mapChildren(child.props.children)});
       }
       return child;
     });
   }
 
   protected renderButton(
-    element: JSX.Element
-  ): JSX.Element | ReadonlyArray<JSX.Element> | undefined {
+    element: React.ReactElement
+  ): React.ReactNode | undefined {
     const {onSaveDiagram} = this.context.ontodiaContext;
     const {view, onClearAll} = this.context.ontodiaWorkspace;
     const history = view.model.history;
@@ -253,7 +257,7 @@ export class Toolbar<P extends ToolbarProps = ToolbarProps, S = {}> extends Comp
     if (languages.length <= 1) { return null; }
     const selectedLanguage = view.getLanguage();
     return (
-      <ButtonGroup bsSize='small' className={classnames(styles.group, styles.languageSelector)}>
+      <ButtonGroup size='sm' className={classnames(styles.group, styles.languageSelector)}>
         <label>
           <span>Data Language&nbsp;-&nbsp;</span>
           <select value={selectedLanguage} onChange={this.onChangeLanguage}>

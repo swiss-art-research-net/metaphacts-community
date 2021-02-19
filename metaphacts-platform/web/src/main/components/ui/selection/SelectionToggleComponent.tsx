@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,10 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-/**
- * @author Philip Polkovnikov
- */
-
 import * as React from 'react';
 import { Component } from 'react';
 import { trigger } from 'platform/api/events';
@@ -48,36 +44,41 @@ import { Cancellation } from 'platform/api/async';
 import { SelectionEvents } from './SelectionEvents';
 import { SelectionGroupContext, SelectionGroupContextTypes } from './SelectionGroupComponent';
 
-interface Props {
+/**
+ * Checkbox to mark rows as selected
+ */
+interface SelectionToggleConfig {
   /**
    * Name of checkbox listener
    */
-  selection: string,
+  selection: string;
   /**
    * Extra data to pass to listener, so that it's possible to
    * figure out, which of checkboxes was toggled
    */
-  tag: string
+  tag: string;
   /**
    * Toggles the checkbox by default
    */
   defaultChecked?: boolean;
 }
 
+export type SelectionToggleProps = SelectionToggleConfig;
+
 interface State {
   value: boolean
 }
 
 /**
- * Checkbox to mark rows as selected
+ * @author Philip Polkovnikov
  */
-class SelectionToggleComponent extends Component<Props, State> {
+export class SelectionToggle extends Component<SelectionToggleProps, State> {
   private cancellation = new Cancellation();
 
   static contextTypes = SelectionGroupContextTypes;
   context: SelectionGroupContext;
 
-  constructor(props: Props, context: any) {
+  constructor(props: SelectionToggleProps, context: any) {
     super(props, context);
     this.state = {
       value: context.getSelectionValue ? context.getSelectionValue(props.tag) : false,
@@ -90,7 +91,7 @@ class SelectionToggleComponent extends Component<Props, State> {
     }
   }
 
-  componentDidUpdate(prevProps: Props, prevState: State) {
+  componentDidUpdate(prevProps: SelectionToggleProps, prevState: State) {
     if (this.state.value !== prevState.value) {
       trigger({
         eventType: SelectionEvents.Toggle,
@@ -118,4 +119,4 @@ class SelectionToggleComponent extends Component<Props, State> {
   }
 }
 
-export default SelectionToggleComponent;
+export default SelectionToggle;

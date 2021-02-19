@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -175,11 +175,11 @@ export function renderFilterSidebar(
     </div>
 
     <div data-flex-layout='row center-justify' className={styles.filterSidebarActions}>
-      <Button bsStyle='primary'
+      <Button variant='primary'
         onClick={() => applyFiltersAndClose(tableInstance, setSidebarShown)}>
         Apply filters
       </Button>
-      <Button bsStyle='link' onClick={() => resetAllAndClose(tableInstance, setSidebarShown)}>
+      <Button variant='link' onClick={() => resetAllAndClose(tableInstance, setSidebarShown)}>
         Clear all
       </Button>
     </div>

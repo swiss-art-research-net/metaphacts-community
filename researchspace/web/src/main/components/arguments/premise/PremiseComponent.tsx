@@ -17,7 +17,7 @@
  */
 import * as React from 'react';
 import {
-  Button, Col, ControlLabel, Form, FormControl, FormGroup, Radio, Row,
+  Button, Col, FormLabel, Form, FormControl, FormGroup, FormCheck, Row,
 } from 'react-bootstrap';
 import * as moment from 'moment';
 import * as _ from 'lodash';
@@ -229,32 +229,32 @@ export class PremiseComponent extends Component<Props, State> {
     props: {argument: Argument, title: string, children?: React.ReactNode}
   ) => <Form>
     <FormGroup>
-      <ControlLabel>Premise</ControlLabel>
-      <FormControl.Static>
+      <FormLabel>Premise</FormLabel>
+      <Form.Text>
         {props.title}
-      </FormControl.Static>
+      </Form.Text>
     </FormGroup>
     <FormGroup>
-      <ControlLabel>Title</ControlLabel>
-      <FormControl.Static>
+      <FormLabel>Title</FormLabel>
+      <Form.Text>
         {props.argument.title}
-      </FormControl.Static>
+      </Form.Text>
     </FormGroup>
     {props.argument.note ? (
       <FormGroup>
-        <ControlLabel>Description</ControlLabel>
-        <FormControl.Static>
+        <FormLabel>Description</FormLabel>
+        <Form.Text>
           {props.argument.note}
-        </FormControl.Static>
+        </Form.Text>
       </FormGroup>
     ) : null}
     {props.children}
-    <Button bsSize='sm' bsClass='btn btn-sm btn-default pull-right'
+    <Button size='sm' bsPrefix='btn btn-sm btn-secondary pull-right'
       style={{marginLeft: 10}}
       onClick={() => this.removeArgument(props.argument)}>
       Remove Premise
     </Button>
-    <Button bsSize='sm' bsClass='btn btn-sm btn-default pull-right'
+    <Button size='sm' bsPrefix='btn btn-sm btn-secondary pull-right'
       onClick={() => this.editArgument(props.argument)}>
       Edit Premise
     </Button>
@@ -264,18 +264,18 @@ export class PremiseComponent extends Component<Props, State> {
   private renderObservationArgument = (argument: Observation) =>
     <this.argumentFrame argument={argument} title='Observation'>
       <FormGroup>
-        <ControlLabel>Place</ControlLabel>
-        <FormControl.Static>
+        <FormLabel>Place</FormLabel>
+        <Form.Text>
           <SemanticContextProvider repository='default'>
             <ResourceLinkComponent uri={argument.place.value} />
           </SemanticContextProvider>
-        </FormControl.Static>
+        </Form.Text>
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Date</ControlLabel>
-        <FormControl.Static>
+        <FormLabel>Date</FormLabel>
+        <Form.Text>
           {moment(argument.date.value).format('LL')}
-        </FormControl.Static>
+        </Form.Text>
       </FormGroup>
     </this.argumentFrame>
 
@@ -299,15 +299,15 @@ export class PremiseComponent extends Component<Props, State> {
     return (
       <this.argumentFrame argument={argument} title='Inference'>
         <FormGroup>
-          <ControlLabel>Logic Type</ControlLabel>
-          <FormControl.Static>
+          <FormLabel>Logic Type</FormLabel>
+          <Form.Text>
             <SemanticContextProvider repository='assets'>
               <ResourceLinkComponent uri={argument.logicType.value} />
             </SemanticContextProvider>
-          </FormControl.Static>
+          </Form.Text>
         </FormGroup>
         <FormGroup>
-          <ControlLabel>Evidence</ControlLabel>
+          <FormLabel>Evidence</FormLabel>
           <Row className={styles.evidenceList}>
             {argument.premises.map(premise =>
               <Col md={4} className={styles.evidenceList}>
@@ -413,24 +413,24 @@ export class PremiseComponent extends Component<Props, State> {
     const isArgumentTypeSelected = (argumentType: ArgumentType): boolean =>
       this.state.newArgumentType === argumentType;
     return <FormGroup>
-      <Radio name={name}
+      <FormCheck type='radio' name={name}
         checked={isArgumentTypeSelected(ObservationType)}
         onClick={onArgumentTypeChange(ObservationType)}
         inline>
         Observation
-      </Radio>
-      <Radio name={name}
+      </FormCheck>
+      <FormCheck type='radio' name={name}
         checked={isArgumentTypeSelected(BeliefAdoptionType)}
         onClick={onArgumentTypeChange(BeliefAdoptionType)}
         inline>
         Adoption
-      </Radio>
-      <Radio name={name}
+      </FormCheck>
+      <FormCheck type='radio' name={name}
         checked={isArgumentTypeSelected(InferenceType)}
         onClick={onArgumentTypeChange(InferenceType)}
         inline>
         Inference
-      </Radio>
+      </FormCheck>
     </FormGroup>;
   }
 
@@ -445,10 +445,10 @@ export class PremiseComponent extends Component<Props, State> {
       return (
         <div>
           <FormGroup>
-            <ControlLabel>Premise</ControlLabel>
-            <FormControl.Static>
+            <FormLabel>Premise</FormLabel>
+            <Form.Text>
               {premise.argumentType}
-            </FormControl.Static>
+            </Form.Text>
           </FormGroup>
           {this.premiseForm(premise.argumentType, premise)}
           {hr}

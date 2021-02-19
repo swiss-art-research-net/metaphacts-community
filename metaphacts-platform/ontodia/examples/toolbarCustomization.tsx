@@ -1,17 +1,18 @@
 import * as React from 'react';
 
 import {
-    Workspace, DemoDataProvider, WorkspaceLayout, WorkspaceRow, WorkspaceColumn, WorkspaceItem, ClassTree,
+    Workspace, WorkspaceLayout, WorkspaceRow, WorkspaceColumn, WorkspaceItem, ClassTree,
     InstancesSearch, LinkTypesToolbox, Canvas, CanvasCommands, CanvasWidget, Navigator, EventSource, EventTrigger,
-    InstancesSearchCommands, Halo, HaloLink,
+    InstancesSearchCommands, Halo, HaloLink, DefaultWorkspaceLayoutCommands, RdfDataProvider,
 } from '../src/ontodia/index';
 
-import { renderExample, tryLoadLayoutFromLocalStorage } from './resources/common';
+import {N3Parser, renderExample, tryLoadLayoutFromLocalStorage} from './resources/common';
 
-const CLASSES = require('./resources/classes.json');
-const LINK_TYPES = require('./resources/linkTypes.json');
-const ELEMENTS = require('./resources/elements.json');
-const LINKS  = require('./resources/links.json');
+const data = require('./resources/orgOntology.ttl');
+
+const RdfXmlParser: any = require('rdf-parser-rdfxml');
+const JsonLdParser: any = require('rdf-parser-jsonld');
+
 
 interface CustomToolbarProps {
     commands: EventTrigger<CanvasCommands>;
@@ -47,7 +48,7 @@ export class CustomToolbar extends React.Component<CustomToolbarProps> {
 }
 
 class ToolbarCustomizationExample extends React.Component {
-    private canvasCommands = new EventSource<CanvasCommands>();
+    private canvasCommands = new EventSource<DefaultWorkspaceLayoutCommands>();
     private instancesSearchCommands = new EventSource<InstancesSearchCommands>();
 
     render() {
@@ -71,7 +72,7 @@ class ToolbarCustomizationExample extends React.Component {
                                         onExampleClick={() => { alert('Example button have been pressed!'); }}
                                     />
                                 </CanvasWidget>
-                                <Halo />
+                                <Halo commands={this.canvasCommands} />
                                 <HaloLink />
                                 <Navigator />
                             </Canvas>
@@ -94,7 +95,21 @@ class ToolbarCustomizationExample extends React.Component {
 
         const diagram = tryLoadLayoutFromLocalStorage();
         model.importLayout({
-            dataProvider: new DemoDataProvider(CLASSES, LINK_TYPES, ELEMENTS, LINKS),
+            dataProvider: new RdfDataProvider({
+                data: [
+                    {
+                        content: data,
+                        type: 'text/turtle',
+                        fileName: 'testData.ttl',
+                    },
+                ],
+                acceptBlankNodes: false,
+                parsers: {
+                    'application/rdf+xml': new RdfXmlParser(),
+                    'application/ld+json': new JsonLdParser(),
+                    'text/turtle': new N3Parser(),
+                },
+            }),
             diagram,
             validateLinks: true,
         });

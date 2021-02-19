@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,10 +39,10 @@
  */
 import { objectValues, getOrCreateArrayInMap } from '../../viewUtils/collections';
 import * as Rdf from '../rdf/rdfModel';
-import { DataProvider, LinkElementsParams, FilterParams } from '../provider';
+import { DataProvider, FilterParams } from '../provider';
 import {
     Dictionary, ClassModel, LinkTypeModel, ElementModel, LinkModel, LinkCount, PropertyModel,
-    ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri, isEncodedBlank,
+    LinkedElement, ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri, isEncodedBlank,
 } from '../model';
 import {
     prependAdditionalBindings,
@@ -311,6 +311,7 @@ export class SparqlDataProvider implements DataProvider {
             triples = [];
         }
 
+        // types are needed only for matching property configuration domains
         const types = this.queryManyElementTypes(
             this.settings.propertyConfigurations.length > 0 ? params.elementIds : []
         );
@@ -323,9 +324,11 @@ export class SparqlDataProvider implements DataProvider {
             this.openWorldProperties
         );
 
-        for (const iri of nonBlankResources) {
-            if (!Object.prototype.hasOwnProperty.call(elementModels, iri)) {
-                elementModels[iri] = emptyElementInfo(iri);
+        if (this.settings.assumeResourceExistence) {
+            for (const iri of nonBlankResources) {
+                if (!Object.prototype.hasOwnProperty.call(elementModels, iri)) {
+                    elementModels[iri] = emptyElementInfo(iri);
+                }
             }
         }
 
@@ -385,7 +388,10 @@ export class SparqlDataProvider implements DataProvider {
                 linkConfigurations,
             });
             bindings = this.executeSparqlQuery<LinkBinding>(linksInfoQuery);
-            types = this.queryManyElementTypes(params.elementIds);
+            // types are needed only for matching link configuration domains
+            types = this.queryManyElementTypes(
+                this.settings.linkConfigurations.length > 0 ? nonBlankResources : []
+            );
         } else {
             bindings = Promise.resolve({
                 head: {vars: []},
@@ -481,23 +487,8 @@ export class SparqlDataProvider implements DataProvider {
         return foundLinkStats;
     }
 
-    linkElements(params: LinkElementsParams): Promise<Dictionary<ElementModel>> {
-        // for sparql we have rich filtering features and we just reuse filter.
-        return this.filter({
-            refElementId: params.elementId,
-            refElementLinkId: params.linkId,
-            linkDirection: params.direction,
-            limit: params.limit,
-            offset: params.offset,
-            languageCode: ''
-        });
-    }
-
-    async filter(baseParams: FilterParams): Promise<Dictionary<ElementModel>> {
-        const params: FilterParams = {...baseParams};
-        if (params.limit === undefined) {
-            params.limit = 100;
-        }
+    async filter(baseParams: FilterParams): Promise<LinkedElement[]> {
+        const params: FilterParams = {...baseParams, limit: baseParams.limit ?? 100};
 
         // query types to match link configuration domains
         const types = this.querySingleElementTypes(
@@ -520,7 +511,7 @@ export class SparqlDataProvider implements DataProvider {
         );
 
         if (this.options.prepareLabels) {
-            await attachLabels(objectValues(elementModels), this.options.prepareLabels);
+            await attachLabels(elementModels.map(item => item.element), this.options.prepareLabels);
         }
 
         if (this.blankGrounding && this.blankGrounding.hasBlankResults(bindings)) {
@@ -536,7 +527,7 @@ export class SparqlDataProvider implements DataProvider {
             throw new Error('Cannot execute refElementLink filter without refElement');
         }
 
-        let outerProjection = '?inst ?class ?label';
+        let outerProjection = '?inst ?class ?label ?propType ?propValue';
         let innerProjection = '?inst';
 
         let refQueryPart = '';
@@ -586,7 +577,8 @@ export class SparqlDataProvider implements DataProvider {
                     ${this.settings.filterAdditionalRestriction}
                 }
                 ${textSearchPart ? 'ORDER BY DESC(?score)' : ''}
-                LIMIT ${params.limit} OFFSET ${params.offset}
+                ${typeof params.limit === 'number' ? `LIMIT ${params.limit}` : ''}
+                ${typeof params.offset === 'number' ? `OFFSET ${params.offset}` : ''}
             }
             ${refQueryTypes}
             ${resolveTemplate(this.settings.filterElementInfoPattern, {dataLabelProperty})}
@@ -704,7 +696,8 @@ export class SparqlDataProvider implements DataProvider {
             } else {
                 const linkType = escapeIri(link.id);
                 unionParts.push(
-                    `{ ${this.formatLinkPath(link.path, '?source', '?target')} BIND(${linkType} as ?type) }`
+                    `{ ${this.formatLinkPath(link.path, '?source', '?target')} BIND(${linkType} as ?type)
+                    ${link.properties ? this.formatLinkPath(link.properties, '?source', '?target') : ''}}`
                 );
             }
         }
@@ -757,13 +750,12 @@ export class SparqlDataProvider implements DataProvider {
     private async queryManyElementTypes(
         elements: ReadonlyArray<ElementIri>
     ): Promise<Map<ElementIri, Set<ElementTypeIri>>> {
-        if (elements.length === 0) {
+        const {filterTypePattern} = this.settings;
+        const nonBlanks = elements.filter(iri => !isEncodedBlank(iri));
+        if (nonBlanks.length === 0) {
             return new Map();
         }
-        const {filterTypePattern} = this.settings;
-        const ids = elements
-            .filter(iri => !isEncodedBlank(iri))
-            .map(iri => `(${escapeIri(iri)})`).join(' ');
+        const ids = nonBlanks.map(iri => `(${escapeIri(iri)})`).join(' ');
 
         const queryTemplate = `SELECT ?inst ?class { VALUES(?inst) { \${ids} } \${filterTypePattern} }`;
         const query = resolveTemplate(queryTemplate, {ids, filterTypePattern});
@@ -818,7 +810,7 @@ export function resolveTemplate(template: string, values: Dictionary<string>) {
     for (const replaceKey in values) {
         if (!values.hasOwnProperty(replaceKey)) { continue; }
         const replaceValue = values[replaceKey];
-        if (replaceValue) {
+        if (replaceValue !== undefined && replaceValue !== null) {
             result = result.replace(new RegExp('\\${' + replaceKey + '}', 'g'), replaceValue);
         }
     }

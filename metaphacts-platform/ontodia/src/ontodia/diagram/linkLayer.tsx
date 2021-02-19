@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,15 +40,12 @@
 import * as React from 'react';
 import { Component, ReactElement, SVGAttributes, CSSProperties } from 'react';
 
-import { Rdf } from '../data/rdf';
-import {
-    LinkTemplate, LinkStyle, LinkLabel as LinkLabelProperties, LinkMarkerStyle, RoutedLink, RoutedLinks,
-} from '../customization/props';
+import { LinkStyle, LinkMarkerStyle, RoutedLink, RoutedLinks } from '../customization/props';
 import { Debouncer } from '../viewUtils/async';
 import { EventObserver } from '../viewUtils/events';
 
 import { restoreCapturedLinkGeometry } from './commands';
-import { Element as DiagramElement, Link as DiagramLink, LinkVertex, linkMarkerKey, LinkType } from './elements';
+import { Element as DiagramElement, Link as DiagramLink, LinkVertex, LinkType } from './elements';
 import {
     Vector, computePolyline, computePolylineLength, getPointAlongPolyline, computeGrouping, Rect,
 } from './geometry';
@@ -145,6 +142,17 @@ export class LinkLayer extends Component<LinkLayerProps, {}> {
             const linkTypeId = linkTypeEvent.source.id;
             for (const link of view.model.linksOfType(linkTypeId)) {
                 this.scheduleUpdateLink(link.id);
+            }
+        });
+        this.listener.listen(view.model.events, 'propertyEvent', ({data}) => {
+            const propertyEvent = data.changeLabel;
+            if (!propertyEvent) { return; }
+            const propertyTypeId = propertyEvent.source.id;
+            for (const link of view.model.links) {
+                if (!link.data) { continue; }
+                if (Object.prototype.hasOwnProperty.call(link.data, propertyTypeId)) {
+                    this.scheduleUpdateLink(link.id);
+                }
             }
         });
         this.listener.listen(renderingState.events, 'syncUpdate', ({layer}) => {
@@ -301,8 +309,9 @@ class LinkView extends Component<LinkViewProps, {}> {
 
         const path = 'M' + polyline.map(({x, y}) => `${x},${y}`).join(' L');
 
-        const {index: typeIndex, showLabel} = this.linkType;
-        const style = this.template.renderLink(model, view.model);
+        const {showLabel} = this.linkType;
+        const {markerSource, markerSourceId, markerTarget, markerTargetId} = this.template;
+        const style = this.template.renderLink(model, view);
         const pathAttributes = getPathAttributes(model, style);
 
         const isBlurred = view.highlighter && !view.highlighter(model);
@@ -310,8 +319,8 @@ class LinkView extends Component<LinkViewProps, {}> {
         return (
             <g className={className} data-link-id={model.id} data-source-id={source.id} data-target-id={target.id}>
                 <path className={`${LINK_CLASS}__connection`} d={path} {...pathAttributes}
-                    markerStart={`url(#${linkMarkerKey(typeIndex!, true)})`}
-                    markerEnd={`url(#${linkMarkerKey(typeIndex!, false)})`} />
+                    markerStart={markerSource ? `url(#${markerSourceId})` : undefined}
+                    markerEnd={markerTarget ? `url(#${markerTargetId})` : undefined} />
                 <path className={`${LINK_CLASS}__wrap`} d={path} />
                 {showLabel ? this.renderLabels(polyline, style) : undefined}
                 {this.renderVertices(verticesDefinedByUser, pathAttributes.stroke)}
@@ -352,6 +361,12 @@ class LinkView extends Component<LinkViewProps, {}> {
             restoreCapturedLinkGeometry(vertex.link)
         );
         vertex.remove();
+        // remove all vertices for loop link if only one left
+        // (it's hard to remove it otherwise due to overlapping decorators)
+        const {link} = vertex;
+        if (link.sourceId === link.targetId && link.vertices.length === 1) {
+            link.setVertices([]);
+        }
     }
 
     private onBoundsUpdate = (newBounds: Rect | undefined) => {
@@ -372,20 +387,26 @@ class LinkView extends Component<LinkViewProps, {}> {
         const polylineLength = computePolylineLength(polyline);
         TEMPORARY_LABEL_LINES.clear();
 
+        let seenNonEmptyLabel = false;
         return (
             <g className={`${LINK_CLASS}__labels`}>
                 {labels.map((label, index) => {
+                    if (label.content === null) {
+                        return null;
+                    }
                     const {x, y} = getPointAlongPolyline(polyline, polylineLength * label.offset);
                     const groupKey = Math.round(label.offset * LABEL_GROUPING_PRECISION) / LABEL_GROUPING_PRECISION;
                     const line = TEMPORARY_LABEL_LINES.get(groupKey) || 0;
                     TEMPORARY_LABEL_LINES.set(groupKey, line + 1);
+                    const onBoundsUpdate = seenNonEmptyLabel ? undefined : this.onBoundsUpdate;
+                    seenNonEmptyLabel = true;
                     return (
                         <LinkLabel key={index}
                             x={x} y={y}
                             line={line}
                             label={label}
                             textAnchor={textAnchor}
-                            onBoundsUpdate={index === 0 ? this.onBoundsUpdate : undefined}
+                            onBoundsUpdate={onBoundsUpdate}
                         />
                     );
                 })}
@@ -397,44 +418,41 @@ class LinkView extends Component<LinkViewProps, {}> {
 function computeLinkLabels(model: DiagramLink, style: LinkStyle, view: DiagramView) {
     const labels: LabelAttributes[] = [];
 
-    const labelStyle = style.label || {};
-    const labelTexts = labelStyle.attrs && labelStyle.attrs.text ? labelStyle.attrs.text.text : undefined;
+    const labelStyle = style.label ?? {};
 
-    let text: Rdf.Literal | undefined;
+    let content: React.ReactNode | undefined;
     let title: string | undefined = labelStyle.title;
-    if (labelTexts && labelTexts.length > 0) {
-        text = view.selectLabel(labelTexts);
+    if (labelStyle.content !== undefined) {
+        // allow to hide label by setting it's content to null
+        content = labelStyle.content;
     } else {
         const type = view.model.getLinkType(model.typeId)!;
-        text = view.selectLabel(type.label) || view.model.factory.literal(view.formatLabel(type.label, type.id));
+        const text = view.selectLabel(type.label)?.value ?? view.formatLabel(type.label, type.id);
+        content = text;
         if (title === undefined) {
-            title = `${text.value} ${view.formatIri(model.typeId)}`;
+            title = `${text} ${view.formatIri(model.typeId)}`;
         }
     }
 
     labels.push({
-        offset: labelStyle.position || 0.5,
-        text,
+        offset: labelStyle.position ?? 0.5,
+        content,
         title,
-        attributes: {
-            text: getLabelTextAttributes(labelStyle),
-            rect: getLabelRectAttributes(labelStyle),
-        },
+        rectStyle: applyLabelRectStyleDefaults(labelStyle.rectStyle),
+        textStyle: applyLabelTextStyleDefaults(labelStyle.textStyle),
     });
 
     if (style.properties) {
         for (const property of style.properties) {
-            if (!(property.attrs && property.attrs.text && property.attrs.text.text)) {
+            if (!property.content) {
                 continue;
             }
             labels.push({
-                offset: property.position || 0.5,
-                text: view.selectLabel(property.attrs.text.text),
+                offset: property.position ?? 0.5,
+                content: property.content,
                 title: property.title,
-                attributes: {
-                    text: getLabelTextAttributes(property),
-                    rect: getLabelRectAttributes(property),
-                },
+                rectStyle: applyLabelRectStyleDefaults(property.rectStyle),
+                textStyle: applyLabelTextStyleDefaults(property.textStyle),
             });
         }
     }
@@ -454,38 +472,33 @@ function getPathAttributes(model: DiagramLink, style: LinkStyle): SVGAttributes<
     return {fill, stroke, strokeWidth, strokeDasharray};
 }
 
-function getLabelTextAttributes(label: LinkLabelProperties): CSSProperties {
+function applyLabelTextStyleDefaults(style: CSSProperties | undefined): CSSProperties {
     const {
         fill = 'black',
         stroke = 'none',
-        'stroke-width': strokeWidth = 0,
-        'font-family': fontFamily = '"Helvetica Neue", "Helvetica", "Arial", sans-serif',
-        'font-size': fontSize = 'inherit',
-        'font-weight': fontWeight = 'bold',
-    } = label.attrs?.text ?? {};
-    return {
-        fill, stroke, strokeWidth, fontFamily, fontSize,
-        fontWeight: fontWeight as CSSProperties['fontWeight'],
-    };
+        strokeWidth = 0,
+        fontFamily = '"Helvetica Neue", "Helvetica", "Arial", sans-serif',
+        fontSize = 'inherit',
+        fontWeight = 'bold',
+    } = style ?? {};
+    return {...style, fill, stroke, strokeWidth, fontFamily, fontSize, fontWeight};
 }
 
-function getLabelRectAttributes(label: LinkLabelProperties): CSSProperties {
+function applyLabelRectStyleDefaults(style: CSSProperties | undefined): CSSProperties {
     const {
         fill = 'white',
         stroke = 'none',
-        'stroke-width': strokeWidth = 0,
-    } = label.attrs && label.attrs.rect ? label.attrs.rect : {};
-    return {fill, stroke, strokeWidth};
+        strokeWidth = 0,
+    } = style ?? {};
+    return {...style, fill, stroke, strokeWidth};
 }
 
 interface LabelAttributes {
     offset: number;
-    text?: Rdf.Literal;
+    content?: React.ReactNode;
     title?: string;
-    attributes: {
-        text: CSSProperties;
-        rect: CSSProperties;
-    };
+    rectStyle?: CSSProperties;
+    textStyle?: CSSProperties;
 }
 
 interface LinkLabelProps {
@@ -528,13 +541,13 @@ class LinkLabel extends Component<LinkLabelProps, LinkLabelState> {
               {label.title ? <title>{label.title}</title> : undefined}
               <rect x={rectX} y={rectY}
                   width={width} height={height}
-                  style={label.attributes.rect}
+                  style={label.rectStyle}
               />
               <text ref={this.onTextMount}
-                x={x} y={y} dy={dy}
-                textAnchor={textAnchor}
-                style={label.attributes.text}>
-                  {label.text ? label.text.value : null}
+                    x={x} y={y} dy={dy}
+                    textAnchor={textAnchor}
+                    style={label.textStyle}>
+                    {label.content}
               </text>
           </g>
         );
@@ -647,11 +660,10 @@ export class LinkMarkers extends Component<LinkMarkersProps, {}> {
             const type = model.getLinkType(linkTypeId);
             if (!type) { return; }
 
-            const typeIndex = type.index!;
             if (template.markerSource) {
                 markers.push(
-                    <LinkMarker key={typeIndex * 2}
-                        linkTypeIndex={typeIndex}
+                    <LinkMarker key={template.markerSourceId}
+                        markerId={template.markerSourceId}
                         style={template.markerSource}
                         isStartMarker={true}
                     />
@@ -659,8 +671,8 @@ export class LinkMarkers extends Component<LinkMarkersProps, {}> {
             }
             if (template.markerTarget) {
                 markers.push(
-                    <LinkMarker key={typeIndex * 2 + 1}
-                        linkTypeIndex={typeIndex}
+                    <LinkMarker key={template.markerTargetId}
+                        markerId={template.markerTargetId}
                         style={template.markerTarget}
                         isStartMarker={false}
                     />
@@ -695,7 +707,7 @@ export class LinkMarkers extends Component<LinkMarkersProps, {}> {
 const SVG_NAMESPACE: 'http://www.w3.org/2000/svg' = 'http://www.w3.org/2000/svg';
 
 interface LinkMarkerProps {
-    linkTypeIndex: number;
+    markerId: string;
     isStartMarker: boolean;
     style: LinkMarkerStyle;
 }
@@ -712,23 +724,35 @@ class LinkMarker extends Component<LinkMarkerProps, {}> {
     private onMarkerMount = (marker: SVGMarkerElement) => {
         if (!marker) { return; }
 
-        const {linkTypeIndex, isStartMarker, style} = this.props;
+        const {markerId, isStartMarker, style} = this.props;
 
-        marker.setAttribute('id', linkMarkerKey(linkTypeIndex, isStartMarker));
-        marker.setAttribute('markerWidth', style.width.toString());
-        marker.setAttribute('markerHeight', style.height.toString());
+        marker.setAttribute('id', markerId);
+        marker.setAttribute('markerWidth', String(style.width));
+        marker.setAttribute('markerHeight', String(style.height));
         marker.setAttribute('orient', 'auto');
 
         const xOffset = isStartMarker ? 0 : (style.width - 1);
-        marker.setAttribute('refX', xOffset.toString());
-        marker.setAttribute('refY', (style.height / 2).toString());
+        marker.setAttribute('refX', String(xOffset));
+        marker.setAttribute('refY', String(style.height / 2));
         marker.setAttribute('markerUnits', 'userSpaceOnUse');
 
         const path = document.createElementNS(SVG_NAMESPACE, 'path');
         path.setAttribute('d', style.d);
-        if (style.fill !== undefined) { path.setAttribute('fill', style.fill); }
-        if (style.stroke !== undefined) { path.setAttribute('stroke', style.stroke); }
-        if (style.strokeWidth !== undefined) { path.setAttribute('stroke-width', style.strokeWidth); }
+        if (style.fill !== undefined) {
+            path.setAttribute('fill', style.fill);
+        }
+        if (style.fillOpacity !== undefined) {
+            path.setAttribute('fill-opacity', String(style.fillOpacity));
+        }
+        if (style.stroke !== undefined) {
+            path.setAttribute('stroke', style.stroke);
+        }
+        if (style.strokeWidth !== undefined) {
+            path.setAttribute('stroke-width', String(style.strokeWidth));
+        }
+        if (style.strokeOpacity !== undefined) {
+            path.setAttribute('stroke-opacity', String(style.strokeOpacity));
+        }
 
         marker.appendChild(path);
     }

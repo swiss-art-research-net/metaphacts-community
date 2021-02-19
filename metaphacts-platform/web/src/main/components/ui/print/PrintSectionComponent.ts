@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@
 import { Component, createFactory, CSSProperties } from 'react';
 import * as D from 'react-dom-factories';
 
-export interface Props {
+interface PrintSectionConfig {
   id: string;
   label: string;
   className?: string;
@@ -48,8 +48,10 @@ export interface Props {
   defaultPrint?: boolean;
 }
 
-export class PrintSectionComponent extends Component<Props, {}> {
-  static defaultProps = {
+export type PrintSectionProps = PrintSectionConfig;
+
+export class PrintSectionComponent extends Component<PrintSectionProps, {}> {
+  static defaultProps: Required<Pick<PrintSectionProps, 'defaultPrint'>> = {
     defaultPrint: true,
   };
 

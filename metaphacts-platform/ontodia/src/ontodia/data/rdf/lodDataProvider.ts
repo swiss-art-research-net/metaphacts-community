@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,9 +39,9 @@
  */
 import {
     Dictionary, ElementIri, ElementModel, ElementTypeIri, LinkTypeIri, PropertyModel, PropertyTypeIri, ClassModel,
-    LinkCount, LinkModel, LinkTypeModel,
+    LinkCount, LinkModel, LinkTypeModel, LinkedElement,
 } from '../model';
-import { DataProvider, FilterParams, LinkElementsParams } from '../provider';
+import { DataProvider, FilterParams } from '../provider';
 
 import { RdfDataProvider } from './rdfDataProvider';
 import { RdfLoader } from './rdfLoader';
@@ -141,19 +141,11 @@ export class LodDataProvider implements DataProvider {
         return this.baseProvider.linkTypesOf(params);
     }
 
-    async linkElements(params: LinkElementsParams): Promise<Dictionary<ElementModel>> {
-        const initialResult = await this.baseProvider.linkElements(params);
-        const missingResources = this.missingResourcesFromObject(initialResult);
-        if (missingResources.size === 0) {
-            return initialResult;
-        }
-        await this.loadMissingInfo(missingResources);
-        return this.baseProvider.linkElements(params);
-    }
-
-    async filter(params: FilterParams): Promise<Dictionary<ElementModel>> {
+    async filter(params: FilterParams): Promise<LinkedElement[]> {
         const initialResult = await this.baseProvider.filter(params);
-        const missingResources = this.missingResourcesFromObject(initialResult);
+        const missingResources = this.missingResourcesFromArray(
+            initialResult.map(item => item.element)
+        );
         if (missingResources.size === 0) {
             return initialResult;
         }

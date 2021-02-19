@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,13 +71,13 @@ import {
   SemanticSearchKnowledgePanelController
 } from './SemanticSearchKnowledgePanelController';
 
-export interface Props extends React.Props<SemanticSearch>, SemanticSearchConfig {}
+export interface Props extends React.ClassAttributes<SemanticSearch>, SemanticSearchConfig {}
 interface State {
   domain?: Data.Maybe<Model.Category>
   availableDomains?: Data.Maybe<Model.AvailableDomains>
   baseQuery?: Data.Maybe<SparqlJs.SelectQuery>
   baseQueryStructure?: Data.Maybe<Model.Search>
-  facetStructure?: FacetModel.Ast
+  facetStructure?: FacetModel.Ast | null;
   facetActions?: FacetModel.Actions
   extendedSearch?: Data.Maybe<{value: ExtendedSearchValue, range: Model.Category}>
   resultQuery?: Data.Maybe<SparqlJs.SelectQuery>
@@ -94,8 +94,12 @@ interface State {
 
 const SAVED_STATE_QUERY_KEY = 'semanticSearch';
 
+type DefaultProps = Required<Pick<Props,
+  'optimizer' | 'categories' | 'searchProfile' | 'limit' | 'selectorMode'
+>>;
+
 export class SemanticSearch extends Component<Props, State> {
-  static defaultProps: Partial<Props> = {
+  static defaultProps: DefaultProps = {
     optimizer: 'blazegraph',
     categories: SearchDefaults.DefaultTextPattern(),
     searchProfile: {

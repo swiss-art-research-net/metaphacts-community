@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Props as ReactProps, Component, createElement } from 'react';
+import { Props as ReactProps, Component, createElement, FunctionComponent } from 'react';
 import * as D from 'react-dom-factories';
 import * as URI from 'urijs';
 import { findDOMNode } from 'react-dom';
@@ -108,7 +108,7 @@ export interface State {
 }
 
 export class SparqlEditor extends Component<SparqlEditorProps, State> {
-  static defaultProps: Partial<SparqlEditorProps> = {
+  static defaultProps: Required<Pick<SparqlEditorProps, 'popoverTemplate'>> = {
     popoverTemplate: DEFAULT_POPOVER_TEMPLATE,
   };
 
@@ -213,7 +213,7 @@ export class SparqlEditor extends Component<SparqlEditorProps, State> {
     );
     return (
       createElement(
-        Overlay,
+        Overlay as unknown as FunctionComponent<{show: boolean}>,
         {show: true},
         createElement(
           TargetedPopover,

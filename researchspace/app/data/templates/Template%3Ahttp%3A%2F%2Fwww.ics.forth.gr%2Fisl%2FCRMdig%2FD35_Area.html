@@ -26,7 +26,7 @@
   <bs-tab-container class="page__body-navtabs--borderless" default-active-key="viewer">
     [[/if]]
     <div>
-      <bs-nav bs-style="tabs">
+      <bs-nav variant="tabs">
         <bs-nav-item event-key="viewer">Image Viewer</bs-nav-item>
         <bs-nav-item event-key="annotations">
           Annotations <semantic-context repository="assets"><semantic-query query="SELECT (COUNT(DISTINCT ?s) AS ?count) WHERE {

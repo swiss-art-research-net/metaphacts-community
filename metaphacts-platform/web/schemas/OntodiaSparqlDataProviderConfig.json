@@ -43,7 +43,7 @@
                     "type": "string"
                 },
                 "path": {
-                    "description": "SPARQL predicate or pattern connecting source element to target element.\n\nExpected bindings (if it is a pattern):\n   - `?source` source element\n   - `?target` target element",
+                    "description": "SPARQL predicate or pattern connecting source element to target element.\n\nExpected bindings (if it is a pattern):\n   - `?source` source element\n   - `?target` target element\n   - `?linkIri` unique IRI to allow links with same type between same elements",
                     "type": "string"
                 },
                 "properties": {
@@ -63,39 +63,14 @@
             ],
             "type": "object"
         },
-        "PropertyConfiguration": {
-            "description": "Specifies property abstraction configuration",
+        "Partial<SparqlDataProviderSettings>": {
+            "description": "Make all properties in T optional",
             "properties": {
-                "domain": {
-                    "description": "Optional domain constraint for source element of the property.\nIf specified checks RDF type of source element to match one from this set.",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
+                "assumeResourceExistence": {
+                    "default": false,
+                    "description": "Returns an element even if it was not found in the triplestore. Setting to true will\ntrigger additional helpers, like label and image evaluation",
+                    "type": "boolean"
                 },
-                "id": {
-                    "description": "IRI of the \"virtual\" link",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "SPARQL predicate or pattern connecting source element to property value.\n\nExpected bindings (if it is a pattern):\n   - `?inst` source element\n   - `?value` property value",
-                    "type": "string"
-                }
-            },
-            "propertyOrder": [
-                "id",
-                "domain",
-                "path"
-            ],
-            "required": [
-                "id",
-                "path"
-            ],
-            "type": "object"
-        },
-        "SparqlDataProviderSettings": {
-            "description": "Dataset-schema specific settings for SPARQL data provider.",
-            "properties": {
                 "classInfoQuery": {
                     "description": "SELECT query to retrieve data for each class in a set.\n\nParametrized variables:\n   - `${ids}` VALUES clause content with class IRIs\n   - `${schemaLabelProperty}` `schemaLabelProperty` property from the settings\n\nExpected output bindings:\n   - `?class`\n   - `?label` (optional)\n   - `?instcount` (optional)",
                     "type": "string"
@@ -121,7 +96,7 @@
                     "type": "string"
                 },
                 "filterElementInfoPattern": {
-                    "description": "how to fetch elements info when fetching data.",
+                    "description": "SPARQL query pattern to retrieve elements info when filtering.\n\nParametrized variables:\n  - `${dataLabelProperty}` `dataLabelProperty` property from the settings\n\nExpected output bindings:\n  - `?inst` element IRI\n  - `?class` (optional) element type (there may be multiple or transitive types for an element)\n  - `?label` (optional) element label (there may be multiple labels for an element)\n  - `?propType` (optional) element property type\n  - `?propValue` (optional) element property value",
                     "type": "string"
                 },
                 "filterRefElementLinkPattern": {
@@ -209,6 +184,7 @@
                 "linkTypesInfoQuery",
                 "propertyInfoQuery",
                 "elementInfoQuery",
+                "assumeResourceExistence",
                 "linksInfoQuery",
                 "imageQueryPattern",
                 "linkTypesOfQuery",
@@ -222,22 +198,35 @@
                 "propertyConfigurations",
                 "openWorldProperties"
             ],
+            "type": "object"
+        },
+        "PropertyConfiguration": {
+            "description": "Specifies property abstraction configuration",
+            "properties": {
+                "domain": {
+                    "description": "Optional domain constraint for source element of the property.\nIf specified checks RDF type of source element to match one from this set.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "description": "IRI of the \"virtual\" link",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "SPARQL predicate or pattern connecting source element to property value.\n\nExpected bindings (if it is a pattern):\n   - `?inst` source element\n   - `?value` property value",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "id",
+                "domain",
+                "path"
+            ],
             "required": [
-                "dataLabelProperty",
-                "defaultPrefix",
-                "elementInfoQuery",
-                "filterAdditionalRestriction",
-                "filterElementInfoPattern",
-                "filterRefElementLinkPattern",
-                "filterTypePattern",
-                "fullTextSearch",
-                "imageQueryPattern",
-                "linkConfigurations",
-                "linkTypesOfQuery",
-                "linkTypesStatisticsQuery",
-                "linksInfoQuery",
-                "propertyConfigurations",
-                "schemaLabelProperty"
+                "id",
+                "path"
             ],
             "type": "object"
         }
@@ -261,12 +250,17 @@
             "type": "string"
         },
         "providerSettings": {
-            "$ref": "#/definitions/SparqlDataProviderSettings",
+            "$ref": "#/definitions/Partial<SparqlDataProviderSettings>",
             "description": "Sparql data provider settings to override default settings.\nSee definition of `SparqlDataProviderSettings`."
         },
         "repository": {
             "description": "Repository ID.",
             "type": "string"
+        },
+        "useFields": {
+            "default": true,
+            "description": "Enables field-based navigation and property fetching for entities.",
+            "type": "boolean"
         }
     },
     "propertyOrder": [
@@ -274,6 +268,7 @@
         "imageQuery",
         "imageIris",
         "providerSettings",
+        "useFields",
         "acceptBlankNodes"
     ],
     "type": "object"

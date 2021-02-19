@@ -8,31 +8,66 @@
     </p>
 
     <h2>Implementation</h2>
-    
+
     <p>Currently the implementation of Reconciliation API includes a reconciliation service, also referred to as Look-up service. The following RESTful endpoints are available</p>
-    
+
     <ul>
       <li>
         <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation</code> (without any parameters). Returns the manifest of the service in <b>JSON</b> or <b>JSONP</b> format depending on <b>Accept</b> field in the header. Two types for result are available: <code>application/json</code> or <code>application/javascript</code>
       </li>
       <li>
-        <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation?query=</code><b style="margin-left: -5px;"><code>{ReconciliationRequest}</code></b> - where <b>ReconciliationRequest</b> is a URL-encoded JSON-object. Returns <code>ReconciliationResponse</code> in <b>JSON</b> or <b>JSONP</b> format depending on <b>Accept</b> field in the header. Two types for result are available: <code>application/json</code> or <code>application/javascript</code>
+        <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation?query=</code><b><code>{ReconciliationRequest}</code></b> - where <b>ReconciliationRequest</b> is a URL-encoded JSON-object. Returns <code>ReconciliationResponse</code> in <b>JSON</b> or <b>JSONP</b> format depending on <b>Accept</b> field in the header. Two types for result are available: <code>application/json</code> or <code>application/javascript</code>
       </li>
       <li>
         <b>POST: </b> <code>{SERVER_URL}/rest/reconciliation</code> - similar to the GET variant, with the only difference being that the <code>ReconciliationRequest</code> is provided as JSON-object in the body of POST-request.
       </li>
+      <li>
+        <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation/</code><b><code>{LOOKUP_SERVICE_NAME}</code></b> (without any parameters). Returns the manifest of the specific service in <b>JSON</b> or <b>JSONP</b> format depending on <b>Accept</b> field in the header. Two types for result are available: <code>application/json</code> or <code>application/javascript</code>
+      </li>
+      <li>
+        <b>GET: </b> <code>{SERVER_URL}/rest/reconciliation/</code><b><code>{LOOKUP_SERVICE_NAME}</code></b><code>?query=</code><b><code>{ReconciliationRequest}</code></b> - where <b>ReconciliationRequest</b> is a URL-encoded JSON-object. Returns <code>ReconciliationResponse</code> in <b>JSON</b> or <b>JSONP</b> format depending on <b>Accept</b> field in the header. <code>LOOKUP_SERVICE_NAME</code> - specifies to which lookup service implementation the request will be directed. Two types for result are available: <code>application/json</code> or <code>application/javascript</code>
+      </li>
+      <li>
+        <b>POST: </b> <code>{SERVER_URL}/rest/reconciliation/</code><b><code>{LOOKUP_SERVICE_NAME}</code></b> - similar to the GET variant, with the only difference being that the <code>ReconciliationRequest</code> is provided as JSON-object in the body of POST-request. <code>LOOKUP_SERVICE_NAME</code> - specifies to which lookup service implementation the request will be directed.
+      </li>
     </ul>
 
+    <p>
+      <ul>
+        <li>
+          <b><code>accept-language</code></b> request header parameter is available for all endpoints and specifies the preferred language to use for resolving labels and descriptions.
+        </li>
+        <li>
+          <b><code>preferredLanguage</code></b> query parameter is available for all endpoints and specifies the preferred language to use for resolving labels and descriptions.
+        </li>
+      </ul>
+      When both the <code>accept-language</code> request header as well as the <code>preferredLanguage</code> query parameter are specified, only the <code>preferredLanguage</code> query parameter will be used. A language tag consists of the language and optionally variant, e.g. <code>de</code> or <code>de-CH</code>. See <a href="https://tools.ietf.org/html/rfc4647">RFC4647</a> for details.<br>Examples: <code>en</code>, <code>en,fr-CH,de,ru</code>
+    </p>
+
     <h3>Reconciliation request examples</h3>
-    
+
     <p>The following examples illustrate API access from the commandline using cURL.</p>
-    
+
     <h4>Manifest query example (GET):</h4>
     <mp-code-block mode="cURL">
       <![CDATA[
       curl -X GET \
         http://localhost:10214/rest/reconciliation \
         -H 'Accept: application/json' \
+        -H 'Accept-Language: de, en, ru' \
+        -H 'Content-Type: application/json'
+      ]]>
+    </mp-code-block>
+
+    <h4>
+      Manifest query example (GET) directed to the specific lookup implementation (remote-lookup):
+    </h4>
+    <mp-code-block mode="cURL">
+      <![CDATA[
+      curl -X GET \
+        http://localhost:10214/rest/reconciliation/remote-lookup \
+        -H 'Accept: application/json' \
+        -H 'Accept-Language: de, en, ru' \
         -H 'Content-Type: application/json'
       ]]>
     </mp-code-block>
@@ -41,7 +76,7 @@
     <mp-code-block mode="cURL">
       <![CDATA[
       curl -X POST \
-        http://localhost:10214/rest/reconciliation \
+        http://localhost:10214/rest/reconciliation?preferredLanguage=de%2C%20en%2C%20ru \
         -H 'Accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{
@@ -66,9 +101,9 @@
     </mp-code-block>
 
     <h3>Reconciliation request</h3>
-    
+
     <p>The <code>ReconciliationRequest</code> object is a JSON-object, which represents a Map (String to <code>ReconciliationQuery</code>) of reconciliation queries, where the keys are identifiers of the queries.</p>
-    
+
     <mp-code-block mode="application/json">
       <![CDATA[
       {
@@ -81,9 +116,9 @@
     </mp-code-block>
 
     <h3>Reconciliation query</h3>
-    
+
       <p>The <code>ReconciliationQuery</code> defines a query following the specification of the <a href="https://reconciliation-api.github.io/specs/latest/" target="_blank">OpenRefine Reconciliation API</a>. A query object can define the following fields:</p>
-      
+
     <div class="panel panel-default">
       <table>
         <tbody>
@@ -145,12 +180,24 @@
               </ul>
             </td>
           </tr>
+          <tr>
+            <td rowspan="1" colspan="1">
+              <p>"preferredLanguage"</p>
+            </td>
+            <td rowspan="1" colspan="1">
+              <p>
+                language tag (or comma-separated list of language tags with decreasing order of preference) of the preferred language(s) (optional).
+                A language tag consists of the language and optionally variant, e.g. <code>de</code> or <code>de-CH</code>. See <a href="https://tools.ietf.org/html/rfc4647">RFC4647</a> for details.<br>
+                Examples: <code>en</code>, <code>en,fr-CH,de,ru</code>.
+              </p>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
 
     <h4>Example Reconciliation Query:</h4>
-    
+
     <mp-code-block mode="application/json">
       <![CDATA[
         {
@@ -161,17 +208,18 @@
           "properties" : [
             { "pid" : "P571", "v" : 2009 },
             { "pid" : "P176" , "v" : { "id" : "Q20827633" } }
-          ]
+          ],
+          "preferredLanguage": "de, ru, en"
         }
       ]]>
     </mp-code-block>
 
     <h3>Reconciliation response</h3>
-    
+
     <p>In response to a <code>ReconciliationQuery</code> the service returns a <code>ReconciliationResponse</code>. The <code>ReconciliationResponse</code> is a map of results, where keys are identifiers of reconciliation queries and the values are lists of JSON-objects which contain reconciliation candidates.</p>
 
     <h4>Example:</h4>
-    
+
     <mp-code-block mode="application/json">
       <![CDATA[
         {
@@ -196,9 +244,9 @@
     </mp-code-block>
 
     <h3>Reconciliation candidate</h3>
-    
+
     <p>The reconciliation candidate is a JSON-object with the following structure:</p>
-    
+
     <mp-code-block mode="application/json">
       <![CDATA[
       {
@@ -218,20 +266,20 @@
     </mp-code-block>
 
     <h3>Service manifest</h3>
-    
+
     <p>The service manifest defines metadata that describes the capabilities of the service. Such metadata can be retrieved by invoking the service with just a JSONP callback parameter and no other parameters. The following fields are provided:</p>
-    
+
     <ul>
       <li>"name": the name of the service, which will be used to display the service in the reconciliation menu;</li>
       <li>"identifierSpace": an URI for the type of identifiers returned by the service;</li>
       <li>"schemaSpace": an URI for the type of types understood by the service;</li>
       <li>"view" an object with a template URL to view a given item from its identifier: "view": {"url":"http://example.com/object/{{id}}"}.</li>
     </ul>
-    
+
     <p>The last two parameters are mainly useful to assert that the identifiers returned by two different reconciliation services refer to the same thing. All other fields are optional: they are used to specify the URLs for the other endpoints (suggest, preview and extend) described in the following section.</p>
 
     <h4>Reconciliation service manifest example:</h4>
-    
+
     <mp-code-block mode="application/json">
       <![CDATA[
       {
@@ -257,9 +305,9 @@
     </mp-code-block>
 
     <h2>Permissions</h2>
-    
+
     <p>The following permissions are required for accessing the reconciliation endpoint:</p>
-    
+
     <table>
       <tbody>
         <tr>
@@ -309,8 +357,8 @@
         </tr>
       </tbody>
     </table>
-    
-    
+
+
     <p>The system ships with a pre-defined role <code>lookup</code> that can be assigned to any user.</p>
     <p>These permissions are defined for the <code>admin</code> role by default (i.e. the default admin user has all required permissions).</p>
 
@@ -322,7 +370,7 @@
 
   See <semantic-link title="Security" uri='[[resolvePrefix "Help:Security"]]'>Security</semantic-link> for details.
  In order to support anonymous access to the reconciliation API (e.g. from the OpenRefine toolkit), the permissions need to be assigned to the <code>anonymous</code> user. Please refer to the <semantic-link title="Security" uri='[[resolvePrefix "Help:Security"]]'>security documentation</semantic-link> for details on how to enable anonymous access to the platform, and how to define a new role that can be assigned to the <code>anonymous</code> user.</p>
-      
+
   </div>
 </div>
 

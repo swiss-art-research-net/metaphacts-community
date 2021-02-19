@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,7 @@ import {
 } from '../FieldValues';
 import {
   MultipleValuesInput,
+  MultipleValuesConfig,
   MultipleValuesProps,
   MultipleValuesHandlerProps,
   MultipleValuesHandler,
@@ -64,9 +65,21 @@ import {
 } from './MultipleValuesInput';
 import { NestedModalForm, tryExtractNestedForm } from './NestedModalForm';
 
-export interface TreePickerInputProps extends MultipleValuesProps {
+/**
+ * Component to select one or many values from a hierarchy represented by a tree selector.
+ *
+ * **Example**:
+ * ```
+ * <semantic-form-tree-picker-input for='place'>
+ * </semantic-form-tree-picker-input>
+ * ```
+ */
+interface SemanticFormTreePickerInputConfig extends MultipleValuesConfig {
   placeholder?: string;
 }
+
+export interface TreePickerInputProps
+  extends SemanticFormTreePickerInputConfig, MultipleValuesProps {}
 
 interface State {
   readonly treeVersionKey?: number;
@@ -78,12 +91,6 @@ interface State {
 
 const CLASS_NAME = 'semantic-form-tree-picker-input';
 
-/**
- * Component to select one or many values from a hierarchy represented by a tree selector.
- *
- * @example
- * <semantic-form-tree-picker-input for='place'></semantic-form-tree-picker-input>
- */
 export class TreePickerInput extends MultipleValuesInput<TreePickerInputProps, State> {
   constructor(props: TreePickerInputProps, context: any) {
     super(props, context);
@@ -237,7 +244,7 @@ export class TreePickerInput extends MultipleValuesInput<TreePickerInputProps, S
     return (
       <Button
         className={`${CLASS_NAME}__create-button`}
-        bsStyle='default'
+        variant='secondary'
         onClick={this.toggleNestedForm}>
         <span className='fa fa-plus' />
         {' Create new'}

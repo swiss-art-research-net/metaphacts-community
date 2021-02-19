@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,12 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-/**
- * @author Philip Polkovnikov
- */
-
 import * as React from 'react';
-import { Component, Children, ReactNode, cloneElement, ReactElement, SyntheticEvent } from 'react';
+import { Component, Children, cloneElement, ReactElement } from 'react';
 import { DropdownButton } from 'react-bootstrap';
 import * as _ from 'lodash';
 import { Event, listen } from 'platform/api/events';
@@ -50,32 +46,34 @@ import { Cancellation } from 'platform/api/async';
 import { SelectionEvents } from 'platform/components/ui/selection';
 import { SelectionGroupContext, SelectionGroupContextTypes } from './SelectionGroupComponent';
 
-interface Props {
+interface SelectionActionChoiceConfig {
   /**
    * id prop is required to make dropdown available to screen reader software
    */
-  id: string,
+  id: string;
 
   /**
    * Action group name
    */
-  selection: string
+  selection: string;
 
   /**
    * Dropdown caption
    */
-  title: string
+  title: string;
 
   /**
    * CSS style
    */
-  style?: any
+  style?: any;
 
   /**
    * CSS class
    */
-  className?: string
+  className?: string;
 }
+
+export type SelectionActionChoiceProps = SelectionActionChoiceConfig;
 
 interface State {
   values?: { [tag: string]: boolean; };
@@ -83,13 +81,16 @@ interface State {
   open?: boolean;
 }
 
-export class SelectionActionChoiceComponent extends Component<Props, State> {
+/**
+ * @author Philip Polkovnikov
+ */
+export class SelectionActionChoice extends Component<SelectionActionChoiceProps, State> {
   private cancellation = new Cancellation();
 
   static contextTypes = SelectionGroupContextTypes;
   context: SelectionGroupContext;
 
-  constructor(props: Props, context: any) {
+  constructor(props: SelectionActionChoiceProps, context: any) {
     super(props, context);
     this.state = {
       values: {},
@@ -106,7 +107,7 @@ export class SelectionActionChoiceComponent extends Component<Props, State> {
     ).onValue(this.onSelectionChange);
   }
 
-  componentDidUpdate(prevProps: Props, prevState: State) {
+  componentDidUpdate(prevProps: SelectionActionChoiceProps, prevState: State) {
     if (this.state.values !== prevState.values && this.context.onChange) {
       this.context.onChange(this.state.values);
     }
@@ -136,8 +137,9 @@ export class SelectionActionChoiceComponent extends Component<Props, State> {
       id={this.props.id}
       disabled={_.isEmpty(this.state.values) ||
                 _.every(this.state.values, val => val === false)}
-      open={this.state.open}
+      show={this.state.open}
       onToggle={this.onDropdownToggle}
+      variant='secondary'
       style={style}
       title={title}
     >
@@ -155,4 +157,5 @@ export class SelectionActionChoiceComponent extends Component<Props, State> {
     this.setState({open: isOpen});
   }
 }
-export default SelectionActionChoiceComponent;
+
+export default SelectionActionChoice;

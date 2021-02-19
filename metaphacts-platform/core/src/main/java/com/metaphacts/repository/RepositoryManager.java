@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -89,6 +89,7 @@ import com.metaphacts.cache.CacheManager;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.groups.EnvironmentConfiguration;
 import com.metaphacts.data.rdf.container.LDPApiInternalRegistry;
+import com.metaphacts.di.SubsystemLifecycle;
 import com.metaphacts.repository.memory.MpMemoryRepository;
 import com.metaphacts.repository.memory.MpMemoryRepositoryImplConfig;
 import com.metaphacts.repository.sparql.DefaultMpSPARQLRepositoryFactory;
@@ -102,7 +103,7 @@ import com.metaphacts.services.storage.api.PlatformStorage;
  * @author Johannes Trame <jt@metaphacts.com>
  *
  */
-public class RepositoryManager implements RepositoryManagerInterface {
+public class RepositoryManager implements RepositoryManagerInterface, SubsystemLifecycle {
 
     private static final Logger logger = LogManager.getLogger(RepositoryManager.class);
 
@@ -556,6 +557,7 @@ public class RepositoryManager implements RepositoryManagerInterface {
         return repository;
     }
 
+    @Override
     public void shutdown(){
         shutdown(true);
     }

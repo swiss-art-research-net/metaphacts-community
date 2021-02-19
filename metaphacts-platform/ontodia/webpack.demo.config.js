@@ -14,7 +14,6 @@ module.exports = {
     mode: 'development',
     entry: {
         rdf: path.join(examplesDir, 'rdf.tsx'),
-        demo: path.join(examplesDir, 'demo.tsx'),
         sparql: path.join(examplesDir, 'sparql.tsx'),
         dbpedia: path.join(examplesDir, 'dbpedia.tsx'),
         sparqlNoStats: path.join(examplesDir, 'sparqlNoStats.tsx'),
@@ -49,14 +48,8 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            filename: 'rdf.html',
             title: 'Ontodia RDF Demo',
             chunks: ['commons', 'rdf'],
-            template: htmlTemplatePath,
-        }),
-        new HtmlWebpackPlugin({
-            title: 'Ontodia Local Demo',
-            chunks: ['commons', 'demo'],
             template: htmlTemplatePath,
         }),
         new HtmlWebpackPlugin({

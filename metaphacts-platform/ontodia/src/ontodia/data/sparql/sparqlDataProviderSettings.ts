@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -153,6 +153,14 @@ export interface SparqlDataProviderSettings {
     elementInfoQuery: string;
 
     /**
+     * Returns an element even if it was not found in the triplestore. Setting to true will
+     * trigger additional helpers, like label and image evaluation
+     *
+     * @default false
+     */
+    assumeResourceExistence: boolean;
+
+    /**
      * SELECT query to retrieve all links between specified elements.
      *
      * Parametrized variables:
@@ -225,7 +233,17 @@ export interface SparqlDataProviderSettings {
     filterTypePattern: string;
 
     /**
-     * how to fetch elements info when fetching data.
+     * SPARQL query pattern to retrieve elements info when filtering.
+     *
+     * Parametrized variables:
+     *  - `${dataLabelProperty}` `dataLabelProperty` property from the settings
+     *
+     * Expected output bindings:
+     *  - `?inst` element IRI
+     *  - `?class` (optional) element type (there may be multiple or transitive types for an element)
+     *  - `?label` (optional) element label (there may be multiple labels for an element)
+     *  - `?propType` (optional) element property type
+     *  - `?propValue` (optional) element property value
      */
     filterElementInfoPattern: string;
 
@@ -314,6 +332,7 @@ export interface LinkConfiguration {
      * Expected bindings (if it is a pattern):
      *   - `?source` source element
      *   - `?target` target element
+     *   - `?linkIri` unique IRI to allow links with same type between same elements
      *
      * @example
      * Direct configuration: `ex:relatedToOther`
@@ -436,6 +455,7 @@ export const RDFSettings: SparqlDataProviderSettings = {
     filterTypePattern: ``,
     filterAdditionalRestriction: ``,
     filterElementInfoPattern: ``,
+    assumeResourceExistence: false,
 };
 
 const WikidataSettingsOverride: Partial<SparqlDataProviderSettings> = {

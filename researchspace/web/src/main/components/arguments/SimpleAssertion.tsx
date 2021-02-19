@@ -18,7 +18,7 @@
 import * as React from 'react';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
-import { FormGroup, ControlLabel, Button } from 'react-bootstrap';
+import { FormGroup, FormLabel, Button } from 'react-bootstrap';
 import * as Maybe from 'data.maybe';
 import ReactSelect, { Option, Options } from 'react-select';
 import * as Immutable from 'immutable';
@@ -164,7 +164,7 @@ class SimpleAssertionDialog extends Component<SimpleAssertionConfig, State> {
   private targetSelection = () => {
     const { targetOptions, targetValue } = this.state;
     return <FormGroup>
-      <ControlLabel>{this.props.targetSelectionLabel}</ControlLabel>
+      <FormLabel>{this.props.targetSelectionLabel}</FormLabel>
       <ReactSelect
         placeholder={this.props.targetSelectionPlaceholder}
         value={targetValue}
@@ -177,7 +177,7 @@ class SimpleAssertionDialog extends Component<SimpleAssertionConfig, State> {
   private fieldSelection = () => {
     const { targetValue } = this.state;
     return <FormGroup>
-      <ControlLabel>{this.props.fieldSelectionLabel}</ControlLabel>
+      <FormLabel>{this.props.fieldSelectionLabel}</FormLabel>
       <FieldSelection multiSelection={false}
         placeholder='Select field for assertion'
         record={Rdf.iri(targetValue.value)}
@@ -207,7 +207,7 @@ class SimpleAssertionDialog extends Component<SimpleAssertionConfig, State> {
 
   private createAssertionButton = () =>
     <div className='pull-right'>
-      <Button onClick={this.onCreateAssertion} bsStyle='primary'>Continue</Button>
+      <Button onClick={this.onCreateAssertion} variant='primary'>Continue</Button>
     </div>;
 
   private onCreateAssertion = () =>

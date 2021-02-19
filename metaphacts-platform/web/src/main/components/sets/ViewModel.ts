@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,7 +59,7 @@ import { BrowserPersistence } from 'platform/components/utils';
 import {
   SetManagementEvents, SetManagementEventType, ItemsFilteredData,
 } from 'platform/api/services/ldp-set/SetManagementEvents';
-import { SetManagementProps, ItemViewMode } from './Configuration';
+import { SetManagementConfig, ItemViewMode } from './Configuration';
 import * as Defaults from './Defaults';
 import {
   PlatformSet, SetItem, FilterValue,
@@ -123,7 +123,7 @@ const SEARCH_DELAY_MS = 300;
 export type Trigger = (eventType: SetManagementEventType, data?: any) => void;
 
 export class ViewModel {
-  private readonly props: SetManagementProps;
+  private readonly props: SetManagementConfig;
 
   private readonly getState: () => ViewState;
   private readonly setState: (state: ViewState) => void;
@@ -137,7 +137,7 @@ export class ViewModel {
   private fetchingSetNameToRename: Cancellation;
 
   constructor(options: {
-    props: SetManagementProps,
+    props: SetManagementConfig,
     cancellation: Cancellation,
     getState: () => ViewState,
     setState: (state: ViewState) => void,
@@ -203,12 +203,12 @@ export class ViewModel {
       : Kefir.fromPromise(getUserDefaultSetIri()).toProperty();
   }
 
-  static localStorageId(props: SetManagementProps) {
+  static localStorageId(props: SetManagementConfig) {
     const suffix = props.id;
     return `mp-set-management${suffix ? `-${suffix}` : ''}`;
   }
 
-  static loadState(props: SetManagementProps): ViewState {
+  static loadState(props: SetManagementConfig): ViewState {
     let itemViewMode: ItemViewMode;
     if (props.persistViewMode) {
       const localState = LocalStorageState.get(ViewModel.localStorageId(props));

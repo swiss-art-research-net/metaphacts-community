@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,25 +37,30 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { ElementModel, ElementTypeIri, LinkTypeIri, PropertyTypeIri, LinkModel, ElementIri } from './model';
-import { LinkDirection } from '../diagram/elements';
+import { ElementModel, ElementTypeIri, LinkTypeIri, PropertyTypeIri, LinkModel } from './model';
 import { CancellationToken } from '../viewUtils/async';
 
 export interface MetadataApi {
     /**
-     * Can user create element and link from this element?
+     * Determines if it's possible to create link between two elements
+     * (does not depend on link direction).
      */
-    canDropOnCanvas(source: ElementModel, ct: CancellationToken): Promise<boolean>;
+    canConnect(
+        element: ElementModel,
+        another: ElementModel | null,
+        linkType: LinkTypeIri | null,
+        ct: CancellationToken
+    ): Promise<boolean>;
 
     /**
-     * Can we create link between two elements? Maybe it's unnesesary.
+     * Determines links of which types can we create between elements
+     * (depends on link direction).
      */
-    canDropOnElement(source: ElementModel, target: ElementModel, ct: CancellationToken): Promise<boolean>;
-
-    /**
-     * Links of which types can we create between elements?
-     */
-    possibleLinkTypes(source: ElementModel, target: ElementModel, ct: CancellationToken): Promise<DirectedLinkType[]>;
+    possibleLinkTypes(
+        source: ElementModel,
+        target: ElementModel,
+        ct: CancellationToken
+    ): Promise<LinkTypeIri[]>;
 
     /**
      * If new element is created by dragging link from existing element, this should return available element types.
@@ -67,24 +72,50 @@ export interface MetadataApi {
      */
     propertiesForType(type: ElementTypeIri, ct: CancellationToken): Promise<PropertyTypeIri[]>;
 
+    /**
+     * Filters types that can be created from the list of given types.
+     * Used in Class Tree to quickly find out what types can be instantiated.
+     */
     filterConstructibleTypes(
         types: ReadonlySet<ElementTypeIri>, ct: CancellationToken
     ): Promise<ReadonlySet<ElementTypeIri>>;
 
+    /**
+     * Determines whether the element can be deleted
+     */
     canDeleteElement(element: ElementModel, ct: CancellationToken): Promise<boolean>;
 
+    /**
+     * Determines whether the element can be modified (incl. modification of iri, label, properties)
+     */
     canEditElement(element: ElementModel, ct: CancellationToken): Promise<boolean>;
 
-    canLinkElement(element: ElementModel, ct: CancellationToken): Promise<boolean>;
-
+    /**
+     * Determines whether the link can be deleted.
+     * This also controls changing of links, because the change is represented as delete+create
+     */
     canDeleteLink(link: LinkModel, source: ElementModel, target: ElementModel, ct: CancellationToken): Promise<boolean>;
 
+    /**
+     * Determines whether link properties can be edited.
+     */
     canEditLink(link: LinkModel, source: ElementModel, target: ElementModel, ct: CancellationToken): Promise<boolean>;
 
-    generateNewElement(types: ReadonlyArray<ElementTypeIri>, ct: CancellationToken): Promise<ElementModel>;
-}
+    /**
+     * Generates new element. Specific MetadataApi implementation can pre-populate element of specified type.
+     */
+    generateNewElement(
+        types: ReadonlyArray<ElementTypeIri>,
+        ct: CancellationToken
+    ): Promise<ElementModel>;
 
-export interface DirectedLinkType {
-    readonly linkTypeIri: LinkTypeIri;
-    readonly direction: LinkDirection;
+    /**
+     * Generates new link. Specific MetadataApi implementation can pre-populate link of specified type.
+     */
+    generateNewLink(
+        source: ElementModel,
+        target: ElementModel,
+        linkType: LinkTypeIri,
+        ct: CancellationToken
+    ): Promise<LinkModel>;
 }

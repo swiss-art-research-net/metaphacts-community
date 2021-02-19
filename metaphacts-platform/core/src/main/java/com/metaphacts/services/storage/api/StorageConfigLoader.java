@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,10 +45,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.commons.configuration2.CombinedConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.SystemConfiguration;
@@ -56,23 +59,57 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.io.FileHandler;
 import org.apache.commons.lang.StringUtils;
 
-import com.google.inject.Injector;
+import com.google.common.collect.Sets;
+import com.metaphacts.config.ConfigurationUtil;
 
 public class StorageConfigLoader {
     
     private final StorageRegistry storageRegistry;
-    private final Injector injector;
     
-    public StorageConfigLoader(StorageRegistry storageRegistry, Injector injector){
+    public StorageConfigLoader(StorageRegistry storageRegistry) {
         this.storageRegistry = storageRegistry;
-        this.injector = injector;
     }
 
     /**
-     * Reads storage configuration from system variables (-Dconfig.storage.foo=...)
+     * Reads static storage configuration from system variables
+     * (-Dconfig.storage.foo=...)
      */
     public LinkedHashMap<String, StorageConfig> readSystemStorageConfig() {
-        return parseStorageConfigs(new SystemConfiguration());
+        return parseStorageConfigsSystemConfig(new SystemConfiguration());
+    }
+
+    /**
+     * Reads dynamic storage configuration from config/storage.prop defined in
+     * static apps
+     */
+    public LinkedHashMap<String, StorageConfig> readDynamicStorageConfig(PlatformStorage platformStorage,
+            Collection<String> dynamicStorages) throws StorageException {
+        CombinedConfiguration config;
+        try {
+            // we need to make sure to not include dynamic storages
+            Set<String> ignoreStorages = Sets.newHashSet(dynamicStorages);
+            config = ConfigurationUtil.readConfigFromStorageOverrides(platformStorage,
+                    ObjectKind.CONFIG.resolve("storage.prop"), ignoreStorages);
+        } catch (IOException | ConfigurationException e) {
+            throw new StorageConfigException("Unable to read dynamic storage configuration", e);
+        }
+        return parseStorageConfigs(config);
+    }
+
+    /**
+     * Read {@link StorageConfig} from a provided {@link Configuration}.
+     * <p>
+     * The configuration is expected to be provided hierarchical, with keys looking
+     * like <i>my-storage.type</i>.
+     * </p>
+     * 
+     * @param configuration
+     * @return the parsed {@link StorageConfig}
+     * @throws StorageConfigException
+     */
+    public LinkedHashMap<String, StorageConfig> readStorageConfig(Configuration configuration)
+            throws StorageConfigException {
+        return parseStorageConfigs(configuration);
     }
 
     /**
@@ -98,16 +135,20 @@ public class StorageConfigLoader {
         PropertiesConfiguration config = createEmptyConfig();
         FileHandler handler = new FileHandler(config);
         handler.load(is);
-        return parseStorageConfigs(config);
+        return parseStorageConfigsSystemConfig(config);
+    }
+
+    private LinkedHashMap<String, StorageConfig> parseStorageConfigsSystemConfig(Configuration config) {
+        Configuration allStoragesSubset = config.subset("config.storage");
+        return parseStorageConfigs(allStoragesSubset);
     }
 
     private LinkedHashMap<String, StorageConfig> parseStorageConfigs(Configuration config) {
-        Configuration allStoragesSubset = config.subset("config.storage");
 
         HashSet<String> storageIds = new HashSet<>();
         List<String> orderedIds = new ArrayList<>();
 
-        allStoragesSubset.getKeys().forEachRemaining(key -> {
+        config.getKeys().forEachRemaining(key -> {
             String storageId = StringUtils.substringBefore(key, ".");
             if (storageIds.add(storageId)) {
                 orderedIds.add(storageId);
@@ -116,17 +157,16 @@ public class StorageConfigLoader {
 
         LinkedHashMap<String, StorageConfig> configs = new LinkedHashMap<>();
         for (String storageId : orderedIds) {
-            Configuration properties = allStoragesSubset.subset(storageId);
+            Configuration properties = config.subset(storageId);
             String storageType = properties.getString("type");
             if (storageType == null) {
                 throw new StorageConfigException(
                     "Missing property 'type' for storage '" + storageId + "'");
             }
 
-            StorageFactory factory = storageRegistry.get(storageType).orElseThrow(
+            StorageFactory<?> factory = storageRegistry.get(storageType)
+                    .orElseThrow(
                 () -> new StorageConfigException("Unknown storage type '" + storageType + "'"));
-            
-            injector.injectMembers(factory);
 
             StorageConfig parsedConfig = factory.parseStorageConfig(storageType, properties);
             try {

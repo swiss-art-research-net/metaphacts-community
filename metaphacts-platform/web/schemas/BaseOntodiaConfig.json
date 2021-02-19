@@ -1,10 +1,27 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "definitions": {
-        "JSX.Element": {
+        "OntodiaNodeStyle": {
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "stylePropertyIri": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "image",
+                "color",
+                "stylePropertyIri"
+            ],
             "type": "object"
         }
     },
+    "description": "The component to display an Ontodia diagram.\n\nThis component **MUST** be wrapped in HTML element with defined height.\nDiagrams are loaded from and saved to `VocabPlatform:OntodiaDiagramContainer` LDP container.\n\nOntodia will listen to `SemanticContext` and will load and save diagram layouts into specified\nrepository; however repository to load data is defined explicitly in data provider.\n\n**Example**: Display component with empty canvas:\n```\n<ontodia></ontodia>\n```\n\n**Example**: Load diagram from resource and display it:\n```\n<ontodia diagram='[[this]]'></ontodia>\n```\n\n**Example**: Display diagram with result elements and links created by construct query:\n```\n<ontodia\n   query='\n     CONSTRUCT { <[[this]]> ?p ?o }\n     WHERE {\n       <[[this]]> ?p ?o\n       FILTER (ISIRI(?o))\n     } LIMIT 50\n'></ontodia>\n```\n\n**Example**: Display diagram with only one element to start with:\n```\n<ontodia iri='http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object'></ontodia>\n```",
     "properties": {
         "addToDefaultSet": {
             "default": false,
@@ -12,25 +29,33 @@
             "type": "boolean"
         },
         "children": {
-            "anyOf": [
-                {
-                    "$ref": "#/definitions/JSX.Element"
-                },
-                {
-                    "items": {
-                        "$ref": "#/definitions/JSX.Element"
-                    },
-                    "type": "array"
-                }
-            ],
-            "description": "Custom workspace layout, data provider and authoring config."
+            "description": "Custom workspace layout, data provider and authoring config.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "defaultDiagram": {
+            "description": "Whether the diagram specified with `diagram` is the default diagram.",
+            "type": "boolean"
+        },
+        "defaultDiagramMetadata": {
+            "description": "Additional turtle data that will be parsed and attached to the saved default diagram.",
+            "type": "string"
+        },
+        "defaultDiagramName": {
+            "description": "If the diagram was not already saved, this is used as the diagram name instead\nof prompting the user.",
+            "type": "string"
+        },
+        "defaultNodeStyle": {
+            "$ref": "#/definitions/OntodiaNodeStyle",
+            "description": "Default node style to apply to all elements, unless overridden"
         },
         "diagram": {
             "description": "Diagram identifier to display saved diagram.",
             "type": "string"
         },
         "findRelationshipQuery": {
-            "description": "Sparql query to find a relationship between two elements.",
+            "description": "SPARQL CONSTRUCT query to find a relationship between two elements.\n\nThe query is expected to return a set of linked triples that should be added\nto the diagram after being sorted to follow from source to target element.\n\nParametrized inputs:\n   - `?in` - source resource;\n   - `?target` - target resource;",
             "type": "string"
         },
         "graph": {
@@ -69,7 +94,7 @@
             "type": "boolean"
         },
         "id": {
-            "description": "Used as source id for emitted events.",
+            "description": "Used as source ID for emitted events.",
             "type": "string"
         },
         "iri": {
@@ -120,23 +145,7 @@
         },
         "nodeStyles": {
             "additionalProperties": {
-                "properties": {
-                    "color": {
-                        "type": "string"
-                    },
-                    "image": {
-                        "type": "string"
-                    }
-                },
-                "propertyOrder": [
-                    "image",
-                    "color"
-                ],
-                "required": [
-                    "color",
-                    "image"
-                ],
-                "type": "object"
+                "$ref": "#/definitions/OntodiaNodeStyle"
             },
             "description": "Custom images and colors of the elements",
             "propertyOrder": [
@@ -149,10 +158,6 @@
                 "navigate",
                 "none"
             ],
-            "type": "string"
-        },
-        "propertySuggestionQuery": {
-            "description": "Sparql query to get suggested properties of elements.",
             "type": "string"
         },
         "query": {
@@ -169,14 +174,18 @@
             "type": "object"
         },
         "queryRepository": {
-            "default": "'default'",
+            "default": "default",
             "description": "Repository which is used to execute SPARQL query specified in `query` property.",
             "type": "string"
         },
         "requestLinksOnInit": {
-            "default": true,
-            "description": "Controls if component should re-request all links from data provider when showing existing\ngraph (via loading the diagram or executing CONSTRUCT query), if link is not found in the\ndata, it is shown as dashed. Setting this to false speeds up initialization and the links on\nthe diagram will be shown exactly as they were when the diagram was saved.",
-            "type": "boolean"
+            "default": "true",
+            "description": "Controls if component should re-request all links from data provider when showing existing\ngraph (via loading the diagram or executing CONSTRUCT query):\n   - `true`: if link is not found in the data, it is shown as dashed;\n   - `false`: this setting speeds up initialization and the links on the diagram will\n     be shown exactly as they were when the diagram was saved;\n   - `'dismiss'`: works the same as setting it as `true` and additionally removes all\n     links that were not found in the data;",
+            "enum": [
+                "dismiss",
+                false,
+                true
+            ]
         }
     },
     "propertyOrder": [
@@ -193,9 +202,12 @@
         "queryParams",
         "addToDefaultSet",
         "nodeStyles",
+        "defaultNodeStyle",
+        "defaultDiagram",
+        "defaultDiagramName",
+        "defaultDiagramMetadata",
         "groupBy",
         "linkSettings",
-        "propertySuggestionQuery",
         "findRelationshipQuery",
         "hideNavigationConfirmation",
         "postSaving",

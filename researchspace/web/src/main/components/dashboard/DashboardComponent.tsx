@@ -70,11 +70,16 @@ export interface DashboardLinkedViewConfig {
    */
   image?: string;
   /**
-   * Class of the icon that will be used as the representation of the specific View in the Dashboard Item. It will be applied if the <code>image</code> attribute isn't specified.
+   * Class of the icon that will be used as the representation of the specific View
+   * in the Dashboard Item.
+   *
+   * It will be applied if the `image` attribute isn't specified.
    */
   iconClass?: string;
   /**
-   * SPARQL Ask query that is used to check whether it is possible to display a specific resource type in the specific view. Resource IRI is injected into the query using the <code>?value</code> binding variable.
+   * SPARQL Ask query that is used to check whether it is possible to display
+   * a specific resource type in the specific view. Resource IRI is injected into
+   * the query using the `?value` binding variable.
    */
   checkQuery?: string;
 }
@@ -235,7 +240,7 @@ export class DashboardComponent extends Component<Props, State> {
           }>
           <div className={styles.itemLabelContainer}>
             {body ? (
-              <button className={`btn btn-xs ${styles.expandItemButton}`}
+              <button className={`btn btn-sm ${styles.expandItemButton}`}
                 onClick={() => this.onExpandItem(item.id)}>
                 <i className={
                   `fa ${item.isExpanded ? 'fa fa-caret-down' : 'fa-caret-right'}`
@@ -243,7 +248,7 @@ export class DashboardComponent extends Component<Props, State> {
               </button>
             ) : null}
             {this.renderLabel(item)}
-            <button className={`btn btn-link btn-xs ${styles.deleteItemButton}`}
+            <button className={`btn btn-link btn-sm ${styles.deleteItemButton}`}
               onClick={() => this.onRemoveItem(item)}>
               <i className='fa fa-times text-danger'/>
             </button>
@@ -356,7 +361,7 @@ export class DashboardComponent extends Component<Props, State> {
     const heading = (
       <div>
         Thinking Frames&nbsp;
-        <button className={`btn btn-link btn-xs pull-right ${styles.addItemButton}`}
+        <button className={`btn btn-link btn-sm pull-right ${styles.addItemButton}`}
           onClick={e => {
             e.preventDefault();
             e.stopPropagation();

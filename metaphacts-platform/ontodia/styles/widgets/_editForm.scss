@@ -1,15 +1,19 @@
 .ontodia-edit-form {
-  height: 100%;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
 
   &__body {
     overflow: auto;
     padding: 10px;
-    flex: 1 1 100%;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     position: relative;
+  }
+
+  .ontodia-dialog--resized &__body {
+    flex-basis: 0;
   }
 
   &__controls {
@@ -52,10 +56,11 @@
   }
 
   &__existing-elements-list {
-    flex: 1 1 0;
+    flex: 1 1 auto;
+    max-height: 200px;
+    overflow-y: auto;
     margin-top: 7px;
     padding-right: 10px;
-    overflow-y: scroll;
   }
 
   &__separator {

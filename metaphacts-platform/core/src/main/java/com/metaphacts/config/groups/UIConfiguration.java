@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,6 +49,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.query.MalformedQueryException;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
@@ -82,7 +83,12 @@ public class UIConfiguration extends ConfigurationGroupBase {
     private final static String DESCRIPTION =
             "Configuration properties for options that affect how data is displayed in the UI.";
 
-    private final static String DEFAULT_LANGUAGE = "en";
+    /**
+     * The default system preferred language tag
+     * 
+     * @see UIConfiguration#getPreferredLanguages()
+     */
+    public final static String DEFAULT_LANGUAGE = "en";
 
     private NamespaceRegistry namespaceRegistry;
     
@@ -98,11 +104,34 @@ public class UIConfiguration extends ConfigurationGroupBase {
      **************************************************************************/
 
     /**
-     * Returns preferred label property IRIs for rendering resource
-     * labels in the UI.
-     *
-     * @return a list of full IRIs enclosed in angle brackets (&lt;&gt;).
-     */
+	 * Returns preferred description property IRIs for rendering resource
+	 * description in the UI.
+	 *
+	 * @return a list of full IRIs enclosed in angle brackets (&lt;&gt;).
+	 */
+	@ConfigurationParameter(name = "preferredTypes", restartRequired = false, desc = "Ordered list of predicates, property paths and/or graph patterns, "
+			+ "which are used to determine the type(s) for IRIs within the application:<br>"
+			+ "<ul style=\"list-style-type:none\">\n"
+			+ "  <li>(a) full ( surround by &lt;&gt;) or prefixed IRIs or/and </li> \n"
+			+ "  <li>(b) a SPARQL property path with full or prefixed IRIs or/and </li>\n"
+			+ "  <li>(c) a full SPARQL pattern, which must have a <code>?subject</code> (will be used to inject the entity for which a type should be generated) "
+			+ "and a <code>?value</code> (denoting the type value) variable. The entire pattern must be enclosed by curly braces "
+			+ "(<code>{ ?subject ?predicate ?value }</code>) and <u>commas must be escaped</u> with a backslash (<code>\\</code>).</li>"
+			+ "</ul><b>Example:</b><br>\n"
+			+ "<code>rdf:type,&lt;http://www.wikidata.org/prop/direct/P31&gt;</code><br>\n"
+			+ "<br>\n"
+			+ "<p>Please note that the number and complexity of patterns may heavily influences the performance and load of the application/underlying database.</p>\n"
+			+ "Default: rdf:type")
+	public List<String> getPreferredTypes() {
+		return getStringList("preferredTypes", Lists.newArrayList("<" + RDF.TYPE.stringValue() + ">"));
+	}
+
+	/**
+	 * Returns preferred label property IRIs for rendering resource labels in the
+	 * UI.
+	 *
+	 * @return a list of full IRIs enclosed in angle brackets (&lt;&gt;).
+	 */
     @ConfigurationParameter(name = "preferredLabels", restartRequired = false, desc = "Ordered list of predicates, property paths and/or graph patterns, "
             + "which are used to generate human readable labels for IRIs within the application:<br>"
             + "<ul style=\"list-style-type:none\">\n"
@@ -135,8 +164,8 @@ public class UIConfiguration extends ConfigurationGroupBase {
             + "<ul style=\"list-style-type:none\">\n"
             + "  <li>(a) full ( surround by &lt;&gt;) or prefixed IRIs or/and </li> \n"
             + "  <li>(b) a SPARQL property path with full or prefixed IRIs or/and </li>\n"
-            + "  <li>(c) a full SPARQL pattern, which must have a <code>?subject</code> (will be used to inject the entity for which a label should be generated) "
-            + "and a <code>?value</code> (denoting the label value) variable. The entire pattern must be enclosed by curly braces "
+			+ "  <li>(c) a full SPARQL pattern, which must have a <code>?subject</code> (will be used to inject the entity for which a description should be generated) "
+			+ "and a <code>?value</code> (denoting the description value) variable. The entire pattern must be enclosed by curly braces "
             + "(<code>{ ?subject ?predicate ?value }</code>) and <u>commas must be escaped</u> with a backslash (<code>\\</code>).</li>"
             + "</ul><b>Example:</b><br>\n"
             + "<code>rdfs:comment,&lt;https://schema.org/description&gt;,a/rdfs:subClassOf/rdfs:comment, {OPTIONAL{?subject rdfs:comment ?description.} BIND(COALESCE(?description\\,\"No description\") as ?value)}</code><br>\n"
@@ -267,37 +296,33 @@ public class UIConfiguration extends ConfigurationGroupBase {
         }
     }
     
+    @ConfigurationParameterHook(forSetting = "preferredTypes")
+    public void onUpdatePreferredType(String configIdInGroup, List<String> configValues, PropertiesConfiguration targetConfig) throws ConfigurationException {
+        checkPropertyPatterns("preferredTypes", configValues);
+    }
     
     @ConfigurationParameterHook(forSetting = "preferredLabels")
     public void onUpdatePreferredLabels(String configIdInGroup, List<String> configValues, PropertiesConfiguration targetConfig) throws ConfigurationException {
-        try {
-            for (String singlePreferredLabel : configValues) {
-                PropertyPattern.parse(singlePreferredLabel, namespaceRegistry);
-            }
-        } catch (MalformedQueryException e) {
-            throw new ConfigurationException("The \"preferredLabels\" that you have entered is invalid. Please add a valid value. \n Details: " +e.getMessage());
-        }
+        checkPropertyPatterns("preferredLabels", configValues);
     }
 
     @ConfigurationParameterHook(forSetting = "preferredDescriptions")
     public void onUpdatePreferredDescriptions(String configIdInGroup, List<String> configValues, PropertiesConfiguration targetConfig) throws ConfigurationException {
-        try {
-            for (String singlePreferredDescriptionProperties : configValues) {
-                PropertyPattern.parse(singlePreferredDescriptionProperties, namespaceRegistry);
-            }
-        } catch (MalformedQueryException e) {
-            throw new ConfigurationException("The \"preferredDescriptions\" that you have entered is invalid. Please add a valid value. \n Details: " +e.getMessage());
-        }
+        checkPropertyPatterns("preferredDescriptions", configValues);
     }
 
     @ConfigurationParameterHook(forSetting = "preferredThumbnails")
     public void onUpdatePreferredThumbnails(String configIdInGroup, List<String> configValues, PropertiesConfiguration targetConfig) throws ConfigurationException {
+        checkPropertyPatterns("preferredThumbnails", configValues);
+    }
+    
+    protected void checkPropertyPatterns(String configProperty, List<String> configValues) throws ConfigurationException {
         try {
-            for (String singlePreferredThumbnail : configValues) {
-                PropertyPattern.parse(singlePreferredThumbnail, namespaceRegistry);
+            for (String singlePropertyPattern : configValues) {
+                PropertyPattern.parse(singlePropertyPattern, namespaceRegistry);
             }
         } catch (MalformedQueryException e) {
-            throw new ConfigurationException("The \"preferredThumbnails\" that you have entered is invalid. Please add a valid value  \n Details: " +e.getMessage());
+            throw new ConfigurationException("The \"" + configProperty + "\" that you have entered is invalid. Please add a valid value. \n Details: " +e.getMessage());
         }
     }
 

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,29 +39,70 @@
  */
 package com.metaphacts.rest.endpoint;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Model of {@code web-extensions.json} file defining extensions for the
  * frontend.
- * 
+ *
  * @author Stefan Schmitt <stefan.schmitt@metaphacts.com>
  */
 public class WebExtensions {
-    List<String> extensions;
+    @Nullable
+    private Map<String, WebComponentMetadata> components;
+    @Nullable
+    private List<String> extensions;
 
-    public WebExtensions() {
-    }
+    public WebExtensions() {}
 
-    public WebExtensions(List<String> extensions) {
+    public WebExtensions(
+        Map<String, WebComponentMetadata> components,
+        List<String> extensions
+    ) {
+        this.components = components;
         this.extensions = extensions;
     }
 
-    public void setExtensions(List<String> extensions) {
+    public void setComponents(@Nullable Map<String, WebComponentMetadata> components) {
+        this.components = components;
+    }
+
+    @Nullable
+    public Map<String, WebComponentMetadata> getComponents() {
+        return components;
+    }
+
+    public void setExtensions(@Nullable List<String> extensions) {
         this.extensions = extensions;
     }
 
+    @Nullable
     public List<String> getExtensions() {
         return extensions;
+    }
+
+    public void normalize() {
+        if (this.components == null) {
+            this.components = new HashMap<>();
+        }
+        if (this.extensions == null) {
+            this.extensions = new ArrayList<>();
+        }
+    }
+
+    public void mergeFrom(WebExtensions other) {
+        this.normalize();
+        if (other.getComponents() != null) {
+            for (var pair : other.getComponents().entrySet()) {
+                this.components.put(pair.getKey(), pair.getValue());
+            }
+        }
+        if (other.getExtensions() != null) {
+            this.extensions.addAll(other.getExtensions());
+        }
     }
 }

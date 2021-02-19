@@ -35,11 +35,11 @@ export interface SimpleDateInputProps extends React.Props<SimpleDateInput> {
 
 interface State {
   day?: string
-  dayIsValid?: 'success' | 'warning' | 'error'
+  dayIsValid?: boolean
   month?: string
-  monthIsValid?: 'success' | 'warning' | 'error'
+  monthIsValid?: boolean
   year?: string
-  yearIsValid?: 'success' | 'warning' | 'error'
+  yearIsValid?: boolean
 }
 
 export class SimpleDateInput extends React.PureComponent<SimpleDateInputProps, State> {
@@ -57,24 +57,30 @@ export class SimpleDateInput extends React.PureComponent<SimpleDateInputProps, S
 
   render() {
     return <div className={styles.holder}>
-      <FormGroup validationState={this.state.dayIsValid}>
+      <FormGroup>
         <FormControl className={classNames('form-control', styles.day)}
                      autoFocus={this.props.autoFocus}
                      value={this.state.day}
                      onChange={this.onDayChange}
+                     isValid={this.state.dayIsValid}
+                     isInvalid={this.state.dayIsValid == null ? null : !this.state.dayIsValid}
                      type='number' min='1' max='31' placeholder='DD' required={true}
         />
       </FormGroup>
-      <FormGroup validationState={this.state.monthIsValid}>
+      <FormGroup>
         <FormControl className={classNames('form-control', styles.month)}
                      value={this.state.month}
                      onChange={this.onMonthChange}
+                     isValid={this.state.monthIsValid}
+                     isInvalid={this.state.monthIsValid == null ? null : !this.state.monthIsValid}
                      type='number' min='1' max='12' placeholder='MM' required={true} />
       </FormGroup>
-      <FormGroup validationState={this.state.yearIsValid}>
+      <FormGroup>
         <FormControl className={classNames('form-control', styles.year)}
                      value={this.state.year}
                      onChange={this.onYearChange}
+                     isValid={this.state.yearIsValid}
+                     isInvalid={this.state.monthIsValid == null ? null : !this.state.yearIsValid}
                      type='number' placeholder='YYYY' required={true} />
       </FormGroup>
     </div>;
@@ -84,22 +90,22 @@ export class SimpleDateInput extends React.PureComponent<SimpleDateInputProps, S
     this.triggerOnSelected(nextState);
   }
 
-  private onDayChange = (event: React.FormEvent<FormControl>) => {
-    const value = (event.target as any).value;
+  private onDayChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
     if (this.state.day !== value) {
       const number = parseInt(value);
       this.setState({
         day: value,
-        dayIsValid: _.isNaN(number) || number < 1 || number > 31 ? 'error' : 'success',
+        dayIsValid: _.isNaN(number) || number < 1 || number > 31 ? false : true,
       });
     }
   }
 
-  private onMonthChange = (event: React.FormEvent<FormControl>) => {
+  private onMonthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({month: (event.target as any).value});
   }
 
-  private onYearChange = (event: React.FormEvent<FormControl>) => {
+  private onYearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({year: (event.target as any).value});
   }
 

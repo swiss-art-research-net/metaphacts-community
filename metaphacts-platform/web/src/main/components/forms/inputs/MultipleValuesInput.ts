@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,11 +49,25 @@ import {
   FieldValue, EmptyValue, CompositeValue, DataState, FieldError, ErrorKind,
 } from '../FieldValues';
 
-export interface MultipleValuesProps {
-  /** Key to associate with FieldDefinition by name */
-  for: string;
+export interface MultipleValuesConfig {
+  /**
+   * Field definition ID to associate input with.
+   */
+  for?: string;
   defaultValue?: string | number | boolean;
   defaultValues?: ReadonlyArray<string>;
+  /**
+   * Determines whether field label and description should be displayed above the input.
+   *
+   * If explicitly set to `false` the header will not be rendered and other markup may
+   * be used instead.
+   *
+   * Defaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.
+   */
+  renderHeader?: boolean;
+}
+
+export interface MultipleValuesProps extends MultipleValuesConfig {
   handler?: MultipleValuesHandler;
   definition?: FieldDefinition;
   dataState?: DataState;
@@ -61,20 +75,12 @@ export interface MultipleValuesProps {
   errors?: ReadonlyArray<FieldError>;
   updateValues?: (reducer: (previous: ValuesWithErrors) => ValuesWithErrors) => void;
   dependencyContext?: DependencyContext;
-  /**
-   * Optional argument to prevent label and description being
-   * rendered above the value input(s) i.e. in most settings (default),
-   * default layout / rendering will be sufficient.
-   *
-   * If and only explicitly set to 'false' the header will not be rendered and
-   * the static field markup components for layouting the title and description
-   * might be used.
-   */
-  renderHeader?: boolean;
 }
 
 export interface MultipleValuesHandler {
   validate(values: ValuesWithErrors): ValuesWithErrors;
+  discard?(values: ValuesWithErrors): void;
+  beforeFinalize?(): void;
   finalize(
     values: ReadonlyArray<FieldValue>,
     owner: EmptyValue | CompositeValue

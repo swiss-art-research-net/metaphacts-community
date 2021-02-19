@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -166,7 +166,8 @@ export class PageComponent extends React.Component<{}, State> {
     if (DefaultRepositoryInfo.isValidDefault()) {
       if (isEdit) {
         return ComponentsLoader.factory({
-          componentTagName: 'mp-internal-page-editor', componentProps: props,
+          componentTagName: 'mp-internal-page-editor',
+          componentProps: {...props, key: props.iri.value},
         });
       } else {
         return this.renderPageViews(resource, props.params);
@@ -236,7 +237,7 @@ export class PageComponent extends React.Component<{}, State> {
     return Array.from(this.state.loadedPageViews.values(), loadedView =>
       <div
         key={loadedView}
-        className={loadedView !== this.state.pageView ? 'hidden' : null}>
+        style={{display: loadedView !== this.state.pageView ? 'none' : null}}>
 
         <PageViewer
           iri={this.templateForView(currentResource, loadedView)}

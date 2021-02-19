@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,38 +50,46 @@ import { Cancellation } from 'platform/api/async';
 import { getLabels } from 'platform/api/services/resource-label';
 import { Rdf } from 'platform/api/rdf';
 
+/**
+ * Exports LDP resource.
+ *
+ * **Example**:
+ * ```
+ * <mp-ldp-export-resource iri="http://example.com/resource">
+ *   <button class="btn btn-secondary">Export resource</button>
+ * </mp-ldp-export-resource>
+ * ```
+ */
+interface LdpExportResourceConfig {
+  iri?: string;
+  selection?: string[];
+}
 
-interface IriProps {
+interface ExportResourceProps extends LdpExportResourceConfig {}
+
+interface IriProps extends ExportResourceProps {
   iri: string;
 }
-interface SelectionProps {
+interface SelectionProps extends ExportResourceProps {
   selection: string[];
 }
-export type Props = IriProps | SelectionProps;
 
-function isIriProps(props: Props): props is IriProps {
+function isIriProps(props: ExportResourceProps): props is IriProps {
   return _.has(props, 'iri');
 }
-function isSelectionProps(props: Props): props is SelectionProps {
+function isSelectionProps(props: ExportResourceProps): props is SelectionProps {
   return _.has(props, 'selection');
 }
 
-/**
- * Export LDP resource.
- * @example
- *  <mp-ldp-export-resource iri="http://example.com/resource">
- *      <button class="btn btn-default">Export resource</button>
- *  </mp-ldp-export-resource>
- */
-export class ExportResourceComponent extends Component<Props, {}> {
+export class ExportResource extends Component<ExportResourceProps, {}> {
   private readonly cancellation = new Cancellation();
 
-  constructor(props: Props, context: ComponentContext) {
+  constructor(props: ExportResourceProps, context: ComponentContext) {
     super(props, context);
     this.checkProps(props);
   }
 
-  componentWillReceiveProps(props: Props) {
+  componentWillReceiveProps(props: ExportResourceProps) {
     this.checkProps(props);
   }
 
@@ -89,7 +97,7 @@ export class ExportResourceComponent extends Component<Props, {}> {
     this.cancellation.cancelAll();
   }
 
-  checkProps(props: Props) {
+  checkProps(props: ExportResourceProps) {
     if (isIriProps(props) === isSelectionProps(props)) {
       throw 'Property iri xor selection of mp-ldp-export-resource should be set';
     }
@@ -131,4 +139,4 @@ export class ExportResourceComponent extends Component<Props, {}> {
   }
 }
 
-export default ExportResourceComponent;
+export default ExportResource;

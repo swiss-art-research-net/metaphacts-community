@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -94,7 +94,7 @@ export enum ErrorKind {
 export interface FieldError {
   readonly kind: ErrorKind;
   /** Opaque reference to filter errors from multiple sources. */
-  readonly source?: FieldConstraint;
+  readonly source?: FieldConstraint | symbol;
   readonly message: string;
 }
 export namespace FieldError {
@@ -117,9 +117,19 @@ export namespace FieldError {
   }
 }
 
-export interface EmptyValue { type: 'empty' }
+export interface EmptyValue {
+  readonly type: 'empty';
+  readonly errors: ReadonlyArray<FieldError>;
+}
 export namespace EmptyValue {
   export const type = 'empty';
+
+  export function set(source: EmptyValue, props: Partial<EmptyValue>): EmptyValue {
+    if ('errors' in props && !props.errors) {
+      throw new Error('EmptyValue.errors cannot be null or undefined');
+    }
+    return {...source, ...props};
+  }
 }
 
 export interface AtomicValue extends LabeledValue {
@@ -211,6 +221,8 @@ export namespace FieldState {
 export interface CompositeValue {
   readonly type: 'composite';
   readonly subject: Rdf.Iri;
+  readonly editableSubject: boolean;
+  readonly suggestSubject: boolean;
   readonly definitions: Immutable.Map<string, FieldDefinition>;
   readonly constraints: ReadonlyArray<MultipleFieldConstraint>;
   /**
@@ -230,6 +242,8 @@ export namespace CompositeValue {
   export const empty: CompositeValue = {
     type,
     subject: Rdf.iri(''),
+    editableSubject: false,
+    suggestSubject: false,
     definitions: Immutable.Map(),
     constraints: [],
     fields: Immutable.Map(),
@@ -247,7 +261,10 @@ export namespace CompositeValue {
 
 export type FieldValue = EmptyValue | AtomicValue | CompositeValue;
 export namespace FieldValue {
-  export const empty: EmptyValue = {type: EmptyValue.type};
+  export const empty: EmptyValue = {
+    type: EmptyValue.type,
+    errors: [],
+  };
 
   export function isEmpty(value: FieldValue): value is EmptyValue {
     return value.type === EmptyValue.type;
@@ -282,7 +299,7 @@ export namespace FieldValue {
 
   export function getErrors(value: FieldValue) {
     switch (value.type) {
-      case EmptyValue.type: return FieldError.noErrors;
+      case EmptyValue.type: return value.errors;
       case AtomicValue.type: return value.errors;
       case CompositeValue.type: return value.errors;
     }
@@ -290,26 +307,46 @@ export namespace FieldValue {
   }
 
   export function setErrors(
-    value: AtomicValue | CompositeValue,
+    value: FieldValue,
     errors: ReadonlyArray<FieldError>
-  ): AtomicValue | CompositeValue {
+  ): FieldValue {
     if (!errors) {
       throw new Error('Cannot set field value errors to null or undefined');
     }
     switch (value.type) {
-      case AtomicValue.type: return {...value, errors};
-      case CompositeValue.type: return {...value, errors};
+      case EmptyValue.type: return EmptyValue.set(value, {errors});
+      case AtomicValue.type: return AtomicValue.set(value, {errors});
+      case CompositeValue.type: return CompositeValue.set(value, {errors});
     }
     unknownFieldType(value);
   }
 
-  export function replaceError(v: FieldValue, error: FieldError) {
-    const nonEmpty = FieldValue.isEmpty(v)
-      ? FieldValue.fromLabeled({value: Rdf.iri('')}) : v;
-    return FieldValue.setErrors(nonEmpty, [error]);
+  export function replaceError(v: FieldValue, error: FieldError): FieldValue {
+    return FieldValue.setErrors(v, [error]);
   }
 
   export function unknownFieldType(value: never) {
     throw new Error(`Unknown field value type: ${(value as FieldValue).type}`);
   }
+
+  export function getSingle(values: ReadonlyArray<FieldValue>): FieldValue {
+    return findLiteralWithLanguage(values, '')
+      ?? findLiteralWithLanguage(values, 'en')
+      ?? FieldState.getFirst(values)
+      ?? FieldValue.empty;
+  }
+}
+
+function findLiteralWithLanguage(
+  values: ReadonlyArray<FieldValue>,
+  language: string
+): FieldValue | undefined {
+  for (const value of values) {
+    if (FieldValue.isAtomic(value) && Rdf.isLiteral(value.value)) {
+      if (value.value.language === language) {
+        return value;
+      }
+    }
+  }
+  return undefined;
 }

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -99,21 +99,15 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
-import org.eclipse.rdf4j.query.BooleanQuery;
 import org.eclipse.rdf4j.query.QueryEvaluationException;
 import org.eclipse.rdf4j.repository.Repository;
-import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.sail.SailException;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import com.google.common.base.Throwables;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
-import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.LabelCache;
-import com.metaphacts.cache.PlatformCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.cache.TemplateIncludeCache;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
@@ -132,7 +126,7 @@ import com.metaphacts.services.storage.api.StorageException;
 import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.MetaphactsHandlebars;
 import com.metaphacts.templates.PageViewConfig;
-import com.metaphacts.templates.PageViewConfigBuilder;
+import com.metaphacts.templates.PageViewConfigManager;
 import com.metaphacts.templates.PageViewConfigSettings;
 import com.metaphacts.templates.TemplateByIriLoader;
 import com.metaphacts.templates.TemplateContext;
@@ -159,16 +153,19 @@ public class TemplateEndpoint extends ResourceConfig {
     private static final StoragePath PAGE_RENDER_INFO_STORAGE_PATH = ObjectKind.CONFIG
             .resolve(PageViewConfigSettings.CONFIG_FILE_NAME);
 
-    protected static final String DEFAULT_BREADCRUMBS_TEMPLATE = "http://www.metaphacts.com/resource/breadcrumbs/Resource";
+    private static final Set<String> SUPPORTED_WORKER_BUNDLES = Set.of(
+        "monaco.editor.worker",
+        "monaco.html.worker",
+        "monaco.json.worker",
+        "monaco.css.worker",
+        "monaco.mp-template.worker"
+    );
 
     @Inject
     private ST st;
 
     @Inject
-    private LabelCache labelCache;
-
-    @Inject
-    private PageViewConfigSettings pageRenderConfiguration;
+    private LabelService labelCache;
 
     @Inject @Named("ASSETS_MAP")
     private Map<String, String> assetsMap;
@@ -186,8 +183,7 @@ public class TemplateEndpoint extends ResourceConfig {
 
     private static final ValueFactory vf = SimpleValueFactory.getInstance();
     private final MetaphactsHandlebars handlebars;
-    private final Configuration config;
-    private final PageViewConfigCache pageViewConfigCache;
+    private final PageViewConfigManager pageViewConfigCache;
 
     @Inject
     public TemplateEndpoint(
@@ -197,7 +193,7 @@ public class TemplateEndpoint extends ResourceConfig {
         PlatformStorage platformStorage,
         MetaphactsHandlebars handlebars,
         Configuration configuration,
-        CacheManager cacheManager
+        PageViewConfigManager pageViewConfigCache
     ) {
         this.ns = ns;
         this.repositoryManager=repositoryManager;
@@ -206,10 +202,7 @@ public class TemplateEndpoint extends ResourceConfig {
 
         this.handlebars = handlebars;
 
-        this.config = configuration;
-
-        this.pageViewConfigCache = new PageViewConfigCache();
-        cacheManager.register(pageViewConfigCache);
+        this.pageViewConfigCache = pageViewConfigCache;
     }
 
     public static class RenderedTemplate {
@@ -262,9 +255,6 @@ public class TemplateEndpoint extends ResourceConfig {
         }
     }
 
-
-
-
     /**
      * For caching purpose every new build of the platform has unique name for vendor bundle.
      * So we need to expose vendor js script through stable URL when we want to embed the platform
@@ -279,6 +269,29 @@ public class TemplateEndpoint extends ResourceConfig {
         return Response.status(Status.FOUND).location(uri).build();
     }
 
+    @GET
+    @Path("workers/{workerBundle}")
+    @NoCache
+    public Response getWorkerScript(@PathParam("workerBundle") String workerBundle) {
+        if (!(SUPPORTED_WORKER_BUNDLES.contains(workerBundle) && assetsMap.containsKey(workerBundle))) {
+            logger.warn("Invalid worker bundle: \"{}\"", workerBundle);
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        // This dynamic script generation is done to:
+        //   1. allow loading web worker scripts from another origin in development;
+        //   2. load vendor bundle with dynamic name in production;
+        // See StackOverflow question "Execute web worker from different origin":
+        // https://stackoverflow.com/a/22151285/5278565
+
+        // add 'window' object as workaround for Webpack v4 bundle execution
+        String workerScript = "window = {};\n" +
+            "importScripts(\"" + assetsMap.get("vendor") + "\");\n" +
+            "importScripts(\"" + assetsMap.get(workerBundle) + "\");";
+
+        return Response.ok(workerScript, "application/javascript").build();
+    }
+
     @GET()
     @Path("pageViewConfig")
     @Produces(MediaType.APPLICATION_JSON)
@@ -287,8 +300,7 @@ public class TemplateEndpoint extends ResourceConfig {
             @QueryParam("repository") Optional<String> repositoryId
             ) {
         try {
-            String cacheKey = pageViewConfigCache.createCacheKey(iri, repositoryId);
-            return pageViewConfigCache.cache.get(cacheKey, () -> computePageRenderInfo(iri, repositoryId));
+            return pageViewConfigCache.getPageViewConfig(iri, repositoryId);
         } catch (ExecutionException e) {
             logger.warn("Error while computing page render information: " + e.getMessage());
             logger.debug("Details:", e);
@@ -296,112 +308,6 @@ public class TemplateEndpoint extends ResourceConfig {
             Throwables.throwIfInstanceOf(cause, RuntimeException.class);
             throw new RuntimeException(cause);
         }
-    }
-
-    protected PageViewConfig computePageRenderInfo(IRI iri, Optional<String> repositoryId) {
-
-        TemplateContext tc = new TemplateContext(
-                iri, repositoryId.map(repId -> repositoryManager.getRepository(repId))
-                        .orElse(repositoryManager.getDefault()),
-                uriInfo, null
-                );
-        tc.setLabelCache(labelCache);
-        tc.setNamespaceRegistry(this.ns);
-        
-        // check whether IRI represents an RDF node (subj, pred, or obj)
-        boolean isRDFNode = isRDFNode(iri, repositoryId);
-
-        // 1. is IRI representing a static page
-        boolean isStaticPage = TemplateUtil.getTemplateSource(handlebars.getLoader(), iri.stringValue()).isPresent();
-        if (isStaticPage) {
-            
-            if (isRDFNode) {
-                // a static page with RDF content, we want to allow toggling the knowledge graph bar
-                PageViewConfigBuilder builder = PageViewConfigBuilder.forStaticPage(iri, pageRenderConfiguration)
-                        .withShowKnowledgeGraphBarToggle(true);
-
-                // resolve the knowledge panel template to be used (if exist) and find the first
-                // existing panel template
-                Optional<String> firstExistingPanelTemplate = resolveKnowledgePanelTemplateIfExist(iri, tc);
-
-                // apply the panel template to the config
-                if (firstExistingPanelTemplate.isPresent()) {
-                    builder.withKnowledgePanelTemplateIri(firstExistingPanelTemplate.get());
-                }
-
-                return builder
-                        .applyConfiguration(pageRenderConfiguration).build();
-            } else {
-                // a static page without RDF content (e.g. an admin page)
-                return PageViewConfigBuilder.forStaticPage(iri, pageRenderConfiguration)
-                        .applyConfiguration(pageRenderConfiguration).build();
-            }
-        }
-        
-        
-        // 2. IRI does not represent an RDF node
-        if (!isRDFNode) {
-            return PageViewConfigBuilder.forNonExistingResource(iri, pageRenderConfiguration)
-                    .applyConfiguration(pageRenderConfiguration)
-                    .build();
-        }
-
-        // IRI represents an RDF node
-        // now check if IRI is a typed node => used template include identifiers
-        LinkedHashSet<String> resourceTemplates = TemplateUtil.getRdfTemplateIncludeIdentifiers(iri, tc, includeCache);
-        
-        // find the first existing template
-        Optional<String> firstExistingTemplate = TemplateUtil.findFirstExistingTemplate(handlebars.getLoader(),
-                resourceTemplates);
-        
-        PageViewConfigBuilder builder = PageViewConfigBuilder.createDefault(iri, pageRenderConfiguration);
-        // if template exists, take it. Otherwise use initialize template from defaults
-        if (firstExistingTemplate.isPresent()) {
-            builder.withPageViewTemplateIri(firstExistingTemplate.get());
-        } else {
-            builder.withBreadcrumbsTemplateIri(DEFAULT_BREADCRUMBS_TEMPLATE);
-        }
-
-        // resolve the knowledge panel template to be used (if exist) and find the first
-        // existing panel template
-        Optional<String> firstExistingPanelTemplate = resolveKnowledgePanelTemplateIfExist(iri, tc);
-
-        // apply the panel template to the config
-        if (firstExistingPanelTemplate.isPresent()) {
-            builder.withKnowledgePanelTemplateIri(firstExistingPanelTemplate.get());
-        }
-
-        return builder
-                .withShowKnowledgeGraphBar(!firstExistingTemplate.isPresent())
-                .applyConfiguration(pageRenderConfiguration)
-                .build();
-
-    }
-
-    protected boolean isRDFNode(IRI iri, Optional<String> repositoryId) {
-        
-        // TODO consider checking for graph as well
-        // Note: might not work in all databases (e.g. wikidata)
-        String askQuery = "ASK { { ?iri ?p ?o } UNION { ?s ?iri ?o} UNION {?s ?p ?iri} }";
-
-        Repository repo = repositoryId.map(repId -> repositoryManager.getRepository(repId))
-                .orElse(repositoryManager.getDefault());
-        try (RepositoryConnection conn = repo.getConnection()) {
-            BooleanQuery bq = conn.prepareBooleanQuery(askQuery);
-            bq.setBinding("iri", iri);
-            return bq.evaluate();
-        }
-    }
-
-
-    protected Optional<String> resolveKnowledgePanelTemplateIfExist(IRI iri, TemplateContext tc) {
-
-        // compute the knowledge panel template to be used (if exist)
-        LinkedHashSet<String> knowledgePanelTemplates = TemplateUtil.getRdfKnowledgePanelTemplateIncludeIdentifiers(iri,
-                tc, includeCache);
-
-        // find the first existing panel template
-        return TemplateUtil.findFirstExistingTemplate(handlebars.getLoader(), knowledgePanelTemplates);
     }
 
     @GET
@@ -464,8 +370,7 @@ public class TemplateEndpoint extends ResourceConfig {
     }
 
     private void reloadPageViewConfigs() {
-        pageRenderConfiguration.reloadConfiguration();
-        pageViewConfigCache.invalidate();
+        pageViewConfigCache.reloadConfiguration();
     }
 
     /**
@@ -487,13 +392,13 @@ public class TemplateEndpoint extends ResourceConfig {
         // by default the context equals the requested IRI, however, clients may overwrite it
         IRI templateContextIri = context.orElse(iri);
         logger.trace("Requesting page for resource \"{}\"", iri.stringValue());
-        
+
         if (!PermissionUtil.hasTemplateActionPermission(iri, PAGES.Action.VIEW)) {
             return Response.status(Status.FORBIDDEN).entity(
                     "No permission to view the page for the resource " + iri.stringValue())
                     .build();
         }
-        
+
         try {
             Repository repo = repositoryManager.getRepository(repositoryId).orElse(repositoryManager.getDefault());
             TemplateContext tc = new TemplateContext(
@@ -534,7 +439,7 @@ public class TemplateEndpoint extends ResourceConfig {
                     .entity("No permission to view the knowledge panel page for the resource " + iri.stringValue())
                     .build();
         }
-        
+
         PageViewConfig pageViewConfig = getPageViewConfig(iri, repositoryId);
         IRI knowledgePanelTemplateIRI = SimpleValueFactory.getInstance()
                 .createIRI(pageViewConfig.getKnowledgePanelTemplateIri());
@@ -615,7 +520,7 @@ public class TemplateEndpoint extends ResourceConfig {
                     "No permission to view the source for the template " + iri.stringValue())
                     .build();
         }
-        
+
         StoragePath objectId = TemplateByIriLoader.templatePathFromIri(iri);
         List<PlatformStorage.FindResult> overrides =
             platformStorage.findOverrides(objectId);
@@ -635,12 +540,6 @@ public class TemplateEndpoint extends ResourceConfig {
             .map(r -> r.getAppId())
             .collect(Collectors.toList());
 
-        Set<IRI> includes = Sets.newLinkedHashSet();
-        try {
-            includes.addAll(TemplateUtil.extractIncludeIRIs(templateContent,ns));
-        } catch (IllegalArgumentException e) {
-            logger.error("Problem while trying to extract handlebars includes from template source code:"+ e.getMessage());
-        }
         Repository repo = repositoryManager.getRepository(repositoryId).orElse(repositoryManager.getDefault());
         TemplateContext tc = new TemplateContext(iri, repo, uriInfo, null);
         tc.setLabelCache(labelCache);
@@ -660,7 +559,6 @@ public class TemplateEndpoint extends ResourceConfig {
             templateContent,
             definedByApps,
             orderedSetOfLocations,
-            includes,
             appliedTemplate
         );
 
@@ -679,7 +577,6 @@ public class TemplateEndpoint extends ResourceConfig {
         private List<String> definedByApps;
         private Set<String> applicableTemplates;
         private String appliedTemplate;
-        private Set<IRI> includes;
 
         public RawTemplate(
             String appId,
@@ -687,7 +584,6 @@ public class TemplateEndpoint extends ResourceConfig {
             String source,
             List<String> definedByApps,
             Set<String> applicableTemplates,
-            Set<IRI> includes,
             String appliedTemplate
         ) {
             this.appId = appId;
@@ -695,7 +591,6 @@ public class TemplateEndpoint extends ResourceConfig {
             this.source = source;
             this.definedByApps = definedByApps;
             this.applicableTemplates = applicableTemplates;
-            this.includes = includes;
             this.appliedTemplate= appliedTemplate;
         }
 
@@ -719,10 +614,6 @@ public class TemplateEndpoint extends ResourceConfig {
             return applicableTemplates;
         }
 
-        public Set<IRI> getIncludes() {
-            return includes;
-        }
-
         public String getAppliedTemplate() {
             return appliedTemplate;
         }
@@ -742,7 +633,7 @@ public class TemplateEndpoint extends ResourceConfig {
         if (logger.isTraceEnabled()) {
             logger.trace("Saving Page: " + iri);
         }
-        
+
         if (!PermissionUtil.hasTemplateActionPermission(iri, PAGES.Action.EDIT_SAVE)) {
             return Response.status(Status.FORBIDDEN).entity(
                     "No permission to save the template " + iri.stringValue())
@@ -818,7 +709,7 @@ public class TemplateEndpoint extends ResourceConfig {
     @Produces(MediaType.APPLICATION_JSON)
     @RequiresAuthentication
     public List< TemplateInfo> getAllInfo() throws IOException, URISyntaxException {
-        
+
         Collection<PlatformStorage.FindResult> templateObjects =
             platformStorage.findAll(ObjectKind.TEMPLATE).values();
 
@@ -831,11 +722,11 @@ public class TemplateEndpoint extends ResourceConfig {
             if (!iri.isPresent()) {
                 continue;
             }
-            
+
             if (!PermissionUtil.hasTemplateActionPermission(iri.get(), PAGES.Action.INFO_VIEW)) {
                 continue;
             }
-            
+
             String creationDate = null;
             if (metadata.getCreationDate() != null) {
                 Instant roundedToSeconds = metadata.getCreationDate().with(ChronoField.NANO_OF_SECOND, 0);
@@ -894,7 +785,7 @@ public class TemplateEndpoint extends ResourceConfig {
                         if (!PermissionUtil.hasTemplateActionPermission(iri, PAGES.Action.INFO_EXPORT)) {
                             throw new SecurityException("No permission to export the " + info.iri + " template");
                         }
-                        
+
                         StoragePath objectId = TemplateByIriLoader.templatePathFromIri(iri);
 
                         String path = platformStorage.getPathMapping()
@@ -958,7 +849,7 @@ public class TemplateEndpoint extends ResourceConfig {
                 throw new WebApplicationException("No permission to delete the template: " + iri.stringValue(), Status.FORBIDDEN);
             }
         }
-        
+
         for (RevisionInfo info : selected) {
             IRI iri = vf.createIRI(info.iri);
             StoragePath objectId = TemplateByIriLoader.templatePathFromIri(iri);
@@ -1007,45 +898,5 @@ public class TemplateEndpoint extends ResourceConfig {
     @RequiresAuthentication
     public String getNoPermissionsPage() throws IOException {
         return st.renderPageLayoutTemplate(TEMPLATES.NO_PERMISSIONS_PAGE);
-    }
-
-    public class PageViewConfigCache implements PlatformCache {
-
-        public static final String CACHE_ID = "platform.PageViewConfigCache";
-
-        /**
-         * Cache key is defined in {@link #createCacheKey(IRI, Optional)}
-         */
-        private Cache<String, PageViewConfig> cache;
-
-        public PageViewConfigCache() {
-            this.cache = initializeCache();
-        }
-
-        private Cache<String, PageViewConfig> initializeCache() {
-            String spec = TemplateEndpoint.this.config.getCacheConfig().getPageViewConfigCacheSpec();
-            return CacheBuilder.from(spec).build();
-        }
-
-        @Override
-        public void invalidate() {
-            cache.invalidateAll();
-            // create a new instance to allow changing cache configuration at runtime
-            cache = initializeCache();
-        }
-
-        @Override
-        public void invalidate(Set<IRI> iris) {
-            cache.invalidateAll();
-        }
-
-        @Override
-        public String getId() {
-            return CACHE_ID;
-        }
-
-        String createCacheKey(IRI iri, Optional<String> repositoryId) {
-            return iri.stringValue() + "--" + repositoryId.orElse("default");
-        }
     }
 }

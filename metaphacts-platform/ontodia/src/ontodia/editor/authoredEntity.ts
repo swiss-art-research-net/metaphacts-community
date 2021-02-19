@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import * as React from 'react';
 
-import { ElementModel } from '../data/model';
+import { ElementModel, LinkTypeIri } from '../data/model';
 import { PaperAreaContextTypes, PaperAreaContextWrapper } from '../diagram/paperArea';
 import { DiagramView } from '../diagram/view';
 
@@ -48,7 +48,7 @@ import { Listener } from '../viewUtils/events';
 
 import { WorkspaceContextTypes, WorkspaceContextWrapper } from '../workspace/workspaceContext';
 
-import { AuthoringState, AuthoringKind } from './authoringState';
+import { AuthoringState } from './authoringState';
 import { EditLayerMode } from './editLayer';
 import { EditorEvents, EditorController } from './editorController';
 
@@ -66,7 +66,9 @@ export interface AuthoredEntityContext {
     canDelete: boolean | undefined;
     onEdit: () => void;
     onDelete: () => void;
-    onEstablishNewLink: (e: React.MouseEvent<HTMLElement>) => void;
+    onEstablishNewLink: (
+        e: React.MouseEvent<HTMLElement>, linkTypeIri?: LinkTypeIri, canDropOnCanvas?: boolean
+    ) => void;
 }
 
 export interface State {
@@ -118,9 +120,9 @@ export class AuthoredEntity extends React.Component<AuthoredEntityProps, State> 
     }
 
     private getTarget() {
-        const {editor} = this.context.ontodiaWorkspace;
+        const {model} = this.context.ontodiaWorkspace;
         const {elementId} = this.props;
-        return editor.model.getElement(elementId);
+        return model.getElement(elementId);
     }
 
     private onChangeAuthoringState: Listener<EditorEvents, 'changeAuthoringState'> = e => {
@@ -193,8 +195,7 @@ export class AuthoredEntity extends React.Component<AuthoredEntityProps, State> 
 
         const iri = target.iri;
         const elementEvent = editor.authoringState.elements.get(iri);
-        const editedIri = elementEvent && elementEvent.type === AuthoringKind.ChangeElement ?
-            elementEvent.newIri : undefined;
+        const editedIri = elementEvent ? elementEvent.newIri : undefined;
 
         return renderTemplate({
             editor,
@@ -209,11 +210,11 @@ export class AuthoredEntity extends React.Component<AuthoredEntityProps, State> 
     }
 
     private onEdit = () => {
-        const {editor} = this.context.ontodiaWorkspace;
+        const {model, overlayController} = this.context.ontodiaWorkspace;
         const {elementId} = this.props;
-        const element = editor.model.getElement(elementId);
+        const element = model.getElement(elementId);
         if (element) {
-            editor.showEditEntityForm(element);
+            overlayController.showEditEntityForm(element);
         }
     }
 
@@ -225,15 +226,24 @@ export class AuthoredEntity extends React.Component<AuthoredEntityProps, State> 
         editor.deleteEntity(target.iri);
     }
 
-    private onEstablishNewLink = (e: React.MouseEvent<HTMLElement>) => {
+    private onEstablishNewLink = (
+        e: React.MouseEvent<HTMLElement>,
+        linkTypeIri?: LinkTypeIri,
+        canDropOnCanvas?: boolean,
+    ) => {
         const target = this.getTarget();
         if (!target) { return; }
 
-        const {editor} = this.context.ontodiaWorkspace;
+        const {overlayController} = this.context.ontodiaWorkspace;
         const {paperArea} = this.context.ontodiaPaperArea;
         const point = paperArea.pageToPaperCoords(e.pageX, e.pageY);
-        editor.startEditing({
-            target, mode: EditLayerMode.establishLink, point,
+
+        overlayController.startEditing({
+            target,
+            mode: EditLayerMode.establishLink,
+            point,
+            linkTypeIri,
+            canDropOnCanvas,
         });
-      }
+    }
 }

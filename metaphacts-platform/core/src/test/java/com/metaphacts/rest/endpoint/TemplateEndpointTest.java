@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -72,6 +72,7 @@ import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.PageViewConfig;
 import com.metaphacts.templates.PageViewConfigBuilder;
+import com.metaphacts.templates.PageViewConfigManager;
 import com.metaphacts.templates.PageViewConfigSettings;
 import com.metaphacts.templates.TemplateByIriLoader;
 
@@ -299,7 +300,7 @@ public class TemplateEndpointTest extends MetaphactsJerseyTest {
                 pInfo.getKnowledgeGraphBarTemplateIri());
         Assert.assertEquals(PageViewConfigBuilder.TEMPLATE_GRAPH_RESOURCE, pInfo.getGraphViewTemplateIri());
         Assert.assertEquals(PageViewConfigBuilder.TEMPLATE_STATEMENTS_RESOURCE, pInfo.getStatementsViewTemplateIri());
-        Assert.assertEquals(TemplateEndpoint.DEFAULT_BREADCRUMBS_TEMPLATE, pInfo.getBreadcrumbsTemplateIri());
+        Assert.assertEquals(PageViewConfigManager.DEFAULT_BREADCRUMBS_TEMPLATE, pInfo.getBreadcrumbsTemplateIri());
     }
 
     @Test

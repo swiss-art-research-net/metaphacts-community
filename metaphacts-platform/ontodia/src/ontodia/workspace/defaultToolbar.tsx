@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,13 +65,13 @@ export interface DefaultToolbarProps extends PaperWidgetProps {
 
 const CLASS_NAME = 'ontodia-toolbar';
 
-type RequiredProps = DefaultToolbarProps & Required<PaperWidgetProps> &
-    Required<Pick<DefaultToolbarProps,
-        'id' | 'dock' | 'margin' | 'diagramName' | 'languages'
-    >>;
+type RequiredProps = DefaultToolbarProps & Required<PaperWidgetProps> & DefaultProps;
+type DefaultProps = Required<Pick<DefaultToolbarProps,
+    'id' | 'dock' | 'margin' | 'diagramName' | 'languages'
+>>;
 
 export class DefaultToolbar extends React.Component<DefaultToolbarProps, {}> {
-    static defaultProps: Partial<DefaultToolbarProps> = {
+    static defaultProps: DefaultProps = {
         id: 'toolbar',
         dock: 'nw',
         margin: 10,
@@ -153,12 +153,10 @@ export class DefaultToolbar extends React.Component<DefaultToolbarProps, {}> {
                 <div className='ontodia-btn-group ontodia-btn-group-sm'>
                     {this.renderSaveDiagramButton()}
                     {this.renderPersistAuthoredChangesButton()}
-                    {this.getContext().onClearAll ? (
-                        <button type='button' className='ontodia-btn ontodia-btn-default'
-                            title='Clear All' onClick={this.getContext().onClearAll}>
-                            <span className='fa fa-trash' aria-hidden='true'/>&nbsp;Clear All
-                        </button>
-                    ) : null}
+                    <button type='button' className='ontodia-btn ontodia-btn-default'
+                        title='Clear All' onClick={this.getContext().onClearAll}>
+                        <span className='fa fa-trash' aria-hidden='true'/>&nbsp;Clear All
+                    </button>
                     <button type='button' className='ontodia-btn ontodia-btn-default'
                             title='Force layout' onClick={this.onForceLayout}>
                         <span className='fa fa-sitemap' aria-hidden='true'/> Layout

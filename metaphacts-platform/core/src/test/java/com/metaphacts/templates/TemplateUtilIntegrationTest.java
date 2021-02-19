@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,7 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.vocabulary.FOAF;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.SKOS;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Assert;
@@ -68,7 +69,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.cache.LabelCache;
+import com.metaphacts.cache.LabelService;
 import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.cache.TemplateIncludeCache;
 import com.metaphacts.config.Configuration;
@@ -101,7 +102,7 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
     public PlatformStorageRule platformStorageRule;
 
     @Inject
-    private LabelCache labelCache;
+    private LabelService labelCache;
     
     @Inject
     private QueryTemplateCache queryTemplateCache;
@@ -224,7 +225,7 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
         LinkedHashSet<String> set = Sets.newLinkedHashSet();
         set.add("Template:"+FOAF.PERSON.stringValue());
         set.add("Template:"+FOAF.AGENT.stringValue());
-        Assert.assertThat(
+        MatcherAssert.assertThat(
                 set,
                 IsIterableContainingInAnyOrder.containsInAnyOrder(TemplateUtil
                         .getRdfTemplateIncludeIdentifiers(joe, context(joe), includeCache).toArray())
@@ -243,7 +244,7 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
             TestPlatformStorage.STORAGE_ID
         );
         LinkedHashSet<Resource> includes = includeCache.getTypesForIncludeScheme(repositoryRule.getRepository(), vf.createIRI("http://www.metaphacts.com/anyIRI"), Optional.of(namespaceRule.getNamespaceRegistry()));
-        Assert.assertThat(
+        MatcherAssert.assertThat(
                 Lists.newArrayList(FOAF.PERSON, FOAF.AGENT, SKOS.CONCEPT),
                 IsIterableContainingInOrder.contains(includes.toArray())
         );
@@ -253,7 +254,7 @@ public class TemplateUtilIntegrationTest extends AbstractRepositoryBackedIntegra
         set.add("Template:"+FOAF.PERSON.stringValue());
         set.add("Template:"+FOAF.AGENT.stringValue());
         set.add("Template:"+SKOS.CONCEPT.stringValue());
-        Assert.assertThat(
+        MatcherAssert.assertThat(
                 set,
                 IsIterableContainingInOrder.contains(
                         TemplateUtil.getRdfTemplateIncludeIdentifiers(joe, context(joe), includeCache)

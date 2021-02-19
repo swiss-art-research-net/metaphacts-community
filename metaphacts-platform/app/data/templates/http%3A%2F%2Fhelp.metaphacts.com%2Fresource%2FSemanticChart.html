@@ -578,6 +578,60 @@
 ></semantic-chart>
 ]]>
     </mp-code-example>
+
+    <h3>Time based chart</h3>
+    <p>This example uses a time based x-axis. In addition it sets the default value to <code>null</code> and <code>spanGaps</code> to <code>true</code>, so data available in only one dataset doesn't affect other datasets.</p>
+    <mp-code-example>
+<![CDATA[
+<semantic-chart provider='chartjs'
+  type='line'
+  query='
+PREFIX person: <http://example.com/person/>
+PREFIX org: <http://example.com/org/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?mseries ?year ?value WHERE {
+  VALUES (?mseries ?year ?value)
+  {
+    ("first" "2020-01-01"^^xsd:date "3")    
+    ("first" "2020-02-01"^^xsd:date "6")
+    ("first" "2020-05-01"^^xsd:date "4")
+    ("first" "2020-09-01"^^xsd:date "7")
+    ("first" "2020-10-01"^^xsd:date "9")
+    ("second" "2020-03-01"^^xsd:date "7")
+    ("second" "2020-05-01"^^xsd:date "3")
+    ("second" "2020-08-01"^^xsd:date "8")
+    ("second" "2020-09-01"^^xsd:date "6")
+  }
+}
+ORDER BY ?year
+'
+  multi-data-set='{
+    "dataSetVariable": "mseries",
+    "category": "year",
+    "value": "value",
+    "defaultValue": null
+  }'
+  styles='[
+    {
+      "provider": "chartjs",
+      "style": {
+        "options": {
+          "spanGaps": true,
+          "scales": {
+            "xAxes": [{
+              "type": "time",
+              "time": {
+                "unit": "month"
+              }
+            }]
+          }
+        }
+      }
+    }
+  ]'>
+</semantic-chart>
+]]>
+    </mp-code-example>
     
   </div>
 </div>

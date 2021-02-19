@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,8 @@ require('whatwg-fetch');
 require('es6-promise/auto');
 require('./viewUtils/polyfills');
 
+export { DefaultLinkTemplateBundle, defaultRenderLinkProperties } from './customization/defaultLinkStyles';
+export { DefaultTypeStyleBundle } from './customization/defaultTypeStyles';
 export * from './customization/props';
 export * from './customization/templates';
 
@@ -53,11 +55,11 @@ export * from './data/provider';
 export { DIAGRAM_CONTEXT_URL_V1, PLACEHOLDER_ELEMENT_TYPE, PLACEHOLDER_LINK_TYPE } from './data/schema';
 
 export * from './data/composite/composite';
-export * from './data/demo/provider';
 export {
    Rdf, RdfDataProvider, RdfDataProviderOptions, RdfFile, LodDataProvider, LodDataProviderOptions,
    RdfParser, RdfExtLegacyGraph, RdfExtLegacyTriple, RdfExtLegacyTerm,
 } from './data/rdf';
+export { canonicalizeBlanks } from './data/rdf/blankHashing';
 export * from './data/sparql/sparqlDataProvider';
 export * from './data/sparql/sparqlDataProviderSettings';
 export * from './data/sparql/graphBuilder';
@@ -69,7 +71,7 @@ export { RestoreGeometry, setElementExpanded, setElementData, setLinkData, perfo
 export { CanvasWidget, CanvasWidgetProps, WidgetDock, getCanvasWidgetPosition } from './diagram/canvasWidget';
 export {
     Cell, Element, ElementEvents, ElementTemplateState,
-    Link, LinkEvents, LinkTemplateState, LinkVertex, LinkDirection,
+    Link, LinkEvents, LinkTemplateState, LinkVertex,
     LinkType, LinkTypeEvents,
     RichClass, RichClassEvents,
     RichProperty, RichPropertyEvents,
@@ -86,9 +88,11 @@ export * from './editor/asyncModel';
 export { EditLayerMode } from './editor/editLayer';
 export { AuthoredEntity, AuthoredEntityProps, AuthoredEntityContext } from './editor/authoredEntity';
 export * from './editor/authoringState';
+export { EditorController, EditorEvents, SelectionItem } from './editor/editorController';
 export {
-    EditorOptions, EditorEvents, EditorController, PropertyEditor, PropertyEditorOptions, SelectionItem,
-} from './editor/editorController';
+    OverlayController, OverlayControllerEvents, PropertyEditor, PropertyEditorOptions,
+    LinkEditor, LinkEditorOptions,
+} from './editor/overlayController';
 export { ValidationState, ElementValidation, LinkValidation } from './editor/validation';
 
 export {
@@ -98,13 +102,18 @@ export {
 
 export { Cancellation, CancellationToken, CancelledError } from './viewUtils/async';
 export * from './viewUtils/events';
+export { HashMap, HashSet, ReadonlyHashMap, ReadonlyHashSet } from './viewUtils/hashMap';
 export { ToDataURLOptions } from './viewUtils/toSvg';
 export {
     LayoutFunction, LayoutFunctionParams, CalculatedLayout, UnzippedCalculatedLayout,
     LayoutNode, LayoutEdge, calculateLayout, applyLayout, forceLayout, removeOverlaps,
+    placeElementsAround,
 } from './viewUtils/layout';
 
-export { PropertySuggestionParams, PropertyScore } from './widgets/connectionsMenu';
+export {
+    ConnectionsMenu, ConnectionsMenuProps, ConnectionsMenuCommands,
+    PropertySuggestionParams, PropertyScore,
+} from './widgets/connectionsMenu';
 export { ClassTree, ClassTreeProps } from './widgets/classTree';
 export { InstancesSearch, InstancesSearchProps, InstancesSearchCommands, SearchCriteria } from './widgets/instancesSearch';
 export { LinkTypesToolbox } from './widgets/linksToolbox';
@@ -114,7 +123,9 @@ export { HaloLink, HaloLinkProps } from './widgets/haloLink';
 export { ElementSearch, ElementSearchProps } from './widgets/elementSearch';
 
 export { DefaultToolbar, DefaultToolbarProps } from './workspace/defaultToolbar';
-export { DefaultWorkspaceLayout, DefaultWorkspaceLayoutProps } from './workspace/defaultWorkspaceLayout';
+export {
+    DefaultWorkspaceLayout, DefaultWorkspaceLayoutProps, DefaultWorkspaceLayoutCommands,
+} from './workspace/defaultWorkspaceLayout';
 export {
     Workspace, WorkspaceProps, WorkspaceLanguage, WorkspaceMethods, renderTo,
 } from './workspace/workspace';

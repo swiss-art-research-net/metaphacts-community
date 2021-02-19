@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -199,7 +199,7 @@ export class FileUpload extends React.Component<FileUploadProps, FileUploadState
         {this.state.alertState.map(value => <Alert {...value} />).getOrElse(null)}
         {this.state.progress.map(progress =>
           <ProgressBar
-            active={true} min={0} max={100} now={progress}
+            animated min={0} max={100} now={progress}
             label={this.state.progressText.getOrElse('Uploading Files')}
           />
         ).getOrElse(null)}

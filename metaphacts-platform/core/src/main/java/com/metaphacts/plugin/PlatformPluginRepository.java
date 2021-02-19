@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,19 +57,23 @@ public class PlatformPluginRepository extends DefaultPluginRepository {
 
     @Override
     public List<Path> getPluginPaths() {
-        // expand plugins zip files
-        File[] pluginZips = pluginsRoot.toFile().listFiles(new ZipFileFilter());
-        if ((pluginZips != null) && pluginZips.length > 0) {
-            for (File pluginZip : pluginZips) {
-                try {
-                    PluginZipUtils.expandAndDeleteIfValidZipApp(pluginZip.toPath());
-                } catch (Exception e) {
-                    logger.error("Cannot expand plugin zip '{}'", pluginZip);
-                    logger.error(e.getMessage());
-                    logger.debug("Details: {}", e);
+
+        pluginsRoots.forEach(pluginsRoot -> {
+
+            // expand plugins zip files
+            File[] pluginZips = pluginsRoot.toFile().listFiles(new ZipFileFilter());
+            if ((pluginZips != null) && pluginZips.length > 0) {
+                for (File pluginZip : pluginZips) {
+                    try {
+                        PluginZipUtils.expandAndDeleteIfValidZipApp(pluginZip.toPath());
+                    } catch (Exception e) {
+                        logger.error("Cannot expand plugin zip '{}'", pluginZip);
+                        logger.error(e.getMessage());
+                        logger.debug("Details: {}", e);
+                    }
                 }
             }
-        }
+        });
 
         return super.getPluginPaths();
     }

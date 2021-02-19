@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {
-    Workspace, EventSource, CanvasCommands, RdfDataProvider, LodDataProvider, GraphBuilder,
+    Workspace, EventSource, RdfDataProvider, LodDataProvider, GraphBuilder, DefaultWorkspaceLayoutCommands,
 } from '../src/ontodia/index';
 
 import { N3Parser, renderExample } from './resources/common';
@@ -52,12 +52,12 @@ const DIAGRAM = `@prefix fts: <https://w3id.org/datafabric.cc/ontologies/fts#> .
                         ex:LE-1-RegInfo-1157847449121 .`;
 
 class SparqlTurtleGraphExample extends React.Component {
-    private commands = new EventSource<CanvasCommands>();
+    private commands = new EventSource<DefaultWorkspaceLayoutCommands>();
 
     render() {
         return (
             <Workspace ref={this.onWorkspaceMount}>
-                <ExampleWorkspaceLayout canvasCommands={this.commands} />
+                <ExampleWorkspaceLayout commands={this.commands} />
             </Workspace>
         );
     }

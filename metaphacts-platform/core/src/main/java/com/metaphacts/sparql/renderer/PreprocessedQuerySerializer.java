@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -146,6 +146,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.metaphacts.sparql.renderer.SerializableParsedTupleQuery.QueryModifier;
+import com.metaphacts.util.QueryUtil;
 
 /**
  * This class processes a {@link SerializableParsedTupleQuery} and renders it as a SPARQL string.
@@ -465,7 +466,7 @@ public class PreprocessedQuerySerializer extends AbstractQueryModelVisitor<Runti
     }
 
     public void meet(Value node) {
-        MpSparqlQueryRendererUtils.writeAsSparqlValue(node, builder, !insideFunction);
+        builder.append(QueryUtil.toSPARQL(node));
     }
 
     @Override

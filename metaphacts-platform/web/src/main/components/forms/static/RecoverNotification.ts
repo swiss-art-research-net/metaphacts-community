@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,16 +37,20 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { createFactory, CSSProperties } from 'react';
+import * as React from 'react';
 import * as D from 'react-dom-factories';
 import * as assign from 'object-assign';
 
-import { StaticComponent, StaticFieldProps } from './StaticComponent';
+import { StaticComponent, StaticComponentProps } from './StaticComponent';
 
-export interface RecoverNotificationProps extends StaticFieldProps {
+interface SemanticFormRecoverNotificationConfig {
+  style?: React.CSSProperties;
+}
+
+export interface RecoverNotificationProps
+  extends SemanticFormRecoverNotificationConfig, StaticComponentProps {
   recoveredFromStorage?: boolean;
   discardRecoveredData?: () => void;
-  style?: CSSProperties;
 }
 
 const CLASS_NAME = 'semantic-form-recover-notification';
@@ -78,27 +82,24 @@ export class RecoverNotification
       D.button(
         {
           type: 'button',
-          className: `${CLASS_NAME}__hide btn btn-default btn-xs`,
+          className: `${CLASS_NAME}__hide btn btn-secondary btn-sm`,
           onClick: () => this.setState({hidden: true}),
           title: 'Hide notification',
         },
         D.i({id: 'hide-i', className: 'fa fa-check'}),
-        D.span({id: 'hide-span'}, ' Ok. Hide Notification.'),
+        D.span({id: 'hide-span'}, ' Ok. Hide Notification.')
       ),
       D.button(
         {
-          className: `${CLASS_NAME}__discard-data btn btn-default btn-xs `,
+          className: `${CLASS_NAME}__discard-data btn btn-secondary btn-sm `,
           onClick: this.props.discardRecoveredData,
           title: 'Reset form to default state discarding all recovered data',
         },
         D.i({id: 'discard-i', className: 'fa fa-times'}),
-        D.span({id: 'discard-span'}, ' Discard recovered data.'),
+        D.span({id: 'discard-span'}, ' Discard recovered data.')
       )
     );
   }
 }
 
-export type component = RecoverNotification;
-export const component = RecoverNotification;
-export const factory = createFactory(component);
-export default component;
+export default RecoverNotification;

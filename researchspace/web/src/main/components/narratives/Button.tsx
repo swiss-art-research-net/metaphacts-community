@@ -35,7 +35,7 @@ const ToggleButton = ({
 }) => (
   <div className="ory-controls-mode-toggle-button">
     <div onClick={() => {onClick(); }}
-         className={classNames('btn btn-default ory-controls-mode-toggle-button-inner',
+         className={classNames('btn btn-secondary ory-controls-mode-toggle-button-inner',
            {'active': active})}>
           <FloatingActionButton
             secondary={active}

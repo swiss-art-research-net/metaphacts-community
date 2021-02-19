@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import {
     Dictionary, ClassModel, LinkTypeModel, ElementModel, LinkModel, LinkCount, PropertyModel,
-    ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri,
+    LinkedElement, ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri,
 } from './model';
 import * as Rdf from './rdf/rdfModel';
 
@@ -120,68 +120,59 @@ export interface DataProvider {
     linkTypesOf(params: { elementId: ElementIri }): Promise<LinkCount[]>;
 
     /**
-     * returns elements following link for specified element.
-     * Has overlapping functionality with filter, but easier less powerful and easier to implement
-     * linkId could be null, if it's the case method should return all elements from all links from current element.
+     * Supports filter functionality with different filters:
+     *   - by type;
+     *   - by connected element and optionally connection type and direction;
+     *   - by full-text search;
+     *
+     * Implementation should support all possible combinations.
      */
-    linkElements(params: LinkElementsParams): Promise<Dictionary<ElementModel>>;
-
-    /**
-     * Supports filter functionality with different filters - by type,
-     * by element and it's connection, by full-text search.
-     * Implementation should implement all possible combinations.
-     */
-    filter(params: FilterParams): Promise<Dictionary<ElementModel>>;
-}
-
-export interface LinkElementsParams {
-    elementId: ElementIri;
-    linkId?: LinkTypeIri;
-    limit?: number;
-    offset: number;
-    direction?: 'in' | 'out';
+    filter(params: FilterParams): Promise<LinkedElement[]>;
 }
 
 export interface FilterParams {
     /**
-     * element type filter
+     * Filter by element type.
      */
     elementTypeId?: ElementTypeIri;
+
     /**
-     * text search
+     * Filter by label text match.
      */
     text?: string;
 
     /**
-     * Reference element id to limit elements accessible through links from this elements only.
-     * Could be used with refElementLinkId to limit link types which to follow.
+     * Filter by connected element (accessible through links from the element).
+     *
+     * Could be used with `refElementLinkId` to limit link types which to follow.
      */
     refElementId?: ElementIri;
 
     /**
-     * Reference element link type id. Is used only when refElementId is set.
+     * Filter by connected link type to specified element.
+     *
+     * Only applicable when `refElementId` is set.
      */
     refElementLinkId?: LinkTypeIri;
 
     /**
-     * Reference element link type direction ('in' | 'out'). Is used only when refElementLinkId is set.
+     * Filter by connected link type direction (either `in` or `out`).
+     *
+     * Only applicable when both `refElementId` and `refElementLinkId` is set.
      */
     linkDirection?: 'in' | 'out';
 
     /**
-     * Limit number of elements returned. Defaults depend on data provider implementation
+     * Limit number of elements returned.
+     *
+     * Default value depends on the implementation.
      */
     limit?: number;
 
     /**
-     * Offset within matched data set to use
+     * Offset within matched data set to use.
+     *
+     * Default value depends on the implementation.
      */
-    offset: number;
-
-    /**
-     * Right now this is unused in sparql data provider.
-     * It was introduced to order results by particular language when doing substring match with regexps.
-     * It's subject to be removed.
-     */
-    languageCode: string;
+    offset?: number;
 }

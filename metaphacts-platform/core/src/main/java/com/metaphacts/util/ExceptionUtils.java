@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,9 +39,11 @@
  */
 package com.metaphacts.util;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.apache.logging.log4j.core.util.Throwables;
 import org.eclipse.rdf4j.RDF4JException;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -53,7 +55,7 @@ public class ExceptionUtils {
      * {@link RDF4JException}.
      * 
      * <p>
-     * This method implements special logic for Stardog to unwrap the original erorr
+     * This method implements special logic for Stardog to unwrap the original error
      * message from a JSON object.
      * </p>
      * 
@@ -62,37 +64,36 @@ public class ExceptionUtils {
      *         the plain exception message from the original exception (which might
      *         be null)
      */
-  public static String extractSparqlExceptionMessage(Exception e) {
-    String message = e.getMessage();
-    Throwable rootCause = org.apache.commons.lang3.exception.ExceptionUtils.getRootCause(e);
+    public static String extractSparqlExceptionMessage(Exception e) {
+        String message = e.getMessage();
+        Throwable rootCause = Throwables.getRootCause(e);
 
-    /*
-     * TODO this may not belong here but might be better improved upstream
-     * RDF4J and or FedX wraps exceptions and does not propagate the original exception message.
-     * Example:
-     * Caused by: org.eclipse.rdf4j.repository.RepositoryException: error executing transaction
-        at org.eclipse.rdf4j.repository.sparql.SPARQLConnection.commit(SPARQLConnection.java:421) ~[rdf4j-repository-sparql-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.federated.write.RepositoryWriteStrategy.commit(RepositoryWriteStrategy.java:55) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.federated.FedXConnection.commitInternal(FedXConnection.java:199) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.sail.helpers.AbstractSailConnection.commit(AbstractSailConnection.java:395) ~[rdf4j-sail-api-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.repository.sail.SailRepositoryConnection.commit(SailRepositoryConnection.java:206) ~[rdf4j-repository-sail-3.4.0.jar:3.4.0+ace0473]
-       Caused by: org.eclipse.rdf4j.query.UpdateExecutionException: {"message":"ICV validation failed.."}
-        at org.eclipse.rdf4j.repository.sparql.query.SPARQLUpdate.execute(SPARQLUpdate.java:47) ~[rdf4j-repository-sparql-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.repository.sparql.SPARQLConnection.commit(SPARQLConnection.java:419) ~[rdf4j-repository-sparql-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.federated.write.RepositoryWriteStrategy.commit(RepositoryWriteStrategy.java:55) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.federated.FedXConnection.commitInternal(FedXConnection.java:199) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.sail.helpers.AbstractSailConnection.commit(AbstractSailConnection.java:395) ~[rdf4j-sail-api-3.4.0.jar:3.4.0+ace0473]
-        at org.eclipse.rdf4j.repository.sail.SailRepositoryConnection.commit(SailRepositoryConnection.java:206) ~[rdf4j-repository-sail-3.4.0.jar:3.4.0+ace0473]
-        ... 95 more
-       Caused by: org.eclipse.rdf4j.repository.RepositoryException: {"message":"ICV validation failed.."}
-     */
-    if ((rootCause instanceof RDF4JException) && rootCause.getMessage() != null) {
-      // only if it is a RDF4J Exception, we trust it and extract the root message
-      message = rootCause.getMessage();
+        /*
+         * RDF4J and or FedX wrap exceptions and do not propagate the original exception message.
+         * Example:
+         * Caused by: org.eclipse.rdf4j.repository.RepositoryException: error executing transaction
+            at org.eclipse.rdf4j.repository.sparql.SPARQLConnection.commit(SPARQLConnection.java:421) ~[rdf4j-repository-sparql-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.federated.write.RepositoryWriteStrategy.commit(RepositoryWriteStrategy.java:55) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.federated.FedXConnection.commitInternal(FedXConnection.java:199) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.sail.helpers.AbstractSailConnection.commit(AbstractSailConnection.java:395) ~[rdf4j-sail-api-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.repository.sail.SailRepositoryConnection.commit(SailRepositoryConnection.java:206) ~[rdf4j-repository-sail-3.4.0.jar:3.4.0+ace0473]
+           Caused by: org.eclipse.rdf4j.query.UpdateExecutionException: {"message":"ICV validation failed.."}
+            at org.eclipse.rdf4j.repository.sparql.query.SPARQLUpdate.execute(SPARQLUpdate.java:47) ~[rdf4j-repository-sparql-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.repository.sparql.SPARQLConnection.commit(SPARQLConnection.java:419) ~[rdf4j-repository-sparql-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.federated.write.RepositoryWriteStrategy.commit(RepositoryWriteStrategy.java:55) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.federated.FedXConnection.commitInternal(FedXConnection.java:199) ~[rdf4j-tools-federation-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.sail.helpers.AbstractSailConnection.commit(AbstractSailConnection.java:395) ~[rdf4j-sail-api-3.4.0.jar:3.4.0+ace0473]
+            at org.eclipse.rdf4j.repository.sail.SailRepositoryConnection.commit(SailRepositoryConnection.java:206) ~[rdf4j-repository-sail-3.4.0.jar:3.4.0+ace0473]
+            ... 95 more
+           Caused by: org.eclipse.rdf4j.repository.RepositoryException: {"message":"ICV validation failed.."}
+         */
+        if ((rootCause instanceof RDF4JException) && rootCause.getMessage() != null) {
+            // only if it is a RDF4J Exception, we trust it and extract the root message
+            message = rootCause.getMessage();
+        }
+
+        return tryToExtractStardogError(message);
     }
-
-    return tryToExtractStardogError(message);
-  }
 
     /**
      * Stardog sends error messages as JSON objects in the response body (
@@ -104,19 +105,19 @@ public class ExceptionUtils {
      * @param message
      * @return
      */
-  private static String tryToExtractStardogError(String message) {
-    
-    try {
-      JsonNode jsonObject;
+    private static String tryToExtractStardogError(String message) {
 
-      jsonObject = new ObjectMapper().readTree(message);
-      if (jsonObject != null && jsonObject.get("message") != null) {
-        message = jsonObject.get("message").getTextValue();
-      }
-    } catch (Throwable e1) {
-      return message;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonObject = objectMapper.readTree(message);
+
+            if (jsonObject != null && jsonObject.get("message") != null) {
+                message = jsonObject.get("message").asText();
+            }
+        } catch (Throwable ignore) {
+            return message;
+        }
+
+        return message;
     }
-
-    return message;
-  }
 }

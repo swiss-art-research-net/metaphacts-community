@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,8 +52,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Response.Status;
 
-import com.metaphacts.junit.PlatformStorageRule;
-import com.metaphacts.ui.templates.ST;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.entity.ContentType;
 import org.eclipse.rdf4j.model.Statement;
@@ -87,7 +85,9 @@ import com.google.inject.Injector;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.di.MainGuiceModule.MainTemplateProvider;
 import com.metaphacts.junit.AbstractIntegrationTest;
+import com.metaphacts.junit.PlatformStorageRule;
 import com.metaphacts.junit.TestUtils;
+import com.metaphacts.ui.templates.ST;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -131,7 +131,7 @@ public class SparqlServletTest extends AbstractIntegrationTest  {
     
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         vf = SimpleValueFactory.getInstance();
         storage.mockPageLayoutTemplate(ST.TEMPLATES.HTML_HEAD);
         storage.mockPageLayoutTemplate(ST.TEMPLATES.MAIN);

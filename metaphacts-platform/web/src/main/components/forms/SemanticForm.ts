@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,7 +51,7 @@ import {
   FieldValue, EmptyValue, AtomicValue, CompositeValue, ErrorKind, DataState,
 } from './FieldValues';
 
-import { CompositeInput } from './inputs/CompositeInput';
+import { CompositeInput, CompositeInputProps } from './inputs/CompositeInput';
 import { SingleValueHandler } from './inputs/SingleValueInput';
 import { FormErrors } from './static/FormErrors';
 
@@ -64,6 +64,7 @@ export interface SemanticFormProps {
   model: EmptyValue | AtomicValue | CompositeValue;
   onChanged: (model: CompositeValue) => void;
   onUpdateState?: (dataState: DataState, loadedModel: CompositeValue | undefined) => void;
+  onValidateSubject?: CompositeInputProps['onValidateSubject'];
   newSubjectTemplate?: string;
   children?: ReactNode;
   debug?: boolean;
@@ -210,6 +211,11 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
   }
 
   finalize(model: CompositeValue): Kefir.Property<CompositeValue> {
+    try {
+      this.handler.beforeFinalize?.();
+    } catch (err) {
+      return Kefir.constantError(err);
+    }
     return this.handler.finalize(model, FieldValue.empty)
       .flatMap(finalized => FieldValue.isComposite(finalized)
         ? Kefir.constant(finalized)
@@ -235,6 +241,7 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
           newSubjectTemplate: this.props.newSubjectTemplate,
           dataState: DataState.Ready,
           updateValue: this.updateModel,
+          onValidateSubject: this.props.onValidateSubject,
           value: this.props.model,
           // in case of configuration errors show FormErrors component instead of form content
           children: hasConfigurationErrors
@@ -253,7 +260,10 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
 
 function asDebugJSObject(value: FieldValue): object {
   switch (value.type) {
-    case EmptyValue.type: return {type: EmptyValue.type};
+    case EmptyValue.type: return {
+      type: EmptyValue.type,
+      errors: value.errors,
+    };
     case AtomicValue.type: return {
       type: AtomicValue.type,
       value: value.value.toString(),

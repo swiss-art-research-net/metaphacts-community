@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,22 +37,25 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Props as ReactProps, createElement,
-         cloneElement, Children, MouseEvent } from 'react';
+import { ClassAttributes, createElement, cloneElement, Children, MouseEvent } from 'react';
 
 import { Rdf } from 'platform/api/rdf';
 import {
-  navigateToResource, NavigationUtils, openResourceInNewWindow,
-  constructUrlForResource, construcUrlForResourceSync,
+  navigateToResource, NavigationUtils, openResourceInNewWindow, constructUrlForResourceSync,
 } from 'platform/api/navigation';
 import { Draggable } from 'platform/components/dnd';
 import { Component } from 'platform/api/components';
 import { ErrorNotification } from 'platform/components/ui/notification';
+
 import { isSimpleClick } from './ResourceLink';
-import { Cancellation } from 'platform/api/async';
 
 /**
- * See 'Link'.
+ * Wrapper component which can be used in a template to generate a routed
+ * link for the resource and provide it to a child component.
+ *
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
  */
 export interface ResourceLinkContainerConfig {
   /**
@@ -86,12 +89,10 @@ export interface ResourceLinkContainerConfig {
    * @default '_self'
    */
   target?: '_self' | '_blank';
-
-  // catcher for query params
-  [index: string]: any;
 }
+
 export type ResourceLinkContainerProps =
-  ResourceLinkContainerConfig & ReactProps<ResourceLinkContainer>;
+  ResourceLinkContainerConfig & ClassAttributes<ResourceLinkContainer>;
 
 interface State {
   readonly url?: uri.URI;
@@ -99,9 +100,7 @@ interface State {
 }
 
 export class ResourceLinkContainer extends Component<ResourceLinkContainerProps, State> {
-  private readonly cancellation = new Cancellation();
-
-  static defaultProps: Partial<ResourceLinkContainerProps> = {
+  static defaultProps: Required<Pick<ResourceLinkContainerProps, 'target'>> = {
     target: '_self' as '_self',
   };
 
@@ -111,27 +110,10 @@ export class ResourceLinkContainer extends Component<ResourceLinkContainerProps,
     const propagateLink = this.propagateLink();
     this.state = {
       propagateLink,
-      url: propagateLink ? construcUrlForResourceSync(
+      url: propagateLink ? constructUrlForResourceSync(
         Rdf.iri(this.getIri()), this.getParams(), this.getRepository()
       ) : null,
     };
-  }
-
-  componentDidMount() {
-    if (this.state.propagateLink) {
-      this.cancellation.map(
-        constructUrlForResource(
-          Rdf.iri(this.getIri()), this.getParams(), this.getRepository()
-        )
-      ).observe({
-        value: url => this.setState({url}),
-        error: error => console.error(error),
-      });
-    }
-  }
-
-  componentWillUnmount() {
-    this.cancellation.cancelAll();
   }
 
   private getIri = () => {

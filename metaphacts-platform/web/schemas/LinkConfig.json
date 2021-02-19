@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Component that uses platform 'Navigation',\nto navigate to the given internal URL without page reload.\n\n**Example**:\n```\n<mp-link url=\"/sparql\">sparql</mp-link>\n```",
+    "patternProperties": {
+        "^urlqueryparam": {
+            "type": "string"
+        }
+    },
+    "properties": {
+        "active": {
+            "description": "if link should be highlighted as active, if not specified\nlink will be highlighted by active if link's url\nand parameters fully match current location",
+            "type": "boolean"
+        },
+        "activeClassName": {
+            "description": "css classes that should be applied to the active link",
+            "type": "string"
+        },
+        "className": {
+            "description": "css class names list",
+            "type": "string"
+        },
+        "title": {
+            "description": "link title shown on mouse-hover",
+            "type": "string"
+        },
+        "url": {
+            "description": "Root-relative URL to navigate to. e.g \"/sparql\"",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "url",
+        "title",
+        "active",
+        "className",
+        "activeClassName"
+    ],
+    "required": [
+        "url"
+    ],
+    "type": "object"
+}
+

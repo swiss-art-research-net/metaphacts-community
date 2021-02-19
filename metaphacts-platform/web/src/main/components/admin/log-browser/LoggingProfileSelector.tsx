@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -115,7 +115,7 @@ export class LoggingProfileSelector extends React.Component<{}, LoggingProfileSe
     return <div>
         {
           profileError ?
-            <Alert bsStyle='warning'>
+            <Alert variant='warning'>
               <ErrorPresenter error={profileError} />
             </Alert> : null
         }

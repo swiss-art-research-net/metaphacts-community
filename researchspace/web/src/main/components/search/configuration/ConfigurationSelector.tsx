@@ -29,10 +29,13 @@ import { AlignmentSelector } from './AlignmentSelector';
 
 import * as styles from './ConfigurationSelector.scss';
 
+interface SemanticSearchConfigurationSelectorConfig {}
+export type ConfigurationSelectorProps = SemanticSearchConfigurationSelectorConfig;
+
 /**
  * @author Artem Kozlov <ak@metaphacts.com>
  */
-export class ConfigurationSelector extends React.Component {
+export class ConfigurationSelector extends React.Component<ConfigurationSelectorProps> {
   render() {
     return (
       <SemanticSearchContext.Consumer>

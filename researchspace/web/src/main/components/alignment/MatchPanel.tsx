@@ -224,7 +224,7 @@ export class MatchPanel extends Component<MatchPanelProps, {}> {
         Scrolling to item <span className={styles.scrollToName}>
           {expandTarget.label.value}</span>
         <Spinner className={styles.scrollSpinner} spinnerDelay={0} messageDelay={Infinity} />
-        <Button bsSize='xsmall' className={styles.cancelScrollingTo}
+        <Button size='sm' className={styles.cancelScrollingTo}
           onClick={onCancelExpandingToScroll}>Cancel</Button>
       </div>
     );
@@ -313,7 +313,7 @@ export class MatchPanel extends Component<MatchPanelProps, {}> {
       <OverlayTrigger key={AlignmentNode.keyOf(node)}
         trigger='click' rootClose={true} placement='right'
         overlay={overlay}>
-        <Button bsSize='xsmall'
+        <Button size='sm'
           className={styles.nodeInfoButton}
           onClick={this.onShowNodeInfoClick}>
           <span className='fa fa-info' aria-hidden='true' />
@@ -322,7 +322,7 @@ export class MatchPanel extends Component<MatchPanelProps, {}> {
     );
   }
 
-  private onShowNodeInfoClick = (e: React.MouseEvent<Button>) => {
+  private onShowNodeInfoClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     // prevent expand/collapse on button click
     e.stopPropagation();
   }
@@ -334,9 +334,9 @@ export class MatchPanel extends Component<MatchPanelProps, {}> {
       return null;
     }
     return (
-      <Button bsSize='xsmall'
+      <Button size='sm'
         className={styles.unalignButton}
-        onClick={e => {
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           const path = forest.getKeyPath(node);
           onUnalign(path);
@@ -352,9 +352,9 @@ export class MatchPanel extends Component<MatchPanelProps, {}> {
       return null;
     }
     return (
-      <Button bsSize='xsmall'
+      <Button size='sm'
         className={styles.findAlignedButton}
-        onClick={e => {
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
           e.stopPropagation();
           onFindAligned(Node.keyOf(node.matchedTargetNode));
         }}>

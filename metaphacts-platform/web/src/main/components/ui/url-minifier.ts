@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,6 +43,7 @@ import {
   createElement,
   cloneElement,
   Children,
+  FunctionComponent,
 } from 'react';
 import * as D from 'react-dom-factories';
 import * as ReactBootstrap from 'react-bootstrap';
@@ -57,7 +58,8 @@ import { Component } from 'platform/api/components';
 
 const FormControl = createFactory(ReactBootstrap.FormControl);
 const InputGroup = createFactory(ReactBootstrap.InputGroup);
-const OverlayTrigger = createFactory(ReactBootstrap.OverlayTrigger);
+const OverlayTrigger = createFactory(ReactBootstrap.OverlayTrigger  as
+  FunctionComponent<ReactBootstrap.OverlayTriggerProps>);
 const Popover = createFactory(ReactBootstrap.Popover);
 const Button = createFactory(ReactBootstrap.Button);
 
@@ -79,7 +81,7 @@ interface State {
  *
  * @example
  * <mp-url-minifier iri='[[this]]'>
- *   <button class="btn btn-default">Get short URL</button>
+ *   <button class="btn btn-secondary">Get short URL</button>
  * </mp-url-minifier>
  */
 class URLMinifier extends Component<Props, State> {
@@ -133,32 +135,29 @@ class URLMinifier extends Component<Props, State> {
 
   render(): ReactElement<any> {
     const child = Children.only(this.props.children) as ReactElement<any>;
-    return OverlayTrigger(
-      {
-        ref: 'trigger',
-        trigger: [],
-        placement: 'bottom',
-        rootClose: true,
-        onExit: () => {
-          this.setState({showLink: false});
-        },
-        overlay: Popover({id: 'url-minifier'},
-          InputGroup({},
-            FormControl({type: 'text', className: 'input-sm', value: this.state.gotLink, readOnly: true}),
-            D.span({className: 'input-group-btn'},
-              createElement(CopyToClipboard,
-                {text: this.state.showLink ? this.state.gotLink : ''},
-                Button({bsSize: 'small'}, D.i({className: 'fa fa-copy'}))
-              )
+    return OverlayTrigger({
+      trigger: [],
+      placement: 'bottom',
+      rootClose: true,
+      onExit: () => {
+        this.setState({ showLink: false });
+      },
+      overlay: () => Popover({ id: 'url-minifier' },
+        InputGroup({},
+          FormControl({ type: 'text', className: 'input-sm', value: this.state.gotLink, readOnly: true }),
+          D.span({ className: 'input-group-btn' },
+            createElement(CopyToClipboard,
+              { text: this.state.showLink ? this.state.gotLink : '' },
+              Button({ size: 'sm' }, D.i({ className: 'fa fa-copy' }))
             )
           )
-        ),
-      },
-      cloneElement(child, assign({}, child.props, {
+        )
+      ),
+      children: cloneElement(child, assign({ ref: 'trigger' }, child.props, {
         disabled: this.state.isLoading,
         onClick: this.onClick,
       }))
-    );
+    });
   }
 }
 

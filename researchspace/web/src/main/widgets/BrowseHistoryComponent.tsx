@@ -20,7 +20,7 @@
  */
 
 import * as React from 'react';
-import { Navbar, Nav, NavItem, MenuItem, NavDropdown } from 'react-bootstrap';
+import { Nav, NavItem, NavLink, Dropdown, NavDropdown } from 'react-bootstrap';
 import * as URI from 'urijs';
 import * as _ from 'lodash';
 
@@ -120,24 +120,31 @@ export class BrowseHistoryComponent extends React.Component<Props, State> {
 
   render() {
     return <div className='browse-history'>
-      <Nav bsStyle={'pills'}>
-        <NavDropdown open={this.state.menuOpen} onToggle={val => this.dropdownToggle(val)}
-                     disabled={this.state.links.length < 1} title='Recent' id='basic-nav-dropdown'>
+      <Nav variant={'pills'}>
+        <Dropdown show={this.state.menuOpen} onToggle={val => this.dropdownToggle(val)}
+          id='basic-nav-dropdown'>
+          <Dropdown.Toggle>Recent</Dropdown.Toggle>
           {this.state.links.map((link, index) => {
-            return <li key={link.link + index} >
+            return <Dropdown.Item key={link.link + index} >
               <ResourceLinkComponent uri={link.link} guessRepository={true}></ResourceLinkComponent>
-            </li>;
+            </Dropdown.Item>;
           })}
-          { this.state.links.length > 1 && <li className={'divider'}></li> }
-          { this.state.links.length > 1 && <li><a onClick={this.clearRecent}>Clear recent</a></li> }
-        </NavDropdown>
-        <NavItem disabled={this.state.links.length < 2 || this.state.locIndex < 1} title='Back'
-                 onClick={this.goBack} href='#'>
-          <i className='fa fa-caret-left'></i>
+          {this.state.links.length > 1 && <Dropdown.Divider></Dropdown.Divider>}
+          {this.state.links.length > 1 && <Dropdown.Item>
+            <a onClick={this.clearRecent}>Clear recent</a>
+          </Dropdown.Item>}
+        </Dropdown>
+        <NavItem title='Back'>
+          <NavLink disabled={this.state.links.length < 2 || this.state.locIndex < 1}
+            onClick={this.goBack}>
+            <i className='fa fa-caret-left'></i>
+          </NavLink>
         </NavItem>
-        <NavItem disabled={this.state.locIndex === this.state.links.length - 1} title='Forward'
-                 onClick={this.goForward} href='#'>
-          <i className='fa fa-caret-right'></i>
+        <NavItem title='Forward'>
+          <NavLink disabled={this.state.locIndex === this.state.links.length - 1}
+            onClick={this.goForward}>
+            <i className='fa fa-caret-right'></i>
+          </NavLink>
         </NavItem>
       </Nav>
     </div>;

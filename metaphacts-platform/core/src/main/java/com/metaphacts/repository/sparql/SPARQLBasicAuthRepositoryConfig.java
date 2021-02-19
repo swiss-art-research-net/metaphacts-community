@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,7 @@
  */
 package com.metaphacts.repository.sparql;
 
+import com.metaphacts.repository.AuthMethod;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -48,5 +49,10 @@ public class SPARQLBasicAuthRepositoryConfig extends SPARQLAuthenticatingReposit
     
     public SPARQLBasicAuthRepositoryConfig() {
         super(SPARQLBasicAuthRepositoryFactory.REPOSITORY_TYPE);
+    }
+
+    @Override
+    public AuthMethod getAuthenticationMethod() {
+        return AuthMethod.BasicAuth;
     }
 }

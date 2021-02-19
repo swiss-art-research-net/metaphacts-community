@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,8 +44,6 @@ import {
   ReactNode,
   cloneElement,
   ReactElement,
-  Props as ReactProps,
-  CSSProperties,
 } from 'react';
 import * as SplitPane from 'react-split-pane';
 import * as assign from 'object-assign';
@@ -59,76 +57,34 @@ import { SplitPaneSidebarOpenComponent } from './SplitPaneSidebarOpenComponent';
 import { SplitPaneToggleOnComponent } from './SplitPaneToggleOnComponent';
 import { SplitPaneToggleOffComponent } from './SplitPaneToggleOffComponent';
 
-import { BaseConfig, ConfigWithDock, configHasDock } from './SplitPaneConfig';
+import { BaseSplitPaneConfig } from './SplitPaneConfig';
 import * as SplitPaneEvents from './SplitPaneEvents';
 
 import './split-pane.scss';
 
-export type Props = (BaseConfig<CSSProperties> | ConfigWithDock<CSSProperties>) &
-  ReactProps<SplitPaneComponent>;
+export type SplitPaneProps = BaseSplitPaneConfig<React.CSSProperties>;
 
 export interface State {
   isOpen?: boolean;
   size?: number;
 }
 
+type DefaultProps = Required<Pick<SplitPaneProps, 'defaultSize' | 'defaultOpen' | 'navHeight'>>;
+
 const LocalStorageState = BrowserPersistence.adapter<{
   readonly isOpen?: boolean;
   readonly size?: number;
 }>();
 
-/**
- * @example
- * <mp-splitpane min-size=5 default-size=100>
- *     <div>
- *         <mp-splitpane-toggle-on>
- *             <button></button>
- *         </mp-splitpane-toggle-on>
- *         <mp-splitpane-toggle-off>
- *             <button></button>
- *         </mp-splitpane-toggle-off>
- *         <mp-splitpane-sidebar-open><!-- sidebar content --></mp-splitpane-sidebar-open>
- *     </div>
- *     <div><!-- main component --></div>
- * </mp-splitpane>
- *
- * @example
- * Using the split-pane as left-side sidebar menu by utilizing
- * the pre-defined "split-pane__leftsidebar-*" css classes
- *
- * <mp-splitpane min-size=30 nav-height=103 footer-height=180 dock=true default-size=300
- *   id="my-panel" persist-resize=true style="margin-top:-60px;" snap-threshold=50>
- *   <div class="split-pane__leftsidebar">
- *     <mp-splitpane-toggle-on>
- *       <div class="split-pane__leftsidebar-caption">SIDEBAR TITLE</div>
- *     </mp-splitpane-toggle-on>
- *     <mp-splitpane-sidebar-open>
- *       <h1> Sidebar </h1>
- * 			<!--side bar content here -->
- *     </mp-splitpane-sidebar-open>
- *     <div class="split-pane__leftsidebar-footer">
- *       <mp-splitpane-toggle-on>
- *         <div class="split-pane__leftsidebar-toggle">&raquo;</div>
- *       </mp-splitpane-toggle-on>
- *       <mp-splitpane-toggle-off>
- *         <div class="split-pane__leftsidebar-toggle" >&laquo;</div>
- *       </mp-splitpane-toggle-off>
- *     </div>
- *   </div>
- *   <div >
- *     <!-- main content here -->
- *   </div>
- * </mp-splitpane>
- */
-export class SplitPaneComponent extends Component<Props, State> {
-  static readonly defaultProps: Partial<Props> = {
+export class SplitPaneComponent extends Component<SplitPaneProps, State> {
+  static readonly defaultProps: DefaultProps = {
     defaultSize: 300,
     defaultOpen: true,
     navHeight: 105, // our default nav + breadcrumbs size
   };
   private readonly cancellation = new Cancellation();
 
-  constructor(props: Props) {
+  constructor(props: SplitPaneProps) {
     super(props);
 
     let isOpen: boolean;
@@ -277,7 +233,7 @@ export class SplitPaneComponent extends Component<Props, State> {
     const sidebarChildStyle = assign(
       {},
       sidebarChild.props.style,
-      configHasDock(this.props) ? {
+      this.props.dock ? {
         position: 'sticky',
         top: this.props.navHeight + 'px',
         height: `calc(100vh - ${this.props.navHeight}px)`,

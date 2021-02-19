@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,18 @@ import * as _ from 'lodash';
 
 import { DRAG_AND_DROP_FORMAT, DRAG_AND_DROP_FORMAT_IE } from './DragAndDropApi';
 
-export interface DraggableProps {
+/**
+ * This component takes inner html and makes it automatically draggable.
+ * Child element could be any HTML-element (not text node).
+ *
+ * **Example**:
+ * ```
+ * <mp-draggable iri="http://collection.britishmuseum.org/id/object/PDB7385">
+ *   <div>Content</div>
+ * </mp-draggable>
+ * ```
+ */
+interface DraggableConfig {
   /**
    * Resource identifier
    */
@@ -59,6 +70,9 @@ export interface DraggableProps {
    * Styles that are added to the component, if it dragged.
    */
   dragStyles?: CSSProperties;
+}
+
+export interface DraggableProps extends DraggableConfig {
   /**
    * Callback which fires when component becomes dragged.
    */
@@ -73,15 +87,6 @@ interface State {
   isDragged: boolean;
 }
 
-/**
- * This component takes inner html and makes it automatically draggable.
- * Child element could be any HTML-element (not text node).
- *
- * @example
- * <mp-draggable iri="http://collection.britishmuseum.org/id/object/PDB7385">
- *     <div>Content</div>
- * </mp-draggable>
- */
 export class Draggable extends Component<DraggableProps, State> {
   private source: Element;
 

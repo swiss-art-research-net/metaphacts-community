@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -66,8 +66,8 @@ export class NavigationConfirmationDialog extends React.Component<Props, {}> {
         </Modal.Body>
         <Modal.Footer>
           <ButtonGroup>
-            <Button bsStyle='primary' onClick={e => onConfirm(false)}>Stay</Button>
-            <Button bsStyle='danger' onClick={e => onConfirm(true)}>Leave</Button>
+            <Button variant='primary' onClick={e => onConfirm(false)}>Stay</Button>
+            <Button variant='danger' onClick={e => onConfirm(true)}>Leave</Button>
           </ButtonGroup>
         </Modal.Footer>
       </Modal>;

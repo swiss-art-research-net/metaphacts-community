@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,13 +48,16 @@ import {
   ComplexTreePatterns, LightweightTreePatterns,
 } from 'platform/components/semantic/lazy-tree';
 
+/**
+ * @additionalProperties false
+ */
 export interface FieldDefinitionConfig {
   /**
    * Unique identifier of the field definition.
    *
    * In most cases it will be the IRI of the field definition, but might be an alias as well.
    */
-  id: string;
+  id?: string;
   /**
    * IRI of field definition.
    */
@@ -88,15 +91,15 @@ export interface FieldDefinitionConfig {
    */
   range?: string | ReadonlyArray<string>;
   /**
-   * XSD schema min cardinality (inclusive) or `'unbound'` (i.e. 0).
+   * XSD schema min cardinality (inclusive) or `"unbound"` (i.e. 0).
    *
-   * @default 'unbound'
+   * @default "unbound"
    */
   minOccurs?: number | 'unbound';
   /**
-   * XSD schema max cardinality (inclusive) or `'unbound'` (i.e. infinite).
+   * XSD schema max cardinality (inclusive) or `"unbound"` (i.e. infinite).
    *
-   * @default 'unbound'
+   * @default "unbound"
    */
   maxOccurs?: number | 'unbound';
   /**
@@ -184,6 +187,7 @@ export interface FieldDefinitionConfig {
    * SELECT ?value ?label WHERE {
    *   SERVICE Repository:lookup {
    *     ?value lookup:token ?__token__ .
+   *     ?value lookup:name ?label .
    *     # ?value lookup:type :MyType
    *   }
    * }
@@ -222,6 +226,9 @@ export interface FieldDefinitionConfig {
   orderedWith?: 'index-property';
 }
 
+/**
+ * @additionalProperties false
+ */
 export interface SingleFieldConstraint {
   /**
    * SPARQL ASK pattern to validate if the constraint holds.
@@ -234,6 +241,9 @@ export interface SingleFieldConstraint {
   message: string;
 }
 
+/**
+ * @additionalProperties false
+ */
 export interface MultipleFieldConstraint extends SingleFieldConstraint {
   /**
    * Maps the ID of a constrained field to the variable name that can be used
@@ -265,6 +275,9 @@ export interface FullTreeConfig extends ComplexTreePatterns {
   type: 'full';
 }
 
+/**
+ * @additionalProperties false
+ */
 export interface FieldDependency {
   /** Dependent field ID. */
   field: string;
@@ -272,7 +285,8 @@ export interface FieldDependency {
    * Maps a field ID (to depend on) to the variable name that can be used in the
    * `autosuggestionPattern` and `valueSetPattern` queries. The value
    * of the dependent field is injected as additional binding into the
-   * queries. */
+   * queries.
+   */
   dependencies: { readonly [fieldId: string]: string };
   /**
    * SPARQL SELECT query to generate a fixed list (choices) of values
@@ -291,7 +305,7 @@ export interface FieldDependency {
   valueSetPattern?: string;
   /**
    * SPARQL SELECT query to generate a dynamic suggestion list based on
-   * text index or regex search. The value of the dependend field
+   * text index or regex search. The value of the dependent field
    * is injected as additional binding as defined in the dependencies
    * mapping.
    *
@@ -344,7 +358,7 @@ export interface FieldDefinition {
  * @see FieldDefinitionConfig
  */
 export interface FieldDefinitionProp {
-  id: string;
+  id?: string;
   iri?: string;
   label?: string | ReadonlyArray<Rdf.Literal>;
   description?: string;

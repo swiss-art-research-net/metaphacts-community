@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,10 +40,8 @@
 import * as React from 'react';
 import { ReactElement, cloneElement, Children } from 'react';
 import {
-  FormGroup, FormControl, InputGroup, OverlayTrigger, Popover, Button, Radio, ControlLabel,
-  Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter,
+  FormGroup, FormControl, OverlayTrigger, Popover, Button, FormCheck, FormLabel, Modal
 } from 'react-bootstrap';
-import * as assign from 'object-assign';
 
 import {Rdf} from 'platform/api/rdf';
 import { Component, ComponentContext } from 'platform/api/components';
@@ -54,23 +52,33 @@ import { LdpService } from 'platform/api/services/ldp';
 import { ResourceLabel } from 'platform/components/ui/resource-label';
 import { Spinner } from 'platform/components/ui/spinner/Spinner';
 
-export interface Props {
+/**
+ * Imports LDP resource.
+ *
+ * **Example**:
+ * ```
+ * <mp-ldp-import-resource>
+ *   <button class="btn btn-secondary">Import resource</button>
+ * </mp-ldp-import-resource>
+ * ```
+ */
+interface LdpImportResourceConfig {
   /**
    * Explicitly target container IRI, if not specify the best suitable container will be
    * found automatically.
    */
-  container?: string
-
+  container?: string;
   /**
    * Force import ignoring warning about dangling resources.
    */
-  force?: boolean
-
+  force?: boolean;
   /**
-   * @default reload
+   * @default "reload"
    */
-  postAction?: 'redirect' | 'reload' | string
+  postAction?: 'redirect' | 'reload' | string;
 }
+
+export interface ImportResourceProps extends LdpImportResourceConfig {}
 
 interface State {
   show?: boolean
@@ -81,30 +89,15 @@ interface State {
   selectedContainer?: string
 }
 
-/**
- * Import LDP resource.
- * Read description of import process in comment to {@see com.metaphacts.data.rdf.container.LDPApi.importLDPResource}
- * @example
- *  <mp-ldp-import-resource>
- *      <button class="btn btn-default">Import resource</button>
- *  </mp-ldp-import-resource>
- */
-export class ImportResourceComponent extends Component<Props, State> {
-  constructor(props: Props, context: ComponentContext) {
+// See description of import process in comment to
+// com.metaphacts.data.rdf.container.LDPApi.importLDPResource
+export class ImportResource extends Component<ImportResourceProps, State> {
+  constructor(props: ImportResourceProps, context: ComponentContext) {
     super(props, context);
     this.state = {
       show: false,
       wait: false,
     };
-  }
-
-  shouldComponentUpdate(nextProps: Props, nextState: State) {
-    if (!this.state.show && nextState.show) {
-      (this.refs['trigger'] as any).show();
-    } else if (this.state.show && !nextState.show) {
-      (this.refs['trigger'] as any).hide();
-    }
-    return true;
   }
 
   private performPostAction = (createdResource: string) => {
@@ -169,14 +162,15 @@ export class ImportResourceComponent extends Component<Props, State> {
       Select container to import into
       <FormGroup>
         {possibleContainers.map(containerIRI =>
-          <Radio name='select-container'
+          <FormCheck name='select-container'
+                 type='radio'
                  value={containerIRI['@id']}
                  checked={selectedContainer === containerIRI['@id']}
                  onChange={() => this.setState({selectedContainer: containerIRI['@id']})}>
                       <span title={containerIRI['@id']}>
                         <ResourceLabel iri={containerIRI['@id']} />
                       </span>
-          </Radio>
+          </FormCheck>
         )}
       </FormGroup>
     </FormGroup>;
@@ -213,7 +207,7 @@ export class ImportResourceComponent extends Component<Props, State> {
       return <FormGroup>
         These object IRIs are not present in target DB:
         {unknownObjects.map(objectIRI =>
-          <div><ControlLabel>{objectIRI['@id'] + '\n'}</ControlLabel></div>
+          <div><FormLabel>{objectIRI['@id'] + '\n'}</FormLabel></div>
         )}
       </FormGroup>;
     }
@@ -227,9 +221,9 @@ export class ImportResourceComponent extends Component<Props, State> {
       return <Modal show={true} onHide={() => {
         this.setState({serverDone: undefined}, () => this.performPostAction(serverDone));
       }}>
-        <ModalHeader><ModalTitle>Success</ModalTitle></ModalHeader>
-        <ModalBody>Import successfully done, resource <ResourceLinkComponent uri={serverDone} /> created
-        </ModalBody>
+        <Modal.Header><Modal.Title>Success</Modal.Title></Modal.Header>
+        <Modal.Body>Import successfully done, resource <ResourceLinkComponent uri={serverDone} /> created
+        </Modal.Body>
       </Modal>;
 
     } else if (serverError) {
@@ -237,8 +231,8 @@ export class ImportResourceComponent extends Component<Props, State> {
       return <Modal show={true} onHide={() => {
         this.setState({serverError: undefined});
       }}>
-        <ModalHeader><ModalTitle>Error</ModalTitle></ModalHeader>
-        <ModalBody>Unexpected error during import</ModalBody>
+        <Modal.Header><Modal.Title>Error</Modal.Title></Modal.Header>
+        <Modal.Body>Unexpected error during import</Modal.Body>
       </Modal>;
 
     } else if (serverDialog) {
@@ -256,23 +250,23 @@ export class ImportResourceComponent extends Component<Props, State> {
       return <Modal show={true} onHide={() => {
         this.setState({serverDialog: undefined});
       }}>
-        <ModalHeader><ModalTitle>Clarification needed</ModalTitle></ModalHeader>
-        <ModalBody>
+        <Modal.Header><Modal.Title>Clarification needed</Modal.Title></Modal.Header>
+        <Modal.Body>
           {this.renderContainerMessage(selectedContainer, possibleContainers)}
           {this.renderUnknownObjectsMessage(unknownObjects)}
-        </ModalBody>
-        <ModalFooter>
+        </Modal.Body>
+        <Modal.Footer>
           <Button disabled={!canProceed} onClick={() => {
             this.importFromDelayedId(delayedImportRequestId, proceedIntoContainer);
             this.setState({serverDialog: undefined, selectedContainer: undefined});
           }}>Proceed</Button>
           <Button onClick={() => this.setState({serverDialog: undefined, selectedContainer: undefined, wait: false})}>Cancel</Button>
-        </ModalFooter>
+        </Modal.Footer>
       </Modal>;
 
     } else if (wait) {
 
-      return <Modal show={true} onHide={() => {}}><ModalBody><Spinner /></ModalBody></Modal>;
+      return <Modal show={true} onHide={() => {}}><Modal.Body><Spinner /></Modal.Body></Modal>;
 
     }
 
@@ -282,37 +276,33 @@ export class ImportResourceComponent extends Component<Props, State> {
   public render() {
     const child = Children.only(this.props.children) as ReactElement<any>;
     const popover = <Popover id='import-resource'>
-      <FormControl type='file' className='input-sm' onChange={(e) => {
-        const files = (e.target as HTMLInputElement).files;
-        if (files.length === 1) {
-          const file = files[0];
-          const fileReader = new FileReader();
-          fileReader.onload = (e) => {
-            const text = (e.target as any).result;
-            this.setState({show: false});
-            this.importFromText(text);
-          };
-          fileReader.readAsText(file);
-        }
-      }} />
+      <Popover.Content>
+        <FormControl type='file' className='input-sm' onChange={(e) => {
+          const files = (e.target as HTMLInputElement).files;
+          if (files.length === 1) {
+            const file = files[0];
+            const fileReader = new FileReader();
+            fileReader.onload = (e) => {
+              const text = (e.target as any).result;
+              this.setState({ show: false });
+              this.importFromText(text);
+            };
+            fileReader.readAsText(file);
+          }
+        }} />
+      </Popover.Content>
     </Popover>;
 
-    return <OverlayTrigger ref='trigger' trigger={[]} placement='bottom'
-      rootClose={true} overlay={popover}
+    return <OverlayTrigger trigger='click' placement='bottom'
+      rootClose={true}
+      overlay={popover}
       onExit={() => {
         this.setState({show: false});
       }}
     >{
-      cloneElement(
-        child,
-        assign({}, child.props, {
-          onClick: () => this.setState({show: !this.state.show}),
-        }),
-        ...child.props.children,
-        this.renderModal(), // OverlayTrigger can have only one child
-      )
+      cloneElement(child, child.props, ...child.props.children ,this.renderModal())
     }</OverlayTrigger>;
   }
 }
 
-export default ImportResourceComponent;
+export default ImportResource;

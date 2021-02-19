@@ -1,10 +1,11 @@
 import {
-    Rdf, ElementModel, LinkModel, ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri, LinkDirection,
-    MetadataApi, ValidationApi, ValidationEvent, ElementError, LinkError, DirectedLinkType, CancellationToken,
+    Rdf, ElementModel, LinkModel, ElementIri, ElementTypeIri, LinkIri, LinkTypeIri, PropertyTypeIri,
+    MetadataApi, ValidationApi, ValidationEvent, ElementError, LinkError, CancellationToken,
 } from '../../src/ontodia/index';
 
 const OWL_PREFIX = 'http://www.w3.org/2002/07/owl#';
 const RDFS_PREFIX = 'http://www.w3.org/2000/01/rdf-schema#';
+const XSD_PREFIX = 'http://www.w3.org/2001/XMLSchema#';
 
 const owl = {
     class: OWL_PREFIX + 'Class' as ElementTypeIri,
@@ -16,6 +17,9 @@ const rdfs = {
     subClassOf: RDFS_PREFIX + 'subClassOf' as LinkTypeIri,
     subPropertyOf: RDFS_PREFIX + 'subPropertyOf' as LinkTypeIri,
 };
+const example = {
+    multiProperty: 'http://example.com/schema/multiProperty' as LinkTypeIri,
+};
 
 function hasType(model: ElementModel, type: ElementTypeIri) {
     return Boolean(model.types.find(t => t === type));
@@ -23,59 +27,71 @@ function hasType(model: ElementModel, type: ElementTypeIri) {
 
 const SIMULATED_DELAY: number = 500; /* ms */
 
-export class ExampleMetadataApi implements MetadataApi {
-    async canDropOnCanvas(source: ElementModel, ct: CancellationToken): Promise<boolean> {
-        await delay(SIMULATED_DELAY, ct);
-        const elementTypes = await this.typesOfElementsDraggedFrom(source, ct);
-        CancellationToken.throwIfAborted(ct);
-        return elementTypes.length > 0;
-    }
+interface Relation {
+    readonly source: ElementTypeIri;
+    readonly target: ElementTypeIri;
+    readonly type: LinkTypeIri;
+    readonly editable?: boolean;
+}
+const EDITABLE_RELATIONS: ReadonlyArray<Relation> = [
+    {source: owl.class, target: owl.class, type: rdfs.subClassOf},
+    {source: owl.class, target: owl.class, type: example.multiProperty, editable: true},
+    {source: owl.objectProperty, target: owl.class, type: owl.domain},
+    {source: owl.objectProperty, target: owl.class, type: owl.range},
+    {source: owl.objectProperty, target: owl.objectProperty, type: rdfs.subPropertyOf},
+];
 
-    async canDropOnElement(source: ElementModel, target: ElementModel, ct: CancellationToken): Promise<boolean> {
+export class ExampleMetadataApi implements MetadataApi {
+    async canConnect(
+        element: ElementModel,
+        another: ElementModel | null,
+        linkType: LinkTypeIri | null,
+        ct: CancellationToken
+    ): Promise<boolean> {
         await delay(SIMULATED_DELAY, ct);
-        const linkTypes = await this.possibleLinkTypes(source, target, ct);
-        CancellationToken.throwIfAborted(ct);
-        return linkTypes.length > 0;
+        for (const relation of EDITABLE_RELATIONS) {
+            if (!linkType || relation.type === linkType) {
+                if (hasType(element, relation.source) && (!another || hasType(another, relation.target))) {
+                    return true;
+                }
+                if (hasType(element, relation.target) && (!another || hasType(another, relation.source))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     async possibleLinkTypes(
         source: ElementModel, target: ElementModel, ct: CancellationToken
-    ): Promise<DirectedLinkType[]> {
+    ): Promise<LinkTypeIri[]> {
         await delay(SIMULATED_DELAY, ct);
-        return (
-            hasType(source, owl.class) && hasType(target, owl.class) ?
-                mapLinkTypes([rdfs.subClassOf]).concat(mapLinkTypes([rdfs.subClassOf], LinkDirection.in)) :
-            hasType(source, owl.objectProperty) && hasType(target, owl.class) ?
-                mapLinkTypes([owl.domain, owl.range]) :
-            hasType(target, owl.objectProperty) && hasType(source, owl.class) ?
-                mapLinkTypes([owl.domain, owl.range], LinkDirection.in) :
-            hasType(source, owl.objectProperty) && hasType(target, owl.objectProperty) ?
-                mapLinkTypes([rdfs.subPropertyOf]).concat(mapLinkTypes([rdfs.subPropertyOf], LinkDirection.in)) :
-            []
-        );
-
-        function mapLinkTypes(types: LinkTypeIri[], direction: LinkDirection = LinkDirection.out): DirectedLinkType[] {
-            return types.map(linkTypeIri => ({linkTypeIri, direction}));
+        const linkTypes = new Set<LinkTypeIri>();
+        for (const relation of EDITABLE_RELATIONS) {
+            if (hasType(source, relation.source) && hasType(target, relation.target)) {
+                linkTypes.add(relation.type);
+            }
         }
+        return Array.from(linkTypes);
     }
 
     async typesOfElementsDraggedFrom(source: ElementModel, ct: CancellationToken): Promise<ElementTypeIri[]> {
         await delay(SIMULATED_DELAY, ct);
-        return (
-            hasType(source, owl.class) ? [owl.class] :
-            hasType(source, owl.objectProperty) ? [owl.class, owl.objectProperty] :
-            []
-        );
+        const elementTypes = new Set<ElementTypeIri>();
+        for (const relation of EDITABLE_RELATIONS) {
+            if (hasType(source, relation.source)) {
+                elementTypes.add(relation.target);
+            }
+            if (hasType(source, relation.target)) {
+                elementTypes.add(relation.source);
+            }
+        }
+        return Array.from(elementTypes);
     }
 
     async propertiesForType(type: ElementTypeIri, ct: CancellationToken): Promise<PropertyTypeIri[]> {
         await delay(SIMULATED_DELAY, ct);
         return [];
-    }
-
-    async canDeleteElement(element: ElementModel, ct: CancellationToken): Promise<boolean> {
-        await delay(SIMULATED_DELAY, ct);
-        return true;
     }
 
     async filterConstructibleTypes(
@@ -91,12 +107,12 @@ export class ExampleMetadataApi implements MetadataApi {
         return result;
     }
 
-    async canEditElement(element: ElementModel, ct: CancellationToken): Promise<boolean> {
+    async canDeleteElement(element: ElementModel, ct: CancellationToken): Promise<boolean> {
         await delay(SIMULATED_DELAY, ct);
         return true;
     }
 
-    async canLinkElement(element: ElementModel, ct: CancellationToken): Promise<boolean> {
+    async canEditElement(element: ElementModel, ct: CancellationToken): Promise<boolean> {
         await delay(SIMULATED_DELAY, ct);
         return true;
     }
@@ -123,6 +139,31 @@ export class ExampleMetadataApi implements MetadataApi {
             types: [...types],
             label: {values: [Rdf.OntodiaDataFactory.literal('New Entity')]},
             properties: {},
+        };
+    }
+
+    async generateNewLink(
+        source: ElementModel,
+        target: ElementModel,
+        linkType: LinkTypeIri,
+        ct: CancellationToken,
+    ): Promise<LinkModel> {
+        await delay(SIMULATED_DELAY, ct);
+        let linkIri: LinkIri | undefined;
+        const properties: LinkModel['properties'] = {};
+        if (EDITABLE_RELATIONS.find(r => r.type === linkType && r.editable)) {
+            const random32BitDigits = Math.floor((1 + Math.random()) * 0x100000000).toString(16).substring(1);
+            linkIri = `${linkType}_${random32BitDigits}` as LinkIri;
+            properties['http://example.com/schema/uniqueIndex'] = {
+                values: [Rdf.OntodiaDataFactory.literal(String(random32BitDigits), XSD_PREFIX + 'integer')],
+            };
+        }
+        return {
+            sourceId: source.id,
+            targetId: target.id,
+            linkTypeId: linkType,
+            linkIri,
+            properties,
         };
     }
 }

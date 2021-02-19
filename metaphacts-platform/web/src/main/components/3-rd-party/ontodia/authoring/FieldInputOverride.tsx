@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,13 +42,13 @@ import * as React from 'react';
 import * as Forms from 'platform/components/forms';
 
 import {
-  FieldConfigurationContext, assertFieldConfigurationItem,
+  FieldConfigurationContext, ApplyOnState, assertFieldConfigurationItem,
 } from './FieldConfigurationCommon';
 
 /**
- * Overrides default inputs for given field or datatype when generating a semantic form
+ * Overrides default input for given field or datatype when generating a semantic form.
  */
-export interface FieldInputOverrideConfig {
+interface OntodiaFieldInputOverrideConfig {
   /**
    * Field for which input have to be overridden. Only for-field or for-datatype can be specified.
    */
@@ -60,13 +60,18 @@ export interface FieldInputOverrideConfig {
   forDatatype?: string;
 
   /**
+   * Restricts in which states to override target input.
+   */
+  applyOn?: ReadonlyArray<ApplyOnState>;
+
+  /**
    * Input instance for override. Should be exactly one component. for-field property will be
    * provided automatically when semantic-form is generated, all other properties will be preserved.
    */
-  children: object;
+  children: {};
 }
 
-export interface FieldInputOverrideProps extends FieldInputOverrideConfig {
+export interface FieldInputOverrideProps extends OntodiaFieldInputOverrideConfig {
   children: Forms.FieldInputElement;
 }
 
@@ -75,7 +80,7 @@ export class FieldInputOverride extends React.Component<FieldInputOverrideProps>
     props: FieldInputOverrideProps,
     context: FieldConfigurationContext
   ): Promise<void> {
-    const {forField, forDatatype, children} = props;
+    const {forField, forDatatype, applyOn, children} = props;
     if (forField && forDatatype) {
       throw new Error(
         `Cannot set both "for-field" and "for-datatype" for <ontodia-field-input-override>`
@@ -91,6 +96,7 @@ export class FieldInputOverride extends React.Component<FieldInputOverrideProps>
         fieldIri: forField,
         datatype: forDatatype,
       },
+      applyOn,
       input: React.Children.only(children),
     });
   }

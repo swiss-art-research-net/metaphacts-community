@@ -61,11 +61,6 @@ const devServer = serve({
           // Filter out ketcher.js warning:
           // "Critical dependency: the request of a dependency is an expression"
           return true;
-        } else if (warning.indexOf('node_modules/@angular/core/src/linker/system_js_ng_module_factory_loader.js')) {
-          // Filter out Angular-based Graphscope warnings:
-          // "Critical dependency: the request of a dependency is an expression"
-          // "System.import() is deprecated and will be removed soon. Use import() instead."
-          return true;
         }
         return false;
       }

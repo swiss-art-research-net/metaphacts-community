@@ -19,7 +19,7 @@ import * as React from 'react';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
 import {
-  FormControl, FormGroup, Button, ButtonGroup, Col, ControlLabel, Form, Row,
+  FormControl, FormGroup, Button, ButtonGroup, Col, FormLabel, Form, Row,
 } from 'react-bootstrap';
 import ReactSelect, { ReactSelectProps, Option } from 'react-select';
 
@@ -96,23 +96,23 @@ export class InferenceMakingComponent extends React.Component<InferenceMakingCom
     const {premises} = this.state;
     return <Form>
       <FormGroup>
-        <ControlLabel>Title*</ControlLabel>
+        <FormLabel>Title*</FormLabel>
         <FormControl
           type='text' placeholder='Premise title...'
           value={this.state.title} onChange={this.onTitleChange} />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Description</ControlLabel>
-        <FormControl componentClass='textarea'
+        <FormLabel>Description</FormLabel>
+        <FormControl as='textarea'
           placeholder='Premise description...'
           value={this.state.note} onChange={this.onNoteChange} />
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Logic Type*</ControlLabel>
+        <FormLabel>Logic Type*</FormLabel>
         {this.logicTypeSelector()}
       </FormGroup>
       <FormGroup>
-        <ControlLabel>Evidences</ControlLabel>
+        <FormLabel>Evidences</FormLabel>
         <Row className={styles.evidenceList}>
         {premises.map((premise, index) =>
           <Col sm={4} className={styles.evidenceItem}>
@@ -129,11 +129,11 @@ export class InferenceMakingComponent extends React.Component<InferenceMakingCom
       </FormGroup>
       <FormGroup>
         <ButtonGroup className='pull-right'>
-          <Button bsStyle='default'
+          <Button variant='secondary'
             onClick={this.props.onCancel}>
             Cancel
           </Button>
-          <Button bsStyle='primary'
+          <Button variant='primary'
             style={{marginLeft:'12px'}}
             onClick={this.saveArgument}
             disabled={!this.canSave()}>

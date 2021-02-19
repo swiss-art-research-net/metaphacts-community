@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+import * as Kefir from 'kefir';
 import { createElement } from 'react';
 import * as D from 'react-dom-factories';
 import ReactSelect, {
@@ -53,21 +54,26 @@ import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import {
   FieldValue, AtomicValue, EmptyValue, SparqlBindingValue, ErrorKind, DataState,
 } from '../FieldValues';
-import { SingleValueInput, AtomicValueInput, AtomicValueInputProps } from './SingleValueInput';
+import {
+  SingleValueInput, SingleValueInputConfig, SingleValueHandlerProps,
+  AtomicValueInput, AtomicValueInputProps, AtomicValueHandler,
+} from './SingleValueInput';
 import { ValidationMessages } from './Decorations';
 import { queryValues } from '../QueryValues';
 
-export interface SelectInputProps extends AtomicValueInputProps {
+interface SemanticFormSelectInputConfig extends SingleValueInputConfig {
   template?: string;
   placeholder?: string;
 }
 
+export interface SelectInputProps extends SemanticFormSelectInputConfig, AtomicValueInputProps {}
+
 interface State {
-  valueSet?: Immutable.List<SparqlBindingValue>;
+  valueSet?: ReadonlyArray<SparqlBindingValue>;
 }
 
-const SELECT_TEXT_CLASS = 'select-text-field';
-const OPTION_CLASS = SELECT_TEXT_CLASS + 'option';
+const CLASS_NAME = 'select-text-field';
+const OPTION_CLASS = CLASS_NAME + 'option';
 
 export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
   private fetchingValueSet = Cancellation.cancelled;
@@ -77,7 +83,7 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
   constructor(props: SelectInputProps, context: any) {
     super(props, context);
     this.state = {
-      valueSet: Immutable.List<SparqlBindingValue>(),
+      valueSet: [],
     };
   }
 
@@ -108,14 +114,15 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
 
     const valueSetPattern = getValueSetPattern(props);
     if (valueSetPattern) {
+      const handler = this.props.handler as SelectInputHandler;
       this.isLoading = true;
       this.fetchingValueSet = new Cancellation();
       this.fetchingValueSet.map(
-        queryValues(valueSetPattern)
+        handler.getCachedValueSet(valueSetPattern)
       ).observe({
         value: valueSet => {
           this.isLoading = false;
-          this.setState({valueSet: Immutable.List(valueSet)});
+          this.setState({valueSet});
           this.props.updateValue(v => v);
         },
         error: error => {
@@ -186,9 +193,7 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
 
   render() {
     const definition = this.props.definition;
-    const options = this.state.valueSet
-      ? this.state.valueSet.toArray()
-      : new Array<SparqlBindingValue>();
+    const options = this.state.valueSet ?? [];
 
     const inputValue = this.props.value;
     const selectedValue = FieldValue.isAtomic(inputValue) ? inputValue : undefined;
@@ -197,14 +202,15 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
       ? this.createDefaultPlaceholder(definition) : this.props.placeholder;
 
     return D.div(
-      {className: SELECT_TEXT_CLASS},
+      {className: CLASS_NAME},
 
       createElement(ReactSelect, {
+        className: `${CLASS_NAME}__select`,
         name: definition.id,
         placeholder: placeholder,
         onChange: this.onValueChanged as OnChangeHandler<any>,
         disabled: !this.canEdit,
-        options: options,
+        options: options as SparqlBindingValue[],
         value: selectedValue,
         optionRenderer: this.optionRenderer as OptionRendererHandler<any>,
         valueRenderer: this.valueRenderer as ValueRendererHandler<any>,
@@ -219,7 +225,9 @@ export class SelectInput extends AtomicValueInput<SelectInputProps, State> {
     return `Select ${fieldName} here...`;
   }
 
-  static makeHandler = AtomicValueInput.makeAtomicHandler;
+  static makeHandler(props: SingleValueHandlerProps<SelectInputProps>) {
+    return new SelectInputHandler(props);
+  }
 }
 
 function getValueSetPattern(props: SelectInputProps) {
@@ -232,13 +240,28 @@ function getValueSetPattern(props: SelectInputProps) {
 }
 
 function appendValueSetLoadingError(v: FieldValue): FieldValue {
-  const nonEmpty = FieldValue.isEmpty(v)
-    ? FieldValue.fromLabeled({value: Rdf.iri('')}) : v;
-  const errors = [...FieldValue.getErrors(nonEmpty), {
+  const errors = [...FieldValue.getErrors(v), {
     kind: ErrorKind.Loading,
     message: `Failed to load value set`,
   }];
-  return FieldValue.setErrors(nonEmpty, errors);
+  return FieldValue.setErrors(v, errors);
+}
+
+class SelectInputHandler extends AtomicValueHandler {
+  private _valueSet: Kefir.Property<ReadonlyArray<SparqlBindingValue>> | undefined;
+  private _valueSetPattern: string | undefined;
+
+  constructor(props: SingleValueHandlerProps<AtomicValueInputProps>) {
+    super(props);
+  }
+
+  getCachedValueSet(valueSetPattern: string): Kefir.Property<ReadonlyArray<SparqlBindingValue>> {
+    if (!(this._valueSet && this._valueSetPattern === valueSetPattern)) {
+      this._valueSetPattern = valueSetPattern;
+      this._valueSet = queryValues(valueSetPattern);
+    }
+    return this._valueSet;
+  }
 }
 
 SingleValueInput.assertStatic(SelectInput);

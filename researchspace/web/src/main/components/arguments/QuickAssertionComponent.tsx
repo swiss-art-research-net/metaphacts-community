@@ -77,7 +77,7 @@ export class QuickAssertionComponent extends React.Component<QuickAssertionCompo
             onBeliefsChange={this.onBeliefsChange}
             quickAssertion={this.props.editMode}
           />
-          <Button bsStyle='success' className='pull-right'
+          <Button variant='success' className='pull-right'
             onClick={this.saveAssertion(field)}>Save</Button>
         </div>
     ).getOrElse(null);

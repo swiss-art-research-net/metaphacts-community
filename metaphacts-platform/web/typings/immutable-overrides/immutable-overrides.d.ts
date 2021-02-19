@@ -1,6 +1,7 @@
 declare global {
   declare module 'immutable' {
     export function List<T>(array: ReadonlyArray<T>): List<T>;
+    export function Set<T>(array: ReadonlyArray<T>): Set<T>;
 
     export module Record {
       type IRecord<T> = T & TypedMap<T>;

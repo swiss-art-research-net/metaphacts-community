@@ -7,14 +7,14 @@
     <p>
       The <code><semantic-context/></code> component can be used to selectively wrap individual <b>visualization components</b> in order to change their execution context, i.e. to instruct components to execute queries against particular repositories (other than the default), named graphs (as far as supported by the database) or to inject binding values into queries.
     </p>
-    <mp-documentation type="SemanticConfigProps"></mp-documentation>
+    <mp-documentation type="SemanticContextProps"></mp-documentation>
     <h2>Context Inheritance</h2>
-    The <code><semantic-context/></code> is automatically inherited to all child HTML nodes.  
+    The <code><semantic-context/></code> is automatically inherited to all child HTML nodes.
 <pre>
 <code>
 <div> <!-- the root page-div has a default semantic context -->
   <semantic-context repository='assets'> <!-- overwrite page context for all child nodes -->
-    <semantic-table 
+    <semantic-table
       query="SELECT ?s {?s a ?type} LIMIT 10"
     	column-configuration='[
       	{"variableName": "s", "cellTemplate": " {{> myNestedInclude}}" }
@@ -34,9 +34,9 @@
 </pre>
 
     <h2>Supported Components</h2>
-    For the time being only the components below support listening to the semantic-context. This is rather a well-informed design constraint (c.f. section below), than an inherent technical limitation. 
+    For the time being only the components below support listening to the semantic-context. This is rather a well-informed design constraint (c.f. section below), than an inherent technical limitation.
     <ul>
-      <li> 
+      <li>
         <semantic-link iri="[[resolvePrefix "Help:SemanticQuery"]]">semantic-query</semantic-link>
       </li>
       <li>
@@ -62,21 +62,21 @@
       </li>
       <li>
          <semantic-link iri="[[resolvePrefix "Help:MPComponents"]]">semantic-link</semantic-link>
-      </li>   
+      </li>
       <li>
          <semantic-link iri="[[resolvePrefix "Help:MPComponents"]]">mp-label</semantic-link>
       </li>
     </ul>
     <b>Currently, the following components explicitly do not support the semantic-context:</b>
     <ul>
-      <li> 
+      <li>
         <semantic-link iri="[[resolvePrefix "Help:SemanticSearch"]]">semantic-search</semantic-link> (Search Framework)
       </li>
       <li>
          <semantic-link iri="[[resolvePrefix "Help:SemanticForm"]]">semantic-form</semantic-link>
       </li>
     </ul>
-    
+
    	<h2>Constraints</h2>
     <p>
       By design, the <code><semantic-context/></code> component currently only works for simple, read-only visualization and result rendering components (c.f. list of supported components above).
@@ -87,19 +87,19 @@
     </p>
 		<ul>
     	<li>
-         The context is inherited and navigation links will be automatically rewritten, i.e. if you follow a link within a semantic-context with a different repository other than the default, subsequent pages will be rewritten to execute against this repository. As a application developer you have to decide whether, when and how the user can navigate back "into" the default repository. 
+         The context is inherited and navigation links will be automatically rewritten, i.e. if you follow a link within a semantic-context with a different repository other than the default, subsequent pages will be rewritten to execute against this repository. As a application developer you have to decide whether, when and how the user can navigate back "into" the default repository.
         There is no magic. Same applies to labels, i.e. all resource labels will be computed within the label service for the repository as specified in the context.
       </li>
       <li>
          Defining the semantics and behavior of the semantic-context on inherently nested authoring or search-framework components is far from trival, i.e. what is the semantic-context supposed to modify? The context from which existing form values would be fetched from? The auto-suggestion, value selection or validation queries would perform against? Or would it be the context to which the result is supposed to be saved to? The answer will be very different depending on the various use-cases.
       </li>
     </ul>
-    
+
     <h2>Examples</h2>
-    
+
     <h3>Example: Inheritance of semantic-context</h3>
     <p>
-      The query from the table below will execute against the <code>repository=assets</code> and also all children components like the <code><semantic-link/></code> will inherit the context. 
+      The query from the table below will execute against the <code>repository=assets</code> and also all children components like the <code><semantic-link/></code> will inherit the context.
     </p>
    	This means:
     <ul>
@@ -113,7 +113,7 @@
     <mp-code-example>
 <![CDATA[
 <semantic-context repository='assets'>
-  <semantic-table 
+  <semantic-table
     query="[[>Help:SemanticTableSampleQuery]]"
   ></semantic-table>
 </semantic-context>
@@ -136,7 +136,7 @@
     <mp-code-example>
 <![CDATA[
 <semantic-context repository='assets'>
-  <semantic-table 
+  <semantic-table
     query="[[>Help:SemanticTableSampleQuery]]"
     column-configuration='[
       {"variableName": "s", "displayName": "Subject", "cellTemplate": "<semantic-context repository=\"default\"><semantic-link iri=\"{{s.value}}\"></semantic-link></semantic-context></div>" }
@@ -145,7 +145,7 @@
 </semantic-context>
 ]]>
         </mp-code-example>
-    
+
 
 <h3>Example: Default Graphs, Named Graphs and Query Bindings</h3>
     <p>

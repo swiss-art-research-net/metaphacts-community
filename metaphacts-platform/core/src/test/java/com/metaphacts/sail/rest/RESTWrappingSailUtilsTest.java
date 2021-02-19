@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,6 +54,7 @@ import org.eclipse.rdf4j.query.algebra.Var;
 import org.eclipse.rdf4j.query.algebra.helpers.StatementPatternCollector;
 import org.eclipse.rdf4j.query.parser.ParsedQuery;
 import org.eclipse.rdf4j.query.parser.QueryParserUtil;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -130,7 +131,7 @@ public class RESTWrappingSailUtilsTest {
                 optSubjVar.get(), RDFS.COMMENT);
         
         Assert.assertEquals(list.size(), 2);
-        Assert.assertThat(list, Matchers.hasItems(VF.createLiteral("comment1"), VF.createLiteral("comment2")));
+        MatcherAssert.assertThat(list, Matchers.hasItems(VF.createLiteral("comment1"), VF.createLiteral("comment2")));
     }
     
     @Test
@@ -140,7 +141,7 @@ public class RESTWrappingSailUtilsTest {
                 null, RDFS.COMMENT);
         
         Assert.assertEquals(list.size(), 2);
-        Assert.assertThat(list, Matchers.hasItems(VF.createLiteral("comment1"), VF.createLiteral("comment2")));
+        MatcherAssert.assertThat(list, Matchers.hasItems(VF.createLiteral("comment1"), VF.createLiteral("comment2")));
     }
 
     @Test
@@ -160,7 +161,7 @@ public class RESTWrappingSailUtilsTest {
                 optSubjVar.get(), RDFS.SEEALSO);
         
         Assert.assertEquals(list.size(), 1);
-        Assert.assertThat(list, Matchers.hasItems(VF.createIRI("http://www.example.org/example")));
+        MatcherAssert.assertThat(list, Matchers.hasItems(VF.createIRI("http://www.example.org/example")));
     }
     
     @Test

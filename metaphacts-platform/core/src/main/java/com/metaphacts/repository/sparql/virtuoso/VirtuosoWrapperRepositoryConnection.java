@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,8 +54,6 @@ import org.eclipse.rdf4j.query.Query;
 import org.eclipse.rdf4j.query.QueryEvaluationException;
 import org.eclipse.rdf4j.query.QueryLanguage;
 import org.eclipse.rdf4j.query.TupleQuery;
-import org.eclipse.rdf4j.query.algebra.TupleExpr;
-import org.eclipse.rdf4j.query.impl.MapBindingSet;
 import org.eclipse.rdf4j.query.impl.SimpleDataset;
 import org.eclipse.rdf4j.query.parser.ParsedGraphQuery;
 import org.eclipse.rdf4j.query.parser.ParsedQuery;
@@ -68,16 +66,12 @@ import org.eclipse.rdf4j.repository.base.RepositoryConnectionWrapper;
 import org.eclipse.rdf4j.repository.sparql.SPARQLConnection;
 
 import com.metaphacts.api.sparql.SparqlUtil;
-import com.metaphacts.sparql.keyword.virtuoso.VirtuosoKeywordSearchGroupExtractor;
-import com.metaphacts.sparql.keyword.virtuoso.VirtuosoKeywordSearchHandler;
 
 /**
  * A wrapper connection for a Virtuoso SPARQL repository.
  * <ul>
  *  <li>Supports ASK queries (not allowed in Virtuoso) by transforming them 
  *      into equivalent SELECT ones.</li>
- *  <li>Re-writes keyword search clauses according to the Virtuoso syntax 
- *      (see {@link VirtuosoKeywordSearchHandler}).</li>
  * </ul> 
  * 
  * @author Andriy Nikolov an@metaphacts.com
@@ -90,9 +84,6 @@ public class VirtuosoWrapperRepositoryConnection extends RepositoryConnectionWra
     private static final Logger logger = 
             LogManager.getLogger(VirtuosoWrapperRepositoryConnection.class);
 
-    protected static VirtuosoKeywordSearchHandler keywordSearchHandler 
-                                                    = new VirtuosoKeywordSearchHandler();
-    
     public VirtuosoWrapperRepositoryConnection(Repository repository,
             RepositoryConnection delegate) {
         super(repository, delegate);
@@ -145,17 +136,8 @@ public class VirtuosoWrapperRepositoryConnection extends RepositoryConnectionWra
     }
 
     protected String generateTargetQuery(ParsedQuery parsedQuery) {
-        VirtuosoKeywordSearchGroupExtractor extractor = new VirtuosoKeywordSearchGroupExtractor();
+        return parsedQuery.getSourceString();
 
-        TupleExpr tupleExpr = parsedQuery.getTupleExpr();
-        extractor.optimize(tupleExpr, null, new MapBindingSet());
-        if (extractor.containsKeywordClauses()) {
-            tupleExpr = extractor.getTupleExpr();
-            parsedQuery.setTupleExpr(tupleExpr);
-            return keywordSearchHandler.generateTargetQuery(parsedQuery);
-        } else {
-            return parsedQuery.getSourceString();
-        }
     }
 
     /**

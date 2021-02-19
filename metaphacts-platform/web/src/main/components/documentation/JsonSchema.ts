@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,10 +37,27 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+export type JsonSchemaType = 'string' | 'boolean' | 'number' | 'object' | 'array' | 'null';
 export interface JsonSchema {
-  anyOf?: any
-  definitions: any
-  properties: any
-  required: any
-  propertyOrder: any
+  id?: string;
+  type: JsonSchemaType | JsonSchemaType[];
+  /** Schema reference, e.g. "#/definitions/SubInterface" */
+  '$ref'?: string;
+  description?: string;
+  default?: unknown;
+  enum?: ReadonlyArray<string>;
+  anyOf?: ReadonlyArray<JsonSchema>;
+  definitions?: { [typeName: string]: JsonSchema };
+  properties?: { [propertyName: string]: JsonSchema };
+  patternProperties?: { [propertyPattern: string]: JsonSchema };
+  additionalProperties?: boolean | JsonSchema;
+  required?: string[];
+  propertyOrder?: string[];
+
+  mpSeeResource?: MpSeeResource | MpSeeResource[];
+}
+
+export interface MpSeeResource {
+  name: string;
+  iri: string;
 }

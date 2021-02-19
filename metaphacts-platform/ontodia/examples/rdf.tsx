@@ -42,9 +42,9 @@ class RdfExample extends React.Component {
                     }}
                     toolbarProps={{
                         onPersistChanges: () => {
-                            const state = this.workspace.getEditor().authoringState;
+                            const {editor} = this.workspace.getContext();
                             // tslint:disable-next-line:no-console
-                            console.log('Authoring state:', state);
+                            console.log('Authoring state:', editor.authoringState);
                         }
                     }}
                 />

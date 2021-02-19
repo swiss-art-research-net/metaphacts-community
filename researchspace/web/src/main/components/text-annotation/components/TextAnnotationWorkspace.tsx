@@ -52,15 +52,22 @@ export interface TextAnnotationWorkspaceProps {
    */
   documentIri: string;
   /**
-   * ID of the <semantic-link iri='http://help.metaphacts.com/resource/Storage'>
-   * storage</semantic-link> to load text document content.
+   * ID of the platform storage to load text document content.
+   *
+   * @mpSeeResource {
+   *   "name": "Platform Storage",
+   *   "iri": "http://help.metaphacts.com/resource/Storage"
+   * }
    */
   storage: string;
   /**
-   * IRI template for generating annotation IRIs. See <code>new-subject-template</code>
-   * attribute at
-   * <semantic-link iri='http://help.metaphacts.com/resource/SemanticForm'></semantic-link>
-   * for syntax.
+   * IRI template for generating annotation IRIs. See `new-subject-template`
+   * attribute of semantic form element for syntax.
+   *
+   * @mpSeeResource {
+   *   "name": "Semantic Form",
+   *   "iri": "http://help.metaphacts.com/resource/SemanticForm"
+   * }
    */
   annotationSubjectTemplate: string;
   /**

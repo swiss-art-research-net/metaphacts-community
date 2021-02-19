@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
  */
 import { Children, ReactNode } from 'react';
 import * as Immutable from 'immutable';
-import { ElementTypeIri, CancellationToken } from 'ontodia';
+import { ElementTypeIri, LinkTypeIri, CancellationToken } from 'ontodia';
 
 import { Component } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
@@ -50,22 +50,30 @@ import { isValidChild } from 'platform/components/utils';
 
 import { observableToCancellablePromise } from '../AsyncAdapters';
 import {
-  EntityMetadata, FieldConfiguration, FieldConfigurationContext, FieldConfigurationItem,
-  OntodiaPersistenceMode,
+  EntityMetadata, LinkMetadata, FieldInputOverride, FormOverride, FieldConfiguration,
+  FieldConfigurationContext, FieldConfigurationItem, OntodiaPersistenceMode,
 } from './FieldConfigurationCommon';
 
 interface OntodiaFieldConfigurationConfigBase {
   /**
    * Switches Ontodia to authoring mode.
    *
-   * Authoring mode requires entity metadata to be specified (using semantic forms as children)
-   * in order to work.
+   * Authoring mode requires entity metadata to be specified in order to work.
+   *
+   * @default false
    */
   authoringMode?: boolean;
 
   /**
+   * Enables field-based validation in authoring mode.
+   *
+   * @default true
+   */
+  enableValidation?: boolean;
+
+  /**
    * Defines persistence mode to use in authoring mode.
-   * @default {type: "form"}
+   * @default {"type": "form"}
    */
   persistence?: OntodiaPersistenceMode;
 
@@ -76,32 +84,43 @@ interface OntodiaFieldConfigurationConfigBase {
   allowRequestFields?: boolean;
 
   /**
-   * Field that is used for entity type. In most cases field should use rdf:type as a property.
+   * Field that is used for entity type. In most cases field should use `rdf:type` as a property.
    */
   typeIri: string;
 
   /**
-   * Default field to be used for entity label
+   * Default field to be used for entity label.
    */
   defaultLabelIri?: string;
 
   /**
-   * Default field to be used for entity image
+   * Default field to be used for entity image.
    */
   defaultImageIri?: string;
 
   /**
    * Default template to create Iri for new entities.
-   * @see new-subject-template from Help:SemanticForm
+   *
+   * @mpSeeResource {
+   *   "name": "Semantic Form - new-subject-template",
+   *   "iri": "http://help.metaphacts.com/resource/SemanticForm"
+   * }
    */
   defaultSubjectTemplate?: string;
 
   /**
-   * Forces certain fields of xsd:anyUri datatype to be treated as entity properties
+   * Forces certain fields of `xsd:anyUri` datatype to be treated as entity properties
    * to be modified inside entity form instead of object properties treated and modified
-   * as an edge in the graph, like entity image Iri, or some vocabulary reference.
+   * as an edge in the graph, like entity image IRI, or some vocabulary reference.
    */
   forceDatatypeFields?: ReadonlyArray<string>;
+
+  /**
+   * Allows to disable default label generation for entities and keep it empty.
+   *
+   * @default true
+   */
+  generatePlaceholderLabel?: boolean;
 
   /**
    * Renders debug info into DOM when placed as stand-alone component and also to the console.
@@ -113,13 +132,20 @@ interface OntodiaFieldConfigurationConfigBase {
 export interface OntodiaFieldConfigurationConfig extends OntodiaFieldConfigurationConfigBase {
   /**
    * Fields to be used in Ontodia instance. Could be populated inline or with backend helper.
-   * @see Reading Field Definitions from the Database from Help:SemanticForm
+   *
+   * @mpSeeResource {
+   *   "name": "Semantic Form - Reading Field Definitions from the Database",
+   *   "iri": "http://help.metaphacts.com/resource/SemanticForm"
+   * }
    */
   fields?: ReadonlyArray<Forms.FieldDefinitionConfig>;
   /**
-   * Children can be either ontodia-entity-metadata or ontodia-field-input-override
+   * Children can be any number of:
+   *   - `<ontodia-entity-metadata>`
+   *   - `<ontodia-link-metadata>`
+   *   - `<ontodia-field-input-override>`
    */
-  children: object;
+  children: {};
 }
 
 export interface OntodiaFieldConfigurationProps extends OntodiaFieldConfigurationConfigBase {
@@ -135,20 +161,25 @@ export async function extractFieldConfiguration(
   props: OntodiaFieldConfigurationProps | undefined,
   ct: CancellationToken
 ): Promise<FieldConfiguration> {
-  const collectedMetadata = new Map<ElementTypeIri, EntityMetadata>();
-  const collectedInputOverrides: Forms.InputOverride[] = [];
+  const collectedEntities = new Map<ElementTypeIri, EntityMetadata>();
+  const collectedLinks = new Map<LinkTypeIri, LinkMetadata>();
+  const collectedInputOverrides: FieldInputOverride[] = [];
+  const collectedFormOverrides: FormOverride[] = [];
 
   let fieldByIri = Immutable.Map<string, Forms.FieldDefinition>();
   const datatypeFields = new Map<string, Forms.FieldDefinition>();
 
   if (!props) {
     return {
-      authoringMode: false,
-      metadata: undefined,
+      startInAuthoringMode: false,
+      enableValidation: false,
+      generatePlaceholderLabel: false,
+      entities: collectedEntities,
+      links: collectedLinks,
       persistence: undefined,
-      allFields: [],
       datatypeFields,
       inputOverrides: collectedInputOverrides,
+      formOverrides: collectedFormOverrides,
     };
   }
 
@@ -227,8 +258,10 @@ export async function extractFieldConfiguration(
     defaultSubjectTemplate,
     datatypeFields: forceDatatypeFields,
     cancellationToken: ct,
-    collectedMetadata,
+    collectedEntities,
+    collectedLinks,
     collectedInputOverrides,
+    collectedFormOverrides,
   };
 
   // execute configuration steps from each configuration item
@@ -237,12 +270,15 @@ export async function extractFieldConfiguration(
   }
 
   const finalConfig: FieldConfiguration = {
-    authoringMode: props ? Boolean(props.authoringMode) : false,
-    metadata: collectedMetadata.size > 0 ? collectedMetadata : undefined,
+    startInAuthoringMode: props ? Boolean(props.authoringMode) : false,
+    enableValidation: props.enableValidation ?? true,
+    generatePlaceholderLabel: props.generatePlaceholderLabel ?? true,
+    entities: collectedEntities,
+    links: collectedLinks,
     persistence: props ? props.persistence : undefined,
-    allFields: fieldByIri.valueSeq().toArray(),
     datatypeFields,
     inputOverrides: collectedInputOverrides,
+    formOverrides: collectedFormOverrides,
   };
   if (props.debug) {
     console.log('Ontodia field configuration:', finalConfig);

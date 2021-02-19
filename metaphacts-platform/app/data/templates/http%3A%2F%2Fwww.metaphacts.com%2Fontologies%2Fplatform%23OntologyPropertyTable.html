@@ -1,0 +1,45 @@
+<semantic-table query='[[> query]]' tuple-template='{{> element}}' number-of-displayed-rows=50 no-result-template='[[noDataMessage]]'>
+  <template id='element'>
+    <div class='ontologyKnowledgePanel__element'>
+      <span class='ontologyKnowledgePanel__elementName'>
+        <mp-popover>
+          <mp-popover-trigger placement="top" trigger='["hover","focus"]'> 
+            <span><mp-label iri='{{relation.value}}'></mp-label></span>
+          </mp-popover-trigger>
+          <mp-popover-content style="background:white;">
+            <div>
+              <mp-description iri='{{relation.value}}' no-result-template='<i>No description available</i>'></mp-description>
+            </div>
+          </mp-popover-content>
+        </mp-popover>
+      </span>
+      {{#ifCond inherited.value '!==' ''}}
+        <span class='ontologyKnowledgePanel__elementInherited'>
+          <mp-popover>
+            <mp-popover-trigger placement="top" trigger='["hover","focus"]'> 
+              <i class="fa fa-sitemap ontologyKnowledgePanel__elementInheritedTrigger" aria-label='inherited'></i>
+            </mp-popover-trigger>
+            <mp-popover-content style="background:white;">
+              <div>Inherited from <strong><mp-label iri='{{inherited.value}}'></mp-label></strong></div>
+            </mp-popover-content>
+          </mp-popover>
+        </span>
+      {{/ifCond}}
+      <span class='ontologyKnowledgePanel__elementType'>
+        {{#if target}}<mp-label iri='{{target.value}}'></mp-label>{{/if}}
+        {{~#ifCond minCount "||" maxCount}}:{{/ifCond}}
+      </span>
+      <span class='ontologyKnowledgePanel__elementCardinality'>{{> cardinality minCount=minCount maxCount=maxCount}}</span>
+    </div>
+  </template>
+  <template id='cardinality'>
+    {{#ifCond minCount "||" maxCount}}
+      {{#ifCond minCount.value '===' maxCount.value}}
+        {{~minCount.value}}
+      {{else}}
+        {{#if minCount}}{{minCount.value}}{{else}}0{{/if}}..
+        {{~#if maxCount}}{{maxCount.value}}{{else}}*{{/if}}
+      {{/ifCond}}
+    {{/ifCond}}
+  </template>
+</semantic-table>

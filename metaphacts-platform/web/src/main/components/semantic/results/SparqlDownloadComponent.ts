@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -45,39 +45,46 @@ import { Component } from 'platform/api/components';
 
 /**
  * Component to trigger the download of a SPARQL result set.
+ *
  * Downloading starts when the child element has been clicked,
  * therefore component should contain only one child element.
  * Child element could be any HTML-element (not text node).
  *
- * @example
- * <mp-sparql-download query="SELECT * WHERE {?a ?b ?c} LIMIT 10"
- *                     header="application/sparql-results+json">
- *     <button>Download SPARQL JSON</button>
+ * **Example**:
+ * ```
+ * <mp-sparql-download query='SELECT * WHERE {?a ?b ?c} LIMIT 10'
+ *   header='application/sparql-results+json'>
+ *   <button>Download SPARQL JSON</button>
  * </mp-sparql-download>
+ * ```
  *
- * @example
- * <mp-sparql-download query="SELECT * WHERE {?a ?b ?c} LIMIT 10"
- *                     header="text/csv"
- *                     filename="myresult.csv">
- *     <a href="#">Download CSV</a>
+ * **Example**:
+ * ```
+ * <mp-sparql-download query='SELECT * WHERE {?a ?b ?c} LIMIT 10'
+ *   header='text/csv'
+ *   filename='myresult.csv'>
+ *   <a href="#">Download CSV</a>
  * </mp-sparql-download>
+ * ```
  */
-export interface Props {
+interface SparqlDownloadConfig {
   /**
-   * SPARQL SELECT OR CONSTRUCT query
+   * SPARQL SELECT or CONSTRUCT query
    */
   query: string;
   /**
-   * result mime type header (according to the standards)
+   * Result mime type header (according to the standards)
    */
   header: SparqlUtil.ResultFormat;
   /**
-   * (optional) file name
+   * Optional file name
    */
   filename?: string;
 }
 
-class SparqlDownloadComponent extends Component<Props, {}> {
+export type SparqlDownloadProps = SparqlDownloadConfig;
+
+class SparqlDownloadComponent extends Component<SparqlDownloadProps, {}> {
   private onSave = (event: React.SyntheticEvent<any>) => {
     event.preventDefault();
 

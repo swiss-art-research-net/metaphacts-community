@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,11 @@
 import * as PropTypes from 'prop-types';
 import { Element } from 'ontodia';
 
+import { FieldConfiguration } from './authoring/FieldConfigurationCommon';
+import { OntodiaPersistence } from './authoring/OntodiaPersistence';
+
 export interface OntodiaContext {
+  ontodiaId?: string;
   inAuthoringMode: () => boolean;
   useLinkConfiguration: () => boolean;
   onShowInfo: (target: Element) => void;
@@ -48,6 +52,10 @@ export interface OntodiaContext {
   onSaveDiagramAs: () => void;
   onPersistChanges: () => void;
   onPersistChangesAndSaveDiagram: () => void;
+  getFieldConfiguration: () => FieldConfiguration;
+  makePersistence: () => OntodiaPersistence;
+  loadDiagram: (diagramIri: string, isDefaultDiagram?: boolean) => Promise<void>;
+  getDiagramIri: () => string | undefined;
 }
 
 export interface OntodiaContextWrapper {

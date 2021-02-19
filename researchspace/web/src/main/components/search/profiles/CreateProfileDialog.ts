@@ -19,7 +19,7 @@
  * @author Artem Kozlov <ak@metaphacts.com>
  */
 
-import { Component, createFactory, ReactElement } from 'react';
+import { Component, createElement, createFactory, ReactElement } from 'react';
 import * as D from 'react-dom-factories';
 import { findDOMNode } from 'react-dom';
 import * as ReactBootstrap from 'react-bootstrap';
@@ -28,7 +28,6 @@ import * as classnames from 'classnames';
 
 const Modal = createFactory(ReactBootstrap.Modal);
 const Button = createFactory(ReactBootstrap.Button);
-const ModalHeader = createFactory(ReactBootstrap.Modal.Header);
 const ModalTitle = createFactory(ReactBootstrap.Modal.Title);
 const ModalBody = createFactory(ReactBootstrap.Modal.Body);
 
@@ -108,7 +107,7 @@ export class CreateProfileDialogClass extends Component<Props, State> {
   }
 
   private dialogHeader() {
-    return ModalHeader(
+    return createElement(ReactBootstrap.Modal.Header,
       {
         closeButton: true,
       },

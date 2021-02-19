@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,15 +43,11 @@ import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.http.HTTPRepository;
 
 import com.google.inject.Inject;
+import com.metaphacts.repository.AuthMethod;
 import com.metaphacts.secrets.SecretResolver;
 import com.metaphacts.secrets.SecretsHelper;
 
 public class AuthenticatingHTTPRepository extends HTTPRepository {
-
-
-    private enum AuthMethod {
-        None, BasicAuth, DigestAuth
-    };
 
     private AuthMethod authenticationModus = AuthMethod.None;
 

@@ -125,7 +125,7 @@ class MPLicenseRenderer implements ReportRenderer {
 		// statistics 
 		output << "<h2>Statistics</h2>\n"
 		output << "<p>"
-		output << "<b>Version:</b> " + project.version + "<br/>\n"
+		output << "<b>Version:</b> " + project.rootProject.version + "<br/>\n"
 		output << "<b>Generated at:</b> " + new Date() + "<br/>\n"
 		output << "<b>" + (modulesBundleName ?: "Module dependencies") + ":</b> " + countDependencies(licenseToModules) + "<br/>\n"
 		for (def bundle : data.importedModules) {

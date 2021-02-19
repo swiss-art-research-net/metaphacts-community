@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,10 +39,10 @@
  */
 import {
     Dictionary, ClassModel, LinkTypeModel, ElementModel, LinkModel, LinkCount, PropertyModel, Property,
-    ElementIri, ElementTypeIri, LinkTypeIri, PropertyTypeIri, BLANK_NODE_PREFIX,
-    ONTODIA_LIST, ONTODIA_LIST_ITEM, ONTODIA_LIST_INDEX,
+    LinkedElement, ElementIri, ElementTypeIri, LinkIri, LinkTypeIri, PropertyTypeIri,
+    BLANK_NODE_PREFIX, ONTODIA_LINK_IDENTITY, ONTODIA_LIST, ONTODIA_LIST_ITEM, ONTODIA_LIST_INDEX,
 } from '../model';
-import { DataProvider, LinkElementsParams, FilterParams } from '../provider';
+import { DataProvider, FilterParams } from '../provider';
 import { objectValues } from '../../viewUtils/collections';
 import { HashSet, ReadonlyHashSet } from '../../viewUtils/hashMap';
 
@@ -65,6 +65,8 @@ export interface RdfDataProviderOptions {
     acceptBlankNodes?: boolean;
     /** @default false */
     transformRdfList?: boolean;
+    /** @default true */
+    acceptLinkProperties?: boolean;
     /** @default rdf:type */
     typePredicate?: string;
     /** @default rdfs:subClassOf */
@@ -77,6 +79,8 @@ export interface RdfDataProviderOptions {
     guessLabelPredicate?: boolean;
     /** @default [] */
     imagePredicates?: ReadonlyArray<string>;
+    /** @default [] */
+    datatypePredicates?: ReadonlyArray<string>;
 }
 
 export interface RdfFile {
@@ -94,17 +98,17 @@ export class RdfDataProvider implements DataProvider {
     private _parser: RdfCompositeParser;
     private acceptBlankNodes: boolean;
     private transformRdfList: boolean;
+    private acceptLinkProperties: boolean;
     private initGraphLoading: Promise<unknown>;
 
-    private readonly dataset = makeIndexedDataset(
-        // tslint:disable-next-line: no-bitwise
-        IndexQuadBy.S | IndexQuadBy.SP | IndexQuadBy.OP
-    );
-    private readonly metadataCache: DatasetMetadataCache;
+    private dataset = createDataset();
+    private readonly createMetadataCache: () => DatasetMetadataCache;
+    private metadataCache: DatasetMetadataCache;
 
     private readonly typePredicate: Rdf.NamedNode;
     private readonly subtypePredicate: Rdf.NamedNode;
     private readonly linkSupertypes: ReadonlyArray<Rdf.NamedNode>;
+    private readonly linkIdentity: Rdf.NamedNode;
     private readonly listOptions: RdfListOptions;
 
     constructor(options: RdfDataProviderOptions) {
@@ -112,6 +116,7 @@ export class RdfDataProvider implements DataProvider {
         this._parser = new RdfCompositeParser(this.factory, options.parsers ?? {});
         this.acceptBlankNodes = Boolean(options.acceptBlankNodes);
         this.transformRdfList = Boolean(options.transformRdfList);
+        this.acceptLinkProperties = Boolean(options.acceptLinkProperties ?? true);
 
         this.typePredicate = options.typePredicate
             ? this.factory.namedNode(options.typePredicate)
@@ -128,6 +133,8 @@ export class RdfDataProvider implements DataProvider {
                 this.factory.namedNode(OWL_NAMESPACE + 'ObjectProperty'),
             ];
 
+        this.linkIdentity = this.factory.namedNode(ONTODIA_LINK_IDENTITY);
+
         this.listOptions = {
             dataset: this.dataset,
             factory: this.factory,
@@ -137,12 +144,14 @@ export class RdfDataProvider implements DataProvider {
             RDF_NIL: this.factory.namedNode(RDF_NAMESPACE + 'nil'),
         };
 
-        this.metadataCache = new DatasetMetadataCache({
+        this.createMetadataCache = () => new DatasetMetadataCache({
             factory: this.factory,
             labelPredicates: options.labelPredicates,
             guessLabelPredicate: options.guessLabelPredicate ?? true,
             imagePredicates: options.imagePredicates,
+            datatypePredicates: options.datatypePredicates,
         });
+        this.metadataCache = this.createMetadataCache();
 
         if (options.data) {
             const onGraphParsed = (graph: ReadonlyArray<Rdf.Quad>) => this.addGraph(graph);
@@ -164,10 +173,19 @@ export class RdfDataProvider implements DataProvider {
         return this._parser;
     }
 
+    clearData() {
+        this.dataset = createDataset();
+        this.metadataCache = this.createMetadataCache();
+    }
+
     addGraph(graph: ReadonlyArray<Rdf.Quad>) {
         const filtered = this.acceptBlankNodes ? graph : graph.filter(nonBlankQuad);
         this.dataset.addAll(filtered);
         this.metadataCache.addFrom(filtered);
+    }
+
+    getGraph(): ReadonlyArray<Rdf.Quad> {
+        return this.dataset.iterateMatches(null, null, null);
     }
 
     private waitInitCompleted(): Promise<unknown> {
@@ -347,14 +365,27 @@ export class RdfDataProvider implements DataProvider {
             if (elementIris.has(t.subject) &&
                 elementIris.has(t.object) &&
                 t.predicate.termType === 'NamedNode' &&
+                !this.metadataCache.isDatatypeProperty(t.predicate, t.object) &&
                 (!linkTypeIris || linkTypeIris.has(t.predicate))
             ) {
-                result.push({
-                    sourceId: encodeTerm(t.subject as Rdf.NamedNode | Rdf.BlankNode),
-                    linkTypeId: encodeTerm(t.predicate),
-                    targetId: encodeTerm(t.object as Rdf.NamedNode | Rdf.BlankNode),
-                    properties: {},
-                });
+                const sourceId = encodeTerm(t.subject as Rdf.NamedNode | Rdf.BlankNode);
+                const targetId = encodeTerm(t.object as Rdf.NamedNode | Rdf.BlankNode);
+                const linkTypeId = encodeTerm(t.predicate);
+                const linkIds = this.dataset.iterateMatches(t, this.linkIdentity, null);
+                if (linkIds.length > 0) {
+                    for (const {object: linkId} of linkIds) {
+                        if (linkId.termType === 'NamedNode' || linkId.termType === 'BlankNode') {
+                            const linkIri = encodeTerm(linkId);
+                            const properties = this.acceptLinkProperties
+                                ? findLinkProperties(this.dataset, linkId) : {};
+                            result.push({linkIri, sourceId, targetId, linkTypeId, properties});
+                        }
+                    }
+                } else {
+                    const properties = this.acceptLinkProperties
+                        ? findLinkProperties(this.dataset, t) : {};
+                    result.push({sourceId, targetId, linkTypeId, properties});
+                }
             }
         });
         if (this.transformRdfList) {
@@ -391,6 +422,7 @@ export class RdfDataProvider implements DataProvider {
 
         this.dataset.forEach(t => {
             if (t.predicate.termType !== 'NamedNode') { return; }
+            if (this.metadataCache.isDatatypeProperty(t.predicate, t.object)) { return; }
             const inLink = isNamedNodeOrBlank(t.subject) && Rdf.equalTerms(element, t.object);
             const outLink = isNamedNodeOrBlank(t.object) && Rdf.equalTerms(element, t.subject);
             if (inLink || outLink) {
@@ -411,32 +443,16 @@ export class RdfDataProvider implements DataProvider {
         return links;
     }
 
-    async linkElements(params: LinkElementsParams): Promise<Dictionary<ElementModel>> {
+    async filter(params: FilterParams): Promise<LinkedElement[]> {
         await this.waitInitCompleted();
-        return await this.filter({
-            refElementId: params.elementId,
-            refElementLinkId: params.linkId,
-            linkDirection: params.direction,
-            limit: params.limit,
-            offset: params.offset,
-            languageCode: '',
-        });
-    }
-
-    async filter(params: FilterParams): Promise<Dictionary<ElementModel>> {
-        await this.waitInitCompleted();
-
-        if (params.limit === undefined) {
-            params.limit = 100;
-        }
 
         const filterSubject = (subject: Rdf.Term): subject is Rdf.NamedNode | Rdf.BlankNode => {
             return isNamedNodeOrBlank(subject);
         };
 
         const visitedSubjects = new HashSet<Rdf.Term>(Rdf.hashTerm, Rdf.equalTerms);
-        const offsetIndex = params.offset;
-        const limitIndex = params.offset + params.limit;
+        const offsetIndex = params.offset ?? 0;
+        const limitIndex = offsetIndex + (params.limit ?? 100);
 
         const statefulLimit = (subject: Rdf.Term): subject is Rdf.NamedNode | Rdf.BlankNode => {
             const index = visitedSubjects.size;
@@ -445,11 +461,11 @@ export class RdfDataProvider implements DataProvider {
             return index >= offsetIndex && index < limitIndex;
         };
 
-        let elements: ElementModel[];
+        let linkedIndex: LinkedItemIndex;
         if (params.elementTypeId) {
-            elements = this.filterByTypeId(params.elementTypeId, filterSubject, statefulLimit);
+            linkedIndex = this.filterByTypeId(params.elementTypeId, filterSubject, statefulLimit);
         } else if (params.refElementId && params.refElementLinkId) {
-            elements = this.filterByRefAndLink(
+            linkedIndex = this.filterByRefAndLink(
                 params.refElementId,
                 params.refElementLinkId,
                 params.linkDirection,
@@ -457,20 +473,21 @@ export class RdfDataProvider implements DataProvider {
                 statefulLimit
             );
         } else if (params.refElementId) {
-            elements = this.filterByRef(params.refElementId, filterSubject, statefulLimit);
+            linkedIndex = this.filterByRef(params.refElementId, filterSubject, statefulLimit);
         } else if (params.text) {
-            elements = this.getAllElements(params.text, filterSubject, statefulLimit);
+            linkedIndex = this.getAllElements(params.text, filterSubject, statefulLimit);
         } else {
-            return {};
+            return [];
         }
 
         if (this.transformRdfList) {
-            elements = elements.concat(
-                filterRdfList(this.listOptions, params, filterSubject, statefulLimit)
-                    .map(el => this.getShortElementInfo(el))
-            );
+            filterRdfList(linkedIndex, this.listOptions, params, filterSubject, statefulLimit);
         }
 
+        const elements = linkedIndex.items.map((item): LinkedElement => {
+            const element = this.getShortElementInfo(item.element);
+            return {element, inLinks: item.inLinks, outLinks: item.outLinks};
+        });
         return this.filterByKey(params.text, elements);
     }
 
@@ -478,11 +495,14 @@ export class RdfDataProvider implements DataProvider {
         elementTypeId: ElementTypeIri,
         filterSubject: (subject: Rdf.Term) => subject is Rdf.NamedNode | Rdf.BlankNode,
         statefulLimit: (subject: Rdf.Term) => boolean,
-    ): ElementModel[] {
-        return this.dataset
-            .iterateMatches(null, this.typePredicate, this.decodeTerm(elementTypeId))
-            .filter(t => filterSubject(t.subject) && statefulLimit(t.subject))
-            .map(el => this.getShortElementInfo(el.subject));
+    ): LinkedItemIndex {
+        const index = new LinkedItemIndex();
+        for (const t of this.dataset.iterateMatches(null, this.typePredicate, this.decodeTerm(elementTypeId))) {
+            if (filterSubject(t.subject) && statefulLimit(t.subject)) {
+                index.getOrCreateItem(t.subject);
+            }
+        }
+        return index;
     }
 
     private filterByRefAndLink(
@@ -491,45 +511,69 @@ export class RdfDataProvider implements DataProvider {
         linkDirection: 'in' | 'out' | undefined,
         filterSubject: (subject: Rdf.Term) => subject is Rdf.NamedNode | Rdf.BlankNode,
         statefulLimit: (subject: Rdf.Term) => boolean,
-    ): ElementModel[] {
-        if (linkDirection === 'in') {
-            return this.dataset
-                .iterateMatches(null, this.decodeTerm(refLink), this.decodeTerm(refEl))
-                .filter(t => filterSubject(t.subject) && statefulLimit(t.subject))
-                .map(el => this.getShortElementInfo(el.subject));
-        } else {
-            return this.dataset
-                .iterateMatches(this.decodeTerm(refEl), this.decodeTerm(refLink), null)
-                .filter(t => filterSubject(t.object) && statefulLimit(t.subject))
-                .map(el => this.getShortElementInfo(el.object));
+    ): LinkedItemIndex {
+        const index = new LinkedItemIndex();
+        const predicate = this.decodeTerm(refLink);
+        if (predicate.termType === 'NamedNode' && this.metadataCache.isDatatypePredicate(predicate)) {
+            return index;
         }
+        if (linkDirection === 'in') {
+            for (const t of this.dataset.iterateMatches(null, predicate, this.decodeTerm(refEl))) {
+                if (filterSubject(t.subject) && statefulLimit(t.subject)) {
+                    const item = index.getOrCreateItem(t.subject);
+                    item.inLinks.push(refLink);
+                }
+            }
+        } else {
+            for (const t of this.dataset.iterateMatches(this.decodeTerm(refEl), predicate, null)) {
+                if (filterSubject(t.object) && statefulLimit(t.subject)) {
+                    const item = index.getOrCreateItem(t.object);
+                    item.outLinks.push(refLink);
+                }
+            }
+        }
+        return index;
     }
 
     private filterByRef(
         refEl: ElementIri,
         filterSubject: (subject: Rdf.Term) => subject is Rdf.NamedNode | Rdf.BlankNode,
         statefulLimit: (subject: Rdf.Term) => boolean,
-    ): ElementModel[] {
-        const inRelations = this.dataset
-            .iterateMatches(null, null, this.decodeTerm(refEl))
-            .filter(t => filterSubject(t.subject) && statefulLimit(t.subject))
-            .map(el => this.getShortElementInfo(el.subject));
+    ): LinkedItemIndex {
+        const index = new LinkedItemIndex();
 
-        const outRelations = this.dataset
-            .iterateMatches(this.decodeTerm(refEl), null, null)
-            .filter(t => filterSubject(t.object) && statefulLimit(t.object))
-            .map(el => this.getShortElementInfo(el.object));
+        for (const t of this.dataset.iterateMatches(null, null, this.decodeTerm(refEl))) {
+            if (t.predicate.termType === 'NamedNode'
+                && !this.metadataCache.isDatatypeProperty(t.predicate, t.object)
+                && filterSubject(t.subject)
+                && statefulLimit(t.subject)
+            ) {
+                const item = index.getOrCreateItem(t.subject);
+                item.inLinks.push(encodeTerm(t.predicate));
+            }
+        }
 
-        return inRelations.concat(outRelations);
+        for (const t of this.dataset.iterateMatches(this.decodeTerm(refEl), null, null)) {
+            if (t.predicate.termType === 'NamedNode'
+                && !this.metadataCache.isDatatypeProperty(t.predicate, t.subject)
+                && filterSubject(t.object)
+                && statefulLimit(t.object)
+            ) {
+                const item = index.getOrCreateItem(t.object);
+                item.outLinks.push(encodeTerm(t.predicate));
+            }
+        }
+
+        return index;
     }
 
     private getAllElements(
         text: string | undefined,
         filterSubject: (subject: Rdf.Term) => subject is Rdf.NamedNode | Rdf.BlankNode,
         statefulLimit: (subject: Rdf.Term) => boolean,
-    ): ElementModel[] {
+    ): LinkedItemIndex {
         const key = text ? text.toLowerCase() : undefined;
-        const models: ElementModel[] = [];
+        const index = new LinkedItemIndex();
         this.dataset.forEach(t => {
             if (t.predicate.termType === 'NamedNode' && filterSubject(t.subject)) {
                 const objectIsLiteral = t.object.termType === 'Literal';
@@ -540,33 +584,33 @@ export class RdfDataProvider implements DataProvider {
 
                 if (containsKey) {
                     if (statefulLimit(t.subject)) {
-                        models.push(this.getShortElementInfo(t.subject));
+                        index.getOrCreateItem(t.subject);
                     }
                 }
             }
         });
-        return models;
+        return index;
     }
 
-    private filterByKey(text: string | undefined, elements: ElementModel[]): Dictionary<ElementModel> {
-        const result: Dictionary<ElementModel> = {};
+    private filterByKey(text: string | undefined, items: LinkedElement[]): LinkedElement[] {
         const key = (text ? text.toLowerCase() : null);
         if (key) {
-            for (const el of elements) {
+            const result: LinkedElement[] = [];
+            for (const item of items) {
                 let acceptableKey = false;
-                for (const label of el.label.values) {
+                for (const label of item.element.label.values) {
                     acceptableKey = acceptableKey || label.value.toLowerCase().indexOf(key) !== -1;
                     if (acceptableKey) { break; }
                 }
-                acceptableKey = acceptableKey || el.id.toLowerCase().indexOf(key) !== -1;
-                if (acceptableKey) { result[el.id] = el; }
+                acceptableKey = acceptableKey || item.element.id.toLowerCase().indexOf(key) !== -1;
+                if (acceptableKey) {
+                    result.push(item);
+                }
             }
+            return result;
         } else {
-            for (const el of elements) {
-                result[el.id] = el;
-            }
+            return items;
         }
-        return result;
     }
 
     private getShortElementInfo(element: Rdf.Term): ElementModel {
@@ -593,12 +637,14 @@ export class RdfDataProvider implements DataProvider {
         const props: Dictionary<Property> = {};
 
         for (const t of propTriples) {
-            if (t.object.termType === 'Literal' &&
-                t.predicate.termType === 'NamedNode' &&
+            if (t.predicate.termType === 'NamedNode' &&
+                this.metadataCache.isDatatypeProperty(t.predicate, t.object) &&
                 !this.metadataCache.isLabelPredicate(t.predicate)
             ) {
                 const property = props[t.predicate.value];
-                const value: Rdf.Literal = t.object;
+                const value = t.object.termType === 'BlankNode'
+                    ? this.factory.namedNode<string>(encodeTerm(t.object))
+                    : (t.object as Rdf.NamedNode | Rdf.Literal);
                 props[t.predicate.value] = {
                     values: property ? [...property.values, value] : [value],
                 };
@@ -637,6 +683,17 @@ export class RdfDataProvider implements DataProvider {
     ): Rdf.NamedNode | Rdf.BlankNode {
         return decodeTerm(iri, this.factory);
     }
+
+    static decodeTerm(id: string, factory: Rdf.DataFactory): Rdf.NamedNode | Rdf.BlankNode {
+        return decodeTerm(id as ElementIri, factory);
+    }
+}
+
+function createDataset() {
+    return makeIndexedDataset(
+        // tslint:disable-next-line: no-bitwise
+        IndexQuadBy.S | IndexQuadBy.SP | IndexQuadBy.OP
+    );
 }
 
 function decodeTerm(
@@ -650,11 +707,11 @@ function decodeTerm(
 
 function encodeTerm(
     term: Rdf.NamedNode | Rdf.BlankNode
-): ElementIri & ElementTypeIri & LinkTypeIri & PropertyTypeIri {
+): ElementIri & ElementTypeIri & LinkIri & LinkTypeIri & PropertyTypeIri {
     const encoded = term.termType === 'BlankNode'
         ? (RDF_BLANK_PREFIX + term.value)
         : term.value;
-    return encoded as ElementIri & ElementTypeIri & LinkTypeIri & PropertyTypeIri;
+    return encoded as ElementIri & ElementTypeIri & LinkIri & LinkTypeIri & PropertyTypeIri;
 }
 
 function isNamedNodeOrBlank(term: Rdf.Term): term is Rdf.NamedNode | Rdf.BlankNode {
@@ -663,6 +720,71 @@ function isNamedNodeOrBlank(term: Rdf.Term): term is Rdf.NamedNode | Rdf.BlankNo
 
 function nonBlankQuad(quad: Rdf.Quad): boolean {
     return quad.subject.termType !== 'BlankNode' && quad.object.termType !== 'BlankNode';
+}
+
+export interface LinkedItem {
+    element: Rdf.NamedNode | Rdf.BlankNode;
+    inLinks: LinkTypeIri[];
+    outLinks: LinkTypeIri[];
+}
+
+export class LinkedItemIndex {
+    readonly items: LinkedItem[] = [];
+    readonly index = new Map<ElementIri, LinkedItem>();
+
+    getOrCreateItem(term: Rdf.NamedNode | Rdf.BlankNode): LinkedItem {
+        const elementIri: ElementIri = encodeTerm(term);
+        let item = this.index.get(elementIri);
+        if (!item) {
+            item = {element: term, inLinks: [], outLinks: []};
+            this.items.push(item);
+        }
+        return item;
+    }
+}
+
+function findLinkProperties(
+    dataset: MemoryDataset,
+    linkId: Rdf.Quad | Rdf.NamedNode | Rdf.BlankNode
+): { [propertyTypeIri: string]: Property } {
+    function arrayHasTerm(
+        array: Array<Rdf.NamedNode | Rdf.Literal>,
+        value: Rdf.NamedNode | Rdf.Literal
+    ) {
+        for (const term of array) {
+            if (Rdf.equalTerms(term, value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    let propertyMap: Map<string, Array<Rdf.NamedNode | Rdf.Literal>> | undefined;
+    for (const q of dataset.iterateMatches(linkId, null, null)) {
+        if (q.predicate.termType === 'NamedNode' && (
+            q.object.termType === 'NamedNode' ||
+            q.object.termType === 'Literal'
+        )) {
+            if (!propertyMap) {
+                propertyMap = new Map<string, Array<Rdf.NamedNode | Rdf.Literal>>();
+            }
+            const propertyTypeIri = q.predicate.value;
+            let values = propertyMap.get(propertyTypeIri);
+            if (!values) {
+                values = [];
+                propertyMap.set(propertyTypeIri, values);
+            }
+            if (!arrayHasTerm(values, q.object)) {
+                values.push(q.object);
+            }
+        }
+    }
+    const properties: { [propertyTypeIri: string]: Property } = {};
+    if (propertyMap) {
+        propertyMap.forEach((values, propertyTypeIri) => {
+            properties[propertyTypeIri] = {values};
+        });
+    }
+    return properties;
 }
 
 interface RdfListOptions {
@@ -710,22 +832,23 @@ function collectRdfListLinks(
 }
 
 function filterRdfList(
+    index: LinkedItemIndex,
     options: RdfListOptions,
     params: FilterParams,
     filterSubject: (subject: Rdf.Term) => subject is Rdf.NamedNode | Rdf.BlankNode,
     statefulLimit: (subject: Rdf.Term) => boolean
-): Array<Rdf.NamedNode | Rdf.BlankNode> {
+): void {
     const {dataset, factory} = options;
-    const result: Array<Rdf.NamedNode | Rdf.BlankNode> = [];
     if (!params.refElementId) {
-        return result;
+        return;
     }
     const refElementIri = decodeTerm(params.refElementId, factory);
     if (isRdfList(options, refElementIri)) {
         if (!params.refElementLinkId || params.refElementLinkId === ONTODIA_LIST_ITEM) {
             for (const item of getRdfListItems(options, refElementIri)) {
                 if (item && filterSubject(item) && statefulLimit(item)) {
-                    result.push(item);
+                    const connectedItem = index.getOrCreateItem(item);
+                    connectedItem.outLinks.push(ONTODIA_LIST_ITEM);
                 }
             }
         }
@@ -735,12 +858,12 @@ function filterRdfList(
             if (filterSubject(t.subject)) {
                 const list = findRdfListHead(options, t.subject);
                 if (statefulLimit(list)) {
-                    result.push(list);
+                    const connectedList = index.getOrCreateItem(list);
+                    connectedList.inLinks.push(ONTODIA_LIST_ITEM);
                 }
             }
         }
     }
-    return result;
 }
 
 function isRdfList(

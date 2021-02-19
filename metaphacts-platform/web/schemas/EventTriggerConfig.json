@@ -1,15 +1,20 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Triggers event by click on child element.\n\n**Example**: Here `Component.Refresh` event is sent to the element with ID `some-element`:\n```\n<mp-event-target-refresh id='some-element'><div></div></mp-event-target-refresh>\n\n<mp-event-trigger type='Component.Refresh' targets='[\"some-element\"]'>\n   <button>Refresh</button>\n</mp-event-trigger>\n```",
     "properties": {
         "data": {
-            "description": "Data that will be sent to all targets"
+            "additionalProperties": true,
+            "description": "Data that will be sent to all targets",
+            "properties": {
+            },
+            "type": "object"
         },
         "id": {
-            "description": "Identifier which will be used as event source id.",
+            "description": "Identifier which will be used as event source ID.",
             "type": "string"
         },
         "targets": {
-            "description": "Ids of the components that this event should be send to.\nWhen empty event is broadcasted to all listeners.",
+            "description": "IDs of the components that this event should be send to.\nWhen empty event is broadcasted to all listeners.",
             "items": {
                 "type": "string"
             },
@@ -27,7 +32,6 @@
         "data"
     ],
     "required": [
-        "id",
         "type"
     ],
     "type": "object"

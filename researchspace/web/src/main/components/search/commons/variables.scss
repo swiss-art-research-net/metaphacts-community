@@ -15,10 +15,17 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+
+// compatibility
+$gray-light: $light;
+$gray-lighter: $light;
+$gray-dark: $dark;
+$gray-darker: $dark;
+
 //vars
 //bootstrap override
-$btn-default-bg: white;
-//@btn-default-border: #999;
+$btn-secondary-bg: white;
+//@btn-secondary-border: #999;
 
 $metaphacts-color-orange: #F0501E;
 $metaphacts-color-blue: #3CB7D2;
@@ -40,13 +47,15 @@ $rs-secondary-font: 0.85em;
 /* Customise flatly bootstrap theme */
 $brand-success: #43ac6a;
 $btn-success-color: #FFF;
-$link-color: $brand-info;
-$btn-default-color: $gray-darker;
-$btn-default-bg: #FFF;
+$link-color: $info;
+$btn-secondary-color: $gray-darker;
+$btn-secondary-bg: #FFF;
 $btn-primary-color: #FFF;
-$btn-default-border: #CCC;
+$btn-secondary-border: #CCC;
 $navbar-default-link-hover-color: #FFF;
-$navbar-default-link-hover-bg: darken($navbar-default-bg, 10%);
+// $navbar-default-link-hover-bg: darken($navbar-default-bg, 10%);
+// TODO: correct variable?
+$navbar-default-link-hover-bg: $navbar-dark-brand-hover-color;
 
 $table-border-color: $rs-color-lightgrey;
 $nav-tabs-border-color: $table-border-color;
@@ -55,11 +64,11 @@ $panel-default-border: $table-border-color;
 $border-radius-base: 3px;
 $border-radius-large: 3px;
 
-$input-height-base: ($line-height-computed + ($padding-base-vertical * 2));
+// $input-height-base: ($line-height-computed + ($padding-base-vertical * 2));
 $input-border-radius: 0;
 $input-border-radius-large: 0;
 $input-border-radius-small: 0;
-$input-border-focus: darken($btn-default-border, 20%);
+$input-border-focus: darken($btn-secondary-border, 20%);
 
 $pagination-color:                     $link-color;
 $pagination-bg:                        transparent;
@@ -70,7 +79,7 @@ $pagination-hover-bg:                  $gray-lighter;
 $pagination-hover-border:              transparent;
 
 $pagination-active-color:              #FFF;
-$pagination-active-bg:                 $brand-primary;
+$pagination-active-bg:                 $primary;
 $pagination-active-border:             transparent;
 
 $pagination-disabled-color:            $gray-light;
@@ -88,7 +97,7 @@ $rs-widest-button-size: 140px;
 $rs-input-width: 400px;
 $rs-fc-button-width: 120px;
 $rs-default-border: 1px $table-border-color solid;
-$rs-lightgrey-border: 1px $btn-default-border solid;
+$rs-lightgrey-border: 1px $btn-secondary-border solid;
 
 //breadcrumbs
 $rs-button-arrow-border: $rs-button-height * 0.74;
@@ -103,7 +112,7 @@ $rs-breadcrumb-arrow-side: $rs-arrow-side * $rs-breadcrumbs-scale;
 
 
 @mixin rsButton() {
-  @include button-variant($rs-button-color, $rs-button-background-color, $rs-button-border-color);
+  @include button-variant($rs-button-background-color, $rs-button-border-color);
   height: $rs-button-height;
 
   display: flex;

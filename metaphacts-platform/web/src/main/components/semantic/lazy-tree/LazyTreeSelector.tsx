@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -117,7 +117,7 @@ const PADDING_PER_DEPTH_LEVEL = 20;
 const VirtualizedList = List as any as ComponentClass<ListProps>;
 
 export class LazyTreeSelector extends Component<LazyTreeSelectorProps, State> {
-  static readonly defaultProps: Partial<LazyTreeSelectorProps> = {
+  static readonly defaultProps: Required<Pick<LazyTreeSelectorProps, 'itemHeight'>> = {
     itemHeight: MIN_ITEM_HEIGHT,
   };
 

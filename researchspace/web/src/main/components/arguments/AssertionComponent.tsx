@@ -17,7 +17,7 @@
  */
 import * as React from 'react';
 import ReactSelect, { OnChangeHandler } from 'react-select';
-import { FormControl, ControlLabel, FormGroup, Button, Panel } from 'react-bootstrap';
+import { FormControl, FormLabel, FormGroup, Button, Card, Accordion } from 'react-bootstrap';
 import * as Maybe from 'data.maybe';
 import * as Immutable from 'immutable';
 import * as _ from 'lodash';
@@ -433,7 +433,7 @@ export class AssertionComponent extends Component<Props, State> {
             {formTemplate}
           </FormGroup>
           <div data-flex-layout='row top-right'>
-            <Button bsStyle='danger'
+            <Button variant='danger'
               onClick={() => this.setState({addingNewValue: false})}>
               Cancel
             </Button>
@@ -448,7 +448,7 @@ export class AssertionComponent extends Component<Props, State> {
     }
     return (
       <FormGroup>
-        <ControlLabel>New Value</ControlLabel>
+        <FormLabel>New Value</FormLabel>
         {input}
       </FormGroup>
     );
@@ -467,13 +467,17 @@ export class AssertionComponent extends Component<Props, State> {
           Add semantic narrative...
         </a>
         {addingNarrative ? (
-          <Panel collapsible expanded={addingNarrative}>
-            <DropArea alwaysVisible={true}
-              query={SEMANTIC_NARRATIVE_ASK_QUERY}
-              repository='assets'
-              onDrop={narrative => this.setState({narrative})}
-              dropMessage='You can drag and drop Semantic Narrative from Clipboard here, to use it as a description' />
-          </Panel>
+          <Accordion defaultActiveKey={addingNarrative ? '0' : undefined}>
+            <Card body>
+              <Accordion.Collapse eventKey='0'>
+                <DropArea alwaysVisible={true}
+                  query={SEMANTIC_NARRATIVE_ASK_QUERY}
+                  repository='assets'
+                  onDrop={narrative => this.setState({narrative})}
+                  dropMessage='You can drag and drop Semantic Narrative from Clipboard here, to use it as a description' />
+              </Accordion.Collapse>
+            </Card>
+          </Accordion>
         ) : null}
       </div>
     );
@@ -486,7 +490,7 @@ export class AssertionComponent extends Component<Props, State> {
     }
     return (
       <FormGroup>
-        <ControlLabel>Narrative</ControlLabel>
+        <FormLabel>Narrative</FormLabel>
         {input}
       </FormGroup>
     );
@@ -506,7 +510,7 @@ export class AssertionComponent extends Component<Props, State> {
         <hr />
         <h4>New Assertion</h4>
         <FormGroup>
-          <ControlLabel>Title*</ControlLabel>
+          <FormLabel>Title*</FormLabel>
           <FormControl type='text'
             value={title}
             placeholder='Enter assertion title...'
@@ -515,8 +519,8 @@ export class AssertionComponent extends Component<Props, State> {
             } />
         </FormGroup>
         <FormGroup>
-          <ControlLabel>Description</ControlLabel>
-          <FormControl componentClass='textarea'
+          <FormLabel>Description</FormLabel>
+          <FormControl as='textarea'
             value={description}
             placeholder='Enter assertion description...'
             onChange={e =>
@@ -525,7 +529,7 @@ export class AssertionComponent extends Component<Props, State> {
         </FormGroup>
         {this.renderNarrative()}
         {this.renderNewValueForm()}
-        <Button bsStyle='primary'
+        <Button variant='primary'
           onClick={this.onSaveAssertion}
           disabled={isSaveDisabled}>
           {isSaving ? (
@@ -642,7 +646,7 @@ export class AssertionComponent extends Component<Props, State> {
     }
     return <div>
       <FormGroup>
-        <ControlLabel>Field to assert on</ControlLabel>
+        <FormLabel>Field to assert on</FormLabel>
         {assertionIri ? (
           <FormControl type='text'
           value={getPreferredLabel(field.label)}

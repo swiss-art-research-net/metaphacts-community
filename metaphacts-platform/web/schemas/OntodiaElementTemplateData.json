@@ -1,0 +1,316 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ElementModel": {
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "label": {
+                    "properties": {
+                        "values": {
+                            "items": {
+                                "$ref": "#/definitions/Literal"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "propertyOrder": [
+                        "values"
+                    ],
+                    "required": [
+                        "values"
+                    ],
+                    "type": "object"
+                },
+                "properties": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/Property"
+                    },
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "sources": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "types": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "id",
+                "types",
+                "label",
+                "image",
+                "properties",
+                "sources"
+            ],
+            "required": [
+                "id",
+                "label",
+                "properties",
+                "types"
+            ],
+            "type": "object"
+        },
+        "Literal": {
+            "properties": {
+                "datatype": {
+                    "$ref": "#/definitions/NamedNode<string>",
+                    "description": "A NamedNode whose IRI represents the datatype of the literal."
+                },
+                "hashCode": {
+                    "description": "Only for compatibility with external hash-based collections (e.g. Immutable.js);\nuse Rdf.hashTerm() instead.",
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "language": {
+                    "description": "the language as lowercase BCP47 string (examples: en, en-gb)\nor an empty string if the literal has no language.",
+                    "type": "string"
+                },
+                "termType": {
+                    "description": "Contains the constant \"Literal\".",
+                    "enum": [
+                        "Literal"
+                    ],
+                    "type": "string"
+                },
+                "value": {
+                    "description": "The text value, unescaped, without language or type (example: Brad Pitt).",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "termType",
+                "value",
+                "language",
+                "datatype",
+                "equals",
+                "hashCode"
+            ],
+            "required": [
+                "datatype",
+                "language",
+                "termType",
+                "value"
+            ],
+            "type": "object"
+        },
+        "NamedNode<string>": {
+            "description": "Contains an IRI.",
+            "properties": {
+                "termType": {
+                    "description": "Contains the constant \"NamedNode\".",
+                    "enum": [
+                        "NamedNode"
+                    ],
+                    "type": "string"
+                },
+                "value": {
+                    "description": "The IRI of the named node (example: `http://example.org/resource`)",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "termType",
+                "value",
+                "equals"
+            ],
+            "required": [
+                "termType",
+                "value"
+            ],
+            "type": "object"
+        },
+        "NamedNode<string>_1": {
+            "properties": {
+                "hashCode": {
+                    "description": "Only for compatibility with external hash-based collections (e.g. Immutable.js);\nuse Rdf.hashTerm() instead.",
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                },
+                "termType": {
+                    "description": "Contains the constant \"NamedNode\".",
+                    "enum": [
+                        "NamedNode"
+                    ],
+                    "type": "string"
+                },
+                "value": {
+                    "description": "The IRI of the named node (example: `http://example.org/resource`)",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "termType",
+                "value",
+                "equals",
+                "hashCode"
+            ],
+            "required": [
+                "termType",
+                "value"
+            ],
+            "type": "object"
+        },
+        "Property": {
+            "properties": {
+                "values": {
+                    "items": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/Literal"
+                            },
+                            {
+                                "$ref": "#/definitions/NamedNode<string>_1"
+                            }
+                        ]
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "values"
+            ],
+            "required": [
+                "values"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "canDelete": {
+            "description": "`true` if element can be deleted from the data",
+            "type": "boolean"
+        },
+        "canEdit": {
+            "description": "`true` if the properties of the element can be edited",
+            "type": "boolean"
+        },
+        "color": {
+            "description": "Color generated by Ontodia represented in CSS format",
+            "type": "string"
+        },
+        "data": {
+            "$ref": "#/definitions/ElementModel",
+            "description": "Raw element model"
+        },
+        "elementId": {
+            "description": "ID of the element",
+            "type": "string"
+        },
+        "iconUrl": {
+            "description": "Name of a CSS class which is used to style the icon of the element",
+            "type": "string"
+        },
+        "imgUrl": {
+            "description": "URL to the element's image",
+            "type": "string"
+        },
+        "inAuthoringMode": {
+            "description": "`true` if the ontodia in Authoring mode",
+            "type": "boolean"
+        },
+        "iri": {
+            "description": "IRI of the element",
+            "type": "string"
+        },
+        "isExpanded": {
+            "description": "`true` if the element is expanded and `false` if collapsed",
+            "type": "boolean"
+        },
+        "label": {
+            "description": "Label of the element",
+            "type": "string"
+        },
+        "onlySelected": {
+            "description": "`true` if the element is the only one that's selected",
+            "type": "boolean"
+        },
+        "props": {
+            "additionalProperties": {
+                "$ref": "#/definitions/Property"
+            },
+            "description": "Map of the element's properties",
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "propsAsList": {
+            "description": "Collections of the element's properties",
+            "items": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "property": {
+                        "$ref": "#/definitions/Property"
+                    }
+                },
+                "propertyOrder": [
+                    "id",
+                    "name",
+                    "property"
+                ],
+                "required": [
+                    "id",
+                    "name",
+                    "property"
+                ],
+                "type": "object"
+            },
+            "type": "array"
+        },
+        "types": {
+            "description": "A string which is a concatenation of the element's types",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "inAuthoringMode",
+        "onlySelected",
+        "canEdit",
+        "canDelete",
+        "elementId",
+        "data",
+        "iri",
+        "types",
+        "label",
+        "color",
+        "iconUrl",
+        "imgUrl",
+        "isExpanded",
+        "propsAsList",
+        "props"
+    ],
+    "required": [
+        "canDelete",
+        "canEdit",
+        "color",
+        "data",
+        "elementId",
+        "inAuthoringMode",
+        "iri",
+        "label",
+        "onlySelected",
+        "props",
+        "propsAsList"
+    ],
+    "type": "object"
+}
+

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,67 +38,77 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as React from 'react';
-import * as Immutable from 'immutable';
 import * as classnames from 'classnames';
 
 import { Cancellation } from 'platform/api/async';
 
-import { FieldState, FieldValue, SparqlBindingValue, ErrorKind, DataState } from '../FieldValues';
+import { FieldValue, SparqlBindingValue, ErrorKind, DataState } from '../FieldValues';
 import {
-  MultipleValuesInput,
-  MultipleValuesProps,
-  MultipleValuesHandlerProps,
-  CardinalityCheckingHandler,
-  ValuesWithErrors,
+  MultipleValuesInput, MultipleValuesConfig, MultipleValuesProps, MultipleValuesHandlerProps,
+  CardinalityCheckingHandler, ValuesWithErrors,
 } from './MultipleValuesInput';
 import { queryValues } from '../QueryValues';
 
 const CHECKLIST_CLASS = 'semantic-form-checklist-input';
 
-export type ChecklistType = 'radio' | 'checkbox';
-
-export interface ChecklistInputProps extends MultipleValuesProps {
+/**
+ * Form component to select one or several items from list.
+ *
+ * **Example**:
+ *
+ * Default with `type='checkbox'`:
+ * ```
+ * <semantic-form-checklist-input for='field-name'>
+ * </semantic-form-checklist-input>
+ * ```
+ * Using `row=true` lay items in a row:
+ * ```
+ * <semantic-form-checklist-input for='field-name' row=true>
+ * </semantic-form-checklist-input>
+ * ```
+ * It's also possible to choose between either `checkbox or `radio` type:
+ * ```
+ * <semantic-form-checklist-input for='field-name' type='checkbox'>
+ * </semantic-form-checklist-input>
+ *
+ * <semantic-form-checklist-input for='field-name' type='radio'>
+ * </semantic-form-checklist-input>
+ * ```
+ */
+interface SemanticFormChecklistInputConfig extends MultipleValuesConfig {
   /**
-   * Allow to add custom css-class of Checklist.
+   * Adds custom CSS class to checklist.
    */
   className?: string;
 
   /**
-   * Allow to add custom css-class of Checklist item .
+   * Adds custom CSS class to checklist item.
    */
   classItemName?: string;
 
   /**
-   * Allow to transform items(checkboxes or radio-buttons) in a row.
-   * By default all items arranged vertically.
+   * Allow to transform items (checkboxes or radio-buttons) in a row.
+   *
+   * @default false
    */
   row?: boolean;
 
   /**
-   * Allow to select one of two types 'checkbox' | 'radio'.
-   * By default is 'checkbox'.
+   * Allow to select one of two types `checkbox` and `radio`.
+   *
+   * @default "checkbox"
    */
   type?: ChecklistType;
 }
 
+export type ChecklistType = 'radio' | 'checkbox';
+
+export interface ChecklistInputProps
+  extends SemanticFormChecklistInputConfig, MultipleValuesProps {}
+
 interface State {
   readonly valueSet?: ReadonlyArray<SparqlBindingValue>;
 }
-
-/**
- * Form component to select one or several items from list.
- *
- * @example
- * // default using, set type='checkbox' by default
- * <semantic-form-checklist-input for='field-name'></semantic-form-checklist-input>
- *
- * // using with row=true transforms items(checkboxes or radio-buttons) in a row
- * <semantic-form-checklist-input for='field-name' row=true></semantic-form-checklist-input>
- *
- * // can use one of two types(checkbox, radio) or without type
- * <semantic-form-checklist-input for='field-name' type='checkbox'></semantic-form-checklist-input>
- * <semantic-form-checklist-input for='field-name' type='radio'></semantic-form-checklist-input>
- */
 
 export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, State> {
   private fetchingValueSet = Cancellation.cancelled;

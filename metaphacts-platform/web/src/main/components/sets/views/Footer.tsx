@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -74,7 +74,7 @@ export class Footer extends React.Component<FooterProps, {}> {
   private renderAddNewSetButton() {
     return <div className='btn-group btn-group-xs' role='group'>
       {!this.props.readonly &&
-      <button type='button' title='Create new set' className='btn btn-default'
+      <button type='button' title='Create new set' className='btn btn-secondary'
         onClick={this.props.onPressCreateNewSet}>
         <i className='fa fa-plus'></i>&nbsp;
         <i className='fa fa-folder fa-lg'></i>
@@ -104,7 +104,7 @@ export class ReorderItemsButton extends React.Component<ReorderingProps, {}> {
       <div className={`btn-group btn-group-xs ${baseClass}__toggle-reorder-items`} role='group'>
         <button type='button' title='Reorder items'
           aria-pressed={isReordering}
-          className={classnames({'btn btn-default': true, active: isReordering})}
+          className={classnames({'btn btn-secondary': true, active: isReordering})}
           onClick={onPressReorder}>
           <i className='fa fa-lg fa-random'></i>
         </button>
@@ -123,10 +123,10 @@ export class ReorderConfirmation extends React.Component<ReorderingProps, {}> {
         </div>
         <div className={`${baseClass}__footer-reorder-buttons`}>
           <button type='button' title='Cancel reordering items'
-            className={`btn btn-xs btn-danger ${baseClass}__footer-reorder-cancel`}
+            className={`btn btn-sm btn-danger ${baseClass}__footer-reorder-cancel`}
             onClick={onPressReorder}>Cancel</button>
           <button type='button' title='Save items order'
-            className='btn btn-xs btn-success'
+            className='btn btn-sm btn-success'
             onClick={onPressReorderApply}>Save changes</button>
         </div>
       </div>
@@ -156,7 +156,7 @@ export class ItemViewModeSwitch extends React.Component<{
       key={mode}
       type='button'
       title={title}
-      className={classnames({'btn btn-default': true, 'active': isPressed})}
+      className={classnames({'btn btn-secondary': true, 'active': isPressed})}
       aria-pressed={isPressed}
       onClick={isPressed ? undefined : () => this.props.onModeChanged(mode)}>
       {children}

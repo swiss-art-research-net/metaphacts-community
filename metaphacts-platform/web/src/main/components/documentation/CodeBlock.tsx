@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,12 +43,26 @@ import { Button, ButtonGroup } from 'react-bootstrap';
 
 import { Component, ComponentProps } from 'platform/api/components';
 
-import { CodeHighlightComponent, CodeHighlightProps } from './CodeHighlight';
+import { CodeHighlightComponent, CodeHighlightConfig } from './CodeHighlight';
 import * as styles from './CodeBlock.scss';
 
-export interface CodeBlockProps extends CodeHighlightProps, ComponentProps {
+/**
+ * Component for code block highlight with optional copy to clipboard button
+ * and execute query button for sparql queries.
+ *
+ * **Example**:
+ * ```
+ * <mp-code-block data-mode="application/typescript">const x = 5</mp-code-block>
+ * ```
+ */
+interface CodeBlockConfig extends CodeHighlightConfig {
   showCopyButton?: boolean;
   showRunQueryButton?: boolean;
+}
+
+export interface CodeBlockProps extends CodeBlockConfig, ComponentProps {
+  // provided by template markup parser, see Registry.ts
+  codeText: string;
 }
 
 const MODE_TEXT: { [mimeType: string]: string | undefined } = {
@@ -66,15 +80,7 @@ const MODE_TEXT: { [mimeType: string]: string | undefined } = {
   'application/xml': 'XML',
 };
 
-/**
- * Component for code block highlight with optional copy to clipboard button
- * and execute query button for sparql queries.
- *
- * @example
- * <pre>
- *  <mp-code-block data-mode="application/typescript">const x = 5</mp-code-block>
- * </pre>
- */
+
 export class CodeBlock extends Component<CodeBlockProps, {}> {
   static defaultProps = {
     mode: 'text/html',
@@ -99,7 +105,7 @@ export class CodeBlock extends Component<CodeBlockProps, {}> {
   private copyButton = (text: string, showCopyButton: boolean) => {
     if (showCopyButton) {
       return <CopyToClipboard text={text}>
-        <Button bsStyle='primary'>Copy to Clipboard</Button>
+        <Button variant='primary'>Copy to Clipboard</Button>
       </CopyToClipboard>;
     } else {
       return null;

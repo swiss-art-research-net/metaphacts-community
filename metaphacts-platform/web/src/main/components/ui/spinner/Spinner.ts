@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,7 +59,7 @@ export interface SpinnerState {
  * Shows spinner only if something takes more than 0.5 second.
  */
 export class SpinnerComponent extends Component<SpinnerProps, SpinnerState> {
-  static readonly defaultProps: Partial<SpinnerProps> = {
+  static readonly defaultProps: Required<Pick<SpinnerProps, 'spinnerDelay' | 'messageDelay'>> = {
     spinnerDelay: 500,
     messageDelay: 2000,
   };

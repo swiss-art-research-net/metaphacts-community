@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "baseIri": {
+            "default": "http://ontologies.metaphacts.com/",
+            "description": "The base IRI for creating the ontology IRI",
+            "type": "string"
+        },
+        "postAction": {
+            "description": "Optional post-action to be performed after a new ontology have been created.\nCan be either 'reload' or 'redirect' (redirects to the newly created resource)\nor any IRI string to which the form will redirect.",
+            "enum": [
+                "none",
+                "redirect",
+                "reload"
+            ],
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "postAction",
+        "baseIri"
+    ],
+    "type": "object"
+}
+

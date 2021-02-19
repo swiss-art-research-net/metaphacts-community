@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,11 +47,23 @@ import {
 
 import { trigger } from 'platform/api/events';
 
+/**
+ * Triggers event by click on child element.
+ *
+ * **Example**: Here `Component.Refresh` event is sent to the element with ID `some-element`:
+ * ```
+ * <mp-event-target-refresh id='some-element'><div></div></mp-event-target-refresh>
+ *
+ * <mp-event-trigger type='Component.Refresh' targets='["some-element"]'>
+ *   <button>Refresh</button>
+ * </mp-event-trigger>
+ * ```
+ */
 interface EventTriggerConfig {
   /**
-   * Identifier which will be used as event source id.
+   * Identifier which will be used as event source ID.
    */
-  id: string;
+  id?: string;
 
   /**
    * Type of the event to trigger.
@@ -59,30 +71,20 @@ interface EventTriggerConfig {
   type: string;
 
   /**
-   * Ids of the components that this event should be send to.
+   * IDs of the components that this event should be send to.
    * When empty event is broadcasted to all listeners.
    */
-  targets?: string[];
+  targets?: ReadonlyArray<string>;
+
   /**
    * Data that will be sent to all targets
    */
-  data?: any;
+  data?: object;
 }
-type EventTriggerProps = EventTriggerConfig;
 
-/**
- * Triggers event.
- *
- * @example
- *   <mp-event-target-refresh id='some-element'><div></div></mp-event-target-refresh>
- *
- *   <mp-event-trigger id='dom-refresh' type='Component.Refresh' targets='["some-element"]'>
- *     <button>Refresh</button>
- *   </mp-event-trigger>
- *
- * In the example above Component.Refresh event is sent to the element with id 'some-element'.
- */
-export class EventTrigger extends Component<EventTriggerProps, void> {
+export type EventTriggerProps = EventTriggerConfig;
+
+export class EventTrigger extends Component<EventTriggerProps> {
   render() {
     const child = Children.only(this.props.children) as ReactElement<any>;
     const props = {onClick: this.onClick};
@@ -100,4 +102,5 @@ export class EventTrigger extends Component<EventTriggerProps, void> {
     });
   }
 }
+
 export default EventTrigger;

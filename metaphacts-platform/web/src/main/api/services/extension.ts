@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,13 @@ import * as request from 'platform/api/http';
 import { requestAsProperty } from 'platform/api/async';
 
 export interface WebExtensions {
-  extensions: string[];
+  readonly components: { [tagName: string]: WebComponentMetadata };
+  readonly extensions: ReadonlyArray<string>;
+}
+
+export interface WebComponentMetadata {
+  readonly loadScripts: ReadonlyArray<string> | null;
+  readonly loadStyles: ReadonlyArray<string> | null;
 }
 
 const REST_EXTENSIONS_URL = '/rest/webextensions';

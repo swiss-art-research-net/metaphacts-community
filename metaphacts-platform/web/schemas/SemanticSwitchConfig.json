@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "**Example**:\n```\n<semantic-switch query='SELECT (?color) ...'\n   cases='{\n     \"blue\": \"{{> purple}}\",\n     \"http://dbpedia.org/resource/Egyptian_blue\": \"{{> blue}}\",\n   }'>\n   <template id='blue'>...</template>\n   <template id='purple'>...</template>\n   <template id='default'>...</template>\n</semantic-switch>\n\n// shorthand version (without 'blue' case)\n<semantic-switch query='SELECT (?color) ...'>\n   <template id='purple'>...</template>\n   <template id='http://dbpedia.org/resource/Egyptian_blue'>...</template>\n   <template id='default'>...</template>\n</semantic-switch>\n\n// inline templates in cases\n<semantic-switch query='SELECT (?color) ...'\n   cases='{\n     \"red\": \"<!-- markup -->\"\n     \"blue\": \"<!-- markup -->\",\n     \"http://dbpedia.org/resource/Egyptian_blue\": \"<!-- markup -->\",\n   }'>\n</semantic-switch>\n```",
+    "properties": {
+        "cases": {
+            "additionalProperties": {
+                "type": "string"
+            },
+            "propertyOrder": [
+            ],
+            "type": "object"
+        },
+        "query": {
+            "description": "SPARQL SELECT query which return the result binding to switch on.\n\nOnly the first variable in the first result tuple will be used as\na string key to switch on.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "query",
+        "cases"
+    ],
+    "required": [
+        "query"
+    ],
+    "type": "object"
+}
+

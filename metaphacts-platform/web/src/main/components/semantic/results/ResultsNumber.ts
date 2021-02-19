@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,13 @@ import { QueryVisitor, SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
 
-export interface Props {
+/**
+ * This component render number of SPARQL query results.
+ *
+ * If query has a limit and number of results is larger than a limit,
+ * this component will render also total number of results.
+ */
+interface SparqlResultsNumberConfig {
   /**
    * SPARQL query
    */
@@ -57,10 +63,11 @@ export interface Props {
 
   /**
    * Handlebars template that will be rendered on query execution.
+   *
    * Special variables will be available in the template:
-   * - numberOfResults
-   * - totalNumberOfResults
-   * - hasLimit
+   *   - `numberOfResults`
+   *   - `totalNumberOfResults`
+   *   - `hasLimit`
    */
   template?: string;
 
@@ -70,27 +77,24 @@ export interface Props {
   id?: string;
 }
 
-export interface State {
+export type ResultsNumberProps = SparqlResultsNumberConfig;
+
+interface State {
   number?: Data.Maybe<number>;
   totalNumber?: Data.Maybe<number>;
   isLoading?: boolean;
 }
 
-/**
- * This component render number of SPARQL query results.
- * If query has a limit and number of results is larger than a limit,
- * this component will render also total number of results.
- */
-export class ResultsNumberComponent extends Component<Props, State> {
+export class ResultsNumber extends Component<ResultsNumberProps, State> {
   private limit: number;
 
-  static defaultProps = {
+  static defaultProps: Required<Pick<ResultsNumberProps, 'template'>> = {
     template: `
         showing {{numberOfResults}} {{#if hasLimit}} of {{totalNumberOfResults}} {{/if}}
     `,
   };
 
-  constructor(props: Props, context: any) {
+  constructor(props: ResultsNumberProps, context: any) {
     super(props, context);
     this.state = {
       number: Maybe.Nothing<number>(),
@@ -103,7 +107,7 @@ export class ResultsNumberComponent extends Component<Props, State> {
     this.calcResultsNumber(this.props.query);
   }
 
-  public componentWillReceiveProps(nextProps: Props) {
+  public componentWillReceiveProps(nextProps: ResultsNumberProps) {
     if (!_.isEqual(nextProps.query, this.props.query)) {
       this.calcResultsNumber(nextProps.query);
     }
@@ -196,4 +200,4 @@ export class ResultsNumberComponent extends Component<Props, State> {
   }
 }
 
-export default ResultsNumberComponent;
+export default ResultsNumber;

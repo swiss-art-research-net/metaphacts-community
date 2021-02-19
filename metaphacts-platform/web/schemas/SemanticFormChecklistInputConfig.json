@@ -1,0 +1,66 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ChecklistType": {
+            "enum": [
+                "checkbox",
+                "radio"
+            ],
+            "type": "string"
+        }
+    },
+    "description": "Form component to select one or several items from list.\n\n**Example**:\n\nDefault with `type='checkbox'`:\n```\n<semantic-form-checklist-input for='field-name'>\n</semantic-form-checklist-input>\n```\nUsing `row=true` lay items in a row:\n```\n<semantic-form-checklist-input for='field-name' row=true>\n</semantic-form-checklist-input>\n```\nIt's also possible to choose between either `checkbox or `radio` type:\n```\n<semantic-form-checklist-input for='field-name' type='checkbox'>\n</semantic-form-checklist-input>\n\n<semantic-form-checklist-input for='field-name' type='radio'>\n</semantic-form-checklist-input>\n```",
+    "properties": {
+        "classItemName": {
+            "description": "Adds custom CSS class to checklist item.",
+            "type": "string"
+        },
+        "className": {
+            "description": "Adds custom CSS class to checklist.",
+            "type": "string"
+        },
+        "defaultValue": {
+            "type": [
+                "string",
+                "number",
+                "boolean"
+            ]
+        },
+        "defaultValues": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "for": {
+            "description": "Field definition ID to associate input with.",
+            "type": "string"
+        },
+        "renderHeader": {
+            "description": "Determines whether field label and description should be displayed above the input.\n\nIf explicitly set to `false` the header will not be rendered and other markup may\nbe used instead.\n\nDefaults to `false` in `<semantic-form-hidden-input>` otherwise `true`.",
+            "type": "boolean"
+        },
+        "row": {
+            "default": false,
+            "description": "Allow to transform items (checkboxes or radio-buttons) in a row.",
+            "type": "boolean"
+        },
+        "type": {
+            "$ref": "#/definitions/ChecklistType",
+            "default": "checkbox",
+            "description": "Allow to select one of two types `checkbox` and `radio`."
+        }
+    },
+    "propertyOrder": [
+        "className",
+        "classItemName",
+        "row",
+        "type",
+        "for",
+        "defaultValue",
+        "defaultValues",
+        "renderHeader"
+    ],
+    "type": "object"
+}
+

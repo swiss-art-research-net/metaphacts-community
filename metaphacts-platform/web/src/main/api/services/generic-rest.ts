@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@ import { requestAsProperty } from 'platform/api/async';
 
 export module GenericRestService {
 
-  export function getJson<T>(path: string): Kefir.Property<T> {
+  export function getJson(path: string): Kefir.Property<unknown> {
     const req = request
         .get(path)
         .type('application/json')

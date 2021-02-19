@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,9 +39,13 @@
  */
 @import "~basic-styles.scss";
 
-$select-input-height: $input-height-base;
-$select-input-border-radius: $border-radius-base;
-$select-input-placeholder: $input-color-placeholder;
+
+// Use constant values because react-select doesn't handle rem or calc
+$select-input-border-width: 1px !default;
+$select-input-height: 36px !default;
+$select-input-internal-height: 34px;
+$select-input-border-radius: $input-border-radius;
+$select-input-placeholder: $input-placeholder-color;
 
 @import '~react-select/scss/default.scss';
 

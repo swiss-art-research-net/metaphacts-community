@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -57,11 +57,20 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
-import com.metaphacts.services.storage.api.*;
 import org.apache.commons.lang.StringUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.metaphacts.services.storage.StorageUtils;
+import com.metaphacts.services.storage.api.ObjectMetadata;
+import com.metaphacts.services.storage.api.ObjectRecord;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.PathMapping;
+import com.metaphacts.services.storage.api.SizedStream;
+import com.metaphacts.services.storage.api.StorageConfig;
+import com.metaphacts.services.storage.api.StorageConfigException;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StorageLocation;
+import com.metaphacts.services.storage.api.StoragePath;
 
 public class NonVersionedFileStorage implements ObjectStorage {
     public final static String STORAGE_TYPE = "nonVersionedFile";
@@ -96,26 +105,25 @@ public class NonVersionedFileStorage implements ObjectStorage {
             this.root = root;
         }
 
-        @Override
-        public NonVersionedFileStorage createStorage(StorageCreationParams params) {
-            return new NonVersionedFileStorage(params.getPathMapping(), this);
-        }
 
-		@Override
-		protected void validate() throws StorageConfigException {
+        @Override
+        protected void validate() throws StorageConfigException {
             super.validate();
-			if (getRoot() == null) {
+            if (getRoot() == null) {
                 throw new StorageConfigException("Missing required property 'root'");
             }
-			if (!getRoot().isAbsolute()) {
-                throw new StorageConfigException(
-                    "'root' path must be absolute: '" + getRoot() + "'");
+            if (!getRoot().isAbsolute()) {
+                throw new StorageConfigException("'root' path must be absolute: '" + getRoot() + "'");
             }
-			if (!Files.isDirectory(getRoot())) {
-                throw new StorageConfigException(
-                    "'root' path does not exists or not a directory: '" + getRoot() + "'");
+            // the directory must already exist or must be inside the storage directory
+            // (where it can get created on the fly)
+            if (!Files.isDirectory(getRoot())) {
+                if (!StorageUtils.isInStorageDirectory(getRoot())) {
+                    throw new StorageConfigException(
+                            "'root' path does not exists or not a permitted directory: '" + getRoot() + "'");
+                }
             }
-		}
+        }
     }
 
     private class DirectStorageLocation implements StorageLocation {

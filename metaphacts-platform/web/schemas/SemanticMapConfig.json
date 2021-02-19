@@ -10,7 +10,11 @@
             "type": "string"
         },
         "noResultTemplate": {
-            "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.",
+            "description": "Template which is applied when query returns no results.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
         },
         "query": {
@@ -18,7 +22,11 @@
             "type": "string"
         },
         "tupleTemplate": {
-            "description": "<semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for marker popup.\nBy default shows `<semantic-link>` to the resource with a short textual description.",
+            "description": "Template for marker popup.\n\nBy default shows `<semantic-link>` to the resource with a short textual description.",
+            "mpSeeResource": {
+                "iri": "http://help.metaphacts.com/resource/FrontendTemplating",
+                "name": "Client-side templating"
+            },
             "type": "string"
         }
     },

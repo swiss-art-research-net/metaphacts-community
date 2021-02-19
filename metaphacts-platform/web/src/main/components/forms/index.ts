@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,8 +41,10 @@ export * from './FieldDefinition';
 export * from './FieldMapping';
 export * from './FieldValues';
 export {
-  readyToSubmit, fieldInitialState, generateSubjectByTemplate, wasIriGeneratedByTemplate,
+  CompositeChange, createDefaultValue, readyToSubmit, fieldInitialState, generateSubjectByTemplate,
+  wasSubjectGeneratedByTemplate, computeIfSubjectWasSuggested,
 } from './FormModel';
+export { clearSubjectErrors, setSubjectError, validateSubjectByQuery } from './FormValidation';
 export * from './ResourceEditorForm';
 export * from './SemanticForm';
 export { queryValues } from './QueryValues';

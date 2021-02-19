@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,12 +46,19 @@ export interface Property {
     readonly values: ReadonlyArray<NamedNode | Literal>;
 }
 
-export type ElementIri = string & { readonly elementBrand: void };
-export type ElementTypeIri = string & { readonly classBrand: void };
-export type LinkTypeIri = string & { readonly linkTypeBrand: void };
-export type PropertyTypeIri = string & { readonly propertyTypeBrand: void };
+/** @TJS-type string */
+export type ElementIri = string & { readonly elementBrand: any };
+/** @TJS-type string */
+export type ElementTypeIri = string & { readonly classBrand: any };
+/** @TJS-type string */
+export type LinkIri = string & { readonly linkBrand: any };
+/** @TJS-type string */
+export type LinkTypeIri = string & { readonly linkTypeBrand: any };
+/** @TJS-type string */
+export type PropertyTypeIri = string & { readonly propertyTypeBrand: any };
 
 export const BLANK_NODE_PREFIX = 'ontodia:blank:';
+export const ONTODIA_LINK_IDENTITY = 'ontodia:linkIdentity' as LinkTypeIri;
 export const ONTODIA_LIST = 'ontodia:list:List' as ElementTypeIri;
 export const ONTODIA_LIST_ITEM = 'ontodia:list:listItem' as LinkTypeIri;
 export const ONTODIA_LIST_INDEX = 'ontodia:list:listIndex' as LinkTypeIri;
@@ -62,10 +69,13 @@ export function isEncodedBlank(iri: string): boolean {
 
 export interface ElementModel {
     id: ElementIri;
+    /**
+     * @items.type string
+     */
     types: ElementTypeIri[];
     label: { values: Literal[] };
     image?: string;
-    properties: { [id: string]: Property | undefined };
+    properties: { [propertyIri: string]: Property | undefined };
     sources?: string[];
 }
 
@@ -73,7 +83,8 @@ export interface LinkModel {
     linkTypeId: LinkTypeIri;
     sourceId: ElementIri;
     targetId: ElementIri;
-    properties: { [id: string]: Property | undefined };
+    linkIri?: LinkIri;
+    properties: { [propertyIri: string]: Property | undefined };
 }
 
 export interface ClassModel {
@@ -100,19 +111,35 @@ export interface PropertyModel {
     label: { values: Literal[] };
 }
 
+export interface LinkedElement {
+    element: ElementModel;
+    /**
+     * @items.type string
+     */
+    inLinks: LinkTypeIri[];
+    /**
+     * @items.type string
+     */
+    outLinks: LinkTypeIri[];
+}
+
 export function sameLink(left: LinkModel, right: LinkModel) {
     return (
         left.linkTypeId === right.linkTypeId &&
         left.sourceId === right.sourceId &&
-        left.targetId === right.targetId
+        left.targetId === right.targetId &&
+        left.linkIri === right.linkIri
     );
 }
 
 export function hashLink(link: LinkModel): number {
-    const {linkTypeId, sourceId, targetId} = link;
+    const {linkTypeId, sourceId, targetId, linkIri} = link;
     let hash = hashFnv32a(linkTypeId);
     hash = hash * 31 + hashFnv32a(sourceId);
     hash = hash * 31 + hashFnv32a(targetId);
+    if (linkIri) {
+        hash = hash * 31 + hashFnv32a(linkIri);
+    }
     return hash;
 }
 

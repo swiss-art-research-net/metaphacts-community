@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ $remove-value-color: gray;
   }
 
   .label-default {
-    color: $brand-primary;
+    color: $primary;
   }
 
   &__row{
@@ -59,7 +59,7 @@ $remove-value-color: gray;
 
   &__expand{
     color: $text-muted;
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     cursor: pointer;
   }
 
@@ -69,25 +69,24 @@ $remove-value-color: gray;
 
   &__error {
     color: red;
-    font-size: $font-size-small;
-    margin-top: -$padding-base-vertical;
+    font-size: $font-size-sm;
     white-space: pre-wrap;
     font-family: monospace;
   }
 
   &__description-input{
-    font-size: $font-size-small!important;
+    font-size: $font-size-sm!important;
   }
   .yasqe_buttons{
     visibility: hidden;
   }
 
   &__xsd-input{
-    font-size: $font-size-small!important;
+    font-size: $font-size-sm!important;
     .Select-control{
       //height: 35px !important;
       //.form-control();
-      font-size: $font-size-small!important;
+      font-size: $font-size-sm!important;
 
       .Select-value{
         //line-height: 32px!important;

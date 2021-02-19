@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,7 @@
 export { LINK_SHOW_IRI } from './customization/defaultLinkStyles';
 
 export { TemplateProperties } from './data/schema';
+export { MemoryDataset, IndexQuadBy, makeIndexedDataset } from './data/rdf/memoryDataset';
 
 export * from './diagram/paper';
 export * from './diagram/paperArea';

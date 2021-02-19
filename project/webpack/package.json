@@ -72,7 +72,7 @@
     "koa-compress": "^3.0.0",
     "license-report": "3.0.0",
     "licensecheck": "0.3.0",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.20",
     "mini-css-extract-plugin": "^0.4.0",
     "mocha": "2.5.3",
     "node-sass": "4.13.0",
@@ -97,7 +97,7 @@
     "webpack": "4.41.3",
     "webpack-bundle-analyzer": "^2.13.1",
     "webpack-cli": "3.3.10",
-    "webpack-notifier": "1.5.0",
+    "webpack-notifier": "1.8.0",
     "webpack-serve": "^1.0.3",
     "ws": "^7.2.1"
   },

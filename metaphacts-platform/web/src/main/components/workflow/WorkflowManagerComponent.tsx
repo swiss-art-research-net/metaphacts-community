@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,17 +52,22 @@ import { Spinner } from 'platform/components/ui/spinner';
 
 import * as styles from './WorkflowManagerComponent.scss';
 
-enum Status {
-  Loading,
-  Updating,
-  Ready,
-}
-
-export interface Props {
+/**
+ * Component to manage workflow instantiations.
+ *
+ * **Example**:
+ * ```
+ * <mp-workflow-manager
+ *   iris='["http://example.com/workflow/instance"]'
+ *   definition='http://example.com/workflow/definition'>
+ * </mp-workflow-manager>
+ * ```
+ */
+interface WorkflowManagerConfig {
   /**
    * Workflow instantiation IRIs
    */
-  iris: Array<string>;
+  iris: ReadonlyArray<string>;
   /**
    * Workflow definition IRI
    */
@@ -73,6 +78,8 @@ export interface Props {
   readonly?: boolean;
 }
 
+export interface WorkflowManagerProps extends WorkflowManagerConfig {}
+
 interface State {
   workflowState?: WorkflowState;
   steps?: ReadonlyArray<WorkflowStep>;
@@ -81,16 +88,13 @@ interface State {
   status?: Status;
 }
 
-/**
- * Component manages workflow instantiations
- *
- * @example
- * <mp-workflow-manager
- *  iris='["http://example.com/workflow/instance"]'
- *  definition='http://example.com/workflow/definition'>
- * </mp-workflow-manager>
- */
-export class WorkflowManagerComponent extends Component<Props, State> {
+enum Status {
+  Loading,
+  Updating,
+  Ready,
+}
+
+export class WorkflowManagerComponent extends Component<WorkflowManagerProps, State> {
   private readonly cancellation = new Cancellation();
   private loadingCancellation = this.cancellation.derive();
   private assigneeQueryingCancellation = this.cancellation.derive();
@@ -99,7 +103,7 @@ export class WorkflowManagerComponent extends Component<Props, State> {
   private initialWorkflowState = WorkflowState.empty;
   private workflowService = new WorkflowService();
 
-  constructor(props: Props, context: any) {
+  constructor(props: WorkflowManagerProps, context: any) {
     super(props, context);
     this.state = {
       workflowState: WorkflowState.empty,
@@ -113,7 +117,7 @@ export class WorkflowManagerComponent extends Component<Props, State> {
     this.fetchWorkflowInstantiations(this.props);
   }
 
-  componentWillReceiveProps(nextProps: Props) {
+  componentWillReceiveProps(nextProps: WorkflowManagerProps) {
     if (this.props !== nextProps) {
       this.loadingCancellation.cancelAll();
       this.initialWorkflowState = WorkflowState.empty;
@@ -128,7 +132,7 @@ export class WorkflowManagerComponent extends Component<Props, State> {
     }
   }
 
-  componentDidUpdate(prevProps: Props, prevState: State) {
+  componentDidUpdate(prevProps: WorkflowManagerProps, prevState: State) {
     const {workflowState: curWorkflowState, assignees: curAssigness} = this.state;
     if (curWorkflowState.step && !curWorkflowState.step.equals(prevState.workflowState.step)) {
       this.updateAssignees();
@@ -145,7 +149,7 @@ export class WorkflowManagerComponent extends Component<Props, State> {
     this.cancellation.cancelAll();
   }
 
-  private fetchWorkflowInstantiations(props: Props) {
+  private fetchWorkflowInstantiations(props: WorkflowManagerProps) {
     const {iris, definition} = props;
     if (!iris.length) { return; }
 

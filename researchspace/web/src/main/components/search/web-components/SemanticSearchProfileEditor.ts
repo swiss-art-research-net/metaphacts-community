@@ -279,7 +279,7 @@
 //     return D.button(
 //       {
 //         className: classnames({
-//           'btn btn-default btn-block': true,
+//           'btn btn-secondary btn-block': true,
 //           'profile-editor__overview__cell-button': !isActive,
 //           'profile-editor__overview__cell-button--active': isActive
 //         }),

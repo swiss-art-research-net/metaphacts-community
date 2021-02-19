@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,18 +40,22 @@
 import * as React from 'react';
 import {
   Halo as OntodiaHalo,
-  HaloProps as OntodiaHaloProps,
   HaloTemplateProps,
+  ConnectionsMenuCommands,
+  EventSource,
   WorkspaceContextTypes,
   WidgetAttachment,
   AuthoredEntity,
   AuthoredEntityContext,
   WorkspaceContextWrapper,
 } from 'ontodia';
+
 import { Component, ComponentContext, ContextTypes } from 'platform/api/components';
 import { TemplateItem } from 'platform/components/ui/template';
 import Spinner from 'platform/components/ui/spinner/Spinner';
+
 import { OntodiaContextWrapper, OntodiaContextTypes } from './OntodiaContext';
+import { subscribeOnConnectionsMenuCommands } from './NavigationMenu';
 import { mapTemplateComponent } from './Canvas';
 import * as styles from './Halo.scss';
 
@@ -64,11 +68,52 @@ const ONTODIA_HALO_DEFAULT_TEMPLATE = `
   </div>
 `;
 
-export interface HaloProps extends OntodiaHaloProps {
+/**
+ * Allows selecting a node and triggering of actions.
+ */
+interface OntodiaHaloConfig {
+  /**
+   * Unique ID to register as Ontodia canvas widget and send events.
+   *
+   * @default "halo"
+   */
+  id?: string;
+  /** @default true */
+  scalable?: boolean;
+  /** @default 5 */
+  margin?: number;
+  /**
+   * Client-side template for Halo content.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
+   */
   template?: string;
 }
 
-export interface HaloState {
+export type HaloProps = OntodiaHaloConfig;
+
+// mapped from Ontodia.HaloTemplateProps and exported for documentation
+interface OntodiaHaloTemplateData extends HaloTemplateProps {
+  /**
+   * `true` if the element is the only one that's selected
+   */
+  onlySelected: boolean;
+
+  /**
+   * `true` if the properties of the element can be edited
+   */
+  canEdit: boolean;
+
+  /**
+   * `true` if element can be deleted from the data
+   */
+  canDelete: boolean;
+}
+
+interface HaloState {
   template: React.ComponentClass<HaloTemplateProps> | undefined;
 }
 
@@ -79,19 +124,30 @@ export class Halo extends Component<HaloProps, HaloState> {
     ...OntodiaContextTypes,
     ...WorkspaceContextTypes,
   };
-  static defaultProps: Partial<HaloProps> = {
+
+  static defaultProps: Pick<HaloProps, 'id' | 'scalable'> = {
     id: 'halo',
+    scalable: true,
   };
+
   static attachment = WidgetAttachment.OverElements;
+
+  private readonly commands = new EventSource<ConnectionsMenuCommands>();
 
   constructor(props: HaloProps, context: any) {
     super(props, context);
     this.state = {template: undefined};
-    this.prepareHaloTemplate(props.template || ONTODIA_HALO_DEFAULT_TEMPLATE);
+  }
+
+  componentDidMount() {
+    const {ontodiaId} = this.context.ontodiaContext;
+    const {id, template} = this.props;
+    this.prepareHaloTemplate(template || ONTODIA_HALO_DEFAULT_TEMPLATE);
+    subscribeOnConnectionsMenuCommands(this.commands, {id, ontodiaId});
   }
 
   private prepareHaloTemplate = (template: string) => {
-    const {inAuthoringMode, onShowInfo} = this.context.ontodiaContext;
+    const ontodiaContext = this.context.ontodiaContext;
 
     return this.appliedTemplateScope.prepare(template).map(compiledTemplate => {
       return class extends Component<HaloTemplateProps, {}> {
@@ -104,38 +160,44 @@ export class Halo extends Component<HaloProps, HaloState> {
 
         render() {
           const {elementId} = this.props;
-          const {editor, view} = this.context.ontodiaWorkspace;
-          const target = editor.model.getElement(elementId);
-          const context = {
-            target, view, editor, onShowInfo,
-          };
-          const onlySelected = editor.selection.length === 1 && editor.selection[0] === target;
-
-          if (inAuthoringMode()) {
-            return <AuthoredEntity
-              elementId={elementId}
-              children={(authoredContext: AuthoredEntityContext) => {
-                return <TemplateItem
-                  template={{
-                    source: compiledTemplate,
-                    options: {
-                      ...this.props,
-                      canEdit: authoredContext.canEdit,
-                      canDelete: authoredContext.canDelete,
-                      onlySelected,
-                    }
-                  }}
-                  componentMapper={component =>
-                    mapTemplateComponent(component, context, authoredContext)}/>;
-              }}/>;
+          if (ontodiaContext.inAuthoringMode()) {
+            return (
+              <AuthoredEntity
+                elementId={elementId}
+                children={(authoredContext: AuthoredEntityContext) => {
+                  return this.renderTemplate(authoredContext);
+                }}
+              />
+            );
           } else {
-            return <TemplateItem
-              template={{
-                source: compiledTemplate,
-                options: {...this.props, isSelected: onlySelected}
-              }}
-              componentMapper={component => mapTemplateComponent(component, context)}/>;
+            return this.renderTemplate();
           }
+        }
+
+        private renderTemplate(authoredContext?: AuthoredEntityContext) {
+          const {elementId} = this.props;
+          const workspace = this.context.ontodiaWorkspace;
+          const {model, editor} = workspace;
+          const target = model.getElement(elementId);
+          const onlySelected = editor.selection.length === 1 && editor.selection[0] === target;
+          const templateData: OntodiaHaloTemplateData = {
+            ...this.props,
+            onlySelected,
+            inAuthoringMode: Boolean(authoredContext),
+            canEdit: authoredContext ? authoredContext.canEdit : false,
+            canDelete: authoredContext ? authoredContext.canDelete : false,
+          };
+          return (
+            <TemplateItem
+              template={{source: compiledTemplate, options: templateData}}
+              componentMapper={component => mapTemplateComponent(component, {
+                target,
+                ontodiaContext,
+                workspace,
+                authoredContext,
+              })}
+            />
+          );
         }
       };
     }).observe({
@@ -148,11 +210,13 @@ export class Halo extends Component<HaloProps, HaloState> {
   render() {
     const {template} = this.state;
     if (template) {
-      return <OntodiaHalo {...this.props}>{
-          React.createElement(template)
-        }</OntodiaHalo>;
+      return (
+        <OntodiaHalo commands={this.commands} {...this.props}>
+          {React.createElement(template)}
+        </OntodiaHalo>
+      );
     } else {
-      return <Spinner/>;
+      return <Spinner />;
     }
   }
 }

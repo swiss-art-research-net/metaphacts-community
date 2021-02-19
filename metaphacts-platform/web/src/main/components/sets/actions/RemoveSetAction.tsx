@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -124,8 +124,8 @@ export class RemoveSetAction extends Component<Props, State> {
                   ref={node => (this.confirmationRef = node)}>
           <span>Are you sure?</span>
           <ButtonToolbar>
-            <Button bsStyle='default' bsSize='xsmall' onClick={this.onNoClick}>no</Button>
-            <Button bsStyle='danger' bsSize='xsmall' onClick={this.onYesClick}>
+            <Button variant='secondary' size='sm' onClick={this.onNoClick}>no</Button>
+            <Button variant='danger' size='sm' onClick={this.onYesClick}>
              {this.state.isRemoving ? '...' : 'yes'}
             </Button>
           </ButtonToolbar>

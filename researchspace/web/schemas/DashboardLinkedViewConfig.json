@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "properties": {
         "checkQuery": {
-            "description": "SPARQL Ask query that is used to check whether it is possible to display a specific resource type in the specific view. Resource IRI is injected into the query using the <code>?value</code> binding variable.",
+            "description": "SPARQL Ask query that is used to check whether it is possible to display\na specific resource type in the specific view. Resource IRI is injected into\nthe query using the `?value` binding variable.",
             "type": "string"
         },
         "description": {
@@ -10,7 +10,7 @@
             "type": "string"
         },
         "iconClass": {
-            "description": "Class of the icon that will be used as the representation of the specific View in the Dashboard Item. It will be applied if the <code>image</code> attribute isn't specified.",
+            "description": "Class of the icon that will be used as the representation of the specific View\nin the Dashboard Item.\n\nIt will be applied if the `image` attribute isn't specified.",
             "type": "string"
         },
         "id": {

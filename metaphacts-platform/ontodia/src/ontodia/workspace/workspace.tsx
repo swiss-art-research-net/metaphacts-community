@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,8 +41,9 @@ import * as React from 'react';
 import { ReactElement } from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { TypeStyleResolver } from '../customization/props';
+import { ElementStyleResolver, TypeStyleResolver } from '../customization/props';
 
+import { Rdf } from '../data/rdf';
 import { MetadataApi } from '../data/metadataApi';
 import { ValidationApi } from '../data/validationApi';
 
@@ -50,12 +51,11 @@ import { CommandHistory, NonRememberingHistory } from '../diagram/history';
 import { DiagramView, IriClickHandler, LabelLanguageSelector, IriClickEvent } from '../diagram/view';
 
 import { AsyncModel, GroupBy } from '../editor/asyncModel';
-import { EditorController, PropertyEditor } from '../editor/editorController';
+import { OverlayController, PropertyEditor, LinkEditor } from '../editor/overlayController';
+import { EditorController } from '../editor/editorController';
 
 import { EventSource, EventObserver } from '../viewUtils/events';
 import { forceLayout } from '../viewUtils/layout';
-
-import { PropertySuggestionHandler } from '../widgets/connectionsMenu';
 
 import { CanvasMethods } from './canvas';
 import { DefaultWorkspaceLayout } from './defaultWorkspaceLayout';
@@ -63,7 +63,6 @@ import {
     WorkspaceContext, WorkspaceContextTypes, WorkspaceContextWrapper, WorkspaceEventHandler, WorkspaceEventKey,
     WorkspaceCommands,
 } from './workspaceContext';
-import { Rdf } from '../data/rdf';
 
 export interface WorkspaceProps {
     /** @default true */
@@ -94,13 +93,15 @@ export interface WorkspaceProps {
     metadataApi?: MetadataApi;
     validationApi?: ValidationApi;
     propertyEditor?: PropertyEditor;
+    linkEditor?: LinkEditor;
 
     typeStyleResolver?: TypeStyleResolver;
+    elementStyleResolver?: ElementStyleResolver;
+
     /**
      * Overrides label selection based on target language.
      */
     selectLabelLanguage?: LabelLanguageSelector;
-    suggestProperties?: PropertySuggestionHandler;
     /**
      * @default
      * (e) => window.open(e.iri, '_blank')
@@ -118,8 +119,7 @@ export interface WorkspaceLanguage {
 
 export interface WorkspaceMethods {
     getModel(): AsyncModel;
-    getDiagram(): DiagramView;
-    getEditor(): EditorController;
+    getContext(): WorkspaceContext;
     showWaitIndicatorWhile(operation: Promise<any>): void;
     undo(): void;
     redo(): void;
@@ -129,10 +129,11 @@ export interface WorkspaceMethods {
     forAnyCanvas(callback: (canvas: CanvasMethods) => void): void;
 }
 
-type RequiredProps = WorkspaceProps & Required<Pick<WorkspaceProps, 'hideTutorial' | 'language'>>;
+type RequiredProps = WorkspaceProps & DefaultProps;
+type DefaultProps = Required<Pick<WorkspaceProps, 'hideTutorial' | 'language'>>;
 
 export class Workspace extends React.Component<WorkspaceProps, {}> implements WorkspaceMethods {
-    static readonly defaultProps: Partial<WorkspaceProps> = {
+    static readonly defaultProps: DefaultProps = {
         hideTutorial: true,
         language: 'en',
     };
@@ -144,15 +145,17 @@ export class Workspace extends React.Component<WorkspaceProps, {}> implements Wo
     private readonly model: AsyncModel;
     private readonly view: DiagramView;
     private readonly editor: EditorController;
+    private readonly overlayController: OverlayController;
 
     private readonly commands = new EventSource<WorkspaceCommands>();
+    private readonly workspaceContext: WorkspaceContext;
 
     constructor(props: WorkspaceProps) {
         super(props);
 
         const {
-            history, factory, metadataApi, validationApi, propertyEditor, groupBy,
-            typeStyleResolver, selectLabelLanguage, suggestProperties, onIriClick, language,
+            history, factory, metadataApi, validationApi, propertyEditor, linkEditor, groupBy,
+            typeStyleResolver, elementStyleResolver, selectLabelLanguage, onIriClick, language,
         } = this.props as RequiredProps;
 
         this.model = new AsyncModel(
@@ -162,32 +165,41 @@ export class Workspace extends React.Component<WorkspaceProps, {}> implements Wo
         );
         this.view = new DiagramView(this.model, {
             typeStyleResolver,
+            elementStyleResolver,
             selectLabelLanguage,
             onIriClick: onIriClick ?? defaultIriClickHandler,
         });
         this.editor = new EditorController({
             model: this.model,
             view: this.view,
-            suggestProperties,
-            validationApi,
-            propertyEditor,
         });
-        this.editor.setMetadataApi(metadataApi);
+        this.overlayController = new OverlayController({
+            model: this.model,
+            editor: this.editor,
+            view: this.view,
+            propertyEditor,
+            linkEditor,
+        });
 
-        this.view.setLanguage(language);
-        this.state = {};
-    }
-
-    getChildContext(): WorkspaceContextWrapper {
-        const ontodiaWorkspace: WorkspaceContext = {
+        this.workspaceContext = {
+            model: this.model,
             view: this.view,
             editor: this.editor,
+            overlayController: this.overlayController,
             onClearAll: this.onClearAll,
             onChangeLanguage: this.onChangeLanguage,
             triggerWorkspaceEvent: this.triggerWorkspaceEvent,
             workspaceCommands: this.commands,
         };
-        return {ontodiaWorkspace};
+
+        this.editor.setMetadataApi(metadataApi);
+        this.editor.setValidationApi(validationApi);
+        this.view.setLanguage(language);
+        this.state = {};
+    }
+
+    getChildContext(): WorkspaceContextWrapper {
+        return {ontodiaWorkspace: this.workspaceContext};
     }
 
     render(): ReactElement<any> {
@@ -214,11 +226,11 @@ export class Workspace extends React.Component<WorkspaceProps, {}> implements Wo
             this.listener.listen(this.editor.events, 'changeSelection', () =>
                 onWorkspaceEvent(WorkspaceEventKey.editorChangeSelection)
             );
-            this.listener.listen(this.editor.events, 'toggleDialog', () =>
-                onWorkspaceEvent(WorkspaceEventKey.editorToggleDialog)
-            );
             this.listener.listen(this.editor.events, 'addElements', () =>
                 onWorkspaceEvent(WorkspaceEventKey.editorAddElements)
+            );
+            this.listener.listen(this.overlayController.events, 'toggleDialog', () =>
+                onWorkspaceEvent(WorkspaceEventKey.editorToggleDialog)
             );
         }
     }
@@ -237,38 +249,39 @@ export class Workspace extends React.Component<WorkspaceProps, {}> implements Wo
     componentWillUnmount() {
         this.listener.stopListening();
         this.view.dispose();
+        this.editor.dispose();
+        this.overlayController.dispose();
     }
 
-    getModel() { return this.model; }
-    getDiagram() { return this.view; }
-    getEditor() { return this.editor; }
+    getModel(): AsyncModel { return this.model; }
+    getContext(): WorkspaceContext { return this.workspaceContext; }
 
-    showWaitIndicatorWhile(operation: Promise<any>) {
-        this.editor.setSpinner({});
+    showWaitIndicatorWhile(operation: Promise<any>): void {
+        this.overlayController.setSpinner({});
         if (operation) {
             operation.then(() => {
-                this.editor.setSpinner(undefined);
+                this.overlayController.setSpinner(undefined);
             }).catch(error => {
                 // tslint:disable-next-line:no-console
                 console.error(error);
-                this.editor.setSpinner({statusText: 'Unknown error occured', errorOccured: true});
+                this.overlayController.setSpinner({statusText: 'Unknown error occurred', errorOccurred: true});
             });
         }
     }
 
-    undo() {
+    undo(): void {
         this.model.history.undo();
     }
 
-    redo() {
+    redo(): void {
         this.model.history.redo();
     }
 
-    clearAll() {
+    clearAll(): void {
         this.editor.removeItems([...this.model.elements]);
     }
 
-    changeLanguage(language: string) {
+    changeLanguage(language: string): void {
         const {onLanguageChange} = this.props;
         // if language is in controlled mode we'll just forward the change
         if (onLanguageChange) {

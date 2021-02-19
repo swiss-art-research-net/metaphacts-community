@@ -6,7 +6,7 @@ configure(project(':' + project.ext.buildConfig.distribution + ':core')) {
 	apply plugin: 'org.owasp.dependencycheck'
 	
 	dependencyCheck {
-		outputDirectory 'target/reports/dependencies'
+		outputDirectory rootProject.file('target/reports/dependencies').absolutePath
 		cveValidForHours = 72 
 		scanConfigurations = ['runtimeClasspath']
 		suppressionFile = project(':project').file('dependency-check-suppression-file.xml')

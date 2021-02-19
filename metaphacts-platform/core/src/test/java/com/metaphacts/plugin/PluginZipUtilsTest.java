@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,10 +39,10 @@
  */
 package com.metaphacts.plugin;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -65,13 +65,14 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.pf4j.PluginRuntimeException;
 
 import com.google.common.collect.Lists;
+import com.metaphacts.junit.MpAssert;
 import com.metaphacts.util.ZipUtils;
 
 /**
@@ -81,8 +82,7 @@ import com.metaphacts.util.ZipUtils;
 public class PluginZipUtilsTest {
     @Rule
     public TemporaryFolder tempFolderRule = new TemporaryFolder();
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
+
     @Test
     public void testZipCreation() throws IOException, PluginRuntimeException {
         File appFolder = createDummyAppFolder();
@@ -191,9 +191,12 @@ public class PluginZipUtilsTest {
         }
         
         assertTrue(backupNotSingleDirectory.exists());
-        exception.expect(PluginRuntimeException.class);
-        exception.expectMessage("The zip file does not contain a folder with a name that is equal to the zip name");
-        PluginZipUtils.isSingleDirectoryAppZip(backupNotSingleDirectory);
+        MpAssert.assertThrows(
+                Matchers.containsString(
+                        "The zip file does not contain a folder with a name that is equal to the zip name"),
+                PluginRuntimeException.class, () -> {
+                    PluginZipUtils.isSingleDirectoryAppZip(backupNotSingleDirectory);
+                });
     }
     
     @Test

@@ -19,17 +19,25 @@
             "properties": {
             },
             "type": "object"
+        },
+        "Dialog.HideAll": {
+            "description": "Event that can be triggered to hide all open dialogs.",
+            "properties": {
+            },
+            "type": "object"
         }
     },
     "propertyOrder": [
         "Component.Refresh",
         "Component.Loaded",
-        "Component.TemplateUpdate"
+        "Component.TemplateUpdate",
+        "Dialog.HideAll"
     ],
     "required": [
         "Component.Loaded",
         "Component.Refresh",
-        "Component.TemplateUpdate"
+        "Component.TemplateUpdate",
+        "Dialog.HideAll"
     ],
     "type": "object"
 }

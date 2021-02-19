@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,8 +71,9 @@ import com.metaphacts.lookup.util.LookupSparqlQueryBuilder;
  * <h3>1) queryTemplate</h3>
  * Defines a layout of the result query. It's possible to use following placeholders in this template:
  * <b>{{static_uuid}}</b>, <b>{{search_block}}</b>, <b>{{properties_block}}</b>,
- * <b>{{limit_block}}</b>, <b>{{type_block}}</b>.
- * It is expected to have following variables as a result: ?candidate, ?types, ?score.
+ * <b>{{limit_block}}</b>, <b>{{type_block}}</b> .
+ * It is expected to have following variables as a result: ?candidate, ?types, ?score
+ * (?label - is optional and should only be used for the cases when you don't want to use label service).
  * In the default configuration it's expected to have following variables as input from inner blocks:
  * ?type and ?score_private (from <b>{{search_block}}</b>).
  *
@@ -96,8 +97,8 @@ import com.metaphacts.lookup.util.LookupSparqlQueryBuilder;
  *
  * Defines custom template for <b>{{search_block}}</b> part in the queryTemplate. This part in general
  * performs filtration by token, but also returns ?score_private and ?type variables (In the default implementation).
- * Available placeholders: <b>{{static_uuid}}</b>.
- * Available bindings: <b>?__token__</b>.
+ * Available placeholders: <b>{{static_uuid}}</b> .
+ * Available bindings: <b>?__token__</b>, <b>?__language__</b>.
  * In the default configuration it is expected to have following variables as a result: ?type, ?score_private
  *
  * <h4>Example</h4>

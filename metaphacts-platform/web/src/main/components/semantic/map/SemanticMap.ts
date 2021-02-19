@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -104,13 +104,24 @@ export interface SemanticMapConfig {
   query: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> for marker popup.
+   * Template for marker popup.
+   *
    * By default shows `<semantic-link>` to the resource with a short textual description.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   tupleTemplate?: string;
 
   /**
-   * <semantic-link uri='http://help.metaphacts.com/resource/FrontendTemplating'>Template</semantic-link> which is applied when query returns no results.
+   * Template which is applied when query returns no results.
+   *
+   * @mpSeeResource {
+   *   "name": "Client-side templating",
+   *   "iri": "http://help.metaphacts.com/resource/FrontendTemplating"
+   * }
    */
   noResultTemplate?: string;
 
@@ -243,7 +254,7 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
         const popupContent = features.map((feature: Feature) => {
           const props = feature.getProperties();
           const popupMarkup = SemanticMap.createPopupContent(
-            props, this.state.tupleTemplate, this.context.templateDataContext
+            props, this.state.tupleTemplate, this.appliedDataContext
           );
           return `<div>${popupMarkup}</div>`;
         });
@@ -484,7 +495,7 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
 
         _.forEach(features, (f) => {
           const html = SemanticMap.createPopupContent(
-            f.getProperties(), template, this.context.templateDataContext
+            f.getProperties(), template, this.appliedDataContext
           );
           const doc = new DOMParser().parseFromString(html, 'text/html');
           d.appendChild(doc.body.firstChild);

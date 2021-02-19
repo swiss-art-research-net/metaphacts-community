@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,16 +46,16 @@
      margin-bottom: $padding-base-horizontal;
 
     &__success {
-        background: $state-success-bg;
+        background: $success;
     }
     &__info {
-        background: $state-info-bg;
+        background: $info;
     }
     &__warning {
-        background: $state-warning-bg;
+        background: $warning;
     }
     &__danger {
-        background: $state-danger-bg;
+        background: $danger;
     }
 
     &__none {

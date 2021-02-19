@@ -1,0 +1,14 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "**Example**:\n```\n<mp-anonymous-hidden><b>Text not to be shown to anonymous user</b></mp-anonymous-hidden>\n<mp-anonymous-hidden alt=\"No permission.\">\n    <b>Text not to be shown to anonymous user</b>\n</mp-anonymous-hidden>\n```",
+    "properties": {
+        "alt": {
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "alt"
+    ],
+    "type": "object"
+}
+

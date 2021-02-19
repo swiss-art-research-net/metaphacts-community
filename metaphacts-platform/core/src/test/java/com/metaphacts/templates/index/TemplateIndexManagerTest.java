@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,6 +62,7 @@ import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.sail.lucene.LuceneSail;
 import org.eclipse.rdf4j.sail.lucene.config.LuceneSailConfig;
 import org.eclipse.rdf4j.sail.memory.config.MemoryStoreConfig;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -145,7 +146,7 @@ public class TemplateIndexManagerTest extends AbstractIntegrationTest {
 
         templateIndexManager.reindex();
 
-        Assert.assertThat(search("Walldorf"), Matchers.empty());
+        MatcherAssert.assertThat(search("Walldorf"), Matchers.empty());
         assertContainsAll(search("Heidelberg"), iri("s"));
     }
 
@@ -193,7 +194,7 @@ public class TemplateIndexManagerTest extends AbstractIntegrationTest {
 
         assertContainsAll(search("Walldorf"), iri("s"));
 
-        Assert.assertThat(search("ignore"), Matchers.empty());
+        MatcherAssert.assertThat(search("ignore"), Matchers.empty());
     }
 
     @Test
@@ -206,7 +207,7 @@ public class TemplateIndexManagerTest extends AbstractIntegrationTest {
 
         assertContainsAll(search("Walldorf"), iri("s"));
 
-        Assert.assertThat(search("ignore"), Matchers.empty());
+        MatcherAssert.assertThat(search("ignore"), Matchers.empty());
     }
 
     @Test
@@ -220,7 +221,7 @@ public class TemplateIndexManagerTest extends AbstractIntegrationTest {
         templateIndexManager.reindex();
 
         assertContainsAll(search("Profile"), iri("s"));
-        Assert.assertThat(search("anchor"), Matchers.empty());
+        MatcherAssert.assertThat(search("anchor"), Matchers.empty());
     }
 
     @Test
@@ -264,7 +265,7 @@ public class TemplateIndexManagerTest extends AbstractIntegrationTest {
 
         templateIndexManager.reindex();
 
-        Assert.assertThat(search("Walldorf"), Matchers.empty());
+        MatcherAssert.assertThat(search("Walldorf"), Matchers.empty());
     }
 
     @Test
@@ -402,7 +403,7 @@ public class TemplateIndexManagerTest extends AbstractIntegrationTest {
     }
 
     protected void assertContainsAll(List<BindingSet> searchResult, IRI... iris) {
-        Assert.assertThat(searchResult.stream().map(b -> b.getValue("subj")).collect(Collectors.toList()),
+        MatcherAssert.assertThat(searchResult.stream().map(b -> b.getValue("subj")).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder(iris));
 
     }

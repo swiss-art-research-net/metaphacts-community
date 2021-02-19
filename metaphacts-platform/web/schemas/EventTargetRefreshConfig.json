@@ -1,5 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Refresh child when receiving Component.Refresh event.\n\n**Example**:\n\nThere are many ways in which one can trigger refresh on this component.\nFor example one can manually trigger the event wit `<mp-event-trigger-component>`:\n```\n<mp-event-target-refresh id='some-element'>\n   <div></div>\n</mp-event-target-refresh>\n\n<mp-event-trigger id='dom-refresh' type='Component.Refresh' targets='[\"some-element\"]'>\n   <button>Refresh</button>\n</mp-event-trigger>\n```\nIn this example as soon as Refresh button is clicked content of corresponding\n`<mp-event-target-refresh>` component will be re-mounted\n\nAlternatively the target refresh can also be triggered by specifying a time interval:\n```\n<mp-event-target-refresh id='some-element' refresh-interval=5>\n   <div></div>\n</mp-event-target-refresh>\n\n<mp-event-trigger id='dom-refresh' type='Component.Refresh' targets='[\"some-element\"]'>\n   <button>Refresh</button>\n</mp-event-trigger>\n```",
     "properties": {
         "id": {
             "description": "Unique id of the component that can be used by event emitters as a target.",

@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,17 +43,18 @@ $default-error-color: red;
 $configuration-error-color: #6f6f6f;
 $loading-error-color: darkorange;
 
-$remove-value-color: gray;
-
 .cardinality-support {
   display: flex;
   flex-direction: column;
 
   &__add-value {
+    &:focus {
+      box-shadow: 0 0 0 0.2rem rgba(193, 193, 193, 0.5);
+    }
     &--first { align-self: flex-start; }
     &--another {
       margin-top: 5px;
-      align-self: flex-end;
+      align-self: flex-start;
     }
   }
 
@@ -83,22 +84,25 @@ $remove-value-color: gray;
 
   &__single-instance > &__remove-value {
     flex: 0 0 auto;
-    margin-left: 10px;
-    color: $remove-value-color;
+    margin-left: 2px;
+    margin-top: 2px;
+    color: gray;
+    border: none;
   }
 
   &__group-instance {
-    position: relative;
-    padding-right: $padding-large-horizontal;
+    display: flex;
+    flex-direction: column;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 0.5rem;
     border: 2px solid lightgray;
+    border-radius: $input-border-radius;
   }
 
   &__group-instance > &__remove-value {
-    position: absolute;
-    right: 5px;
-    top: 5px;
-    padding: 3px 6px;
-    color: $remove-value-color;
+    align-self: flex-end;
+    color: #D0021B;
   }
 
   &__reorderable-list-item {
@@ -114,32 +118,54 @@ $remove-value-color: gray;
   &__inputs {
     display: flex;
     > .form-group {
+      flex: auto;
       margin-bottom: 0;
     }
   }
 
   &__text,
-  & :first-child {
+  & > :first-child {
     flex-grow: 1;
   }
 
+  &__text {
+    border-radius: $input-border-radius;
+  }
+  &--with-language &__text {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  input.plain-text-field__text {
+    height: 36px;
+  }
+
   textarea.plain-text-field__text {
+    border-color: #ddd;
     font-size: 15px;
     padding: 6px 10px;
-    min-height: 39px;
+    min-height: 36px;
     width: 100%;
   }
 
   &__language {
-    flex-basis: 120px;
-    > .Select-control { border-left: none; }
+    flex: 60px 0 0;
+    > .Select-control {
+      border-left: none;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      background: linear-gradient(0deg, #FFFFFF, #F8F8F8);
+    }
   }
 }
 
 .autocomplete-text-field {
   &__main-row { display: flex; }
   &__select { flex: auto; }
-  &__create-button { margin-left: 10px; }
+  &__create-button {
+    margin-left: 10px;
+    border-radius: $input-border-radius;
+  }
 }
 
 .semantic-form-tree-picker-input {
@@ -147,9 +173,18 @@ $remove-value-color: gray;
   flex-direction: column;
   &__tree-input { display: flex; }
   &__picker { flex: auto; }
-  &__create-button { margin-left: 10px; }
+  &__create-button {
+    margin-left: 10px;
+    border-radius: $input-border-radius;
+  }
   &__removable-badge { margin-top: 10px; margin-right: 10px; max-width: 200px; }
   &__title { margin-top: 10px; margin-right: 10px; }
+}
+
+.date-picker-field {
+  &__date-picker > .form-control {
+    border-radius: $input-border-radius;
+  }
 }
 
 .semantic-form-errors {
@@ -173,17 +208,16 @@ $remove-value-color: gray;
 }
 
 .semantic-form-input-decorator {
-  // See also conditinal override at
-  // `platform/components/3-rd-party/ontodia/authoring/EntityForm.scss`
   &--with-header {
-    margin-top: $padding-large-vertical;
-    margin-bottom: $padding-large-vertical;
-    padding-left: $padding-large-horizontal;
+    margin: 12px 0;
   }
 
   &__header {
-    margin-left: -$padding-base-horizontal;
-    margin-bottom: $padding-base-vertical;
+    margin-bottom: 5px;
+  }
+
+  &__label {
+    font-weight: bold;
   }
 
   &__label-required:after {
@@ -191,7 +225,7 @@ $remove-value-color: gray;
   }
 
   &__description-icon {
-    margin-left: $padding-base-horizontal;
+    margin-left: 5px;
     text-transform: capitalize;
     @include icon(question-circle);
     color: $text-muted;
@@ -289,10 +323,25 @@ $remove-value-color: gray;
   }
 }
 
+.semantic-form-subject-input {
+  /* same as semantic-form-input-decorator--with-header */
+  margin: 12px 0;
+
+  &__header {
+    display: flex;
+  }
+  &__label {
+    font-weight: bold;
+  }
+  &__suggest-label {
+    margin-left: 5px;
+    opacity: 0.8;
+  }
+}
+
 .form-switch {
   &__content {
-    width: 100%;
-    margin: 5px 0 0 12px;
+    margin-top: $input-padding-y-lg;
   }
 
   &__select {

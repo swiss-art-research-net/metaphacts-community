@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,15 +39,27 @@
  */
 package com.metaphacts.services.storage.git;
 
-import com.metaphacts.services.storage.api.StorageConfig;
-import com.metaphacts.services.storage.api.StorageConfigException;
-import com.metaphacts.services.storage.api.StorageFactory;
-import org.apache.commons.configuration2.Configuration;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class GitStorageFactory implements StorageFactory {
+import javax.inject.Inject;
+
+import org.apache.commons.configuration2.Configuration;
+
+import com.metaphacts.secrets.SecretResolver;
+import com.metaphacts.secrets.SecretsHelper;
+import com.metaphacts.services.storage.api.ObjectStorage;
+import com.metaphacts.services.storage.api.StorageConfig;
+import com.metaphacts.services.storage.api.StorageConfigException;
+import com.metaphacts.services.storage.api.StorageCreationParams;
+import com.metaphacts.services.storage.api.StorageException;
+import com.metaphacts.services.storage.api.StorageFactory;
+
+public class GitStorageFactory implements StorageFactory<GitStorageConfig> {
+
+    @Inject
+    private SecretResolver secretResolver;
+
     @Override
     public String getStorageType() {
         return GitStorage.STORAGE_TYPE;
@@ -68,11 +80,37 @@ public class GitStorageFactory implements StorageFactory {
             config.setBranch(properties.getString("branch"));
         }
         if (properties.containsKey("remoteUrl")) {
-            config.setRemoteUrl(properties.getString("remoteUrl"));
+            String remoteUrl = properties.getString("remoteUrl");
+            config.setRemoteUrl(SecretsHelper.resolveSecretOrFallback(secretResolver, remoteUrl));
+        }
+        if (properties.containsKey("keyPath")) {
+            String keyPath = properties.getString("keyPath");
+            config.setKeyPath(SecretsHelper.resolveSecretOrFallback(secretResolver, keyPath));
+        }
+        if (properties.containsKey("key")) {
+            String key = properties.getString("key");
+            config.setKey(SecretsHelper.resolveSecretOrFallback(secretResolver, key));
+        }
+        if (properties.containsKey("username")) {
+            String username = properties.getString("username");
+            config.setUsername(SecretsHelper.resolveSecretOrFallback(secretResolver, username));
+        }
+        if (properties.containsKey("password")) {
+            String password = properties.getString("password");
+            config.setPassword(SecretsHelper.resolveSecretOrFallback(secretResolver, password));
+        }
+        if (properties.containsKey("verifyKnownHosts")) {
+            config.setVerifyKnownHosts(properties.getBoolean("verifyKnownHosts"));
         }
         if (properties.containsKey("maxPushAttempts")) {
             config.setMaxPushAttempts(properties.getInt("maxPushAttempts"));
         }
         return config;
+    }
+
+    @Override
+    public ObjectStorage createStorage(GitStorageConfig config, StorageCreationParams creationParams)
+            throws StorageException {
+        return new GitStorage(creationParams.getPathMapping(), config);
     }
 }

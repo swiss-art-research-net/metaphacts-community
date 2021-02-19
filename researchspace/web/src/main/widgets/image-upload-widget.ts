@@ -37,8 +37,6 @@ import { Alert, AlertConfig, AlertType } from 'platform/components/ui/alert';
 import { Dropzone } from 'platform/components/ui/dropzone';
 import { FileUploadService } from 'platform/api/services/file-upload';
 
-const ProgressBar = React.createFactory(ReactBootstrap.ProgressBar);
-
 import '../scss/image-upload-widget.scss';
 
 interface Props {
@@ -277,7 +275,9 @@ class ImageUploadWidget extends Component<Props, State> {
 
     return D.div({className: 'iiif-upload__holder'},
                  this.state.alertState ? createElement(Alert, this.state.alertState) : null,
-                 progress.map(progress => ProgressBar({ active: true, min: 0, max: 100, now: progress })).getOrElse(null),
+                 progress.map(progressVal =>
+                  createElement(ReactBootstrap.ProgressBar, { min: 0, max: 100, now: progressVal }))
+        .getOrElse(null),
       createElement(Dropzone,
         {
           className: 'iiif-upload__dropzone',
@@ -286,7 +286,7 @@ class ImageUploadWidget extends Component<Props, State> {
         },
         D.div({className: 'iiif-upload__description'}, D.p({}, description)),
         D.button({
-          className: 'iiif-upload__dropzone-button btn btn-sm btn-default',
+          className: 'iiif-upload__dropzone-button btn btn-sm btn-secondary',
         }, 'Browse')
       ),
       this.state.files.map(file => D.h4({key: file.name}, 'Selected file: ' + file.name)),
@@ -327,7 +327,9 @@ class ImageUploadWidget extends Component<Props, State> {
         )
       ),
       this.state.alertState ? createElement(Alert, this.state.alertState) : null,
-      progress.map(progress => ProgressBar({ active: true, min: 0, max: 100, now: progress })).getOrElse(null)
+      progress.map(progressVal => createElement(ReactBootstrap.ProgressBar, {
+        min: 0, max: 100, now: progressVal
+      })).getOrElse(null)
     );
   }
 }

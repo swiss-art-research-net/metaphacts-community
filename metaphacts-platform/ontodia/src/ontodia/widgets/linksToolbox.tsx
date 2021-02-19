@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -277,10 +277,10 @@ export class LinkTypesToolbox extends React.Component<{}, LinkTypesToolboxState>
     constructor(props: {}, context: any) {
         super(props, context);
 
-        const {view, editor} = this.context.ontodiaWorkspace;
+        const {model, view, editor} = this.context.ontodiaWorkspace;
 
         this.listener.listen(view.events, 'changeLanguage', () => this.updateOnCurrentSelection());
-        this.listener.listen(editor.model.events, 'loadingSuccess', () => this.updateOnCurrentSelection());
+        this.listener.listen(model.events, 'loadingSuccess', () => this.updateOnCurrentSelection());
         this.listener.listen(editor.events, 'changeSelection', () => {
             this.debounceSelection.call(this.updateOnCurrentSelection);
         });
@@ -307,11 +307,12 @@ export class LinkTypesToolbox extends React.Component<{}, LinkTypesToolboxState>
     }
 
     private requestLinksOf(selectedElement: Element) {
+        const {model} = this.context.ontodiaWorkspace;
         if (selectedElement) {
             const request = {elementId: selectedElement.iri};
             this.currentRequest = request;
             this.setState({dataState: ProgressState.loading, selectedElement});
-            this.context.ontodiaWorkspace.editor.model.dataProvider.linkTypesOf(request).then(linkTypes => {
+            model.dataProvider.linkTypesOf(request).then(linkTypes => {
                 if (this.currentRequest !== request) { return; }
                 const {linksOfElement, countMap} = this.computeStateFromRequestResult(linkTypes);
                 this.subscribeOnLinksEvents(linksOfElement);
@@ -334,10 +335,10 @@ export class LinkTypesToolbox extends React.Component<{}, LinkTypesToolboxState>
     }
 
     private computeStateFromRequestResult(linkTypes: ReadonlyArray<LinkCount>) {
+        const {model} = this.context.ontodiaWorkspace;
         const linksOfElement: LinkType[] = [];
         const countMap: { [linkTypeId: string]: number } = {};
 
-        const model = this.context.ontodiaWorkspace.editor.model;
         for (const linkType of linkTypes) {
             const type = model.createLinkType(linkType.id);
             linksOfElement.push(type);

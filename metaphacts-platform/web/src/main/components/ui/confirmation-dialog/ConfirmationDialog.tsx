@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,7 +42,12 @@ import { Modal, Button, ButtonGroup } from 'react-bootstrap';
 
 export interface ConfirmationDialogProps {
   message: string;
+  detailMessage?: string;
   confirmLabel?: string;
+  /**
+   * @default "primary"
+   */
+  confirmVariant?: 'primary' | 'danger';
   cancelLabel?: string;
   onHide: () => void;
   onConfirm: (confirm: boolean) => void;
@@ -50,18 +55,20 @@ export interface ConfirmationDialogProps {
 
 export class ConfirmationDialog extends React.Component<ConfirmationDialogProps, {}> {
   render() {
-    const {message, confirmLabel, cancelLabel, onHide, onConfirm} = this.props;
+    const {message, detailMessage: detailMessage, confirmLabel, confirmVariant,
+      cancelLabel, onHide, onConfirm} = this.props;
     return (
       <Modal onHide={onHide} show={true}>
         <Modal.Body>
           <Modal.Title>{message}</Modal.Title>
+          {detailMessage ? <div>{detailMessage}</div> : null}
         </Modal.Body>
         <Modal.Footer>
           <ButtonGroup>
-            <Button bsStyle='primary' onClick={e => onConfirm(true)}>
+            <Button variant={confirmVariant ?? 'primary'} onClick={() => onConfirm(true)}>
               {confirmLabel ?? 'Confirm'}
             </Button>
-            <Button bsStyle='danger' onClick={e => onConfirm(false)}>
+            <Button variant='secondary' onClick={() => onConfirm(false)}>
               {cancelLabel ?? 'Cancel'}
             </Button>
           </ButtonGroup>

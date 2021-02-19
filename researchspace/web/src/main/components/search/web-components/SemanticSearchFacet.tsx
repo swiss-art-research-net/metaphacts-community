@@ -179,7 +179,7 @@ class SemanticSearchFacetInner extends React.Component<InnerProps, State> {
         D.button(
         {
           className: classNames({
-            'btn-xs': true,
+            'btn-sm': true,
             'show-facet-button': true,
             'show-facet-button__hide': facetIsShown,
             'show-facet-button__show': !facetIsShown,

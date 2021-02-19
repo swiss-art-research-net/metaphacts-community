@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -276,7 +276,7 @@ export class Graph extends Component<Props, State> {
     (obj: Cy.CollectionFirstElement) => string =
     function(template: HandlebarsTemplateDelegate, x: string) {
       return function(obj: Cy.CollectionFirstElement): string {
-        return template(obj.data());
+        return template(obj.data(), {allowProtoPropertiesByDefault: true});
       };
     };
 

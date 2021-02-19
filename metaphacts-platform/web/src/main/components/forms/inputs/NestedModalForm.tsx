@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,7 @@ export class NestedModalForm extends Component<NestedModalFormProps, {}> {
       },
     };
     return (
-      <Modal bsSize='large' show={true} onHide={onCancel} backdrop={'static'}>
+      <Modal size='lg' show={true} onHide={onCancel} backdrop={'static'}>
         <Modal.Header closeButton={true}>
           <Modal.Title>{`Create New ${getPreferredLabel(definition.label) || definition.id || 'Value'}`}</Modal.Title>
         </Modal.Header>

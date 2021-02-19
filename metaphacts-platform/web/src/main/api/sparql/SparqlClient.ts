@@ -21,7 +21,7 @@
  * License: LGPL 2.1 or later
  * Licensor: metaphacts GmbH
  *
- * Copyright (C) 2015-2020, metaphacts GmbH
+ * Copyright (C) 2015-2021, metaphacts GmbH
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -198,10 +198,14 @@ export function prependValuesClause(patterns: SparqlJs.Pattern[], parameters: Pa
 function serializeParameters(parameters: Parameters) {
   return _.map(parameters, tuple =>
     _.reduce(tuple, (acc, v, k) => {
-      if (Rdf.isBnode(v)) {
-        throw new Error('Cannot parametrize VALUES block with blank node');
+      if (v) {
+        if (Rdf.isBnode(v)) {
+          throw new Error('Cannot parametrize VALUES block with blank node');
+        }
+        acc['?' + k] = v;
+      } else {
+        acc['?' + k] = undefined;
       }
-      acc['?' + k] = v;
       return acc;
     }, {} as Dictionary<SparqlJs.IriTerm | SparqlJs.LiteralTerm | undefined>)
   );

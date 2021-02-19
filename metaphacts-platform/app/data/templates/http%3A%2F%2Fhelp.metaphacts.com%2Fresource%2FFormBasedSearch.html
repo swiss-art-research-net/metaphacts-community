@@ -79,7 +79,7 @@
       }
     ]'>
       <semantic-form-select-input for="class"></semantic-form-select-input>
-      <button type='button' name='submit' class='btn btn-default'>Search</button>
+      <button type='button' name='submit' class='btn btn-secondary'>Search</button>
   </semantic-search-form-query>
 
 	<!-- 2. faceting is optional -->
@@ -128,7 +128,7 @@
        }
      ]'>
 	<semantic-form-select-input for="person" placeholder='Select, for example, "Alice"'></semantic-form-select-input>
-       <button type='button' name='submit' className='btn btn-default'>Visualize Graph</button>
+       <button type='button' name='submit' className='btn btn-secondary'>Visualize Graph</button>
    </semantic-search-form-query>
 
   <!-- 2. facet is optional -->
@@ -185,7 +185,7 @@
      ]'>
        <semantic-form-select-input placeholder='Please select a class to search instances of' for="class"></semantic-form-select-input>
        <semantic-form-text-input for="label" placeholder='Type "li" to find , for example, "mona lisa" or "alice"'></semantic-form-text-input>
-       <button type='button' name='submit' className='btn btn-default'>Search</button>
+       <button type='button' name='submit' className='btn btn-secondary'>Search</button>
    </semantic-search-form-query>
   <!-- 2. facet is optional -->
 	<!-- <semantic-search-facet></semantic-search-facet> -->
@@ -266,7 +266,7 @@
       <semantic-form-autocomplete-input for='museum'></semantic-form-autocomplete-input>
     </semantic-form-composite-input>
     <semantic-form-errors></semantic-form-errors>
-    <button type='button' name='submit' className='btn btn-default'>Search</button>
+    <button type='button' name='submit' className='btn btn-secondary'>Search</button>
   </semantic-search-form-query>
   <!-- 2. facet is optional -->
 	<!-- <semantic-search-facet></semantic-search-facet> -->
@@ -335,7 +335,7 @@
       <semantic-form-autocomplete-input for='person'></semantic-form-autocomplete-input>
     </semantic-form-composite-input>
     <semantic-form-errors></semantic-form-errors>
-    <button type='button' name='submit' className='btn btn-default'>Search</button>
+    <button type='button' name='submit' className='btn btn-secondary'>Search</button>
   </semantic-search-form-query>
   <!-- 2. facet is optional -->
 	<!-- <semantic-search-facet></semantic-search-facet> -->
@@ -347,14 +347,14 @@
 </semantic-search>
 ]]>
   </mp-code-example>
-    
-    
+
+
     <h2> Example: Search with dependent form input elements</h2>
-    
+
     <p>The following example demonstrates the capability of form elements being dependent on each other, e.g. if a user selects a country, a dependent field for a city should auto suggest only the cities of that country. The selected city is then used as argument for the search, in this case to find persons born in the selected city.</p>
-    
+
     <p>This feature is inherited from the <code>semantic-form</code> and is described in full detail <semantic-link iri="[[resolvePrefix "Help:SemanticFormDependenciesConstraints"]]">here</semantic-link>. Note that also the example itself as well as the sample data is borrowed from the linked documentation. Please refer to the <semantic-link iri="[[resolvePrefix "Help:SemanticFormDependenciesConstraints"]]">field dependencies example</semantic-link> for further details and the setup.</p>
-    
+
     <mp-code-example>
 <![CDATA[
 
@@ -363,7 +363,7 @@
       <semantic-search-form-query
         query-template='{
           "queryString": "
-            PREFIX ex: <http://example.com/resource/> 
+            PREFIX ex: <http://example.com/resource/>
             SELECT ?subject WHERE {
               ?subject ex:birthPlace ?city .
             }
@@ -380,7 +380,7 @@
               "minOccurs": "1",
               "maxOccurs": "1",
               "valueSetPattern": "
-                PREFIX ex: <http://example.com/resource/> 
+                PREFIX ex: <http://example.com/resource/>
                 SELECT ?value WHERE {
                   ?value a ex:Country .
                 }
@@ -393,11 +393,12 @@
               "minOccurs": "1",
               "maxOccurs": "1",
               "autosuggestionPattern": "
-                PREFIX ex: <http://example.com/resource/> 
+                PREFIX ex: <http://example.com/resource/>
                 PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
                 SELECT ?value ?label WHERE {
                    SERVICE Repository:lookup {
-                			?value lookup:token ?__token__ ;
+                      ?value lookup:token ?__token__ ;
+                          lookup:name ?label ;
                           lookup:limit 30 ;
                           lookup:type ex:City
                    }
@@ -412,20 +413,21 @@
                 "country": "selectedCountry"
               },
               "autosuggestionPattern": "
-                PREFIX ex: <http://example.com/resource/> 
+                PREFIX ex: <http://example.com/resource/>
                 PREFIX lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#>
                 SELECT (?city AS ?value) ?label WHERE {
                    SERVICE Repository:lookup {
-                			?city lookup:token ?__token__ ;
+                	  ?city lookup:token ?__token__ ;
+                          lookup:name ?label ;
                           lookup:limit 30 ;
                           lookup:type ex:City
                    }
                    FILTER EXISTS { ?selectedCountry ex:city ?city . }
                 }
-                
+
               ",
               "valueSetPattern": "
-                PREFIX ex: <http://example.com/resource/> 
+                PREFIX ex: <http://example.com/resource/>
                 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
                 SELECT (?city AS ?value) ?label WHERE {
                   ?selectedCountry ex:city ?city .
@@ -437,7 +439,7 @@
         ]'>
           <semantic-form-select-input for='country'></semantic-form-select-input>
           <semantic-form-autocomplete-input for='city'></semantic-form-autocomplete-input>
-          <button type='button' name='submit' class='btn btn-default'>Search</button>
+          <button type='button' name='submit' class='btn btn-secondary'>Search</button>
        </semantic-search-form-query>
 
       <semantic-search-result-holder>
@@ -450,6 +452,6 @@
 ]]>
      </mp-code-example>
 
-    
+
   </div>
 </div>
