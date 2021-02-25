@@ -3,7 +3,7 @@ This is a fork of [[https://bitbucket.org/metaphacts/metaphacts-community/src/ma
 >
 > The ResearchSpace app (config and templates) have been removed in order to make it easier to develop new templates from scratch.
 >
-> The Docker image is published as **swissartresearx/metaphacts-platform:4.0.0**
+> The Docker image is published as **swissartresearx/metaphacts-community:4.0.0**
 >
 
 # metaphacts Semantic Platform for Cultural Heritage and Digital Humanities
