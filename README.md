@@ -1,3 +1,11 @@
+> :warning: **Note**
+This is a fork of [[https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/]]. 
+>
+> The ResearchSpace app (config and templates) have been removed in order to make it easier to develop new templates from scratch.
+>
+> The Docker image is published as **swissartresearx/metaphacts-platform:4.0.0**
+>
+
 # metaphacts Semantic Platform for Cultural Heritage and Digital Humanities
 
 The metaphacts platform provides a comprehensive platform to publish research data modelled using the [CIDOC-CRM](http://www.cidoc-crm.org/) ontology for [Cultural Heritage](https://en.wikipedia.org/wiki/Cultural_heritage) and [Digital Humanities](https://en.wikipedia.org/wiki/Digital_humanities) in the Galeries, Libraries, Archives and Museums [(GLAM) sector](https://en.wikipedia.org/wiki/GLAM_(industry_sector)).
