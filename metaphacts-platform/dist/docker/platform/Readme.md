@@ -17,7 +17,7 @@ Follow the links in the readme to get to the desired version corresponding to th
 ### Build the application zip
 
 ```
-./build.sh -no-colors -DbuildEnv=prod -Dbuildjson=./path/to/xxx-root-build.json -DplatformVersion=3.2.0 platformZip
+./build.sh -DbuildEnv=prod -Dbuildjson=./metaphacts-platform/platform-only-root-build.json -DplatformVersion=4.0.0 platformWar
 ```
 
 ### Copy artifacts to docker folder

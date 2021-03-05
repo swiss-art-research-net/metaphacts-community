@@ -88,7 +88,7 @@ COPY --chown=100:0 first-passwd-init.sh /firstStart/
 
 COPY --chown=100:0 ROOT.xml /var/lib/jetty/webapps/ROOT.xml
 COPY --chown=100:0 ROOT.war /var/lib/jetty/webapps/ROOT.war
-COPY --chown=100:0 bundled/apps/ /bundled/apps
+#COPY --chown=100:0 bundled/apps/ /bundled/apps
 
 COPY --chown=100:0 config/shiro.ini /runtime-data/config/shiro.ini
 

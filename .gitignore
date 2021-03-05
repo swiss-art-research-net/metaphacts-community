@@ -57,3 +57,8 @@ workbench.xmi
 
 # Mac
 .DS_Store
+
+# build  artefacts
+metaphacts-platform/dist/docker/platform/config
+metaphacts-platform/dist/docker/platform/etc
+metaphacts-platform/dist/docker/platform/ROOT.war
