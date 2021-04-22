@@ -44,9 +44,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+
 import com.google.common.collect.Lists;
 import com.metaphacts.config.ConfigurationParameter;
 import com.metaphacts.config.ConfigurationParameter.VisibilityLevel;
+import com.metaphacts.config.ConfigurationParameterHook;
+import com.metaphacts.config.ConfigurationUtil;
 import com.metaphacts.config.InvalidConfigurationException;
 import com.metaphacts.security.SecurityConfigRecord;
 import com.metaphacts.security.SecurityConfigType;
@@ -305,6 +310,17 @@ public class EnvironmentConfiguration extends ConfigurationGroupBase {
     @Override
     public void assertConsistency() {
 
+    }
+
+    @ConfigurationParameterHook(forSetting = "sparqlHttpConnectionTimeout")
+    public void onUpdateSparqlHttpConnectionTimeout(String configIdInGroup, List<String> configValues,
+            PropertiesConfiguration targetConfig) throws ConfigurationException {
+        try {
+            Object configValue = ConfigurationUtil.listAsConfigValue(configValues);
+            Integer.parseInt(configValue.toString());
+        } catch (NumberFormatException e) {
+            throw new ConfigurationException("Please enter a valid positive number as HTTP connection timeout.");
+        }
     }
 
 }

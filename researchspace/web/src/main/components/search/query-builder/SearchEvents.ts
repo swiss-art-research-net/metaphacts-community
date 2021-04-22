@@ -17,7 +17,10 @@
  */
 import { EventMaker } from 'platform/api/events';
 
-export interface SearchEventData {
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
+export interface SemanticSearchQueryBuilderEventData {
   /**
    * Event which should be triggered when domain or range or predicate is selected.
    */
@@ -29,15 +32,15 @@ export interface SearchEventData {
   /**
    * Event which should be triggered when AND conjunction is clicked.
    */
-  'Search.AndConjunctSelected': void;
+  'Search.AndConjunctSelected': {};
   /**
    * Event which should be triggered when AND conjunction is clicked.
    */
-  'Search.OrDisjunctSelected': void;
+  'Search.OrDisjunctSelected': {};
   /**
    * Event which should be triggered when date format dropdown is selected.
    */
-  'Search.SelectDateFormatOpened': void;
+  'Search.SelectDateFormatOpened': {};
   /**
    * Event which should be triggered when date format is selected.
    */
@@ -45,22 +48,30 @@ export interface SearchEventData {
   /**
    * Event which should be triggered when date format is submitted.
    */
-  'Search.DateFormatSubmitted': void;
+  'Search.DateFormatSubmitted': {};
+}
+
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
+export interface SemanticSearchFacetEventData {
   /**
    * Event which should be triggered when facets are toggled.
    */
-  'Search.FilterToggled': void;
+  'Search.FilterToggled': {};
   /**
-   * Event which should be triggered when a facet category is selected.
-   */
+  * Event which should be triggered when a facet category is selected.
+  */
   'Search.FacetCategorySelected': string;
   /**
-   * Event which should be triggered when a facet property is selected.
-   */
+  * Event which should be triggered when a facet property is selected.
+  */
   'Search.FacetPropertySelected': string;
 }
-const event: EventMaker<SearchEventData> = EventMaker;
 
+const event: EventMaker<
+  SemanticSearchQueryBuilderEventData & SemanticSearchFacetEventData
+> = EventMaker;
 
 export const CategoryOrRelationSelected = event('Search.CategoryOrRelationSelected');
 export const SearchTreeInputSelected = event('Search.TreeInputSelected');
@@ -69,6 +80,7 @@ export const SearchOrDisjunctSelected = event('Search.OrDisjunctSelected');
 export const SearchSelectDateFormatOpened = event('Search.SelectDateFormatOpened');
 export const SearchDateFormatSelected = event('Search.DateFormatSelected');
 export const SearchDateFormatSubmitted = event('Search.DateFormatSubmitted');
+
 export const SearchFilterToggled = event('Search.FilterToggled');
 export const SearchFacetCategorySelected = event('Search.FacetCategorySelected');
 export const SearchFacetPropertySelected = event('Search.FacetPropertySelected');

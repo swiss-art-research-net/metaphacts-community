@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
+    "properties": {
+        "Form.ResourceCreated": {
+            "description": "If the `post-action='event'` for `<semantic-form>` then the form emits\nthis event after a new resource is submitted.",
+            "properties": {
+                "iri": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "iri"
+            ],
+            "required": [
+                "iri"
+            ],
+            "type": "object"
+        },
+        "Form.ResourceUpdated": {
+            "description": "If the `post-action='event'` for `<semantic-form>` then the form emits\nthis event on each update of the resource including creation.",
+            "properties": {
+                "iri": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "iri"
+            ],
+            "required": [
+                "iri"
+            ],
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "Form.ResourceCreated",
+        "Form.ResourceUpdated"
+    ],
+    "required": [
+        "Form.ResourceCreated",
+        "Form.ResourceUpdated"
+    ],
+    "type": "object"
+}
+

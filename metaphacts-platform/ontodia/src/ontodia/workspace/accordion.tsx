@@ -39,6 +39,8 @@
  */
 import * as React from 'react';
 
+import { isValidChild } from '../viewUtils/react';
+
 import { AccordionItem, AccordionItemProps } from './accordionItem';
 
 export interface Props {
@@ -104,7 +106,7 @@ export class Accordion extends React.Component<Props, State> {
         this.state = {
             collapsed: [],
             resizing: false,
-            percents: React.Children.map(this.props.children, () => `${100 / childCount}%`),
+            percents: React.Children.toArray(this.props.children).map(() => `${100 / childCount}%`),
         };
     }
 
@@ -146,7 +148,7 @@ export class Accordion extends React.Component<Props, State> {
         const {children} = this.props;
         const defaultProps = new Map<number, DefaultProps>();
         React.Children.forEach(children, (child, index) => {
-            if (typeof child !== 'object') { return; }
+            if (!isValidChild(child)) { return; }
             const {defaultSize, defaultCollapsed, collapsedSize, minSize} = child.props as AccordionItemProps;
             // enables the scrollbar in the accordion if at least one item has min size
             if (minSize !== undefined) {
@@ -224,7 +226,7 @@ export class Accordion extends React.Component<Props, State> {
         const {children, direction} = this.props;
 
         return React.Children.map(children, (child, index) => {
-            if (typeof child !== 'object') {
+            if (!isValidChild(child)) {
                 throw new Error('Accordion should have only AccordionItem elements as children');
             }
             const lastChild = index === React.Children.count(children) - 1;

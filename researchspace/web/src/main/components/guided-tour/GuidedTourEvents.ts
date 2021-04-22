@@ -17,15 +17,18 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface GuidedTourEventData {
   /**
    * Event which should be triggered when tour is run.
    */
-  'GuidedTour.RunIfNotSeen': void;
+  'GuidedTour.RunIfNotSeen': {};
   /**
    * Event which should be triggered when tour is started.
    */
-  'GuidedTour.Start': void;
+  'GuidedTour.Start': {};
 }
 const event: EventMaker<GuidedTourEventData> = EventMaker;
 

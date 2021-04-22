@@ -394,6 +394,9 @@
         "expanded": {
             "type": "boolean"
         },
+        "focused": {
+            "type": "boolean"
+        },
         "hasError": {
             "type": "boolean"
         },
@@ -413,11 +416,13 @@
         "label",
         "expanded",
         "hasError",
+        "focused",
         "highlight"
     ],
     "required": [
         "data",
         "expanded",
+        "focused",
         "hasError",
         "iri"
     ],

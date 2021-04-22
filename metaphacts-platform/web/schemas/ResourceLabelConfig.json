@@ -16,9 +16,11 @@
             "type": "string"
         },
         "highlightProps": {
-            "description": "Props for highlighted substring span",
-            "properties": {
+            "additionalProperties": {
             },
+            "description": "Props for highlighted substring span.",
+            "propertyOrder": [
+            ],
             "type": "object"
         },
         "iri": {

@@ -45,7 +45,7 @@ import {
   MouseEvent,
 } from 'react';
 
-import { trigger } from 'platform/api/events';
+import { EventType, trigger } from 'platform/api/events';
 
 /**
  * Triggers event by click on child element.
@@ -68,7 +68,7 @@ interface EventTriggerConfig {
   /**
    * Type of the event to trigger.
    */
-  type: string;
+  type: EventType<any>;
 
   /**
    * IDs of the components that this event should be send to.
@@ -77,7 +77,9 @@ interface EventTriggerConfig {
   targets?: ReadonlyArray<string>;
 
   /**
-   * Data that will be sent to all targets
+   * Data that will be sent to all targets.
+   *
+   * @mpHasEventType type
    */
   data?: object;
 }

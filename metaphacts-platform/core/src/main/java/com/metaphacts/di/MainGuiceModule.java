@@ -81,6 +81,7 @@ import com.metaphacts.cache.DelegatingLabelService;
 import com.metaphacts.cache.DescriptionService;
 import com.metaphacts.cache.ExternalLabelDescriptionService;
 import com.metaphacts.cache.LabelService;
+import com.metaphacts.cache.LookupBasedResourceInformationService;
 import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.cache.ResourceDescriptionCache;
 import com.metaphacts.cache.ResourceDescriptionCacheHolder;
@@ -98,13 +99,15 @@ import com.metaphacts.plugin.PlatformPluginManager;
 import com.metaphacts.querycatalog.QueryCatalogRESTServiceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.RepositoryManagerInterface;
+import com.metaphacts.resource.DefaultModelService;
 import com.metaphacts.resource.DefaultResourceDescriptionService;
-import com.metaphacts.resource.DelegatingDescriptionPropertiesProvider;
 import com.metaphacts.resource.DelegatingDescriptionRenderer;
+import com.metaphacts.resource.DelegatingTypePropertyProvider;
 import com.metaphacts.resource.DelegatingTypeService;
-import com.metaphacts.resource.DescriptionPropertiesProvider;
 import com.metaphacts.resource.DescriptionRenderer;
+import com.metaphacts.resource.ModelService;
 import com.metaphacts.resource.ResourceDescriptionService;
+import com.metaphacts.resource.TypePropertyProvider;
 import com.metaphacts.resource.TypeService;
 import com.metaphacts.rest.swagger.SwaggerRegistry;
 import com.metaphacts.security.ShiroTextRealm;
@@ -167,9 +170,12 @@ public class MainGuiceModule extends AbstractModule {
         bind(QueryTemplateCache.class).in(Singleton.class);
         bind(QueryCatalogRESTServiceRegistry.class).in(Singleton.class);
         bind(ExternalLabelDescriptionService.class).in(Singleton.class);
+        bind(LookupBasedResourceInformationService.class).in(Singleton.class);
         bind(ResourceDescriptionCacheHolder.class).in(Singleton.class);
         bind(LabelService.class).to(DelegatingLabelService.class).in(Singleton.class);
         bind(DescriptionService.class).to(DelegatingDescriptionService.class).in(Singleton.class);
+        bind(DefaultModelService.class).in(Singleton.class);
+        bind(ModelService.class).to(DefaultModelService.class).in(Singleton.class);
         bind(DefaultResourceDescriptionService.class).in(Singleton.class);
         bind(ResourceDescriptionService.class).to(DefaultResourceDescriptionService.class).in(Singleton.class);
         bind(ResourceDescriptionCache.class).in(Singleton.class);
@@ -211,13 +217,17 @@ public class MainGuiceModule extends AbstractModule {
      * Labels are queried in a well-defined order which balances
      * priority of sources and performance of the actual retrieval.
      * </p>
-     * 
+     *
      * @param descriptionCacheHolder                implementation based on fetching
      *                                              properties for configured
      *                                              predicates/expressions
      * @param lookupCandidateDescriptionCacheHolder implementation which provides
      *                                              values from injected
      *                                              LookupService response
+     * @param lookupBasedLabelService               implementation which is based on
+     *                                              the DelegatingLabelService which
+     *                                              includes LabelServices implemented by lookup
+     *                                              services
      * @return
      */
     @Inject
@@ -225,12 +235,17 @@ public class MainGuiceModule extends AbstractModule {
     @Singleton
     public DelegatingLabelService getLabelService(
         ResourceDescriptionCacheHolder descriptionCacheHolder,
-        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder
+        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder,
+        LookupBasedResourceInformationService lookupBasedLabelService
     ) {
-        final List<LabelService> labelServices = Arrays.asList(descriptionCacheHolder, lookupCandidateDescriptionCacheHolder);
+        final List<LabelService> labelServices = Arrays.asList(
+            descriptionCacheHolder,
+            lookupCandidateDescriptionCacheHolder,
+            lookupBasedLabelService
+        );
         return new DelegatingLabelService(labelServices);
     }
-    
+
     /**
      * Create Composite DescriptionService implementation which delegates to a set
      * of other implementations until a valid value is provided.
@@ -238,7 +253,7 @@ public class MainGuiceModule extends AbstractModule {
      * Descriptions are queried in a well-defined order which balances priority of
      * sources and performance of the actual retrieval.
      * </p>
-     * 
+     *
      * @param descriptionCacheHolder                implementation based on fetching
      *                                              properties for configured
      *                                              predicates/expressions
@@ -247,6 +262,11 @@ public class MainGuiceModule extends AbstractModule {
      *                                              LookupService response
      * @param resourceDescriptionCache              implementation which is based on
      *                                              the ResourceDescriptionService
+     *
+     * @param lookupBasedDescriptionService         implementation which is based on
+     *                                              the DelegatingDescriptionService which
+     *                                              includes DescriptionServices implemented by lookup
+     *                                              services
      * @return
      */
     @Inject
@@ -255,37 +275,41 @@ public class MainGuiceModule extends AbstractModule {
     public DelegatingDescriptionService getDescriptionService(
         ResourceDescriptionCacheHolder descriptionCacheHolder,
         ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder,
-        ResourceDescriptionCache resourceDescriptionCache
+        ResourceDescriptionCache resourceDescriptionCache,
+        LookupBasedResourceInformationService lookupBasedDescriptionService
     ) {
-        final List<DescriptionService> descriptionServices = Arrays.asList(resourceDescriptionCache,
-                descriptionCacheHolder,
-                lookupCandidateDescriptionCacheHolder);
+        final List<DescriptionService> descriptionServices = Arrays.asList(
+            resourceDescriptionCache,
+            descriptionCacheHolder,
+            lookupCandidateDescriptionCacheHolder,
+            lookupBasedDescriptionService
+        );
         return new DelegatingDescriptionService(descriptionServices);
     }
 
     @Inject
     @Provides
     @Singleton
-    public TypeService getTypeService(PlatformPluginManager platformPluginManager) {
+    public TypeService getTypeService(
+        PlatformPluginManager platformPluginManager,
+        LookupBasedResourceInformationService lookupBasedResourceInformationService
+    ) {
         List<TypeService> delegates = loadServiceInstancesIncludingApps(platformPluginManager, TypeService.class);
-        if (delegates.size() == 1) {
-            // if there's only one instance, return that directly
-            return delegates.get(0);
-        }
+        delegates.add(lookupBasedResourceInformationService);
         return new DelegatingTypeService(delegates);
     }
 
     @Inject
     @Provides
     @Singleton
-    public DescriptionPropertiesProvider getRelevantPropertiesProvider(PlatformPluginManager platformPluginManager) {
-        List<DescriptionPropertiesProvider> delegates = loadServiceInstancesIncludingApps(platformPluginManager,
-                DescriptionPropertiesProvider.class);
+    public TypePropertyProvider getTypePropertyProvider(PlatformPluginManager platformPluginManager) {
+        List<TypePropertyProvider> delegates = loadServiceInstancesIncludingApps(platformPluginManager,
+                TypePropertyProvider.class);
         if (delegates.size() == 1) {
             // if there's only one instance, return that directly
             return delegates.get(0);
         }
-        return new DelegatingDescriptionPropertiesProvider(delegates);
+        return new DelegatingTypePropertyProvider(delegates);
     }
 
     @Inject
@@ -351,13 +375,13 @@ public class MainGuiceModule extends AbstractModule {
 
     /**
      * Load services from the main class path as well as apps.
-     * 
+     *
      * <p>
      * The loaded service instances will be subjected to dependency injection, but
      * only after instantiation, i.e. they need a parameter-less constructor and
      * cannot use constructor injection.
      * </p>
-     * 
+     *
      * @param <T>           type of service to load
      * @param pluginManager plugin manager to load app classes from
      * @param serviceClass  service class for which to load service instances
@@ -382,19 +406,19 @@ public class MainGuiceModule extends AbstractModule {
 
     /**
      * Load services from the main class path.
-     * 
+     *
      * <p>
      * The loaded service instances will be subjected to dependency injection, but
      * only after instantiation, i.e. they need a parameter-less constructor and
      * cannot use constructor injection.
      * </p>
-     * 
+     *
      * <p>
      * Note: this method will NOT load classes froms apps, see
-     * {@link #loadServiceInstancesIncludingApps(Injector, PlatformPluginManager, Class)}
+     * {@link #loadServiceInstancesIncludingApps(PlatformPluginManager, Class)}
      * for a method to also load classes from apps.
      * </p>
-     * 
+     *
      * @param <T>          type of service to load
      * @param injector     Guice injector for dependency injection
      * @param classLoader  class loader from which to load the service classes

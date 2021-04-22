@@ -54,3 +54,4 @@ wd:Q12418 dbo:museum <http://dbpedia.org/resource/Louvre> .
 <http://dbpedia.org/resource/Louvre> dbo:location <http://dbpedia.org/resource/France> .
 <http://dbpedia.org/resource/Louvre> rdfs:label "Louvre" .
 <http://dbpedia.org/resource/Louvre> rdf:type dbo:Museum .
+

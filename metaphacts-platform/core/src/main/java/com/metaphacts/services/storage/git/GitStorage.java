@@ -309,8 +309,8 @@ public class GitStorage implements VersionedObjectStorage {
         } else {
             sb.append("local repository");
         }
-        sb.append(" (Branch: ").append(Optional.of(config.getBranch()).orElse("n/a")).append(")");
-        
+        sb.append(" (Branch: ").append(Optional.ofNullable(config.getBranch()).orElse("n/a")).append(")");
+
         return sb.toString();
     }
 

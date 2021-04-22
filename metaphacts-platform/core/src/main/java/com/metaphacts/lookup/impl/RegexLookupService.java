@@ -39,6 +39,8 @@
  */
 package com.metaphacts.lookup.impl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 
@@ -51,6 +53,9 @@ import com.metaphacts.lookup.util.LookupSparqlQueryBuilder;
  * @author Wolfgang Schell <ws@metaphacts.com>
  */
 public class RegexLookupService extends AbstractSPARQLSearchLookupService {
+
+    private static final Logger logger = LogManager.getLogger(RegexLookupService.class);
+
     public RegexLookupService(SparqlQueryLookupConfig config) {
         super(config);
     }
@@ -58,6 +63,11 @@ public class RegexLookupService extends AbstractSPARQLSearchLookupService {
     @Override
     protected TupleQuery createQuery(LookupQuery query, RepositoryConnection con) {
         LookupSparqlQueryBuilder.QueryPart parsedQuery = LookupSparqlQueryBuilder.parseRegexQuery(query);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("Creating the following regex lookup query: \n{}\nBindings: {}", parsedQuery.getAsString(),
+                    parsedQuery.getBindings());
+        }
 
         SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder.create(
             parsedQuery.getAsString(),

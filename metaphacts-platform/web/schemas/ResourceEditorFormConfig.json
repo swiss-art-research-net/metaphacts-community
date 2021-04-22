@@ -290,6 +290,34 @@
             ],
             "type": "object"
         },
+        "LdpPersistenceConfig": {
+            "description": "LDP persistence with options to specify the repository and container.\n\nExample:\n```\npersistence='{\n   \"type\": \"ldp\",\n   \"containerIri\": \"http://www.example.com/customContainer\"\n}'\n```",
+            "properties": {
+                "containerIri": {
+                    "description": "IRI of the LDP container to use for persistence.",
+                    "type": "string"
+                },
+                "repository": {
+                    "description": "(Optional) ID of the repository in which the data should be updated.",
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "ldp"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "repository",
+                "containerIri"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
         "MultipleFieldConstraint": {
             "additionalProperties": false,
             "properties": {
@@ -320,6 +348,39 @@
                 "fields",
                 "message",
                 "validatePattern"
+            ],
+            "type": "object"
+        },
+        "RawSparqlPersistenceConfig": {
+            "description": "SPARQL persistence with options to specify the repository and named graphs.\n\nThe SPARQL queries are executed against the regular `/sparql` endpoint\nand require corresponding permissions for the user.\n\nOptionally an `insertGraph` and a `deleteGraph` can be specified which are\ninjected into the SPARQL UPDATE queries. If none are provided, data is written\nas specified through the queries in the field definitions.\n\nExample:\n```\npersistence='{\n   \"type\": \"client-side-sparql\",\n   \"insertGraph\": \"http://www.example.com/customNamedGraph\",\n   \"deleteGraph\": \"http://www.example.com/customNamedGraph\"\n}'\n```",
+            "properties": {
+                "deleteGraph": {
+                    "description": "IRI of named graph used for DELETE queries. Specifying this modifies the DELETE queries\nto wrap the statements in a `GRAPH` block.",
+                    "type": "string"
+                },
+                "insertGraph": {
+                    "description": "IRI of named graph used for INSERT queries. Specifying this modifies the INSERT queries\nto wrap the statements in a `GRAPH` block.",
+                    "type": "string"
+                },
+                "repository": {
+                    "description": "ID of the repository in which the data should be updated.",
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "client-side-sparql"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "repository",
+                "insertGraph",
+                "deleteGraph"
+            ],
+            "required": [
+                "type"
             ],
             "type": "object"
         },
@@ -376,9 +437,92 @@
                 "validatePattern"
             ],
             "type": "object"
+        },
+        "SparqlPersistenceConfig": {
+            "description": "SPARQL persistence with options to specify the repository and named graphs.\n\nThe SPARQL queries are executed against the Form SPARQL endpoint\nand require permissions on forms for the user.\n\nOptionally an `insertGraph` and a `deleteGraph` can be specified which are\ninjected into the SPARQL UPDATE queries. If none are provided, data is written\nas specified through the queries in the field definitions.\n\nExample:\n```\npersistence='{\n   \"type\": \"sparql\",\n   \"insertGraph\": \"http://www.example.com/customNamedGraph\",\n   \"deleteGraph\": \"http://www.example.com/customNamedGraph\"\n}'\n```",
+            "properties": {
+                "deleteGraph": {
+                    "description": "IRI of named graph used for DELETE queries. Specifying this modifies the DELETE queries\nto wrap the statements in a `GRAPH` block.",
+                    "type": "string"
+                },
+                "insertGraph": {
+                    "description": "IRI of named graph used for INSERT queries. Specifying this modifies the INSERT queries\nto wrap the statements in a `GRAPH` block.",
+                    "type": "string"
+                },
+                "repository": {
+                    "description": "ID of the repository in which the data should be updated.",
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "sparql"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "type",
+                "repository",
+                "insertGraph",
+                "deleteGraph"
+            ],
+            "required": [
+                "type"
+            ],
+            "type": "object"
+        },
+        "SubjectTemplateFieldSettings": {
+            "properties": {
+                "default": {
+                    "default": "",
+                    "description": "Default value to substitute if there is no such field or it is empty.",
+                    "type": "string"
+                },
+                "disallowRegex": {
+                    "description": "Regex pattern to match character sets to replace with `replaceValue`\nwhen substituting the field value in the IRI.\n\nDefault pattern matches:\n   - ASCII control characters and space: `0x00-0x20`\n   - common illegal path characters: `<` `>` `:` `?` `*` `\"` `|`\n   - path separators: `/` `\\`\n   - recommended to avoid by AWS S3: `&` `$` `@` `=` `;` `+` `,` `#` `0x7f-0xFF`\n   - escape character: `%`\n\n**Default**:\n```\n{\n   \"transform\": \"sanitize\",\n   \"disallowRegex\": \"[\\\\u0000-\\\\u0020<>:?*\\\"|/\\\\\\\\&$@=+,#\\\\u007f-\\\\u00ff%\\\\s]\",\n   \"replaceCharacter\": \"_\"\n}\n```",
+                    "type": "string"
+                },
+                "replaceCharacter": {
+                    "default": "_",
+                    "description": "Character to replace with when sanitizing value.\n\nSequences of this string are collapsed into a single value.",
+                    "type": "string"
+                },
+                "transform": {
+                    "default": "sanitize",
+                    "description": "Defines how substituted values are transformed:\n   - `none`: no transformation;\n   - `sanitize`: replace IRI-unsafe characters as defined\n     by `disallowRegex` with `replaceCharacter`;",
+                    "enum": [
+                        "none",
+                        "sanitize"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "default",
+                "transform",
+                "disallowRegex",
+                "replaceCharacter"
+            ],
+            "type": "object"
+        },
+        "SubjectTemplateSettings": {
+            "properties": {
+                "placeholders": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/SubjectTemplateFieldSettings"
+                    },
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                }
+            },
+            "propertyOrder": [
+                "placeholders"
+            ],
+            "type": "object"
         }
     },
-    "description": "Form component to create and edit resources represented by input fields.\n\nThe component supports submitting or reverting the form to the initial\nstate by specifying <button> element as child with the following name attribute:\n   - `reset` - revert form content to initial state;\n   - `submit` - persist form content as new or edited resource.\n\nThis functionality can be used to backup form data,\nto clone forms and to create multiple similar forms\nwithout read access to the repository:\n   - `load-state` - load file from disk;\n   - `save-state` - save file to disk.\n\n**Example**:\n```\n<semantic-form subject='http://exmaple.com/thing/foo' fields='{[...]}'>\n   <!-- all the children will be passed down to SemanticForm -->\n   <semantic-form-text-input for='person-name'></semantic-form-text-input>\n   <div style='color: blue;'>\n     <semantic-form-datetime-input for='event-date'>\n     </semantic-form-datetime-input>\n   </div>\n   <!-- Button's onClick handler binds by 'name' attribute -->\n   <semantic-form-errors></semantic-form-errors>\n   <button name='reset' type='button' class='btn btn-secondary'>Reset</button>\n   <button name='submit' type='button' class='btn btn-primary'>Submit</button>\n   <button name='load-state' type='button' class='btn btn-info'>Load to file</button>\n   <button name='save-state' type='button' class='btn btn-info'>Save to file</button>\n</semantic-form>\n```\n\n**Example**:\n```\n<!-- enable storing and recovering intermediate inputs from client persistence layer -->\n<semantic-form\n   subject='http://exmaple.com/thing/foo'\n   fields='{[...]}'\n   browser-persistence=true>\n   <semantic-form-recover-notification></semantic-form-recover-notification>\n   <!-- ... -->\n</semantic-form>\n```\n\n**Example**:\n```\n<!-- custom form identifier for client persistence when\n      using multiple forms on the same page -->\n<semantic-form\n   subject='http://exmaple.com/thing/foo'\n   fields='{[...]}'\n   browser-persistence=true\n   form-id='form123'>\n   <semantic-form-recover-notification></semantic-form-recover-notification>\n   <!-- ... -->\n</semantic-form>\n```",
+    "description": "Form component to create and edit resources represented by input fields.",
     "patternProperties": {
         "^urlqueryparam": {
             "type": "string"
@@ -430,18 +574,35 @@
             "type": "string"
         },
         "newSubjectTemplate": {
-            "description": "URI template to customize subject generation.\n\nThe template allows to reference form values, e.g if there is field ABC that uniquely\nidentify record, we can specify subject template as `http://example.com/records/{{ABC}}`,\nwhere `{{ABC}}` will be substituted with value of the field ABC.\n\n`{{UUID}}` placeholder allows to substitute a random UUID.\n\n`new-subject-template` for composite-input can be a relative IRI.\nIf it's set as '.' the IRI will be equal to the parent form IRI.",
+            "description": "IRI template to customize subject generation.\n\nThe template allows to reference form values, e.g if there is field ABC that uniquely\nidentify record, we can specify subject template as `http://example.com/records/{{ABC}}`,\nwhere `{{ABC}}` will be substituted with value of the field ABC.\n\n`{{UUID}}` placeholder allows to substitute a random UUID.\n\n`new-subject-template` for composite-input can be a relative IRI.\nIf it's set as '.' the IRI will be equal to the parent form IRI.",
             "type": "string"
         },
+        "newSubjectTemplateSettings": {
+            "$ref": "#/definitions/SubjectTemplateSettings",
+            "description": "Settings to customize how new-subject-template will be generated.\n\nAllows to define configurations for individual fields.\n\n**Example**: omit all non-(letter, digit or underscore) characters\nin the value of field `myFieldName`:\n```\nnew-subject-template-settings='{\n   \"placeholders\": {\n     \"myFieldName\": {\n       \"disallowRegex\": \"[^a-zA-Z0-9_]\",\n       \"replaceCharacter\": \"\"\n     }\n   }\n}'\n```"
+        },
         "persistence": {
-            "default": "ldp",
-            "description": "Persistence and operation mode to use for creating and modifying data.\nBoth modes require dedicated ACL permissions.\n\nIn `ldp` mode, all generated statements for a form subject are being stored into\na dedicated LDP container and as such can easily be updated or even reverted and\nhave provenance information attached.\nHowever, `ldp` requires to enable quads mode in the graph database.\n\nIn the `sparql` mode no provenance can be captured.",
-            "enum": [
-                "client-side-sparql",
-                "ldp",
-                "sparql"
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/LdpPersistenceConfig"
+                },
+                {
+                    "$ref": "#/definitions/RawSparqlPersistenceConfig"
+                },
+                {
+                    "$ref": "#/definitions/SparqlPersistenceConfig"
+                },
+                {
+                    "enum": [
+                        "client-side-sparql",
+                        "ldp",
+                        "sparql"
+                    ],
+                    "type": "string"
+                }
             ],
-            "type": "string"
+            "default": "ldp",
+            "description": "Persistence and operation mode to use for creating and modifying data.\nAll modes require dedicated ACL permissions.\n\nIn `ldp` mode, all generated statements for a form subject are being stored into\na dedicated LDP container and as such can easily be updated or even reverted and\nhave provenance information attached.\n\nIn the `sparql` mode statements about the subject are created through the defined\nSPARQL update patterns. This allows more control over how data is accessed and\npersisted (for instance w.r.t. handling of named graphs). Note that provenance information\nis not captured automatically, but can be added manually as part of the query patterns."
         },
         "postAction": {
             "anyOf": [
@@ -481,6 +642,7 @@
         "fieldDependencies",
         "subject",
         "newSubjectTemplate",
+        "newSubjectTemplateSettings",
         "id",
         "formId",
         "browserPersistence",

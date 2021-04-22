@@ -43,7 +43,7 @@ module.exports = function (config) {
         watched: false,
         served: true
       },
-      ...defaults.TEST_DIRS.map(testDir => ({
+      ...defaults.TEST_DIRS.map(testDir => /** @type {import('karma').FilePattern} */ ({
         pattern: testDir + '/**/*.test.ts',
         watched: false,
         included: true,

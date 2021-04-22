@@ -63,6 +63,7 @@ import org.eclipse.rdf4j.repository.Repository;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.PropertyPattern;
@@ -142,7 +143,8 @@ public abstract class LiteralCache extends ResourcePropertyCache<LiteralCacheKey
         }
 
         Map<LiteralCacheKey, Optional<Literal>> res = Maps.newConcurrentMap();
-        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads,
+                new ThreadFactoryBuilder().setNameFormat("resource-fetch-%d").build());
         try {
             StreamSupport.stream(Iterables.partition(keys, batchSize).spliterator(), false).forEach(batch -> {
                 executorService.execute(() -> res.putAll(queryAllBatched(repository, batch)));

@@ -68,6 +68,7 @@ export interface OverlayDialogProps extends ReactBootstrap.ModalDialogProps {
   className?: string;
   show?: boolean;
   bsSize?: 'lg' | 'large' | 'sm' | 'small';
+  enforceFocus?: boolean;
 }
 
 export const OverlayDialog: SFC<OverlayDialogProps> = (props: OverlayDialogProps) => {
@@ -123,10 +124,12 @@ interface OverlayComponentConfig {
   title: string;
   /**
    * Overlay type:
-   *   - `dialog` will be small;
    *   - `lightbox` will span over all space;
+   *   - `modal` modal dialog with customizable size using `bs-size`;
+   *
+   * @default "modal"
    */
-  type?: 'dialog' | 'lightbox';
+  type?: 'lightbox' | 'modal';
   /**
    * What dialog css class to use.
    *
@@ -143,6 +146,12 @@ interface OverlayComponentConfig {
    * and `300px` when `bsSize` is equal to `sm` or `small`.
    */
   bsSize?: 'lg' | 'large' | 'sm' | 'small';
+  /**
+   * Whether to enforce focus to stay within the dialog.
+   *
+   * @default true
+   */
+  enforceFocus?: boolean;
 }
 
 export type OverlayComponentProps = OverlayComponentConfig;
@@ -172,6 +181,7 @@ export class OverlayComponent extends Component<OverlayComponentProps, {}> {
             onHide: () => getOverlaySystem().hide(this.props.title),
             children: bodyChild,
             bsSize: getModalSize(this.props.bsSize),
+            enforceFocus: this.props.enforceFocus,
           })
         );
       },
@@ -191,7 +201,7 @@ const getModalSize = (size: string): 'sm' | 'lg' => {
     default:
       return size as any;
   }
-}
+};
 
 
 export default OverlayComponent;

@@ -71,10 +71,10 @@ import com.metaphacts.cache.ResourcePropertyCache;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.config.PropertyPattern;
-import com.metaphacts.config.groups.UIConfiguration;
 import com.metaphacts.services.fields.FieldDefinition;
 import com.metaphacts.services.fields.FieldDefinitionGeneratorChain;
 import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.vocabulary.DASH;
 
 /**
  * Default implementation of the ResourceDescriptionService.
@@ -95,64 +95,47 @@ public class DefaultResourceDescriptionService extends AbstractCachingDescriptio
 
     protected final NamespaceRegistry namespaceRegistry;
     protected final LabelService labelService;
-
     protected final DescriptionRenderer descriptionRenderer;
 
-    protected final DescriptionPropertiesProvider descriptionPropertiesProvider;
     protected final FieldDefinitionGeneratorChain fieldDefinitionGeneratorChain;
-    protected final TypeService typeService;
 
 
     @Inject
     public DefaultResourceDescriptionService(Configuration config, CacheManager cacheManager,
             PlatformStorage platformStorage, NamespaceRegistry namespaceRegistry,
             FieldDefinitionGeneratorChain fieldDefinitionGeneratorChain,
-            DescriptionPropertiesProvider descriptionPropertiesProvider,
             DescriptionRenderer descriptionRenderer,
-            ResourceDescriptionCacheHolder labelService, TypeService typeService) {
-        super(config, cacheManager);
+            ResourceDescriptionCacheHolder labelService, ModelService modelService) {
+        super(config, cacheManager, modelService);
         this.namespaceRegistry = namespaceRegistry;
         this.fieldDefinitionGeneratorChain = fieldDefinitionGeneratorChain;
-        this.descriptionPropertiesProvider = descriptionPropertiesProvider;
         // note: as upstream LabelCache we only want the one fetching data from
         // preferredLabels config property, not the generic, delegating one, as that
         // would lead to initialization loops!
         this.labelService = labelService;
-        this.typeService = typeService;
         this.descriptionRenderer = descriptionRenderer;
-    }
-
-    @Override
-    protected Optional<TypeDescription> lookupTypeDescription(Repository repository, IRI typeIRI) {
-        Optional<List<PropertyDescription>> descriptionProperties = descriptionPropertiesProvider
-                .getDescriptionProperties(repository, typeIRI);
-
-        // @formatter:off
-        DefaultTypeDescription typeDescription = new DefaultTypeDescription(typeIRI)
-                .withDescriptionProperties(descriptionProperties.orElse(null))
-                .withTypeLabel(LabelService.resolveLabelWithFallback(labelService.getLabel(typeIRI, repository, UIConfiguration.DEFAULT_LANGUAGE), typeIRI));
-
-        return Optional.of(typeDescription);
     }
 
     @Override
     protected Optional<ResourceDescription> lookupResourceDescription(Repository repository, LiteralCacheKey cacheKey) {
         IRI instanceIRI = cacheKey.getIri();
-        return getTypeDescriptionForInstance(repository, instanceIRI).flatMap(
+        return modelService.getTypeDescriptionForInstance(repository, instanceIRI).flatMap(
                 typeDescription -> createResourceDescription(repository, typeDescription, instanceIRI, cacheKey));
     }
 
     protected Optional<ResourceDescription> createResourceDescription(Repository repository,
             TypeDescription typeDescription, IRI resource, LiteralCacheKey cacheKey) {
-        // we express the first specified language in the description but use all
-        // preferred languages for resolving the actual label/literals
-        Literal languageTag = literal(cacheKey.getLanguageTag());
-        String preferredLanguage = StringUtils.join(cacheKey.getPreferredLanguages(), ",");
-
         // return early if we do not have a template to create the description string
         if (!descriptionRenderer.canRenderDescription(typeDescription.getTypeIRI())) {
             return Optional.empty();
         }
+
+        logger.trace("Creating resource description for {} (type {})", resource, typeDescription.getTypeIRI());
+
+        // we express the first specified language in the description but use all
+        // preferred languages for resolving the actual label/literals
+        Literal languageTag = literal(cacheKey.getLanguageTag());
+        String preferredLanguage = StringUtils.join(cacheKey.getPreferredLanguages(), ",");
 
         // @formatter:off
         return Optional.of(new DefaultResourceDescription(resource)
@@ -177,12 +160,6 @@ public class DefaultResourceDescriptionService extends AbstractCachingDescriptio
         return descriptionRenderer.renderTemplate(instanceDescription, repository, preferredLanguage);
     }
 
-    protected List<PropertyValue> getDescriptionProperties(Repository repository, ResourceDescription instanceDescription,
-            Literal languageTag) {
-        return getDescriptionProperties(repository, instanceDescription.getTypeDescription(),
-                instanceDescription.getResource(), languageTag);
-    }
-
     protected List<PropertyValue> getDescriptionProperties(Repository repository, TypeDescription typeDescription,
             Resource resource, Literal languageTag) {
         if (!(resource instanceof IRI)) {
@@ -191,8 +168,10 @@ public class DefaultResourceDescriptionService extends AbstractCachingDescriptio
         IRI instanceIRI = (IRI) resource;
         List<PropertyValue> propertyValues = new ArrayList<>();
         // fetch data for all description properties
-        List<PropertyDescription> descriptionProperties = typeDescription.getDescriptionProperties();
+        List<PropertyDescription> descriptionProperties = typeDescription.getPropertiesForRole(DASH.DescriptionRole)
+                .orElse(Collections.emptyList());
         for (PropertyDescription property : descriptionProperties) {
+            logger.trace("Get or create a FieldDefinition for the property {}", property);
             // get or create a FieldDefinition for the property
             Optional<List<Value>> values = getFieldDefinition(property.getPropertyIRI())
                     .flatMap(fieldDefinition -> fetchValues(instanceIRI, repository, fieldDefinition, languageTag));
@@ -294,13 +273,8 @@ public class DefaultResourceDescriptionService extends AbstractCachingDescriptio
     @Override
     protected boolean canProvideDescription(IRI resourceIri, Repository repository) {
         // check whether we have a description template for this resource's primary type
-        return getPrimaryInstanceType(repository, resourceIri)
+        return modelService.getPrimaryInstanceType(repository, resourceIri)
                 .map(typeIRI -> descriptionRenderer.canRenderDescription(typeIRI)).orElse(false);
-    }
-
-    @Override
-    protected TypeService getTypeService() {
-        return typeService;
     }
 
     /**

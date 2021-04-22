@@ -65,6 +65,7 @@ import com.metaphacts.cache.DelegatingLabelService;
 import com.metaphacts.cache.DescriptionService;
 import com.metaphacts.cache.ExternalLabelDescriptionService;
 import com.metaphacts.cache.LabelService;
+import com.metaphacts.cache.LookupBasedResourceInformationService;
 import com.metaphacts.cache.ResourceDescriptionCache;
 import com.metaphacts.cache.ResourceDescriptionCacheHolder;
 import com.metaphacts.cache.TemplateIncludeCache;
@@ -81,13 +82,15 @@ import com.metaphacts.plugin.PlatformPluginManager;
 import com.metaphacts.querycatalog.QueryCatalogRESTServiceRegistry;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.repository.RepositoryManagerInterface;
+import com.metaphacts.resource.DefaultModelService;
 import com.metaphacts.resource.DefaultResourceDescriptionService;
-import com.metaphacts.resource.DelegatingDescriptionPropertiesProvider;
 import com.metaphacts.resource.DelegatingDescriptionRenderer;
+import com.metaphacts.resource.DelegatingTypePropertyProvider;
 import com.metaphacts.resource.DelegatingTypeService;
-import com.metaphacts.resource.DescriptionPropertiesProvider;
 import com.metaphacts.resource.DescriptionRenderer;
+import com.metaphacts.resource.ModelService;
 import com.metaphacts.resource.ResourceDescriptionService;
+import com.metaphacts.resource.TypePropertyProvider;
 import com.metaphacts.resource.TypeService;
 import com.metaphacts.secrets.DefaultSecretsStore;
 import com.metaphacts.secrets.SecretResolver;
@@ -146,9 +149,12 @@ public class MetaphactsGuiceTestModule extends AbstractModule {
         bind(QueryCatalogRESTServiceRegistry.class).in(TestSingleton.class);
         bind(CacheManager.class).in(TestSingleton.class);
         bind(ExternalLabelDescriptionService.class).in(TestSingleton.class);
+        bind(LookupBasedResourceInformationService.class).in(TestSingleton.class);
         bind(ResourceDescriptionCacheHolder.class).in(TestSingleton.class);
         bind(LabelService.class).to(DelegatingLabelService.class).in(TestSingleton.class);
         bind(DescriptionService.class).to(DelegatingDescriptionService.class).in(TestSingleton.class);
+        bind(DefaultModelService.class).in(TestSingleton.class);
+        bind(ModelService.class).to(DefaultModelService.class).in(TestSingleton.class);
         bind(DefaultResourceDescriptionService.class).in(TestSingleton.class);
         bind(ResourceDescriptionService.class).to(DefaultResourceDescriptionService.class).in(TestSingleton.class);
         bind(ResourceDescriptionCache.class).in(TestSingleton.class);
@@ -177,9 +183,14 @@ public class MetaphactsGuiceTestModule extends AbstractModule {
     @TestSingleton
     public DelegatingLabelService getLabelService(
         ResourceDescriptionCacheHolder descriptionCacheHolder,
-        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder
+        ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder,
+        LookupBasedResourceInformationService lookupBasedLabelService
     ) {
-        final List<LabelService> labelServices = Arrays.asList(descriptionCacheHolder, lookupCandidateDescriptionCacheHolder);
+        final List<LabelService> labelServices = Arrays.asList(
+            descriptionCacheHolder,
+            lookupCandidateDescriptionCacheHolder,
+            lookupBasedLabelService
+        );
         return new DelegatingLabelService(labelServices);
     }
 
@@ -189,38 +200,43 @@ public class MetaphactsGuiceTestModule extends AbstractModule {
     public DelegatingDescriptionService getDescriptionService(
         ResourceDescriptionCacheHolder descriptionCacheHolder,
         ExternalLabelDescriptionService lookupCandidateDescriptionCacheHolder,
-        ResourceDescriptionCache resourceDescriptionCache
+        ResourceDescriptionCache resourceDescriptionCache,
+        LookupBasedResourceInformationService lookupBasedDescriptionService
     ) {
-        final List<DescriptionService> descriptionServices = Arrays.asList(resourceDescriptionCache,
-                descriptionCacheHolder,
-                lookupCandidateDescriptionCacheHolder);
+        final List<DescriptionService> descriptionServices = Arrays.asList(
+            resourceDescriptionCache,
+            descriptionCacheHolder,
+            lookupCandidateDescriptionCacheHolder,
+            lookupBasedDescriptionService
+        );
         return new DelegatingDescriptionService(descriptionServices);
     }
 
     @Inject
     @Provides
     @TestSingleton
-    public TypeService getTypeService(PlatformPluginManager platformPluginManager) {
-        List<TypeService> delegates = MainGuiceModule.loadServiceInstancesIncludingApps(platformPluginManager,
-                TypeService.class);
-        if (delegates.size() == 1) {
-            // if there's only one instance, return that directly
-            return delegates.get(0);
-        }
+    public TypeService getTypeService(
+        PlatformPluginManager platformPluginManager,
+        LookupBasedResourceInformationService lookupBasedResourceInformationService
+    ) {
+        List<TypeService> delegates = MainGuiceModule.loadServiceInstancesIncludingApps(
+            platformPluginManager, TypeService.class
+        );
+        delegates.add(lookupBasedResourceInformationService);
         return new DelegatingTypeService(delegates);
     }
 
     @Inject
     @Provides
     @TestSingleton
-    public DescriptionPropertiesProvider getDescriptionPropertiesProvider(PlatformPluginManager platformPluginManager) {
-        List<DescriptionPropertiesProvider> delegates = MainGuiceModule
-                .loadServiceInstancesIncludingApps(platformPluginManager, DescriptionPropertiesProvider.class);
+    public TypePropertyProvider getTypePropertyProvider(PlatformPluginManager platformPluginManager) {
+        List<TypePropertyProvider> delegates = MainGuiceModule.loadServiceInstancesIncludingApps(platformPluginManager,
+                TypePropertyProvider.class);
         if (delegates.size() == 1) {
             // if there's only one instance, return that directly
             return delegates.get(0);
         }
-        return new DelegatingDescriptionPropertiesProvider(delegates);
+        return new DelegatingTypePropertyProvider(delegates);
     }
 
     @Inject
@@ -257,7 +273,7 @@ public class MetaphactsGuiceTestModule extends AbstractModule {
 
         // hard-code FieldDefinitionManager as the first generator to use.
         generators.add(0, fdManager);
-        
+
         return new SimpleFieldDefinitionGeneratorChain(generators, cacheManager, config);
     }
 

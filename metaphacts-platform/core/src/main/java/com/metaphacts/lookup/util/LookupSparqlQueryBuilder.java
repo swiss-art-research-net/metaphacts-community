@@ -75,7 +75,7 @@ import com.metaphacts.util.LanguageHelper;
  * <code>
  * SELECT
  *     ?candidate
- *     (GROUP_CONCAT(DISTINCT ?type ; separator=",") as ?types)
+ *     (GROUP_CONCAT(DISTINCT STR(?type) ; separator=",") as ?types)
  *     (MAX(?score_private) as ?score)
  * WHERE {
  *     {{type_block}}
@@ -163,7 +163,7 @@ public class LookupSparqlQueryBuilder {
             // query template
             "SELECT\n"
              + SUBJECT_BINDING_VARIABLE + "\n"
-             + "(GROUP_CONCAT(DISTINCT ?type ; separator=\",\") as " + TYPES_BINDING_VARIABLE + ")\n"
+             + "(GROUP_CONCAT(DISTINCT STR(?type) ; separator=\",\") as " + TYPES_BINDING_VARIABLE + ")\n"
              + "(MAX(?score_private) as " + SCORE_BINDING_VARIABLE + ")\n"
              + "WHERE {\n"
              +     TYPE_BLOCK_PLACEHOLDER

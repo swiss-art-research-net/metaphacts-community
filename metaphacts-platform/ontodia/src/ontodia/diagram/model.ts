@@ -115,11 +115,25 @@ export class DiagramModel {
 
     sourceOf(link: Link) { return this.getElement(link.sourceId); }
     targetOf(link: Link) { return this.getElement(link.targetId); }
-    isSourceAndTargetVisible(link: Link): boolean {
-        return Boolean(this.sourceOf(link) && this.targetOf(link));
+
+    isLinkVisible(link: Link): boolean {
+        const linkType = this.getLinkType(link.typeId);
+        return Boolean(
+            this.sourceOf(link) &&
+            this.targetOf(link) &&
+            linkType && linkType.visible
+        );
     }
 
-    resetGraph() {
+    getPresentLinkTypes(): LinkType[] {
+        const typeIris = new Set<LinkTypeIri>();
+        for (const link of this.links) {
+            typeIris.add(link.typeId);
+        }
+        return Array.from(typeIris, iri => this.getLinkType(iri)!);
+    }
+
+    protected resetGraph() {
         if (this.graphListener) {
             this.graphListener.stopListening();
             this.graphListener = new EventObserver();
@@ -127,7 +141,7 @@ export class DiagramModel {
         this.graph = new Graph();
     }
 
-    subscribeGraph() {
+    protected subscribeGraph() {
         this.graphListener.listen(this.graph.events, 'changeCells', e => {
             this.source.trigger('changeCells', e);
         });
@@ -197,10 +211,11 @@ export class DiagramModel {
             return existingLink;
         }
 
-        const linkType = this.createLinkType(data.linkTypeId);
+        this.createLinkType(data.linkTypeId);
+
         const source = this.getElement(sourceId);
         const target = this.getElement(targetId);
-        if (!(linkType.visible && source && target)) {
+        if (!(source && target)) {
             // link is invisible
             return undefined;
         }

@@ -1,11 +1,11 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "ES2017",
         "module": "commonjs",
         "jsx": "react",
         "lib": [
-            "dom",
-            "es2015"
+            "DOM",
+            "ES2017"
         ],
         "importHelpers": true,
         "strict": true,

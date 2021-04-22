@@ -47,7 +47,7 @@ import {
 import { Rdf } from 'platform/api/rdf';
 
 import {
-  CompositeValue, EmptyValue, FieldState, FieldValue, FieldError, queryValues,
+  CompositeValue, AtomicValue, EmptyValue, FieldState, FieldValue, FieldError, queryValues,
 } from 'platform/components/forms';
 
 import { EntityMetadata, LinkMetadata, isObjectProperty } from './FieldConfigurationCommon';
@@ -125,6 +125,20 @@ export function convertElementModelToCompositeValue(
     subject: Rdf.iri(model.id),
     definitions: metadata.fieldByIri,
     fields,
+  });
+}
+
+export function convertElementModelToAtomicValue(
+  model: ElementModel,
+  metadata: EntityMetadata
+): AtomicValue {
+  const labels = convertPropertyToFieldValues(model.label);
+  const singleLabel = FieldValue.getSingle(labels);
+  return FieldValue.fromLabeled({
+    value: Rdf.iri(model.id),
+    label: FieldValue.isAtomic(singleLabel)
+      ? singleLabel.value.value
+      : undefined,
   });
 }
 

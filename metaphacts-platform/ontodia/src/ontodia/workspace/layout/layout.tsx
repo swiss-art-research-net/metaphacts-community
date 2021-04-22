@@ -39,6 +39,8 @@
  */
 import * as React from 'react';
 
+import { isValidChild, componentHasType } from '../../viewUtils/react';
+
 import { Accordion } from '../accordion';
 import { AccordionItem, AccordionItemProps, DockSide } from '../accordionItem';
 
@@ -84,8 +86,8 @@ export class WorkspaceLayout extends React.Component<WorkspaceLayoutProps, {}> {
         animationDuration?: number;
     }) {
         const {horizontalCollapsedSize, verticalCollapsedSize, _onResize} = this.props;
-        const items = React.Children.map(children, (child, index) => {
-            if (typeof child !== 'object') { return undefined; }
+        const items = React.Children.toArray(children).map((child, index) => {
+            if (!isValidChild(child)) { return undefined; }
             let dockSide: DockSide | undefined;
             if (direction === 'horizontal' && !child.props.undocked) {
                 if (index === 0) {
@@ -101,8 +103,9 @@ export class WorkspaceLayout extends React.Component<WorkspaceLayoutProps, {}> {
                     : verticalCollapsedSize;
             }
             return (
-                <AccordionItem key={child.type === WorkspaceItem ? child.props.id : index}
-                    heading={child.type === WorkspaceItem ? child.props.heading : undefined}
+                <AccordionItem
+                    key={componentHasType(child, WorkspaceItem) ? child.props.id : index}
+                    heading={componentHasType(child, WorkspaceItem) ? child.props.heading : undefined}
                     dockSide={dockSide}
                     defaultSize={child.props.defaultSize}
                     defaultCollapsed={child.props.defaultCollapsed}
@@ -126,22 +129,22 @@ export class WorkspaceLayout extends React.Component<WorkspaceLayoutProps, {}> {
     }
 
     private renderLayout(layout: React.ReactElement<WorkspaceLayoutNodeProps>) {
-        if (layout.type === WorkspaceRow) {
+        if (componentHasType(layout, WorkspaceRow)) {
             return this.renderAccordion({
                 children: layout.props.children,
                 direction: 'horizontal',
-                animationDuration: (layout.props as WorkspaceContainerProps).animationDuration,
+                animationDuration: layout.props.animationDuration,
             });
         }
-        if (layout.type === WorkspaceColumn) {
+        if (componentHasType(layout, WorkspaceColumn)) {
             return this.renderAccordion({
                 children: layout.props.children,
                 direction: 'vertical',
-                animationDuration: (layout.props as WorkspaceContainerProps).animationDuration,
+                animationDuration: layout.props.animationDuration,
             });
         }
-        if (layout.type === WorkspaceItem) {
-            return (layout.props as WorkspaceItemProps).children;
+        if (componentHasType(layout, WorkspaceItem)) {
+            return layout.props.children;
         }
         return null;
     }

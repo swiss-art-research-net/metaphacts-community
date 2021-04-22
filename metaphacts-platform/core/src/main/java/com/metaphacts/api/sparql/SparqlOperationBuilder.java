@@ -43,6 +43,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
+
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,6 +53,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.util.Values;
 import org.eclipse.rdf4j.query.Dataset;
 import org.eclipse.rdf4j.query.MalformedQueryException;
 import org.eclipse.rdf4j.query.Operation;
@@ -60,6 +64,8 @@ import org.eclipse.rdf4j.repository.RepositoryException;
 
 import com.google.common.collect.Maps;
 import com.metaphacts.api.sparql.SparqlUtil.SparqlOperation;
+import com.metaphacts.config.groups.UIConfiguration;
+import com.metaphacts.servlet.SparqlServlet;
 
 
 /**
@@ -76,6 +82,8 @@ public class SparqlOperationBuilder<T extends Operation> {
     private Resource thisResource;
     private Resource userURI;
     private String baseURI;
+    @NotNull
+    private Supplier<String> userPreferredLanguage;
     private Map<String,Value> bindings;
     private Dataset dataset;
     private Boolean includeInferred = false;
@@ -88,6 +96,8 @@ public class SparqlOperationBuilder<T extends Operation> {
         this.queryString = queryString;
         this.bindings = Maps.newHashMap();
         this.clazz = clazz;
+        // fallback for worst case
+        this.userPreferredLanguage = () -> UIConfiguration.DEFAULT_LANGUAGE;
     }
 
     public static <T extends Operation> SparqlOperationBuilder<T> create(String queryString, Class<? extends Operation> clazz) {
@@ -206,9 +216,59 @@ public class SparqlOperationBuilder<T extends Operation> {
     }
     
     /**
+     * Resolve the user preferred language as
+     * {@link SparqlMagicVariables#USER_PREFERRED_LANGUAGE}
+     * 
+     * <p>
+     * If <code>null</code> is being passed as language, the value is ignored and
+     * not set to this builder.
+     * </p>
+     * 
+     * @param userPreferredLanguage the non-null user preferred language. This
+     *                              string is a single language tag (e.g. en or de)
+     * @return
+     */
+    public SparqlOperationBuilder<T> resolveUserPreferredLanguage(String userPreferredLanguage) {
+        if (userPreferredLanguage == null) {
+            return this; // no-op
+        }
+        this.userPreferredLanguage = () -> userPreferredLanguage;
+        return this;
+    }
+
+    /**
+     * Resolve the user preferred language as
+     * {@link SparqlMagicVariables#USER_PREFERRED_LANGUAGE}
+     * 
+     * <p>
+     * This method can be used for lazy computation of the user preferred language,
+     * i.e. when it is actually used inside a query.
+     * </p>
+     * 
+     * <p>
+     * If <code>null</code> is being passed as language, the value is ignored and
+     * not set to this builder.
+     * </p>
+     * 
+     * @param userPreferredLanguage the {@link Supplier} for a non-null user
+     *                              preferred language. The supplier must produce a
+     *                              non-null string representing a single language
+     *                              tag (e.g. en or de)
+     * @return
+     */
+    public SparqlOperationBuilder<T> resolveUserPreferredLanguage(Supplier<String> userPreferredLanguage) {
+        if (userPreferredLanguage == null) {
+            return this; // no-op
+        }
+        this.userPreferredLanguage = userPreferredLanguage;
+        return this;
+    }
+
+
+    /**
      * Syntactic replacement of legacy parameters:
      * <ul>
-     *  <li> <b>??</b> - for the current resource</li>
+     * <li><b>??</b> - for the current resource</li>
      * </ul>
      */
     private void replaceLegacyParameters() {
@@ -281,6 +341,12 @@ public class SparqlOperationBuilder<T extends Operation> {
         if (this.queryString.contains(SparqlMagicVariables.THIS) && this.thisResource != null) {
             op.setBinding(SparqlMagicVariables.THIS, thisResource);
         }
+        if (this.queryString.contains(SparqlMagicVariables.USER_PREFERRED_LANGUAGE)
+                && this.userPreferredLanguage != null) {
+            // Note: lazy retrieval through supplier only if used in a query
+            String _userPreferredLanguage = this.userPreferredLanguage.get();
+            op.setBinding(SparqlMagicVariables.USER_PREFERRED_LANGUAGE, Values.literal(_userPreferredLanguage));
+        }
         return cast(op,this.clazz, type);
     }
     
@@ -305,6 +371,27 @@ public class SparqlOperationBuilder<T extends Operation> {
     public static class SparqlMagicVariables {
         public static final String USERURI = "__useruri__";
         public static final String THIS = "__this__";
+        /**
+         * Magic variable for the user preferred language tag (e.g. de, en).
+         * 
+         * <p>
+         * Users can expect this variable to be always bound (if not explicitly provided
+         * than using a fallback).
+         * </p>
+         * <p>
+         * In case the query is executed through the {@link SparqlServlet} and the
+         * client sends the preferred language as header, it is made available as
+         * binding for this variable.
+         * </p>
+         * 
+         * <p>
+         * Note: this magic variable is explicitly not populated with fallback values,
+         * i.e. if multiple language tags are provided as input, the binding is resolved
+         * to the first language tag.
+         * </p>
+         * </p>
+         */
+        public static final String USER_PREFERRED_LANGUAGE = "__userPreferredLanguage__";
     }
 
 

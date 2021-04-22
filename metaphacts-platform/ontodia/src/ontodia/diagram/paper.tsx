@@ -149,7 +149,7 @@ export interface PaperTransform {
     paddingY: number;
 }
 
-export interface TransformedSvgCanvasProps extends React.HTMLProps<SVGSVGElement> {
+export interface TransformedSvgCanvasProps extends React.SVGProps<SVGSVGElement> {
     paperTransform: PaperTransform;
 }
 

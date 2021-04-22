@@ -50,7 +50,11 @@ export function canonicalizeBlanks(
 ): HashMap<Rdf.BlankNode, Rdf.BlankNode> {
     // tslint:disable-next-line: no-bitwise
     const dataset = makeIndexedDataset(IndexQuadBy.S | IndexQuadBy.O);
-    dataset.addAll(quads);
+    for (const q of quads) {
+        if (q.subject.termType === 'BlankNode' || q.object.termType === 'BlankNode') {
+            dataset.add(q);
+        }
+    }
 
     const finder = new BlankSplitFinder(dataset);
 
@@ -117,7 +121,7 @@ export class BlankSplitFinder {
             }
         }
 
-        return this.connectedSplitSet.iterateMatches(null, null, null);
+        return Array.from(this.connectedSplitSet);
     }
 }
 

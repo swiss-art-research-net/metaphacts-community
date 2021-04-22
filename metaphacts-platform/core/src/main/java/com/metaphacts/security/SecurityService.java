@@ -39,18 +39,36 @@
  */
 package com.metaphacts.security;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.subject.support.DelegatingSubject;
+import org.apache.shiro.util.ThreadContext;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.pac4j.core.profile.CommonProfile;
 
 import com.github.jknack.handlebars.Context;
 import com.github.jknack.handlebars.Handlebars;
@@ -71,23 +89,18 @@ import com.metaphacts.vocabulary.LDP;
 
 import io.buji.pac4j.subject.Pac4jPrincipal;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.subject.support.DelegatingSubject;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Model;
-import org.eclipse.rdf4j.rio.RDFFormat;
-import org.eclipse.rdf4j.rio.RDFParseException;
-import org.pac4j.core.profile.CommonProfile;
-
 /**
  * @author Denis Ostapenko
  * @author Artem Kozlov <ak@metaphacts.com>
  */
 @Singleton
 public class SecurityService {
+    
+    /**
+     * User ID for an unknown user
+     */
+    public static final String UNKNOWN_USER_NAME = "unknown";
+    
     private static final Logger logger = LogManager.getLogger(SecurityService.class);
 
     private final RioUtils rioUtils;
@@ -105,6 +118,7 @@ public class SecurityService {
         this.ns = ns;
     }
 
+    @SuppressWarnings("unused")
     public String renderUsersMetadataToTurtle(UserMetadataProvider userMetadataProvider) throws IOException {
         class UserMetadataGroupOpts {
             public String dn;
@@ -167,9 +181,25 @@ public class SecurityService {
         }
     }
     
+    /**
+     * Returns the current user from the current context.
+     * 
+     * <p>
+     * If there is no security manager registered in the current thread context,
+     * this method returns <i>unknown</i>
+     * </p>
+     * 
+     * <p>
+     * Note that exceptions due to invalid security environment setup are caught and
+     * logged. In such case the error is logged
+     * </p>
+     * 
+     * @return the current user's name or "unknown", never <code>null</code>
+     */
     public static String getUserName() {
-        Object subject = SecurityUtils.getSubject();
-        String userName = "unknown";
+        Object subject = getSubject().map(s -> (Object) s).orElse(UNKNOWN_USER_NAME);
+
+        String userName = UNKNOWN_USER_NAME;
         if (subject instanceof String) {
             userName = (String) subject;
         } else if (subject instanceof DelegatingSubject) {
@@ -182,10 +212,67 @@ public class SecurityService {
             }
         }
         if (StringUtils.isEmpty(userName)) {
-            userName = "unknown";
+            userName = UNKNOWN_USER_NAME;
         }
         return userName;
     }
+
+    /**
+     * Returns the {@link Subject} from the current context.
+     * 
+     * <p>
+     * If there is no security manager registered in the current thread context,
+     * this method returns {@link Optional#empty()}.
+     * </p>
+     * 
+     * <p>
+     * Note that exceptions due to invalid security environment setup are caught and
+     * logged. In such case the error is logged
+     * </p>
+     * 
+     * <p>
+     * Further note that if the {@link Subject} does not exist in the current
+     * context, it is created and bound to the current {@link ThreadContext}
+     * </p>
+     * 
+     * @return
+     * @see SecurityUtils#getSubject()
+     */
+    public static Optional<Subject> getSubject() {
+
+        try {
+            // try to obtain directly from the ThreadContext first, if any
+            // Note: this does not require a security manager and thus
+            // prevents misleading error messages in certain environments
+            Subject subject = ThreadContext.getSubject();
+            if (subject != null) {
+                return Optional.of(subject);
+            }
+
+            return Optional.ofNullable(SecurityUtils.getSubject());
+        } catch (Exception e) {
+
+            Level logLevel = Level.DEBUG;
+            if (!hasSecurityManagerRegistered()) {
+                // reduce log level if there is no security manager available
+                logLevel = Level.TRACE;
+            }
+            logger.log(logLevel, "Failed to obtain Shiro subject in current context: " + e.getMessage());
+            logger.trace("Details: ", e);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Allows to handle case where no security manager is available. This may for
+     * instance be in stand-alone setups (e.g. tests)
+     * 
+     * @return whether a security manager is registered
+     */
+    protected static boolean hasSecurityManagerRegistered() {
+        return ThreadContext.getSecurityManager() != null;
+    }
+
 
     /**
      * Return additional user attributes. 

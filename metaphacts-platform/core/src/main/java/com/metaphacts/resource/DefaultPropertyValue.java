@@ -70,12 +70,6 @@ public class DefaultPropertyValue implements PropertyValue {
         this.values = values;
     }
 
-    public DefaultPropertyValue(IRI instanceIRI, FieldDefinition fieldDefinition, List<Value> values) {
-        this(instanceIRI,
-                new DefaultPropertyDescription(fieldDefinition.getIri(), fieldDefinition.getIri().getLocalName()),
-                fieldDefinition, values);
-    }
-
     public IRI getInstanceIRI() {
         return instanceIRI;
     }

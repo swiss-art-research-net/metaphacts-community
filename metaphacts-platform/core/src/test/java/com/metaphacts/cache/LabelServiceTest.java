@@ -39,6 +39,10 @@
  */
 package com.metaphacts.cache;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -672,6 +676,27 @@ public class LabelServiceTest extends AbstractRepositoryBackedIntegrationTest {
         Optional<Literal> label = labelCache.getLabel(asIRI(IRI1), repositoryRule.getRepository(), null);
         Assert.assertTrue(label.isPresent());
         Assert.assertEquals(IRI1_LABEL_NOLANG, label.get().stringValue());
+    }
+
+    @Test
+    public void testNonExistingMultiValueCall() throws Exception {
+        LabelService labelCache = new DelegatingLabelService(Collections.emptyList());
+        // we do not provide any descriptions for any of those resources
+        IRI iri1 = asIRI(IRI1);
+        IRI iri2 = asIRI(IRI2);
+        IRI iri3 = asIRI(IRI3);
+        List<IRI> iris = List.of(iri1, iri2, iri3);
+        // fetch all labels at once
+        Map<IRI, Optional<Literal>> labels = labelCache.getLabels(iris,
+                repositoryRule.getRepository(), null);
+        assertNotNull(labels);
+        assertEquals("we should get a result for each fetched resource", iris.size(), labels.size());
+        assertNotNull("there should be a result for iri1", labels.get(iri1));
+        assertFalse("there should be no actual value for iri1", labels.get(iri1).isPresent());
+        assertNotNull("there should be a result for iri1", labels.get(iri2));
+        assertFalse("there should be no actual value for iri2", labels.get(iri2).isPresent());
+        assertNotNull("there should be a result for iri1", labels.get(iri3));
+        assertFalse("there should be no actual value for iri3", labels.get(iri3).isPresent());
     }
 
     @Test

@@ -45,6 +45,7 @@ import { DefaultLinkTemplateBundle } from '../customization/defaultLinkStyles';
 import { StandardTemplate, DefaultElementTemplateBundle } from '../customization/templates';
 
 import { ElementTypeIri, LinkTypeIri } from '../data/model';
+import { Debouncer } from '../viewUtils/async';
 import { Events, EventObserver, EventSource, PropertyChange } from '../viewUtils/events';
 
 import { Element, Link, LinkType } from './elements';
@@ -64,6 +65,7 @@ export enum RenderingLayer {
     Element = 1,
     ElementSize,
     PaperArea,
+    LinkRouting,
     Link,
     Editor,
 
@@ -86,6 +88,8 @@ export class RenderingState implements SizeProvider {
     private readonly source = new EventSource<RenderingStateEvents>();
     readonly events: Events<RenderingStateEvents> = this.source;
 
+    private readonly delayedRouteLinks = new Debouncer();
+
     private readonly model: DiagramModel;
     private readonly router: LinkRouter;
     private readonly resolveLinkTemplate: LinkTemplateResolver;
@@ -105,6 +109,11 @@ export class RenderingState implements SizeProvider {
         this.initRouting();
     }
 
+    dispose() {
+        this.listener.stopListening();
+        this.delayedRouteLinks.dispose();
+    }
+
     performSyncUpdate() {
         for (let layer = RenderingLayer.FirstToUpdate; layer <= RenderingLayer.LastToUpdate; layer++) {
             this.source.trigger('syncUpdate', {layer});
@@ -112,22 +121,33 @@ export class RenderingState implements SizeProvider {
     }
 
     private initRouting() {
-        this.updateRoutings();
+        this.updateRoutings(true);
+        this.listener.listen(this.events, 'syncUpdate', ({layer}) => {
+            if (layer === RenderingLayer.LinkRouting) {
+                this.delayedRouteLinks.runSynchronously();
+            }
+        });
 
-        this.listener.listen(this.model.events, 'changeCells', () =>  this.updateRoutings());
+        this.listener.listen(this.model.events, 'changeCells', e => {
+            this.scheduleRouteLinks();
+        });
         this.listener.listen(this.model.events, 'linkEvent', ({key, data}) => {
             if (data.changeVertices) {
-                this.updateRoutings();
+                this.scheduleRouteLinks();
             }
         });
         this.listener.listen(this.model.events, 'elementEvent', ({key, data}) => {
             if (data.changePosition) {
-                this.updateRoutings();
+                this.scheduleRouteLinks();
             }
         });
     }
 
-    private updateRoutings() {
+    private scheduleRouteLinks() {
+        this.delayedRouteLinks.call(this.updateRoutings);
+    }
+
+    private updateRoutings = (silent?: boolean) => {
         const previousRoutes = this.routings;
         const computedRoutes = this.router.route(this.model, this);
         previousRoutes.forEach((previous, linkId) => {
@@ -139,7 +159,9 @@ export class RenderingState implements SizeProvider {
             }
         });
         this.routings = computedRoutes;
-        this.source.trigger('updateRoutings', {source: this, previous: previousRoutes});
+        if (!silent) {
+            this.source.trigger('updateRoutings', {source: this, previous: previousRoutes});
+        }
     }
 
     getRoutings() {
@@ -162,8 +184,8 @@ export class RenderingState implements SizeProvider {
         );
         if (same) { return; }
         this.elementSizes.set(element, size);
+        this.scheduleRouteLinks();
         this.source.trigger('changeElementSize', {source: element, previous});
-        this.updateRoutings();
     }
 
     getLinkLabelBounds(link: Link) {

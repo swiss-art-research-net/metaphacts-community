@@ -120,7 +120,9 @@ export class RepositoryManager extends Component<{}, State> {
     if (!repositories) {
         return <Spinner/>;
     }
-    const rows = repositories.map( (status, id) => {
+    const rows = repositories
+      .sortBy((status, id) => id.toLowerCase())
+      .map((status, id) => {
       const rowCls = {
         [styles.RepositoryRow]: true,
         [styles.RepositoryRowActive]: id === repositoryToEdit,

@@ -136,14 +136,21 @@ function deserialize(fieldIri: Rdf.Iri, graph: Rdf.Graph): FieldDefinitionProp {
 const FIELDS_REST_PATH = '/rest/fields/definitions';
 
 export function getGeneratedFieldDefinitions(
-  iris: ReadonlyArray<Rdf.Iri>
+  options: {
+    subject?: Rdf.Iri,
+    class?: Rdf.Iri,
+    fields?: ReadonlyArray<Rdf.Iri>,
+  }
 ): Kefir.Property<FieldDefinitionProp[]> {
-  if (iris.length === 0) {
+  const iris = options.fields;
+  if (!options.subject && !options.class && (!iris || iris.length === 0)) {
     return Kefir.constant([]);
   }
   const req = request
     .post(FIELDS_REST_PATH)
     .send({
+      subject: options.subject?.value,
+      class: options.class?.value,
       fields: iris.map(iri => iri.value),
     })
     .type('application/json')

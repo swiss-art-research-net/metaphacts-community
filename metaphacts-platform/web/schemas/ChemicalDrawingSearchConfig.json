@@ -1,0 +1,86 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ChemicalDrawingSearchQueries": {
+            "properties": {
+                "exact": {
+                    "type": "string"
+                },
+                "similarity": {
+                    "type": "string"
+                },
+                "substructure": {
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "exact",
+                "similarity",
+                "substructure"
+            ],
+            "type": "object"
+        }
+    },
+    "description": "**Example**:\n```\n<semantic-search>\n   <semantic-search-query-chemical-drawing\n     query='SELECT ?compound WHERE { }'\n     search-queries='{\"exact\": \"SELECT ?compound WHERE { ?compound rdfs:label ?smilesCode }\"}'>\n   </semantic-search-query-chemical-drawing>\n   <semantic-search-result-holder>\n     <semantic-search-result>\n       <semantic-table id=\"table\" query=\"SELECT ?subject WHERE { }\"></semantic-table>\n     </semantic-search-result>\n   </semantic-search-result-holder>\n</semantic-search>\n```",
+    "properties": {
+        "domain": {
+            "description": "Specify search domain category IRI (full IRI enclosed in `<>`).\nRequired, if component is used together with facets.",
+            "type": "string"
+        },
+        "exampleSmilesCode": {
+            "default": "undefined",
+            "description": "Initial smiles code that should be set and\nrendered when initially rendering the component.",
+            "type": "string"
+        },
+        "projectionBindings": {
+            "default": [
+                "compound",
+                "similarity"
+            ],
+            "description": "String array of projection variables from the `search-queries` which\nshould be injected as values into the main `query`.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "query": {
+            "description": "SPARQL SELECT query string, which will be provided to the search framework as base query.\n\nThe query string will be parameterized through the values as selected by the user from\nauto-suggestion list, which is generated through the `search-query`. Selected values will be\ninjected using the same binding variable names as specified by the `projection-bindings`\nattribute i.e. effectively using the same variable name as returned by the `search-query`.",
+            "type": "string"
+        },
+        "renderSmilesCode": {
+            "default": true,
+            "description": "Whether the smiles code should be render as canvas next to search panel\ni.e. when the ketcher drawing modal is not shown.",
+            "type": "boolean"
+        },
+        "searchQueries": {
+            "$ref": "#/definitions/ChemicalDrawingSearchQueries",
+            "description": "SPARQL SELECT query string which is used to provide a autosuggestion list of resources.\n\nNeeds to expose result using a projection variable equal to the `resource-binding-name`\nattribute.\n\n**Example**:\n```\nsearch-queries='{\n   \"exact\": \"SELECT ?compound ?similarity WHERE {\n     ?x :smilesCode ?smilesCode .\n     BIND(100 as ?similarity)\n   }\",\n   \"substructure\": \"SELECT ?compound ?similarity WHERE {\n     SERVICE <:Substructure> {\n       ?x :smilesCode ?smilesCode;\n         :similarity ?similarity.\n     }\n   }\",\n   \"similarity\": \"SELECT ?compound ?similarity WHERE {\n     SERVICE <:Similarity> {\n       ?x :smilesCode ?smilesCode;\n         :similarity ?similarity.\n     }\n   }\"\n}'\n```"
+        },
+        "similarityThresholdBindingName": {
+            "default": "similarityThreshold",
+            "description": "Name of the bind variable used to inject the similarity threshold.",
+            "type": "string"
+        },
+        "smilesBindingName": {
+            "default": "smilesCode",
+            "description": "Name of the bind variable used to inject the smiles code.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "query",
+        "searchQueries",
+        "smilesBindingName",
+        "similarityThresholdBindingName",
+        "projectionBindings",
+        "renderSmilesCode",
+        "exampleSmilesCode",
+        "domain"
+    ],
+    "required": [
+        "query",
+        "searchQueries"
+    ],
+    "type": "object"
+}
+

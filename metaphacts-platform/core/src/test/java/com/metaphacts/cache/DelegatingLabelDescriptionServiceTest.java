@@ -322,7 +322,7 @@ public class DelegatingLabelDescriptionServiceTest extends AbstractRepositoryBac
                 return new LookupResponse(request.getQueryId(), candidates);
             }
         });
-
+        lookupServiceManager.reloadLookupServices();
         Optional<LookupService> lookupService = lookupServiceManager.getLookupServiceByName(repositoryId);
         return lookupService;
     }

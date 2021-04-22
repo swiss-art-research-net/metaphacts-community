@@ -41,11 +41,11 @@ import * as React from 'react';
 
 import { MetadataApi } from '../data/metadataApi';
 import { ValidationApi } from '../data/validationApi';
-import { ElementModel, LinkModel, ElementIri, sameLink } from '../data/model';
+import { ElementModel, LinkModel, ElementIri, PropertyTypeIri, sameLink } from '../data/model';
 
 import { setElementData, setLinkData } from '../diagram/commands';
 import { DiagramModel, CreateLinkProps } from '../diagram/model';
-import { Element, Link, LinkVertex, ElementRedrawMode } from '../diagram/elements';
+import { Element, Link, LinkType, LinkVertex, ElementRedrawMode } from '../diagram/elements';
 import { Vector, boundsOf } from '../diagram/geometry';
 import { Command } from '../diagram/history';
 import { PointerUpEvent } from '../diagram/paperArea';
@@ -68,20 +68,20 @@ export interface EditorProps {
 }
 
 export interface EditorEvents {
-    changeMode: { source: EditorController };
+    changeMode: { readonly source: EditorController };
     changeSelection: PropertyChange<EditorController, ReadonlyArray<SelectionItem>>;
     changeAuthoringState: PropertyChange<EditorController, AuthoringState>;
     changeValidationState: PropertyChange<EditorController, ValidationState>;
     changeTemporaryState: PropertyChange<EditorController, TemporaryState>;
     itemClickCapture: ItemClickEvent & { cancel(): void };
     itemClick: ItemClickEvent;
-    addElements: { elements: ReadonlyArray<Element> };
+    addElements: { readonly elements: ReadonlyArray<Element> };
 }
 
 export interface ItemClickEvent {
-    sourceEvent: MouseEvent;
-    target: Element | Link | LinkVertex | undefined;
-    triggerAsClick: boolean;
+    readonly sourceEvent: MouseEvent;
+    readonly target: Element | Link | LinkVertex | undefined;
+    readonly triggerAsClick: boolean;
 }
 
 export class EditorController {
@@ -113,6 +113,9 @@ export class EditorController {
             if (data.requestedGroupContent) {
                 this.loadGroupContent(data.requestedGroupContent.source);
             }
+        });
+        this.listener.listen(this.model.events, 'createLoadedLink', e => {
+            e.setLink(this.mapLoadedLink(e.model));
         });
 
         this.handleSelectionEvent();
@@ -392,6 +395,11 @@ export class EditorController {
         });
     }
 
+    private mapLoadedLink(link: LinkModel): LinkModel | null {
+        const change = this.authoringState.links.get(link);
+        return change ? change.after : link;
+    }
+
     createNewEntity({elementModel, temporary}: { elementModel: ElementModel; temporary?: boolean }): Element {
         const batch = this.model.history.startBatch('Create new entity');
 
@@ -412,50 +420,45 @@ export class EditorController {
         return element;
     }
 
-    changeEntityData(targetIri: ElementIri, newData: ElementModel): ElementIri {
-        const elements = this.model.elements.filter(el => el.iri === targetIri);
-        if (elements.length === 0) {
-            return targetIri;
-        }
-        const oldData = elements[0].data;
+    changeEntityData(target: ElementModel, newData: ElementModel): ElementIri {
         const batch = this.model.history.startBatch('Edit entity');
 
-        const newState = AuthoringState.changeElement(this._authoringState, oldData, newData);
+        const newState = AuthoringState.changeElement(this._authoringState, target, newData);
         // get created authoring event by either old or new IRI (in case of new entities)
-        const event = (newState.elements.get(targetIri) || newState.elements.get(newData.id))!;
-        this.model.history.execute(setElementData(this.model, targetIri, event.after));
+        const event = (newState.elements.get(target.id) || newState.elements.get(newData.id))!;
+        this.model.history.execute(setElementData(this.model, target.id, event.after));
         this.setAuthoringState(newState);
 
         batch.store();
         return event.after.id;
     }
 
-    deleteEntity(elementIri: ElementIri) {
-        const state = this.authoringState;
-        const elements = this.model.elements.filter(el => el.iri === elementIri);
-        if (elements.length === 0) {
-            return;
-        }
+    deleteEntity(target: ElementModel) {
+        const elements = this.model.elements.filter(el => el.iri === target.id);
+
+        const ownedIris = new Set<ElementIri>();
+        collectOwnedResources(target, this.metadataApi, ownedIris);
+        const discardedEvents = getEntityEvents(ownedIris, this._authoringState);
 
         const batch = this.model.history.startBatch('Delete entity');
-        const model = elements[0].data;
 
-        const event = state.elements.get(elementIri);
         // remove new connected links
         const linksToRemove = new Set<string>();
         for (const element of elements) {
             for (const link of element.links) {
-                if (link.data && AuthoringState.isNewLink(state, link.data)) {
+                if (link.data && AuthoringState.isNewLink(this.authoringState, link.data)) {
                     linksToRemove.add(link.id);
                 }
             }
         }
         linksToRemove.forEach(linkId => this.model.removeLink(linkId));
 
+        const event = this.authoringState.elements.get(target.id);
         if (event) {
-            this.discardChange(event);
+            discardedEvents.push(event);
         }
-        this.setAuthoringState(AuthoringState.deleteElement(state, model));
+        this.discardChanges(discardedEvents);
+        this.setAuthoringState(AuthoringState.deleteElement(this.authoringState, target));
         batch.store();
     }
 
@@ -593,11 +596,18 @@ export class EditorController {
     }
 
     discardChanges(events: ReadonlyArray<AuthoringEvent>): void {
-        const newState = AuthoringState.discard(this._authoringState, events);
+        const ownedEntityIris = new Set<ElementIri>();
+        for (const event of events) {
+            if (event.type !== 'element') { continue; }
+            collectOwnedResources(event.after, this.metadataApi, ownedEntityIris);
+        }
+
+        const allEvents = events.concat(getEntityEvents(ownedEntityIris, this._authoringState));
+        const newState = AuthoringState.discard(this._authoringState, allEvents);
         if (newState === this._authoringState) { return; }
 
         const batch = this.model.history.startBatch('Discard changes');
-        for (const event of events) {
+        for (const event of allEvents) {
             switch (event.type) {
                 case 'element': {
                     if (event.deleted) {
@@ -662,6 +672,47 @@ export function isButtonOrAnchorClickEvent(event: PointerUpEvent) {
         target = target.parentElement;
     }
     return false;
+}
+
+function collectOwnedResources(
+    owner: ElementModel,
+    metadataApi: MetadataApi | undefined,
+    outResources: Set<ElementIri>
+): void {
+    if (!(metadataApi && metadataApi.getOwnedProperties)) {
+        return;
+    }
+    const propertySet = new Set<PropertyTypeIri>();
+    for (const typeIri of owner.types) {
+        for (const propertyIri of metadataApi.getOwnedProperties(typeIri)) {
+            propertySet.add(propertyIri);
+        }
+    }
+    for (const propertyIri in owner.properties) {
+        if (!Object.prototype.hasOwnProperty.call(owner.properties, propertyIri)) { continue; }
+        const property = owner.properties[propertyIri];
+        if (property && propertySet.has(propertyIri as PropertyTypeIri)) {
+            for (const propertyValue of property.values) {
+                if (propertyValue.termType === 'NamedNode') {
+                    outResources.add(propertyValue.value as ElementIri);
+                }
+            }
+        }
+    }
+}
+
+function getEntityEvents(
+    entities: Iterable<ElementIri>,
+    authoringState: AuthoringState
+): AuthoringEvent[] {
+    const events: AuthoringEvent[] = [];
+    for (const ownedIri of entities) {
+        const event = authoringState.elements.get(ownedIri);
+        if (event) {
+            events.push(event);
+        }
+    }
+    return events;
 }
 
 function placeElements(

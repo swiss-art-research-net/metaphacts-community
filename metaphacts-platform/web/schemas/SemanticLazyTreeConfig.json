@@ -18,6 +18,10 @@
             "description": "Node IRI that should be opened and focused on by default.",
             "type": "string"
         },
+        "id": {
+            "description": "ID for component events",
+            "type": "string"
+        },
         "noResultTemplate": {
             "description": "Template which is applied when the query returns no results.",
             "mpSeeResource": {
@@ -60,6 +64,7 @@
         }
     },
     "propertyOrder": [
+        "id",
         "className",
         "placeholder",
         "escapeLuceneSyntax",

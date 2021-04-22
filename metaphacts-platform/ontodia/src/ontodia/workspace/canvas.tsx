@@ -50,7 +50,7 @@ import {
 import { RenderingState } from '../diagram/renderingState';
 
 import { Events, EventObserver, EventTrigger } from '../viewUtils/events';
-import { LayoutFunction, LayoutFunctionParams, forceLayout } from '../viewUtils/layout';
+import { CalculateLayoutParams, layoutForce } from '../viewUtils/layout';
 import { PropTypes } from '../viewUtils/react';
 import { ToDataURLOptions, dataURLToBlob } from '../viewUtils/toSvg';
 
@@ -110,10 +110,10 @@ export interface CanvasMethods {
     exportAsSvgString(): Promise<string>;
     exportAsDataUrl(options: ToDataURLOptions): Promise<string>;
     forceLayout(): Promise<void>;
-    performLayout(layoutFunction: LayoutFunction, params: PerformLayoutParams): void;
+    performLayout(params: PerformLayoutParams): void;
 }
 
-export type PerformLayoutParams = Omit<LayoutFunctionParams, 'model' | 'sizeProvider'>;
+export type PerformLayoutParams = Omit<CalculateLayoutParams, 'model' | 'sizeProvider'>;
 
 export interface CanvasState extends SizeProvider {
     performSyncUpdate(): void;
@@ -179,6 +179,7 @@ export class Canvas extends React.Component<CanvasProps> implements CanvasMethod
     }
 
     componentWillUnmount() {
+        this.renderingState.dispose();
         this.paperListener.stopListening();
         this.commandListener.stopListening();
         this.workspaceCommandListener.stopListening();
@@ -294,15 +295,14 @@ export class Canvas extends React.Component<CanvasProps> implements CanvasMethod
     }
 
     forceLayout(): Promise<void> {
-        this.performLayout(forceLayout, {});
+        this.performLayout({layoutFunction: layoutForce});
         return Promise.resolve();
     }
 
-    performLayout(layoutFunction: LayoutFunction, params: PerformLayoutParams): void {
+    performLayout(params: PerformLayoutParams): void {
         CanvasImplementation.executeLayoutCommand(
             this.context.ontodiaWorkspace,
             this.renderingState,
-            layoutFunction,
             params
         );
     }
@@ -416,12 +416,11 @@ export namespace CanvasImplementation {
     export function executeLayoutCommand(
         context: WorkspaceContext,
         renderingState: RenderingState,
-        layoutFunction: LayoutFunction,
         params: PerformLayoutParams
     ): void {
         const {view} = context;
         view.model.history.execute(
-            performLayout(layoutFunction, {
+            performLayout({
                 ...params,
                 model: view.model,
                 sizeProvider: renderingState,

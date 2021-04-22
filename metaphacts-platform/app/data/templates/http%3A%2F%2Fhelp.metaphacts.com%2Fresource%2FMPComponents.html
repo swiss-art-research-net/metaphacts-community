@@ -179,7 +179,6 @@
     <h3>Example: Download tuple result as CSV</h3>
     ... using a link.
 <mp-code-example>
-<![CDATA[
 <mp-sparql-download
   query="SELECT * WHERE {?a ?b ?c} LIMIT 10"
   header="text/csv"
@@ -228,6 +227,14 @@
 <mp-code-example>
 <mp-has-permission permission='sparql:update'>
   <div>This will be rendered if the currently logged-in user has the permission "sparql:update"</div>
+</mp-has-permission>
+</mp-code-example>
+
+    <p>It also allows using <code>any-of</code> and <code>all-of</code> to check multiple permissions. If multiple conditions are provided, they all need to be fulfilled.</p>
+
+<mp-code-example>
+<mp-has-permission all-of='["sparql:query", "sparql:update"]' any-of='["namespaces:create", "namespaces:change"]'>
+  <div>This will be rendered if the currently logged-in user has both "sparql:query" and "sparql:update" and either "namespaces:create" or "namespaces:change"</div>
 </mp-has-permission>
 </mp-code-example>
 

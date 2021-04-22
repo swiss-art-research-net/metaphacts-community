@@ -819,6 +819,13 @@ public class RepositoryManager implements RepositoryManagerInterface, SubsystemL
             updatedConfigs.put(id, config);
         }
         
+        // always re-initialize the linked default repository to have a clean state
+        // (e.g. for resolving managed repositories in a federation)
+        String linkedDefault = getLinkedDefaultRepositoryID();
+        if (!DEFAULT_REPOSITORY_ID.equals(linkedDefault) && !updatedConfigs.containsKey(linkedDefault)) {
+            updatedConfigs.put(linkedDefault, this.getRepositoryConfig(linkedDefault));
+        }
+
         Map<String, RepositoryConfig> configsToRefresh = collectRelevantRepositoryConfigs(updatedConfigs, allConfigs);
         logger.trace("Reinitializing repositories: " + configsToRefresh.keySet().toString());
         Map<String, RepositoryConfig> allConfigsSorted = RepositoryDependencySorter.sortConfigs(allConfigs);

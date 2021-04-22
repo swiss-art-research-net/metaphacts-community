@@ -38,115 +38,139 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as React from 'react';
-import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
-import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
-
-import { Component, SemanticContext } from 'platform/api/components';
-import {ketcherui, smiles, molfile} from 'ketcher/dist/ketcher';
 import * as _ from 'lodash';
 import * as Maybe from 'data.maybe';
-import { setSearchDomain } from '../commons/Utils';
-
-import { LoadingBackdrop } from 'platform/components/utils';
-import { Rdf, vocabularies} from 'platform/api/rdf';
+import * as SparqlJs from 'sparqljs';
 import {
-    Row, Col, InputGroup, FormGroup, Button, ButtonGroup, FormControl, FormCheck, Alert
- } from 'react-bootstrap';
-import { getOverlaySystem, OverlayDialog} from 'platform/components/ui/overlay';
+  Row, Col, InputGroup, FormGroup, Button, ButtonGroup, FormControl, FormCheck, Alert,
+} from 'react-bootstrap';
+import { ketcherui, smiles, molfile } from 'ketcher';
+
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
-import 'ketcher/dist/ketcher.css';
-import 'ketcher/dist/raphael.min.js';
-import {SmilesCodeDrawer} from 'platform/components/3-rd-party/SmilesCodeDrawer';
+
 import { Cancellation } from 'platform/api/async';
-import * as SparqlJs from 'sparqljs';
+import { Component, SemanticContext } from 'platform/api/components';
+import { Rdf, vocabularies } from 'platform/api/rdf';
+import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 
-export interface ChemicalDrawingSearchProps {
-    /**
-     * SPARQL Select query string, which will be provided to the search framework as base query.
-     * The query stringwill be parameterized through the values as selected by the user from
-     * auto-suggestion list, which is generated through the `search-query`. Selected values will be
-     * injected using the same binding variable names as specified by the `projection-bindings`
-     * attribute i.e. effectively using the same variable name as returned by the `search-query`.
-     */
-    query: string
+import { SmilesCodeDrawer } from 'platform/components/3-rd-party/SmilesCodeDrawer';
+import { getOverlaySystem, OverlayDialog} from 'platform/components/ui/overlay';
+import { LoadingBackdrop } from 'platform/components/utils';
 
-    /**
-     * SPARQL Select query string which is used to provide a autosuggestion list of resources.
-     * Needs to expose result using a projection variable equal to the `resource-binding-name`
-     * attribute.
-     * @example `search-queries='{
-        "exact":"SELECT ?compound ?similarity WHERE {?
-            x :smilesCode ?smilesCode, BIND(100 as ?similarity)}",
-        "substructure": "SELECT ?compound ?similarity WHERE {
-            SERVICE<:Substructure>{?x :smilesCode ?smilesCode; :similarity ?similarity.}",
-        "similarity":"SELECT ?compound ?similarity WHERE {
-            SERVICE<:Similarity>{?x :smilesCode ?smilesCode :similarity ?similarity.}"
-     }'`
-     *
-     */
-    searchQueries: {[index in Modes ]: string }
-
-    /**
-     * Name of the bind variable used to inject the smiles code.
-     *
-     * @default "smilesCode"
-     */
-    smilesBindingName?: string
-
-    /**
-     * Name of the bind variable used to inject the similarity threshold.
-     *
-     * @default "similarityThreshold"
-     */
-    similarityThresholdBindingName?: string
-
-    /**
-     * String array of projection variables from the `search-queries` which
-     * should be injected as values into the main `query`.
-     *
-     * @default ["compound", "similarity"]
-     */
-    projectionBindings?: string[]
-
-    /**
-     * Whether the smiles code should be render as canvas next to search panel
-     * i.e. when the ketcher drawing modal is not shown.
-     *
-     * @default true
-     */
-    renderSmilesCode?: boolean
-
-    /**
-     * Initial smiles code that should be set and
-     * rendered when initally rendering the component.
-     *
-     * @default undefined
-     */
-    exampleSmilesCode?: string
-
-    /**
-    * Specify search domain category IRI (full IRI enclosed in <>).
-    * Required, if component is used together with facets.
-    */
-    domain?: string
-}
+import { setSearchDomain } from '../commons/Utils';
+import { SemanticSearchContext, InitialQueryContext } from './SemanticSearchApi';
 
 /**
- * @example
- <semantic-search>
-    <semantic-search-query-chemical-drawing
-        query='SELECT ?compound WHERE { }'
-        search-queries='{"exact":"SELECT ?compound WHERE {?compound rdfs:label ?smilesCode}"}'
-    >
-    </semantic-search-query-chemical-drawing>
-  <semantic-search-result-holder>
-    <semantic-search-result>
-      <semantic-table id="table" query="SELECT ?subject WHERE { }"></semantic-table>
-    </semantic-search-result>
-  </semantic-search-result-holder>
-</semantic-search>
+ * **Example**:
+ * ```
+ * <semantic-search>
+ *   <semantic-search-query-chemical-drawing
+ *     query='SELECT ?compound WHERE { }'
+ *     search-queries='{"exact": "SELECT ?compound WHERE { ?compound rdfs:label ?smilesCode }"}'>
+ *   </semantic-search-query-chemical-drawing>
+ *   <semantic-search-result-holder>
+ *     <semantic-search-result>
+ *       <semantic-table id="table" query="SELECT ?subject WHERE { }"></semantic-table>
+ *     </semantic-search-result>
+ *   </semantic-search-result-holder>
+ * </semantic-search>
+ * ```
  */
+interface ChemicalDrawingSearchConfig {
+  /**
+   * SPARQL SELECT query string, which will be provided to the search framework as base query.
+   *
+   * The query string will be parameterized through the values as selected by the user from
+   * auto-suggestion list, which is generated through the `search-query`. Selected values will be
+   * injected using the same binding variable names as specified by the `projection-bindings`
+   * attribute i.e. effectively using the same variable name as returned by the `search-query`.
+   */
+  query: string;
+
+  /**
+   * SPARQL SELECT query string which is used to provide a autosuggestion list of resources.
+   *
+   * Needs to expose result using a projection variable equal to the `resource-binding-name`
+   * attribute.
+   *
+   * **Example**:
+   * ```
+   * search-queries='{
+   *   "exact": "SELECT ?compound ?similarity WHERE {
+   *     ?x :smilesCode ?smilesCode .
+   *     BIND(100 as ?similarity)
+   *   }",
+   *   "substructure": "SELECT ?compound ?similarity WHERE {
+   *     SERVICE <:Substructure> {
+   *       ?x :smilesCode ?smilesCode;
+   *         :similarity ?similarity.
+   *     }
+   *   }",
+   *   "similarity": "SELECT ?compound ?similarity WHERE {
+   *     SERVICE <:Similarity> {
+   *       ?x :smilesCode ?smilesCode;
+   *         :similarity ?similarity.
+   *     }
+   *   }"
+   * }'
+   * ```
+   */
+  searchQueries: ChemicalDrawingSearchQueries;
+
+  /**
+   * Name of the bind variable used to inject the smiles code.
+   *
+   * @default "smilesCode"
+   */
+  smilesBindingName?: string;
+
+  /**
+   * Name of the bind variable used to inject the similarity threshold.
+   *
+   * @default "similarityThreshold"
+   */
+  similarityThresholdBindingName?: string;
+
+  /**
+   * String array of projection variables from the `search-queries` which
+   * should be injected as values into the main `query`.
+   *
+   * @default ["compound", "similarity"]
+   */
+  projectionBindings?: string[];
+
+  /**
+   * Whether the smiles code should be render as canvas next to search panel
+   * i.e. when the ketcher drawing modal is not shown.
+   *
+   * @default true
+   */
+  renderSmilesCode?: boolean;
+
+  /**
+   * Initial smiles code that should be set and
+   * rendered when initially rendering the component.
+   *
+   * @default undefined
+   */
+  exampleSmilesCode?: string;
+
+  /**
+  * Specify search domain category IRI (full IRI enclosed in `<>`).
+  * Required, if component is used together with facets.
+  */
+  domain?: string;
+}
+
+interface ChemicalDrawingSearchQueries {
+  exact?: string;
+  similarity?: string;
+  substructure?: string;
+}
+
+export type ChemicalDrawingSearchProps = ChemicalDrawingSearchConfig;
+
 export class ChemicalDrawingSearch extends Component<ChemicalDrawingSearchProps, {}> {
   render() {
     const {semanticContext} = this.context;
@@ -218,7 +242,7 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
       }
     }
 
-    renderKetcher = (element: Element ) => {
+    renderKetcher = (element: HTMLElement | null) => {
         if (!element) {
             return;
         }
@@ -368,7 +392,10 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                                 borderBottomLeftRadius: 0,
                                             }}
                                             onClick={() => this.showModal()}>
-                                            <i className='fa fa-pencil' title='Draw Structure'></i>
+                                            <InputGroup.Text>
+                                              <i className='fa fa-pencil' title='Draw Structure'>
+                                              </i>
+                                            </InputGroup.Text>
                                         </InputGroup.Append>
 
                                         </InputGroup>
@@ -376,19 +403,19 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                 </form>
                             </Col>
                         </Row>
-                        <Row>
-                            <FormGroup>
+                        <FormGroup>
+                            <Row>
                                 <Col sm={2}>
                                     <FormCheck type='radio'
                                         name='radioGroup'
                                         onChange={() => this.setState({ mode: Modes.EXACT })}
                                         checked={mode === 'exact' ? true : false}
                                         disabled={searchQueries.exact ? false : true}
-                                    >
-                                         {searchQueries.exact
+                                        label={searchQueries.exact
                                             ? 'Exact'
                                             : this.getDisabledModeLabel('Exact')
                                         }
+                                    >
                                     </FormCheck>
                                 </Col>
                                 <Col sm={2}>
@@ -397,11 +424,11 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                         onChange={() => this.setState({ mode: Modes.SUBSTRUCTURE})}
                                         checked={mode === 'substructure' ? true : false}
                                         disabled={searchQueries.substructure ? false : true}
-                                    >
-                                        {searchQueries.substructure
+                                        label={searchQueries.substructure
                                             ? 'Substructure'
                                             : this.getDisabledModeLabel('Substructure')
                                         }
+                                    >
                                     </FormCheck>
                                 </Col>
                                 <Col sm={3}>
@@ -410,13 +437,13 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                         onChange={() => this.setState({ mode: Modes.SIMILARITY })}
                                         checked={mode === 'similarity' ? true : false}
                                         disabled={searchQueries.similarity ? false : true}
-                                    >
-                                        {searchQueries.similarity
+                                        label={searchQueries.similarity
                                             ? 'Similarity  (Threshold: '+ this.state.similarityThreshold+'%)'
                                             : this.getDisabledModeLabel(
                                                 'Similarity  (Threshold: '+ this.state.similarityThreshold+'%)'
                                             )
                                         }
+                                    >
                                     </FormCheck>
                                 </Col>
                                 <Col sm={2}>
@@ -427,8 +454,8 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                                             Search
                                     </Button>
                                 </Col>
-                            </FormGroup>
-                        </Row>
+                            </Row>
+                        </FormGroup>
                         <Row>
                                 <Col sm={{span: 3, offset: 4}}>
                                     { this.state.mode === 'similarity' ?
@@ -485,7 +512,7 @@ class ChemicalDrawingSearchInner extends React.Component<InnerProps, State> {
                     main[role="application"] {width: 800px!important;  height: 80vh!important; }
                 `}} />
 
-                <div ref={this.renderKetcher} />
+                <div className='ketcher-bundle' ref={this.renderKetcher} />
                 <ButtonGroup className='pull-right'>
                     <Button size='sm' onClick={() => this.hideModal()}>
                         Cancel

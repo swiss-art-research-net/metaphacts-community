@@ -39,6 +39,7 @@
  */
 package com.metaphacts.resource;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.rdf4j.model.IRI;
@@ -46,8 +47,7 @@ import org.eclipse.rdf4j.model.IRI;
 public class DefaultTypeDescription implements TypeDescription {
     protected final IRI type;
     protected String typeLabel;
-    protected List<PropertyDescription> descriptionProperties;
-    protected String descriptionTemplate;
+    protected List<PropertyDescription> properties;
     
     public DefaultTypeDescription(IRI type) {
         this.type = type;
@@ -68,19 +68,14 @@ public class DefaultTypeDescription implements TypeDescription {
         return typeLabel;
     }
     
-    public DefaultTypeDescription withDescriptionProperties(List<PropertyDescription> descriptionProperties) {
-        this.descriptionProperties = descriptionProperties;
+    public DefaultTypeDescription withProperties(List<PropertyDescription> properties) {
+        this.properties = (properties != null ? properties : Collections.emptyList());
         return this;
     }
     
     @Override
-    public List<PropertyDescription> getDescriptionProperties() {
-        return descriptionProperties;
-    }
-    
-    public DefaultTypeDescription withDescriptionTemplate(String descriptionTemplate) {
-        this.descriptionTemplate = descriptionTemplate;
-        return this;
+    public List<PropertyDescription> getProperties() {
+        return properties;
     }
     
     @Override

@@ -37,19 +37,19 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import * as assign from 'object-assign';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 import * as SparqlJs from 'sparqljs';
 import * as URI from 'urijs';
+
+import { requestAsProperty } from 'platform/api/async';
+import * as request from 'platform/api/http';
 
 import { serializeQuery, parseQuerySync } from './SparqlUtil';
 import { cloneQuery } from './QueryVisitor';
 import { VariableBinder, TextBinder } from './QueryBinder';
 import * as turtle from '../rdf/formats/turtle';
 import * as Rdf from '../rdf/core/Rdf';
-import * as request from 'platform/api/http';
-import { requestAsProperty } from 'platform/api/async';
 
 /*
  * Javascript client for SPARQL 1.1 endpoint.
@@ -345,6 +345,11 @@ export function sendSparqlQuery(
   });
 }
 
+let preferredUserLanguage: string | undefined;
+export function __unsafe__setPreferredUserLanguage(value: string | undefined): void {
+  preferredUserLanguage = value;
+}
+
 export function sparqlQueryRequest(params: {
   query: string | SparqlJs.SparqlQuery;
   endpoint: string;
@@ -373,12 +378,15 @@ export function sparqlQueryRequest(params: {
     ? setBindings(parsedQuery, context.bindings) : parsedQuery;
   const preparedQuery = serializeQuery(queryWithContext);
 
-  const header = assign({
+  const headersWithDefaults: { [header: string]: string } = {
     'Content-Type': 'application/sparql-query; charset=utf-8',
-  }, headers);
+    'MPH-UserPreferredLanguage': preferredUserLanguage,
+    ...headers,
+  };
 
-  const req =
-    request.post(parametrizedEndpoint.toString()).send(preparedQuery).set(header);
+  const req = request.post(parametrizedEndpoint.toString())
+    .send(preparedQuery)
+    .set(headersWithDefaults);
   return requestAsProperty(req).map(res => res.text);
 }
 

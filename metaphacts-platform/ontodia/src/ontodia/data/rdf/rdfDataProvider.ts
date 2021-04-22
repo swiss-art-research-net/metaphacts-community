@@ -185,7 +185,7 @@ export class RdfDataProvider implements DataProvider {
     }
 
     getGraph(): ReadonlyArray<Rdf.Quad> {
-        return this.dataset.iterateMatches(null, null, null);
+        return Array.from(this.dataset);
     }
 
     private waitInitCompleted(): Promise<unknown> {
@@ -197,16 +197,22 @@ export class RdfDataProvider implements DataProvider {
     }
 
     private getInstancesCount(type: Rdf.NamedNode | Rdf.BlankNode): number {
-        return this.dataset.iterateMatches(null, this.typePredicate, type).length;
+        let count = 0;
+        for (const q of this.dataset.iterateMatches(null, this.typePredicate, type)) {
+            count++;
+        }
+        return count;
     }
 
     async classTree(): Promise<ClassModel[]> {
         await this.waitInitCompleted();
 
-        const classes = this.dataset.iterateMatches(null, this.typePredicate, null)
-            .map((cl): Rdf.Term => cl.object)
-            .filter(isNamedNodeOrBlank)
-            .map<ElementTypeIri>(encodeTerm);
+        const classes: ElementTypeIri[] = [];
+        for (const {object} of this.dataset.iterateMatches(null, this.typePredicate, null)) {
+            if (isNamedNodeOrBlank(object)) {
+                classes.push(encodeTerm(object));
+            }
+        }
 
         const parents: Dictionary<ElementTypeIri[]> = {};
 
@@ -371,7 +377,7 @@ export class RdfDataProvider implements DataProvider {
                 const sourceId = encodeTerm(t.subject as Rdf.NamedNode | Rdf.BlankNode);
                 const targetId = encodeTerm(t.object as Rdf.NamedNode | Rdf.BlankNode);
                 const linkTypeId = encodeTerm(t.predicate);
-                const linkIds = this.dataset.iterateMatches(t, this.linkIdentity, null);
+                const linkIds = Array.from(this.dataset.iterateMatches(t, this.linkIdentity, null));
                 if (linkIds.length > 0) {
                     for (const {object: linkId} of linkIds) {
                         if (linkId.termType === 'NamedNode' || linkId.termType === 'BlankNode') {
@@ -633,13 +639,13 @@ export class RdfDataProvider implements DataProvider {
     }
 
     private getElementProperties(element: Rdf.NamedNode | Rdf.BlankNode): Dictionary<Property> {
-        const propTriples = this.dataset.iterateMatches(element, null, null);
         const props: Dictionary<Property> = {};
-
-        for (const t of propTriples) {
+        for (const t of this.dataset.iterateMatches(element, null, null)) {
             if (t.predicate.termType === 'NamedNode' &&
                 this.metadataCache.isDatatypeProperty(t.predicate, t.object) &&
-                !this.metadataCache.isLabelPredicate(t.predicate)
+                !Rdf.equalTerms(t.predicate, this.typePredicate) &&
+                !this.metadataCache.isLabelPredicate(t.predicate) &&
+                !this.metadataCache.isImagePredicate(t.predicate)
             ) {
                 const property = props[t.predicate.value];
                 const value = t.object.termType === 'BlankNode'

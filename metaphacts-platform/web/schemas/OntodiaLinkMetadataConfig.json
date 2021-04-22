@@ -1,5 +1,57 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "SubjectTemplateFieldSettings": {
+            "properties": {
+                "default": {
+                    "default": "",
+                    "description": "Default value to substitute if there is no such field or it is empty.",
+                    "type": "string"
+                },
+                "disallowRegex": {
+                    "description": "Regex pattern to match character sets to replace with `replaceValue`\nwhen substituting the field value in the IRI.\n\nDefault pattern matches:\n   - ASCII control characters and space: `0x00-0x20`\n   - common illegal path characters: `<` `>` `:` `?` `*` `\"` `|`\n   - path separators: `/` `\\`\n   - recommended to avoid by AWS S3: `&` `$` `@` `=` `;` `+` `,` `#` `0x7f-0xFF`\n   - escape character: `%`\n\n**Default**:\n```\n{\n   \"transform\": \"sanitize\",\n   \"disallowRegex\": \"[\\\\u0000-\\\\u0020<>:?*\\\"|/\\\\\\\\&$@=+,#\\\\u007f-\\\\u00ff%\\\\s]\",\n   \"replaceCharacter\": \"_\"\n}\n```",
+                    "type": "string"
+                },
+                "replaceCharacter": {
+                    "default": "_",
+                    "description": "Character to replace with when sanitizing value.\n\nSequences of this string are collapsed into a single value.",
+                    "type": "string"
+                },
+                "transform": {
+                    "default": "sanitize",
+                    "description": "Defines how substituted values are transformed:\n   - `none`: no transformation;\n   - `sanitize`: replace IRI-unsafe characters as defined\n     by `disallowRegex` with `replaceCharacter`;",
+                    "enum": [
+                        "none",
+                        "sanitize"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "default",
+                "transform",
+                "disallowRegex",
+                "replaceCharacter"
+            ],
+            "type": "object"
+        },
+        "SubjectTemplateSettings": {
+            "properties": {
+                "placeholders": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/SubjectTemplateFieldSettings"
+                    },
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                }
+            },
+            "propertyOrder": [
+                "placeholders"
+            ],
+            "type": "object"
+        }
+    },
     "properties": {
         "children": {
             "description": "Semantic form override. If developer wants to override auto-generated form,\nit should be placed inside `<ontodia-entity-metadata>`.",
@@ -35,6 +87,10 @@
         "newSubjectTemplate": {
             "description": "Subject template override for generating IRIs for new links of this type.",
             "type": "string"
+        },
+        "newSubjectTemplateSettings": {
+            "$ref": "#/definitions/SubjectTemplateSettings",
+            "description": "Subject template settings override for generating IRIs for new links of this type."
         }
     },
     "propertyOrder": [
@@ -42,6 +98,7 @@
         "hasIdentity",
         "fields",
         "newSubjectTemplate",
+        "newSubjectTemplateSettings",
         "editableWhen",
         "children"
     ],

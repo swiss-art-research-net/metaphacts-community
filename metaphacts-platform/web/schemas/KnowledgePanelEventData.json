@@ -1,5 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
     "properties": {
         "KnowledgePanel.Close": {
             "description": "Command to close knowledge panel.",

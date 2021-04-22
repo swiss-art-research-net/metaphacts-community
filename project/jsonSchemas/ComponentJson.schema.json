@@ -19,6 +19,10 @@
           "deferAttributes": {
             "type": "object",
             "description": "Defines which attributes should be deferred when resolving template syntax.",
+            "propertyNames": {
+              "description": "Component attribute name pattern.",
+              "pattern": "^([a-z]+-)*[a-z]+$"
+            },
             "additionalProperties": {
               "type": "boolean",
               "enum": [true]
@@ -27,6 +31,10 @@
           "deferJsonProperties": {
             "type": "object",
             "description": "Defines which values from JSON properties inside attributes should be deferred when resolving template syntax.",
+            "propertyNames": {
+              "description": "Component attribute name pattern.",
+              "pattern": "^([a-z]+-)*[a-z]+$"
+            },
             "additionalProperties": {
               "type": "object",
               "additionalProperties": {
@@ -37,7 +45,14 @@
           },
           "propsSchema": {
             "type": "string",
-            "description": "TypeScript interface name to generate and import schema for the component."
+            "description": "TypeScript interface name to generate and use as props schema for the component."
+          },
+          "additionalSchemas": {
+            "type": "array",
+            "description": "TypeScript interface names to generate as schemas for other usages.",
+            "items": {
+              "type": "string"
+            }
           },
           "helpResource": {
             "type": "string",

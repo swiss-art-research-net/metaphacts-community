@@ -6,6 +6,12 @@
     max-width: 100%;
     margin-bottom: 20px;
   }
+  kbd {
+    border: 1px solid #d8d8d8;
+    background: linear-gradient(1deg, gainsboro, #fbfbfb);
+    color: black;
+    border-radius: 3px;
+  }
 </style>
 
 <div class="page">
@@ -20,34 +26,34 @@
 
     <h2>Editor features</h2>
 
-    <h3>Feature: on-hover info for tags and attributes</h3>
+    <h3 id='on-hover-info'>Feature: on-hover info for tags and attributes</h3>
     <p>The language service provides <i>tag</i> and <i>attribute</i> descriptions for basic HTML tags and platform components.</p>
-    <p>To access this infortmation, move the mouse over a component tag or any attribute, or alternatively place the text cursor inside and press <code>Ctrl/Cmd+K</code> then <code>Ctrl/Cmd+I</code>.</p>
+    <p>To access this information, move the mouse over a component tag or any attribute, or alternatively place the text cursor inside and press <kbd>Ctrl+K, Ctrl+I</kbd> (or <kbd>⌘+K, ⌘+I</kbd> on Mac).</p>
     <img class='pageEditorAnimation' src='/images/help/page-editor/attribute-hover.gif'>
 
-    <h3>Feature: link to the component documentation</h3>
+    <h3 id='link-to-documentation'>Feature: link to the component documentation</h3>
     <p>For platform components the language service provides links to their respective documentation pages. This information can be accessed when moving the mouse over a component tag.</p>
     <img class='pageEditorAnimation' src='/images/help/page-editor/help-link.gif'>
 
-    <h3>Feature: jump to the included template page</h3>
+    <h3 id='jump-to-included-page'>Feature: jump to the included template page</h3>
     <p>The language service marks included template references as links and allows to jump to them directly from the editor.</p>
-    <p>To use this feature, hover the mouse over any template reference or set text cursor inside and press <code>Ctrl/Cmd+Click</code>.</p>
+    <p>To use this feature, hover the mouse over any template reference or set text cursor inside and press <kbd>Ctrl+Click</kbd> (or <kbd>⌘+Click</kbd> on Mac).</p>
     <img class='pageEditorAnimation' src='/images/help/page-editor/include-link.gif'>
 
-    <h3>Feature: tag completion</h3>
-    <p>A very powerful feature is that of auto-completion: the language service auto-completes basic HTML tags as well as platform component by pressing <code>Ctrl/Cmd+Space</code> (while typing).</p>
+    <h3 id='tag-completion'>Feature: tag completion</h3>
+    <p>A very powerful feature is that of auto-completion: the language service auto-completes basic HTML tags as well as platform component by pressing <kbd>Ctrl+Space</kbd> (or <kbd>⌘+Space</kbd> on Mac) while typing.</p>
     <img class='pageEditorAnimation' src='/images/help/page-editor/tag-completion.gif'>
 
-    <h3>Feature: attribute completion</h3>
+    <h3 id='attribute-completion'>Feature: attribute completion</h3>
     <p>Similarly to tag completion, the language service can complete attributes of platform components.</p>
-    <p>To use this feature, start typing attribute or press <code>Ctrl/Cmd+Space</code> while typing.</p>
+    <p>To use this feature, start typing attribute or press <kbd>Ctrl+Space</kbd> (or <kbd>⌘+Space</kbd> on Mac) while typing.</p>
     <img class='pageEditorAnimation' src='/images/help/page-editor/attribute-completion.gif'>
 
-    <h3>Feature: JSON syntax highlighting in attributes</h3>
+    <h3 id='json-syntax-highlighting'>Feature: JSON syntax highlighting in attributes</h3>
     <p>The template language defines custom syntax highlighting which recognizes embedded JSON in attribute values.</p>
     <img class='pageEditorAnimation' src='/images/help/page-editor/json-attribute-highlighting.png'>
 
-    <h3>Feature: display tag and attribute warnings (experimental)</h3>
+    <h3 id='diagnostic-warnings'>Feature: display tag and attribute warnings (experimental)</h3>
     <p>The visual editor supports the template developers with syntactical validation checks. This feature is disabled by default and can be can be enabled manually by toggling the "Show warnings" switch.</p>
     <p>The following types of warnings are currently available:</p>
     <ul>
@@ -60,10 +66,14 @@
 
     <img class='pageEditorAnimation' src='/images/help/page-editor/attribute-diagnostics.gif'>
 
-    <h3>Feature: HTML formatting (experimental)</h3>
+    <h3 id='event-system-support'>Feature: event system support</h3>
+    <p>The language service provides on-hover information, auto-completion and validation support for <semantic-link iri='http://help.metaphacts.com/resource/EventSystem'>component events</semantic-link>, including event types and corresponding event data objects.</p>
+    <img class='pageEditorAnimation' src='/images/help/page-editor/event-support.gif'>
+
+    <h3 id='auto-formatting'>Feature: HTML formatting (experimental)</h3>
     <p>The language service supports formatting of selected text or the whole template document.</p>
     <p>This feature is considered experimental: only pure HTML and client-side templates are supported and formatting may or may not work with backend Handlebars syntax.</p>
-    <p>To use this feature, open context menu for selected text and choose "Format Selection" or "Format Document", or press <code>Alt/Cmd+Shift+F</code> to format selected text or <code>Ctrl/Cmd+K</code> then <code>Ctrl/Cmd+F</code> to format whole document.</p>
+    <p>To use this feature, open context menu for selected text and choose "Format Selection" or "Format Document", or press <kbd>Alt+Shift+F</kbd> (or <kbd>⌘+Shift+F</kbd> on Mac) to format selected text or <kbd>Ctrl+K, Ctrl+F</kbd> (or <kbd>⌘+K, ⌘+F</kbd> on Mac) to format whole document.</p>
 
   </div>
 </div>

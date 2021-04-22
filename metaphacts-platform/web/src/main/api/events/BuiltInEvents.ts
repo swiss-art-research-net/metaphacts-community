@@ -42,6 +42,9 @@ import * as Kefir from 'kefir';
 import { EventType } from './EventsApi';
 import { EventMaker } from './Utils';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface BuiltInEventData {
   /**
    * Event which should be triggered when something should be refreshed.

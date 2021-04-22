@@ -64,7 +64,7 @@ interface HighlightConfig {
   /**
    * Props for highlighted substring span
    */
-  highlightProps?: {};
+  highlightProps?: { [propName: string]: any };
   /**
    * Whether to split the highlight term into individual tokens / words.
    * If active, highlighting is done on matched words.

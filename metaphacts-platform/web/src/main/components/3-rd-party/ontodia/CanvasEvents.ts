@@ -37,39 +37,60 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Rect, Vector, Element, Link } from 'ontodia';
+import { Rect, Vector, Element, Link, ViewportOptions } from 'ontodia';
 
 import { EventMaker } from 'platform/api/events';
 
-export interface BaseCanvasEventData {
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
+export interface OntodiaCanvasEventData {
   /**
    * Perform Force layout.
    */
-  'Canvas.ForceLayout': {};
+  'Canvas.ForceLayout': {
+    options?: ViewportOptions;
+  };
   /**
    * Zoom in diagram.
    */
-  'Canvas.ZoomIn': {};
+  'Canvas.ZoomIn': {
+    options?: ViewportOptions;
+  };
   /**
    * Zoom out diagram.
    */
-  'Canvas.ZoomOut': {};
+  'Canvas.ZoomOut': {
+    options?: ViewportOptions;
+  };
   /**
    * Zoom to fit diagram.
    */
-  'Canvas.ZoomToFit': { boundingBox?: Rect };
+  'Canvas.ZoomToFit': {
+    boundingBox?: Rect;
+    options?: ViewportOptions;
+  };
   /**
    * Center to diagram.
    */
-  'Canvas.CenterTo': { position: Vector };
+  'Canvas.CenterTo': {
+    position: Vector;
+    options?: ViewportOptions;
+  };
   /**
    * Set zoom level.
    */
-  'Canvas.SetZoomLevel': { scale: number };
+  'Canvas.SetZoomLevel': {
+    scale: number;
+    options?: ViewportOptions;
+  };
   /**
    * Zoom by diagram.
    */
-  'Canvas.ZoomBy': { value: number };
+  'Canvas.ZoomBy': {
+    value: number;
+    options?: ViewportOptions;
+  };
   /**
    * Export diagram as PNG.
    */
@@ -84,24 +105,30 @@ export interface BaseCanvasEventData {
   'Canvas.Print': {};
 }
 
-export interface BaseInternalCanvasEventData {
-  'Canvas.ZoomToContent': {
+export interface InternalOntodiaCanvasEventData {
+  'CanvasInternal.ZoomToContent': {
     elements: ReadonlyArray<Element>;
     links: ReadonlyArray<Link>;
+    options?: ViewportOptions;
   };
-  'Canvas.MoveElementToCenter': { element: Element; position?: Vector };
+  'CanvasInternal.MoveElementToCenter': {
+    element: Element;
+    position?: Vector;
+  };
 }
-const event: EventMaker<BaseCanvasEventData & BaseInternalCanvasEventData> = EventMaker;
+
+const event: EventMaker<OntodiaCanvasEventData & InternalOntodiaCanvasEventData> = EventMaker;
 
 export const ForceLayout = event('Canvas.ForceLayout');
 export const ZoomIn = event('Canvas.ZoomIn');
 export const ZoomOut = event('Canvas.ZoomOut');
 export const ZoomToFit = event('Canvas.ZoomToFit');
-export const ZoomToContent = event('Canvas.ZoomToContent');
 export const CenterTo = event('Canvas.CenterTo');
 export const SetZoomLevel = event('Canvas.SetZoomLevel');
 export const ZoomBy = event('Canvas.ZoomBy');
 export const ExportPng = event('Canvas.ExportPng');
 export const ExportSvg = event('Canvas.ExportSvg');
 export const Print = event('Canvas.Print');
-export const MoveElementToCenter = event('Canvas.MoveElementToCenter');
+
+export const ZoomToContent = event('CanvasInternal.ZoomToContent');
+export const MoveElementToCenter = event('CanvasInternal.MoveElementToCenter');

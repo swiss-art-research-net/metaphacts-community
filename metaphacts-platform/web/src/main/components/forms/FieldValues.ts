@@ -350,3 +350,10 @@ function findLiteralWithLanguage(
   }
   return undefined;
 }
+
+export interface InspectedInputTree {
+  readonly self: object;
+  readonly dataState: keyof typeof DataState;
+  readonly handler: object;
+  readonly children: { readonly [key: string]: ReadonlyArray<InspectedInputTree> };
+}

@@ -206,6 +206,7 @@ function prepareConfigAndExecuteQuery(
     value: res => {
       setData(res);
       setLoading(false);
+      setError(undefined);
     },
     error: error => {
       setError(error);

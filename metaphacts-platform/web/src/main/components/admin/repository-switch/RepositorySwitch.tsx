@@ -104,7 +104,9 @@ export class RepositorySwitch extends Component<{}, State> {
     const options: ReactNode[] = [];
     if (repositoryStatus) {
       options.push(<option key='@empty' value=''>(from context)</option>);
-      repositoryStatus.forEach((running, repository) => {
+      repositoryStatus
+        .sortBy((running, repository) => repository.toLowerCase())
+        .forEach((running, repository) => {
         options.push(
           <option key={repository}
             disabled={!running}

@@ -60,9 +60,9 @@ interface CollapsibleDivConfig {
   /**
    * Whether panel should be expanded by default.
    *
-   * @default true
+   * @default false
    */
-  expanded: boolean;
+  expanded?: boolean;
 }
 
 export type CollapsibleDivProps = CollapsibleDivConfig;
@@ -75,7 +75,7 @@ export class CollapsibleDiv extends React.Component<CollapsibleDivProps, State> 
   constructor(props: CollapsibleDivProps, context: any) {
     super(props, context);
     this.state = {
-      expanded: this.props.expanded,
+      expanded: Boolean(this.props.expanded),
     };
   }
 

@@ -73,6 +73,11 @@ export interface MetadataApi {
     propertiesForType(type: ElementTypeIri, ct: CancellationToken): Promise<PropertyTypeIri[]>;
 
     /**
+     * List properties for type meant to have values which can only exists with owner element.
+     */
+    getOwnedProperties?(type: ElementTypeIri): PropertyTypeIri[];
+
+    /**
      * Filters types that can be created from the list of given types.
      * Used in Class Tree to quickly find out what types can be instantiated.
      */

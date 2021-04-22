@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.common.collect.Iterables;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.repository.Repository;
 
@@ -90,9 +91,10 @@ public class DelegatingTypeService extends AbstractDelegatingProvider<TypeServic
             Map<IRI, Optional<Iterable<IRI>>> map = typeService.getAllTypes(irisToFetch, repository);
             List<IRI> remainingIrisToFetch = new ArrayList<>();
             // Check results and put empty in the "remainingIrisToFetch"
-            for (var literal : map.entrySet()) {
-                if (literal.getValue().isEmpty()) {
-                    remainingIrisToFetch.add(literal.getKey());
+            for (var iri : map.entrySet()) {
+                var value = iri.getValue();
+                if (value.isEmpty() || Iterables.isEmpty(value.get())) {
+                    remainingIrisToFetch.add(iri.getKey());
                 }
             }
             // Save results

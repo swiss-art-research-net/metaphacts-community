@@ -39,21 +39,28 @@
  */
 package com.metaphacts.servlet.filter;
 
-import com.google.common.collect.Lists;
-import com.metaphacts.config.Configuration;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.List;
+import com.google.common.collect.Lists;
+import com.metaphacts.config.Configuration;
 
 /**
  * Filter to redirect resource access by IRI to a canonical URL, e.g.
@@ -94,6 +101,8 @@ public class RewriteFilter implements Filter {
 
                 HttpServletResponse httpServletResponse = (HttpServletResponse) response;
                 httpServletResponse.sendRedirect(httpServletResponse.encodeRedirectURL(newPath));
+                // request was handled
+                return;
             }
         }
         chain.doFilter(request, response);

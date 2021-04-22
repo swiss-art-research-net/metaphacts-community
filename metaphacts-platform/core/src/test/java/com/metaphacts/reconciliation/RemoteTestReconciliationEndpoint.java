@@ -39,9 +39,12 @@
  */
 package com.metaphacts.reconciliation;
 
+import java.net.URI;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nullable;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -53,23 +56,61 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.metaphacts.lookup.model.LookupEntityType;
 import com.metaphacts.lookup.model.LookupQuery;
+import com.metaphacts.lookup.model.LookupServiceManifest;
 
 @Path("remote/reconciliation")
 @Singleton
 public class RemoteTestReconciliationEndpoint {
-    public final static String MANIFEST = "{" +
-    "   \"identifierSpace\": \"http://www.metaphacts.com/ontologies/platform#remote-reconciliation\"," +
-    "   \"name\": \"mp-reconciliation\"," +
-    "   \"defaultTypes\": [{\n" +
-    "      \"id\": \"http://example.com/entity-type/car\"," +
-    "      \"name\": \"car\"" +
-    "   }," +
-    "   {" +
-    "      \"id\": \"http://example.com/entity-type/human\"," +
-    "      \"name\": \"human\"" +
-    "   }]," +
-    "   \"schemaSpace\": \"http://www.metaphacts.com/ontologies/platform#remote-reconciliation-schema\"" +
+
+    private static String getRemoteManifest() {
+        var manifest = new LookupServiceManifest(
+            "mp-reconciliation",
+            "http://www.metaphacts.com/ontologies/platform/reconciliation#",
+            "http://www.metaphacts.com/ontologies/platform/reconciliation-schema#",
+            Arrays.asList(
+                new LookupEntityType("http://example.com/entity-type/car", "car"),
+                new LookupEntityType("http://example.com/entity-type/human", "human")
+            ),
+            new LookupServiceManifest.BasicService(
+            "http://localhost:10001/api/resource?uri={{id}}"
+            ),
+            new LookupServiceManifest.PreviewService(
+                "http://localhost:10001/api/reconciliation/description?uri={{id}}",
+                300,
+                200
+            ),
+            new LookupServiceManifest.BasicService(
+                "http://localhost:10001/api/remote/reconciliation/getLabelsForRdfValue"
+            ),
+            new LookupServiceManifest.BasicService(
+                "http://localhost:10001/api/remote/reconciliation/getDescriptionForRdfValue"
+            ),
+            new LookupServiceManifest.BasicService(
+                "http://localhost:10001/api/remote/reconciliation/getTypesForRdfValue"
+            )
+        );
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(manifest);
+        } catch (JsonProcessingException e) {
+            return "";
+        }
+    }
+
+    public static final String LABEL_RESPONSE = "{\n" +
+    "    \"http://my.custom.namespace/s2\": \"label s2 (no language tag)\"\n" +
+    "}";
+
+    public static final String DESCRIPTION_RESPONSE = "{\n" +
+    "    \"http://my.custom.namespace/s2\": \"It's the test description for the test\"\n" +
+    "}";
+
+    public static final String TYPES_RESPONSE = "{\n" +
+    "    \"http://my.custom.namespace/s2\": [ \"http://my.custom.namespace/ExampleEntity_remote\" ]\n" +
     "}";
 
     public final static String RESPONSE = "{" +
@@ -117,8 +158,37 @@ public class RemoteTestReconciliationEndpoint {
     @Produces({"application/javascript", MediaType.APPLICATION_JSON})
     public Response lookupOrGetManifest(@QueryParam("queries") String stringQueries) {
         if (stringQueries == null) {
-            return Response.ok().entity(MANIFEST).type(MediaType.APPLICATION_JSON).build();
+            return Response.ok().entity(getRemoteManifest()).type(MediaType.APPLICATION_JSON).build();
         }
         return Response.ok().entity(RESPONSE).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    @POST
+    @Path("getLabelsForRdfValue")
+    @Produces({"application/javascript", MediaType.APPLICATION_JSON})
+    public Response getLabelsForRdfValue(
+        @QueryParam("repository") final @Nullable String repositoryId,
+        @QueryParam("preferredLanguage") final @Nullable String preferredLanguage
+    ) {
+        return Response.ok().entity(LABEL_RESPONSE).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    @POST
+    @Path("getDescriptionForRdfValue")
+    @Produces({"application/javascript", MediaType.APPLICATION_JSON})
+    public Response getDescriptionsForRdfValues(
+        @QueryParam("repository") final @Nullable String repositoryId,
+        @QueryParam("preferredLanguage") final @Nullable String preferredLanguage
+    ) {
+        return Response.ok().entity(DESCRIPTION_RESPONSE).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    @POST
+    @Path("getTypesForRdfValue")
+    @Produces({"application/javascript", MediaType.APPLICATION_JSON})
+    public Response getTypesForRdfValues(
+        @QueryParam("repository") final @Nullable String repositoryId
+    ) {
+        return Response.ok().entity(TYPES_RESPONSE).type(MediaType.APPLICATION_JSON).build();
     }
 }

@@ -119,6 +119,11 @@
                 "variableName": {
                     "description": "SPARQL projection variable name that this column is bind to.",
                     "type": "string"
+                },
+                "visible": {
+                    "default": true,
+                    "description": "Whether this column should be visible by default",
+                    "type": "boolean"
                 }
             },
             "propertyOrder": [
@@ -128,6 +133,7 @@
                 "showFilter",
                 "filterType",
                 "aggregation",
+                "visible",
                 "aggregationCellTemplate",
                 "id"
             ],
@@ -155,9 +161,27 @@
                 "groupingOptions": {
                     "$ref": "#/definitions/GroupingOptions"
                 },
+                "pageSizeSelection": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "number"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "boolean"
+                        }
+                    ],
+                    "description": "Enable runtime selection of page size. Set to `true` for default sizes or an array\nof numbers for custom selection (e.g. [5, 10, 15, 20]). Adding a `-1` to the array,\nwill add an option to show all rows."
+                },
                 "showColumnFilters": {
                     "default": false,
                     "description": "Whether or not to display column filters. Can also be configured in the individual\ncolumn configurations.",
+                    "type": "boolean"
+                },
+                "showColumnToggle": {
+                    "description": "Whether or not to allow toggling column visiblity. Switching column visibility is a\nclient side operation on the table view, i.e. it does not re-execute the SPARQL query.\n\nBy default, it is shown if there are columns that are not initially visible.",
                     "type": "boolean"
                 },
                 "showFilter": {
@@ -187,9 +211,11 @@
                 "enableGrouping",
                 "groupingOptions",
                 "sorting",
+                "pageSizeSelection",
                 "styleHeader",
                 "defaultCellTemplate",
                 "showColumnFilters",
+                "showColumnToggle",
                 "showFilter",
                 "showTableHeading",
                 "enableSort"

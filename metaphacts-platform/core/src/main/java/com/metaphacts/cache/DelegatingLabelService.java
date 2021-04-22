@@ -51,26 +51,18 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.repository.Repository;
 
-import com.metaphacts.config.groups.UIConfiguration;
 import com.metaphacts.util.AbstractDelegatingProvider;
 
 /**
  * LabelService which delegates to a list of other implementations. The first
  * valid value returned from an instance is used.
  * 
- * Extraction and caching logics for batched access to URI labels, according to
- * the specification in {@link UIConfiguration#getPreferredLabels()} and
- * {@link UIConfiguration#getPreferredLanguages()}. This cache obtains list of
- * other implementations of LabelCache and DescriptionCaches and query them in
- * the order as them were provided. For the single item requests lik
- * {@link #getLabel} and {@link #getDescription} this class returns first non
- * empty result. For the {@link #getLabels} and {@link #getDescriptions} it
- * returns the sets of results queried from all implementations where for the
- * each IRI in request is returned the first non-empty result.
- *
  * @author Daniil Razdiakonov <dr@metaphacts.com>
  */
 public class DelegatingLabelService extends AbstractDelegatingProvider<LabelService> implements LabelService {
+    public DelegatingLabelService() {
+    }
+
     public DelegatingLabelService(List<LabelService> labelCaches) {
         super(labelCaches);
     }
@@ -105,9 +97,10 @@ public class DelegatingLabelService extends AbstractDelegatingProvider<LabelServ
             Map<IRI, Optional<Literal>> map = lc.getLabels(irisToFetch, repository, preferredLanguage);
             List<IRI> remainingIrisToFetch = new ArrayList<>();
             // Check results and put empty in the "remainingIrisToFetch"
-            for (var literal : map.entrySet()) {
-                if(literal.getValue().isEmpty()) {
-                    remainingIrisToFetch.add(literal.getKey());
+            for (var entry : map.entrySet()) {
+                Optional<Literal> literal = entry.getValue();
+                if (literal.isEmpty()) {
+                    remainingIrisToFetch.add(entry.getKey());
                 }
             }
             // Save relevant results
@@ -118,6 +111,12 @@ public class DelegatingLabelService extends AbstractDelegatingProvider<LabelServ
             } else {
                 // Set IRIs with empty results to be fetched from other implementations
                 irisToFetch = remainingIrisToFetch;
+            }
+        }
+        // add negative result for all unresolved labels
+        for (IRI iri : resourceIris) {
+            if (!result.containsKey(iri)) {
+                result.put(iri, Optional.empty());
             }
         }
         return result;

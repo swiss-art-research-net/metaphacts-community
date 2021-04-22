@@ -57,21 +57,19 @@ export function isEmptyMap(map: object) {
 }
 
 /**
- * Clones Map collection. Required due to IE11 not supporing `new Map(map)`.
+ * Clones `Map` collection.
+ * @deprecated Use `new Map<K, V>(map)` instead. (Was used for IE11 compatibility.)
  */
 export function cloneMap<K, V>(map: ReadonlyMap<K, V>): Map<K, V> {
-    const clone = new Map<K, V>();
-    map.forEach((value, key) => clone.set(key, value));
-    return clone;
+    return new Map<K, V>(map);
 }
 
 /**
- * Clones Set collection. Required due to IE11 not supporing `new Set(set)`.
+ * Clones Set collection.
+ * @deprecated Use `new Set<T>(map)` instead. (Was used for IE11 compatibility.)
  */
 export function cloneSet<T>(set: ReadonlySet<T>): Set<T> {
-    const clone = new Set<T>();
-    set.forEach(item => clone.add(item));
-    return clone;
+    return new Set<T>(set);
 }
 
 export function getOrCreateArrayInMap<K, V>(map: Map<K, V[]>, key: K): V[] {

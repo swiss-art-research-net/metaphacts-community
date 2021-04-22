@@ -79,12 +79,12 @@ import com.metaphacts.util.OrderableComparator;
 /**
  * DescriptionRenderer using a Handelbars template and the provided resource
  * description.
- * 
+ *
  * <p>
  * A "one-line" textual description of an entity is created by rendering a
  * Handlebars template with the description properties provided as input.
  * </p>
- * 
+ *
  * <p>
  * The renderer fetches a Handlebars template from the provided
  * {@link DescriptionTemplateProvider} and renders it with the model created
@@ -95,23 +95,23 @@ import com.metaphacts.util.OrderableComparator;
  * Additionally, the generic properties {@value #MODEL_LABEL} and
  * {@value #MODEL_TYPE} are provided.
  * </p>
- * 
+ *
  * <p>
  * Variables and expressions are enclosed in <code>[[ ... ]]</code>. To avoid
  * HTML escaping triple-braces can be used: <code>[[[ ... ]]]</code>
  * </p>
- * 
+ *
  * <p>
  * Besides the default Handlebars helpers also the methods provided by
  * {@link DateTimeHelperSource} are available.
  * </p>
- * 
- * 
+ *
+ *
  * <p>
  * Example of a template:<br>
  * <code>[[[label]]] ([[[type]]]): [[occupation.0.value]] ([[dateOfBirth.0.value]])[[#if marriedTo]], married to [[marriedTo.0.value]][[/if]]</code>
  * </p>
- * 
+ *
  * @author Wolfgang Schell <ws@metaphacts.com>
  */
 public class HandlebarsDescriptionRenderer implements DescriptionRenderer, Orderable {
@@ -147,7 +147,7 @@ public class HandlebarsDescriptionRenderer implements DescriptionRenderer, Order
         templateCache.setReload(true);
 
         // @formatter:off
-        return new Handlebars()
+        Handlebars handlebars = new Handlebars()
             .with(templateCache)
             .with(templateLoader)
             .with(EscapingStrategy.NOOP)    // for pure text rendering we don't want to escape anything
@@ -155,6 +155,10 @@ public class HandlebarsDescriptionRenderer implements DescriptionRenderer, Order
             .endDelimiter(endDelimiter)
             .registerHelpers(DateTimeHelperSource.class)
             ;
+
+        DateTimeHelperSource.getHelpers().entrySet().forEach(entry ->
+            handlebars.registerHelper(entry.getKey(), entry.getValue()));
+        return handlebars;
         // @formatter:on
     }
 
@@ -228,7 +232,7 @@ public class HandlebarsDescriptionRenderer implements DescriptionRenderer, Order
      * uses the preferred language to resolve the labels.</li>
      * </ul>
      * </p>
-     * 
+     *
      * @param values            list of values to convert
      * @param repository        repository from which to fetch any additional
      *                          resource labels
@@ -316,13 +320,13 @@ public class HandlebarsDescriptionRenderer implements DescriptionRenderer, Order
 
     /**
      * Handlebars value resolver for sub-properties of an RDF4J value.
-     * 
+     *
      * <p>
      * This value resolver implement fields as defined in rdf.js, see
      * <a href="https://rdf.js.org/data-model-spec/#data-interfaces">RDF.JS data
      * model spec</a>.
      * </p>
-     * 
+     *
      * <p>
      * This corresponds to what is available in our frontend rendering, i.e. allows
      * to use {@code variable.value} to get a value's or literal's string

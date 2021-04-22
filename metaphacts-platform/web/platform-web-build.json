@@ -10,12 +10,7 @@
     "monaco.mp-template.worker": "./src/main/components/3-rd-party/monaco/TemplateLanguageWorkerEntry.ts"
   },
   "stableEntryNames": [
-    "page-renderer",
-    "monaco.editor.worker",
-    "monaco.mp-template.worker",
-    "monaco.json.worker",
-    "monaco.css.worker",
-    "monaco.html.worker"
+    "page-renderer"
   ],
   "aliases": {
     "platform/app": "./src/main/app/ts",
@@ -37,6 +32,7 @@
     "src/main/components/dnd",
     "src/main/components/documentation",
     "src/main/components/language-switch",
+    "src/main/components/ontology",
     "src/main/components/persistence",
     "src/main/components/semantic/data-table",
     "src/main/components/semantic/lazy-tree",
@@ -49,25 +45,11 @@
     "src/main/components/sparql-editor"
   ],
   "generatedJsonSchemas": [
-    "BaseCanvasEventData",
-    "BaseOntodiaListenEventData",
     "BuiltInEventData",
-    "ChartTooltipData",
     "FieldDefinitionConfig",
     "FieldDependency",
-    "KnowledgePanelEventData",
     "LookupDataQuery",
     "MultipleFieldConstraint",
-    "OntodiaEdgePropertyGroupTemplateData",
-    "OntodiaElementTemplateData",
-    "OntodiaHaloTemplateData",
-    "OntodiaListenEventData",
-    "OntodiaTriggerEventData",
-    "SaveButtonTemplateData",
-    "InstancesSearchEventData",
-    "SemanticLazyTreeTemplateData",
-    "SemanticQueryTemplateData",
-    "SemanticUpdateEventData",
     "SparqlDataQuery"
   ]
 }

@@ -55,6 +55,7 @@
       "no-result-template": true
     },
     "propsSchema": "SemanticQueryConfig",
+    "additionalSchemas": ["SemanticQueryTemplateData"],
     "helpResource": "http://help.metaphacts.com/resource/SemanticQuery"
   },
   "semantic-carousel": {
@@ -73,6 +74,7 @@
       "no-result-template": true
     },
     "propsSchema": "SemanticChartConfig",
+    "additionalSchemas": ["ChartTooltipData"],
     "helpResource": "http://help.metaphacts.com/resource/SemanticChart"
   },
   "semantic-chart-type-selector": {
@@ -178,7 +180,10 @@
       "template": true
     }
   },
-  "semantic-search-query-chemical-drawing": "platform/components/semantic/search/web-components/ChemcialDrawingSearch.tsx",
+  "semantic-search-query-chemical-drawing": {
+    "path": "platform/components/semantic/search/web-components/ChemcialDrawingSearch.tsx",
+    "propsSchema": "ChemicalDrawingSearchConfig"
+  },
   "semantic-search-query-constant": {
     "path": "platform/components/semantic/search/web-components/QueryConstant.tsx",
     "propsSchema": "SemanticSearchQueryConstantConfig",
@@ -243,6 +248,7 @@
   "semantic-update": {
     "path": "platform/components/semantic/update/SemanticUpdate.tsx",
     "propsSchema": "SemanticUpdateConfig",
+    "additionalSchemas": ["SemanticUpdateEventData"],
     "helpResource": "http://help.metaphacts.com/resource/SemanticUpdate"
   },
   "semantic-context": {
@@ -301,6 +307,7 @@
   "mp-event-target-redirect": {
     "path": "platform/components/ui/redirect-action/RedirectAction.ts",
     "propsSchema": "RedirectActionProps",
+    "additionalSchemas": ["EventTargetRedirectEventData"],
     "helpResource": "http://help.metaphacts.com/resource/EventSystem"
   },
 
@@ -320,6 +327,7 @@
       }
     },
     "propsSchema": "ResourceEditorFormConfig",
+    "additionalSchemas": ["SemanticFormEventData"],
     "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
   },
   "semantic-form-switch": {
@@ -375,6 +383,9 @@
   },
   "semantic-form-composite-input": {
     "path": "platform/components/forms/inputs/CompositeInput.ts",
+    "deferAttributes": {
+      "new-subject-template": true
+    },
     "propsSchema": "SemanticFormCompositeInputConfig",
     "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
   },
@@ -399,6 +410,9 @@
   },
   "semantic-form-template": {
     "path": "platform/components/forms/static/FormTemplate.tsx",
+    "deferAttributes": {
+      "template": true
+    },
     "propsSchema": "SemanticFormTemplateConfig"
   },
   "semantic-form-field-label": {
@@ -418,6 +432,10 @@
       "no-result-template": true
     },
     "propsSchema": "SemanticLazyTreeConfig",
+    "additionalSchemas": [
+      "SemanticLazyTreeEventData",
+      "SemanticLazyTreeTemplateData"
+    ],
     "helpResource": "http://help.metaphacts.com/resource/SemanticLazyTree"
   },
   "mp-field-visualization": {
@@ -468,7 +486,7 @@
   "mp-rdf-upload": {
     "path": "platform/components/admin/rdf-upload/RdfUpload.tsx",
     "deferAttributes": {
-      "placeholderTemplate": true
+      "placeholder-template": true
     },
     "propsSchema": "RdfUploadConfig"
   },
@@ -599,6 +617,7 @@
   "mp-splitpane": {
     "path": "platform/components/ui/splitpane/SplitPaneComponent.ts",
     "propsSchema": "SplitPaneConfig",
+    "additionalSchemas": ["SplitPaneEventData"],
     "helpResource": "http://help.metaphacts.com/resource/MPSplitPaneComponent"
   },
   "mp-splitpane-sidebar-closed": {
@@ -695,7 +714,8 @@
         "listTemplate": true
       }
     },
-    "propsSchema": "SetManagementConfig"
+    "propsSchema": "SetManagementConfig",
+    "additionalSchemas": ["SetManagementEventData"]
   },
   "mp-set-management-action-remove-set-item": "platform/components/sets/actions/RemoveSetItemAction.ts",
   "mp-set-management-action-fetch-set-items": "platform/components/sets/actions/FetchSetItemsAction.ts",
@@ -759,7 +779,11 @@
   "mp-smiles-code-drawer": "platform/components/3-rd-party/SmilesCodeDrawer.tsx",
   "ontodia": {
     "path": "platform/components/3-rd-party/ontodia/Ontodia.tsx",
-    "propsSchema": "BaseOntodiaConfig",
+    "propsSchema": "OntodiaConfig",
+    "additionalSchemas": [
+      "OntodiaTriggerEventData",
+      "OntodiaListenEventData"
+    ],
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
   "diagram-search-result": {
@@ -789,7 +813,12 @@
         "template": true
       }
     },
-    "propsSchema": "CanvasConfig",
+    "propsSchema": "OntodiaCanvasConfig",
+    "additionalSchemas": [
+      "OntodiaCanvasEventData",
+      "OntodiaEdgePropertyGroupTemplateData",
+      "OntodiaElementTemplateData"
+    ],
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
   "ontodia-class-tree": {
@@ -800,6 +829,7 @@
   "ontodia-instances-search": {
     "path": "platform/components/3-rd-party/ontodia/InstancesSearch.tsx",
     "propsSchema": "InstancesSearchConfig",
+    "additionalSchemas": ["InstancesSearchEventData"],
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
   "ontodia-connections": {
@@ -832,6 +862,7 @@
       "template": true
     },
     "propsSchema": "OntodiaHaloConfig",
+    "additionalSchemas": ["OntodiaHaloTemplateData"],
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
   "ontodia-halo-link": {
@@ -850,20 +881,30 @@
       "template": true
     },
     "propsSchema": "OntodiaSaveButtonConfig",
+    "additionalSchemas": ["SaveButtonTemplateData"],
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
   "ontodia-field-configuration": {
     "path": "platform/components/3-rd-party/ontodia/authoring/OntodiaFieldConfiguration.ts",
+    "deferAttributes": {
+      "default-subject-template": true
+    },
     "propsSchema": "OntodiaFieldConfigurationConfig",
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
   "ontodia-entity-metadata": {
     "path": "platform/components/3-rd-party/ontodia/authoring/OntodiaEntityMetadata.ts",
+    "deferAttributes": {
+      "new-subject-template": true
+    },
     "propsSchema": "OntodiaEntityMetadataConfig",
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
   "ontodia-link-metadata": {
     "path": "platform/components/3-rd-party/ontodia/authoring/OntodiaLinkMetadata.tsx",
+    "deferAttributes": {
+      "new-subject-template": true
+    },
     "propsSchema": "OntodiaLinkMetadataConfig",
     "helpResource": "http://help.metaphacts.com/resource/Ontodia"
   },
@@ -950,6 +991,7 @@
   "mp-workflow-create": {
     "path": "platform/components/workflow/WorkflowCreateComponent.tsx",
     "propsSchema": "WorkflowCreateConfig",
+    "additionalSchemas": ["WorkflowEventData"],
     "helpResource": "http://help.metaphacts.com/resource/Workflow"
   },
   "mp-workflow-manager": {
@@ -974,6 +1016,7 @@
       "template": true
     },
     "propsSchema": "KnowledgePanelFrameConfig",
+    "additionalSchemas": ["KnowledgePanelEventData"],
     "helpResource": "http://help.metaphacts.com/resource/KnowledgePanel"
   },
   "mp-knowledge-panel-trigger": {

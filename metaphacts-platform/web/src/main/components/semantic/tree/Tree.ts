@@ -37,11 +37,13 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, createElement, MouseEvent, ReactNode } from 'react';
+import { createElement, MouseEvent, ReactNode } from 'react';
 import * as D from 'react-dom-factories';
 import * as _ from 'lodash';
 import * as ReactTreeView from 'react-treeview';
 import * as classnames from 'classnames';
+
+import { Component } from 'platform/api/components';
 
 import { TemplateItem } from 'platform/components/ui/template';
 

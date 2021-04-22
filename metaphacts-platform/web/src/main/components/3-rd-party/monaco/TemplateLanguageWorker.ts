@@ -37,7 +37,6 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { kebabCase } from 'lodash';
 import * as vsHtmlService from 'vscode-html-languageservice';
 import * as vsJsonService from 'vscode-json-languageservice';
 
@@ -45,8 +44,12 @@ import * as vsJsonService from 'vscode-json-languageservice';
 import type * as monaco from './MonacoBundle';
 import { RangeSet } from './RangeSet';
 import {
-  TemplateLanguageServiceData, ComponentMetadata, JsonSchema,
-  TEMPLATE_INCLUDE_SCHEMA, TEMPLATE_RESOURCE_LINK,
+  TemplateLanguageDataProvider, HtmlOnlyDataProvider, ComponentSchemaProvider,
+  hasComponent, getComponentSchema, attributeNameToPropertyName, propertyNameToAttributeName,
+  deepResolveSchemaRef, findAllSchemaProperties,
+} from './TemplateLanguageDataProvider';
+import {
+  TemplateLanguageServiceData, JsonSchema, TEMPLATE_INCLUDE_SCHEMA,
 } from './TemplateLanguageWorkerCommon';
 
 /* tslint:disable: max-line-length */
@@ -64,9 +67,7 @@ export class TemplateLanguageWorker {
   private readonly jsonService: vsJsonService.LanguageService;
 
   private readonly languageData: TemplateLanguageServiceData;
-  private schemas: vsJsonService.SchemaConfiguration[] | undefined;
-  private readonly augmentedSchemas = new Set<JsonSchema>();
-  private readonly resolvedSchemas = new Map<string, JsonSchema>();
+  private readonly schemaProvider: ComponentSchemaProvider;
 
   constructor(
     workerContext: monaco.worker.IWorkerContext,
@@ -77,15 +78,20 @@ export class TemplateLanguageWorker {
     if (!this.languageData) {
       throw new Error('Missing template language data for language service');
     }
+    this.schemaProvider = new ComponentSchemaProvider(this.languageData);
     this.htmlService = vsHtmlService.getLanguageService({
       useDefaultDataProvider: false,
       customDataProviders: [
         new HtmlOnlyDataProvider(this.languageData),
-        new TemplateLanguageDataProvider(this.languageData),
+        new TemplateLanguageDataProvider(this.languageData, this.schemaProvider),
       ],
     });
     this.jsonService = vsJsonService.getLanguageService({
-      schemaRequestService: this.resolveJsonAttributeSchema,
+      schemaRequestService: this.schemaProvider.resolveSchema,
+    });
+    this.jsonService.configure({
+      validate: true,
+      schemas: this.schemaProvider.getSchemas(),
     });
   }
 
@@ -106,6 +112,7 @@ export class TemplateLanguageWorker {
       document,
       htmlService: this.htmlService,
       jsonService: this.jsonService,
+      schemaProvider: this.schemaProvider,
       getDocumentText: () => {
         if (documentText === null) {
           documentText = document.getText();
@@ -124,7 +131,6 @@ export class TemplateLanguageWorker {
 
     const match = this.getEmbeddedJsonAtPosition(document, htmlDocument, position);
     if (match) {
-      this.ensureJsonAttributeSchemas();
       const jsonPosition = match.positionFromHtml(position);
       const jsonCompletionList = await this.jsonService.doComplete(
         match.textDocument, jsonPosition, match.json
@@ -157,7 +163,6 @@ export class TemplateLanguageWorker {
 
     const match = this.getEmbeddedJsonAtPosition(document, htmlDocument, position);
     if (match) {
-      this.ensureJsonAttributeSchemas();
       const jsonPosition = match.positionFromHtml(position);
       const jsonHover = await this.jsonService.doHover(
         match.textDocument, jsonPosition, match.json
@@ -220,12 +225,11 @@ export class TemplateLanguageWorker {
       for (const range of ranges) {
         const content = document.getText(range);
         if (content === rawValue) {
-          match = matchEmbeddedJson(node.tag, attribute, content, range, context);
+          match = matchEmbeddedJson(node, attribute, content, range, context);
           break;
         }
       }
       if (match) {
-        this.ensureJsonAttributeSchemas();
         tasks.push((async () => {
           const jsonDiagnostics = await this.jsonService.doValidation(
             match.textDocument, match.json
@@ -359,69 +363,12 @@ export class TemplateLanguageWorker {
       addIncludeLink(match);
     }
 
-    const frontendIncludePattern = /\{\{\#?\>\s?\"?([^"\]\s]*)\"?\s?.*?\}\}/g;
+    const frontendIncludePattern = /\{\{\#?\>\s?\"?([^"\}\s]*)\"?\s?.*?\}\}/g;
     while (match = frontendIncludePattern.exec(documentText)) {
       addIncludeLink(match);
     }
 
     return Promise.resolve(links);
-  }
-
-  private ensureJsonAttributeSchemas() {
-    if (this.schemas) { return; }
-    this.schemas = [];
-    for (const tag of getAllComponentTags(this.languageData)) {
-      const schema = getComponentSchema(tag, this.languageData);
-      if (schema) {
-        const allProperties = findAllSchemaProperties(schema);
-        for (const property of Object.keys(allProperties)) {
-          const propertySchema = deepResolveSchemaRef(schema.definitions, allProperties[property]);
-          if (propertySchema.anyOf
-            || propertySchema.type === 'object'
-            || propertySchema.type === 'array'
-          ) {
-            this.schemas.push({
-              fileMatch: [`mp-template:attribute/${tag}/${property}`],
-              uri: `mp-template:attribute/${tag}/${property}`,
-            });
-          }
-        }
-      }
-    }
-    this.jsonService.configure({validate: true, schemas: this.schemas});
-  }
-
-  private resolveJsonAttributeSchema: vsJsonService.SchemaRequestService = uri => {
-    const schema = this.buildJsonAttributeSchema(uri);
-    return Promise.resolve(schema ? JSON.stringify(schema) : undefined);
-  }
-
-  private buildJsonAttributeSchema(uri: string): JsonSchema | undefined {
-    if (this.resolvedSchemas.has(uri)) {
-      return this.resolvedSchemas.get(uri);
-    }
-    const match = /^mp-template:attribute\/([^\/]+)\/([^\/]+)$/.exec(uri);
-    if (!match) {
-      return undefined;
-    }
-    const [, tag, property] = match;
-    const schema = getComponentSchema(tag, this.languageData);
-    if (!schema) {
-      return undefined;
-    }
-    augmentSchemaRecursively(schema, this.augmentedSchemas);
-    const allProperties = findAllSchemaProperties(schema);
-    if (!Object.prototype.hasOwnProperty.call(allProperties, property)) {
-      return undefined;
-    }
-    const propertySchema = allProperties[property];
-    const schemaWithDefinitions: JsonSchema = {
-      ...propertySchema,
-      id: uri,
-      definitions: schema.definitions,
-    };
-    this.resolvedSchemas.set(uri, schemaWithDefinitions);
-    return schemaWithDefinitions;
   }
 
   private getEmbeddedJsonAtPosition(
@@ -440,7 +387,7 @@ export class TemplateLanguageWorker {
       return undefined;
     }
     const {attribute, range, content} = foundAttribute;
-    return matchEmbeddedJson(node.tag, attribute, content, range, context);
+    return matchEmbeddedJson(node, attribute, content, range, context);
   }
 }
 
@@ -487,7 +434,10 @@ function checkDefinedAttributes(
       const rawValue = node.attributes[attribute];
       if (rawValue !== null) {
         const trimmedValue = trimAttributeContent(rawValue);
-        const message = checkAttributeDatatype(trimmedValue, propertySchema);
+        let message = checkAttributeDatatype(trimmedValue, propertySchema, schema.definitions);
+        if (message === null) {
+          message = checkEventTypeAttribute(trimmedValue, propertySchema, context.schemaProvider);
+        }
         if (message !== null) {
           const ranges = findAttributeRanges(node, attribute, AttributePart.Value, context);
           for (const range of ranges) {
@@ -525,6 +475,20 @@ function checkDefinedAttributes(
   }
 }
 
+function checkEventTypeAttribute(
+  value: string,
+  propertySchema: JsonSchema,
+  schemaProvider: ComponentSchemaProvider
+): string | null {
+  if (propertySchema.format === 'mp-event-type') {
+    if (!(value.startsWith('_') || schemaProvider.hasEventType(value))) {
+      return `Unknown event type. Custom event types must be ` +
+        `prefixed with underscore, e.g. _MyEventType`;
+    }
+  }
+  return null;
+}
+
 function findCDATARange(
   node: vsHtmlService.Node,
   context: HtmlDocumentContext
@@ -550,13 +514,15 @@ enum AttributeDatatype {
 }
 function checkAttributeDatatype(
   value: string,
-  propertySchema: JsonSchema
+  propertySchema: JsonSchema,
+  definitions: JsonSchema['definitions']
 ): string | null {
   let allowed = AttributeDatatype.none;
   allowed = addAllowedDatatype(allowed, propertySchema.type);
   if (propertySchema.anyOf) {
     for (const variant of propertySchema.anyOf) {
-      allowed = addAllowedDatatype(allowed, variant.type);
+      const resolved = deepResolveSchemaRef(definitions, variant);
+      allowed = addAllowedDatatype(allowed, resolved.type);
     }
   }
   let valueType = AttributeDatatype.string;
@@ -569,7 +535,7 @@ function checkAttributeDatatype(
   } else if (isNumberAttributeValue(value)) {
     valueType = AttributeDatatype.number;
   }
-  const enumResult = checkStringEnumAttribute(value, valueType, propertySchema);
+  const enumResult = checkEnumAttribute(value, valueType, propertySchema);
   if (enumResult !== null) {
     return enumResult;
   }
@@ -615,20 +581,38 @@ function getDatatypeNames(typeSet: AttributeDatatype): string[] {
   }
   return types;
 }
-function checkStringEnumAttribute(
+function checkEnumAttribute(
   value: string,
   valueType: AttributeDatatype,
   propertySchema: JsonSchema
 ): string | null {
-  if (propertySchema.type === 'string' && propertySchema.enum) {
-    const matchesEnum = valueType === AttributeDatatype.string
-      && propertySchema.enum.indexOf(value) >= 0;
+  if (propertySchema.enum) {
+    const parsedValue = parseEnumValue(value, valueType);
+    const matchesEnum = (
+      (valueType & SUPPORTED_ENUM_TYPES) !== AttributeDatatype.none &&
+      propertySchema.enum.indexOf(parsedValue) >= 0
+    );
     if (!matchesEnum) {
-      const enumValues = propertySchema.enum.map(name => `"${name}"`).join(', ');
+      const enumValues = propertySchema.enum.map(name => JSON.stringify(name)).join(', ');
       return `Expected one of ${enumValues}`;
     }
   }
   return null;
+}
+const SUPPORTED_ENUM_TYPES = (
+  AttributeDatatype.string |
+  AttributeDatatype.number |
+  AttributeDatatype.boolean
+);
+function parseEnumValue(value: string, valueType: AttributeDatatype): string | number | boolean {
+  switch (valueType) {
+    case AttributeDatatype.number:
+      return Number(value);
+    case AttributeDatatype.boolean:
+      return value === 'true';
+    default:
+      return value;
+  }
 }
 // tslint:enable: no-bitwise
 
@@ -671,7 +655,7 @@ class EmbeddedJson {
 }
 
 function matchEmbeddedJson(
-  tag: string,
+  node: vsHtmlService.Node,
   attribute: string,
   content: string,
   range: vsHtmlService.Range,
@@ -683,8 +667,10 @@ function matchEmbeddedJson(
   }
   const jsonValue = maskMultilineStringsJson(trimmedContent);
   const propertyName = attributeNameToPropertyName(attribute);
+  const eventType = tryGetEventTypeForEventDataProperty(node, propertyName, context.schemaProvider);
+  const schemaUri = context.schemaProvider.constructSchemaUri(node.tag, propertyName, eventType);
   const jsonTextDocument = vsJsonService.TextDocument.create(
-    `mp-template:attribute/${tag}/${propertyName}`,
+    schemaUri,
     'json',
     context.document.version,
     jsonValue
@@ -693,6 +679,22 @@ function matchEmbeddedJson(
     + (trimmedContent.length < content.length ? 1 : 0);
   const jsonDocument = context.jsonService.parseJSONDocument(jsonTextDocument);
   return new EmbeddedJson(jsonTextDocument, jsonDocument, jsonOffset, context);
+}
+
+function tryGetEventTypeForEventDataProperty(
+  node: vsHtmlService.Node,
+  propertyName: string,
+  schemaProvider: ComponentSchemaProvider
+): string {
+  const eventTypePropertyName = schemaProvider.getEventTypePropertyName(node.tag, propertyName);
+  if (eventTypePropertyName) {
+    const eventTypeAttributeName = propertyNameToAttributeName(eventTypePropertyName);
+    if (Object.prototype.hasOwnProperty.call(node.attributes, eventTypeAttributeName)) {
+      const eventType = trimAttributeContent(node.attributes[eventTypeAttributeName]);
+      return eventType;
+    }
+  }
+  return undefined;
 }
 
 function translateJsonAttributeCompletion(
@@ -756,235 +758,6 @@ function maskMultilineStringsJson(multilineJson: string): string {
   return multilineJson.replace(/(?:\n|\r|\t)/gm, ' ');
 }
 
-class HtmlOnlyDataProvider implements vsHtmlService.IHTMLDataProvider {
-  private baseProvider = vsHtmlService.getDefaultHTMLDataProvider();
-
-  constructor(
-    private readonly languageData: TemplateLanguageServiceData
-  ) {}
-
-  getId(): string {
-    return this.baseProvider.getId();
-  }
-
-  isApplicable(languageId: string): boolean {
-    return languageId === 'mp-template';
-  }
-
-  provideTags(): vsHtmlService.ITagData[] {
-    return this.baseProvider.provideTags();
-  }
-
-  provideAttributes(tag: string): vsHtmlService.IAttributeData[] {
-    if (hasComponent(tag, this.languageData)) {
-      return [];
-    }
-    return this.baseProvider.provideAttributes(tag);
-  }
-
-  provideValues(tag: string, attribute: string): vsHtmlService.IValueData[] {
-    if (hasComponent(tag, this.languageData)) {
-      return [];
-    }
-    return this.baseProvider.provideValues(tag, attribute);
-  }
-}
-
-class TemplateLanguageDataProvider implements vsHtmlService.IHTMLDataProvider {
-  private cachedTags: vsHtmlService.ITagData[] | undefined;
-
-  constructor(
-    private readonly languageData: TemplateLanguageServiceData
-  ) {}
-
-  getId(): string {
-    return 'mp-template-data-provider';
-  }
-
-  isApplicable(languageId: string): boolean {
-    return languageId === 'mp-template';
-  }
-
-  provideTags(): vsHtmlService.ITagData[] {
-    if (!this.cachedTags) {
-      const allTags = getAllComponentTags(this.languageData);
-      this.cachedTags = allTags.map((tag): vsHtmlService.ITagData => {
-        const metadata = getComponentMetadata(tag, this.languageData);
-        const schema = getComponentSchema(tag, this.languageData);
-        const description = schema?.description ?? `\`${tag}\` component`;
-        const helpUrl = metadata?.helpResource
-          ? (TEMPLATE_RESOURCE_LINK + metadata.helpResource)
-          : undefined;
-        const references: vsHtmlService.IReference[] = [];
-        if (helpUrl) {
-          references.push({name: 'Documentation page', url: helpUrl});
-        }
-        this.addResourceReferences(schema, references);
-        return {
-          name: tag,
-          description,
-          attributes: this.provideAttributes(tag),
-          references,
-        };
-      });
-    }
-    return this.cachedTags;
-  }
-
-  provideAttributes(tag: string): vsHtmlService.IAttributeData[] {
-    const schema = getComponentSchema(tag, this.languageData);
-    if (!schema) {
-      return [];
-    }
-    const allProperties = findAllSchemaProperties(schema);
-    const attributes: vsHtmlService.IAttributeData[] = [];
-    for (const propertyName of Object.keys(allProperties)) {
-      if (propertyName === 'children') { continue; }
-
-      let previousSchema: JsonSchema;
-      let propertySchema = allProperties[propertyName];
-      if (propertySchema) {
-        do {
-          if (propertySchema.description) { break; }
-          previousSchema = propertySchema;
-          propertySchema = resolveSchemaRef(schema.definitions, previousSchema);
-        } while (propertySchema !== previousSchema);
-      }
-
-      const attributeName = propertyNameToAttributeName(propertyName);
-      let description = propertySchema?.description ?? `\`${attributeName}\` attribute`;
-      if (propertySchema?.default) {
-        const defaultValue = propertySchema.default;
-        const defaultString = typeof defaultValue === 'object'
-          ? JSON.stringify(defaultValue) : defaultValue;
-        description += `\n\n**Default**: \`\`\`${defaultString}\`\`\``;
-      }
-
-      const references: vsHtmlService.IReference[] = [];
-      this.addResourceReferences(propertySchema, references);
-
-      attributes.push({
-        name: attributeName,
-        description,
-        values: this.provideValues(tag, attributeName),
-        references,
-      });
-    }
-    return attributes;
-  }
-
-  provideValues(tag: string, attribute: string): vsHtmlService.IValueData[] {
-    const schema = getComponentSchema(tag, this.languageData);
-    if (!schema) {
-      return [];
-    }
-    const allProperties = findAllSchemaProperties(schema);
-    const propertyName = attributeNameToPropertyName(attribute);
-    let propertySchema = allProperties[propertyName];
-    if (!propertySchema) {
-      return [];
-    }
-    propertySchema = deepResolveSchemaRef(schema.definitions, propertySchema);
-    if (propertySchema.enum) {
-      return propertySchema.enum.map((value): vsHtmlService.IValueData => {
-        return {
-          name: value,
-        };
-      });
-    } else if (propertySchema.type === 'boolean') {
-      return [...BOOLEAN_VALUE_SET];
-    } else {
-      return [];
-    }
-  }
-
-  private addResourceReferences(
-    schema: JsonSchema | undefined,
-    outReferences: vsHtmlService.IReference[]
-  ) {
-    if (schema?.mpSeeResource) {
-      if (Array.isArray(schema.mpSeeResource)) {
-        for (const {name, iri} of schema.mpSeeResource) {
-          outReferences.push({name, url: TEMPLATE_RESOURCE_LINK + iri});
-        }
-      } else {
-        const {name, iri} = schema.mpSeeResource;
-        outReferences.push({name, url: TEMPLATE_RESOURCE_LINK + iri});
-      }
-    }
-  }
-}
-
-function findAllSchemaProperties(root: JsonSchema): { [propertyName: string]: JsonSchema } {
-  const result: { [propertyName: string]: JsonSchema } = {};
-  const visitSchema = (schema: JsonSchema) => {
-    if (schema.properties) {
-      Object.assign(result, schema.properties);
-    }
-    if (schema.anyOf) {
-      for (const variant of schema.anyOf) {
-        const resolved = deepResolveSchemaRef(schema.definitions, variant);
-        visitSchema(resolved);
-      }
-    }
-  };
-  visitSchema(root);
-  return result;
-}
-
-interface MonacoExtendedJsonSchema {
-  markdownDescription?: string;
-}
-
-function augmentSchemaRecursively(
-  root: JsonSchema,
-  alreadyAugmented: Set<JsonSchema>
-): void {
-  const visit = (schema: JsonSchema) => {
-    if (alreadyAugmented.has(schema)) { return; }
-    alreadyAugmented.add(schema);
-    /**
-     * Workaround for `vscode-json-languageservice` treating `description` as plain text
-     * and requiring to use `markdownDescription` for formatted content instead.
-     *
-     * See https://github.com/microsoft/vscode-cpptools/issues/4544
-     *
-     * TODO: generate `markdownDescription` field in schemas?
-     */
-    if (typeof schema.description === 'string'
-      && typeof (schema as MonacoExtendedJsonSchema).markdownDescription !== 'string'
-    ) {
-      (schema as MonacoExtendedJsonSchema).markdownDescription = schema.description;
-    }
-    /**
-     * Disallow any unknown properties if not specified otherwise because JSON language
-     * service doesn't have a configurable option to validate in this mode by default.
-     */
-    if (schema.type === 'object'
-      && !(schema.$ref || schema.anyOf || schema.enum || schema.patternProperties)
-      && schema.additionalProperties === undefined
-    ) {
-      schema.additionalProperties = false;
-    }
-    if (schema.anyOf) {
-      for (const variant of schema.anyOf) {
-        visit(variant);
-      }
-    }
-    if (schema.properties) {
-      for (const propertyName of Object.keys(schema.properties)) {
-        visit(schema.properties[propertyName]);
-      }
-    }
-    if (schema.definitions) {
-      for (const definitionName of Object.keys(schema.definitions)) {
-        visit(schema.definitions[definitionName]);
-      }
-    }
-  };
-  visit(root);
-}
-
 function trimAttributeContent(content: string): string {
   if (content.startsWith(`'`) && content.endsWith(`'`)
     || content.startsWith(`"`) && content.endsWith(`"`)
@@ -1005,6 +778,7 @@ export const VOID_HTML_TAGS = new Set<string>([
 interface HtmlDocumentContext {
   readonly htmlService: vsHtmlService.LanguageService;
   readonly jsonService: vsJsonService.LanguageService;
+  readonly schemaProvider: ComponentSchemaProvider;
   readonly document: vsHtmlService.TextDocument;
   getDocumentText(): string;
 }
@@ -1122,58 +896,6 @@ function findAttributeAtOffset(
   return undefined;
 }
 
-const BOOLEAN_VALUE_SET: ReadonlyArray<vsHtmlService.IValueData> = [
-  {name: 'true', description: '`true` boolean value'},
-  {name: 'false', description: '`false` boolean value'},
-];
-
-function getAllComponentTags(languageData: TemplateLanguageServiceData): string[] {
-  return Object.keys(languageData.components);
-}
-
-function hasComponent(
-  componentTag: string,
-  languageData: TemplateLanguageServiceData
-): boolean {
-  return Object.prototype.hasOwnProperty.call(languageData.components, componentTag);
-}
-
-function getComponentMetadata(
-  componentTag: string,
-  languageData: TemplateLanguageServiceData
-): ComponentMetadata | undefined {
-  return hasComponent(componentTag, languageData)
-    ? languageData.components[componentTag] : undefined;
-}
-
-function getComponentSchema(
-  componentTag: string,
-  languageData: TemplateLanguageServiceData
-): JsonSchema | undefined {
-  const metadata = getComponentMetadata(componentTag, languageData);
-  if (!(metadata && metadata.propsSchema)) {
-    return undefined;
-  }
-  const schema = languageData.schemas[metadata.propsSchema];
-  return schema;
-}
-
-function propertyNameToAttributeName(propertyName: string): string {
-  if (propertyName === 'className') {
-    return 'class';
-  }
-  return kebabCase(propertyName);
-}
-
-function attributeNameToPropertyName(attributeName: string): string {
-  if (attributeName === 'class') {
-    return 'className';
-  }
-  return attributeName
-    .replace(/^(x|data)[-_:]/i, '')
-    .replace(/[-_:](.)/g, (x, chr) => chr.toUpperCase());
-}
-
 function isNumberAttributeValue(value: string): boolean {
   return /^[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$/.test(value);
 }
@@ -1203,35 +925,4 @@ function looksLikeEmbeddedJson(attributeValue: string): boolean {
   } else {
     return false;
   }
-}
-
-const SCHEMA_REF_PREFIX = '#/definitions/';
-
-function resolveSchemaRef(
-  definitions: JsonSchema['definitions'],
-  schema: JsonSchema
-): JsonSchema {
-  if (schema && definitions) {
-    if (schema.$ref && schema.$ref.startsWith(SCHEMA_REF_PREFIX)) {
-      const definitionName = schema.$ref.substring(SCHEMA_REF_PREFIX.length);
-      const definition = definitions[definitionName];
-      if (definition) {
-        return definition;
-      }
-    }
-  }
-  return schema;
-}
-
-function deepResolveSchemaRef(
-  definitions: JsonSchema['definitions'],
-  schema: JsonSchema
-): JsonSchema {
-  let previousSchema: JsonSchema;
-  let current = schema;
-  do {
-    previousSchema = current;
-    current = resolveSchemaRef(definitions, previousSchema);
-  } while (current !== previousSchema);
-  return current;
 }

@@ -46,7 +46,7 @@ import { Rdf } from 'platform/api/rdf';
 import { FieldDefinition } from '../FieldDefinition';
 import { DependencyContext } from '../FieldDependencies';
 import {
-  FieldValue, EmptyValue, CompositeValue, DataState, FieldError, ErrorKind,
+  FieldValue, EmptyValue, CompositeValue, DataState, FieldError, ErrorKind, InspectedInputTree,
 } from '../FieldValues';
 
 export interface MultipleValuesConfig {
@@ -106,6 +106,15 @@ export abstract class MultipleValuesInput<P extends MultipleValuesProps, S>
 
   dataState(): DataState {
     return DataState.Ready;
+  }
+
+  inspect(): InspectedInputTree {
+    return {
+      self: this,
+      dataState: DataState[this.dataState()] as keyof typeof DataState,
+      handler: this.props.handler,
+      children: {},
+    };
   }
 
   static readonly defaultHandler: MultipleValuesHandler = {

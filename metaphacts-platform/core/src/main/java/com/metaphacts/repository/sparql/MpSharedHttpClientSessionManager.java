@@ -44,7 +44,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.eclipse.rdf4j.http.client.SharedHttpClientSessionManager;
 import org.eclipse.rdf4j.query.resultio.TupleQueryResultFormat;
-import org.eclipse.rdf4j.rio.RDFFormat;
 
 import com.metaphacts.config.Configuration;
 import com.metaphacts.repository.http.AuthenticatingRDF4JProtocolSession;

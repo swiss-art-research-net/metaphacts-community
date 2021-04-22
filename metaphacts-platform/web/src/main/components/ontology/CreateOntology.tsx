@@ -46,9 +46,12 @@ import { Rdf, vocabularies } from 'platform/api/rdf';
 import { addNotification } from 'platform/components/ui/notification';
 import { refresh, navigateToResource } from 'platform/api/navigation';
 import { RDFGraphStoreService } from 'platform/api/services/rdf-graph-store';
+import { extractParams } from 'platform/api/navigation/NavigationUtils';
 
 const { rdf, rdfs } = vocabularies;
 const OWL_ONTOLOGY = Rdf.iri('http://www.w3.org/2002/07/owl#Ontology');
+
+import * as styles from './CreateOntology.scss';
 
 interface CreateOntologyState {
   alertState?: AlertConfig;
@@ -58,11 +61,20 @@ interface CreateOntologyState {
   previousTitle?: string;
 }
 
+/**
+ * Component which allows users to create a new ontology
+ * by defining IRI and rdf:label of ontology.
+ *
+ * @patternProperties {
+ *   "^urlqueryparam": {"type": "string"}
+ * }
+ */
 interface CreateOntologyConfig {
   /**
-   * Optional post-action to be performed after a new ontology have been created.
+   * Optional post-action to be performed after a new ontology has been created.
    * Can be either 'reload' or 'redirect' (redirects to the newly created resource)
-   * or any IRI string to which the form will redirect.
+   * or any IRI string to which the form will redirect, in which case the created
+   * ontology is provided as `ontologyIri` parameter.
    */
   postAction?: 'none' | 'reload' | 'redirect';
 
@@ -76,10 +88,6 @@ interface CreateOntologyConfig {
 
 export type CreateOntologyProps = CreateOntologyConfig;
 
-/**
- * Component which allows users to create a new ontology
- * by defining IRI and rdf:label of ontology.
- */
 export class CreateOntology extends React.Component<CreateOntologyProps, CreateOntologyState> {
   private readonly cancellation = new Cancellation();
   static defaultProps: Required<Pick<CreateOntologyProps, 'baseIri'>> = {
@@ -99,14 +107,15 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
   }
 
   updateIriFromTitle = () => {
-    const iri = normalizeIri(this.iriFromTitle(this.state.iri));
+    const { iri: previousIri, title, previousTitle } = this.state;
+    const iri = normalizeIri(iriFromTitle(previousIri, title, previousTitle));
     this.setState({ iri: iri });
   }
 
   updateNamespaceFromTitle = () => {
-    const {namespace} = this.state;
-    let iri = this.endsWithSlashOrHash(namespace) ? namespace.slice(0,-1) : namespace;
-    iri = normalizeIri(this.iriFromTitle(iri));
+    const { namespace, title, previousTitle } = this.state;
+    let iri = this.endsWithSlashOrHash(namespace) ? namespace.slice(0, -1) : namespace;
+    iri = normalizeIri(iriFromTitle(iri, title, previousTitle));
     if (!this.endsWithSlashOrHash(iri)) {
       iri = iri + '/';
     }
@@ -115,46 +124,6 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
 
   endsWithSlashOrHash = (str: string): boolean => {
     return str.endsWith('/') || str.endsWith('#');
-  }
-
-  /**
-   * create the ontology IRI based on the title provided by the user.
-   *
-   * Pattern:
-   *
-   * %currentIri% + %ESCAPED_LOWER_CASE_TITLE%
-   */
-  iriFromTitle = (iri: string): string => {
-    if (!iri) { return ''; }
-    const { title, previousTitle } = this.state;
-    // decode URI component, replace space with _, and non-alphanumeric with ""
-    const titleDecoded = decodeURIComponent(title.toLowerCase()
-      .replace(/ /g, '_').replace(/\W/g, ''));
-    const hashFragment = iri.lastIndexOf('#') > 1 ? iri.substring(iri.lastIndexOf('#')) : '';
-    try {
-      const url = new URL(iri);
-      if (!url.pathname) { url.pathname = '/'; }
-      if (!previousTitle) {
-        url.pathname = url.pathname + titleDecoded;
-      } else {
-        const previousTitleDecoded = decodeURIComponent(previousTitle.toLowerCase()
-          .replace(/ /g, '_').replace(/\W/g, ''));
-        // replace the last occurrence of the previous title string
-        // this is to avoid that shorter tokens to not replace strings in high/manually
-        // entered path elements
-        let pos = url.pathname.lastIndexOf(previousTitleDecoded);
-        if (pos !== -1) {
-          const str = url.pathname.substring(0, pos) + titleDecoded
-            + url.pathname.substring(pos + previousTitleDecoded.length);
-          url.pathname = str;
-        }
-      }
-
-      return url.toString() + hashFragment;
-    } catch { /* do nothing */ }
-
-    return iri; // in the worst case do nothing
-
   }
 
   createOntology() {
@@ -230,21 +199,14 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
     const { alertState, iri, title: label, namespace } = this.state;
     const alert = this.state.alertState ? <Alert {...alertState}></Alert> : null;
     const iriIsCorrect = !iri || checkIri(iri);
-    const caCreateOntology = iri && label && iriIsCorrect && !alert;
-    const errorStyle = {
-      borderColor: '#F04124',
-      boxShadow: 'inset 0 1px 1px rgba(0, 0, 0, 0.075)',
-    };
-    return <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
+    const canCreateOntology = iri && label && iriIsCorrect && !alert;
+    return <div className={styles.component}>
       {alert}
       <label>Ontology Title</label>
       <input
         value={label}
-        placeholder={'Enter the ontology title...'}
-        title={'New ontology title'}
+        placeholder='Enter the ontology title...'
+        title='New ontology title'
         onChange={event => {
           this.setState({
             previousTitle: this.state.title,
@@ -259,22 +221,21 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
       <label>Ontology IRI</label>
       <input
         value={iri}
-        placeholder={'Enter the new ontology IRI...'}
-        title={'New ontology IRI'}
+        placeholder='Enter the new ontology IRI...'
+        title='New ontology IRI'
         onChange={event => {
           this.setState({
             iri: event.target.value,
             alertState: null
           });
         }}
-        className='form-control'
-        style={!iriIsCorrect ? errorStyle : {}}
+        className={`form-control ${!iriIsCorrect ? styles.error : ''}`}
       />
       <label>Base Element Namespace (IRI)</label>
       <input
         value={namespace}
-        placeholder={'Enter a namespace (IRI) for ontology elements...'}
-        title={'Namespace used as default for all ontology elements to be created within this ontology. Must end with / or #.'}
+        placeholder='Enter a namespace (IRI) for ontology elements...'
+        title='Namespace used as default for all ontology elements to be created within this ontology. Must end with / or #.'
         onChange={event => {
           const v = event.target.value;
           this.setState({
@@ -284,15 +245,14 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
             }
           });
         }}
-        className='form-control'
-        style={!iriIsCorrect ? errorStyle : {}}
+        className={`form-control ${!iriIsCorrect ? styles.error : ''}`}
       />
 
-      <div style={{marginTop: 10}}>
+      <div className={styles.buttons}>
         <button
-          disabled={!caCreateOntology}
+          disabled={!canCreateOntology}
           type='button'
-          title={caCreateOntology ? `Create ontology ${iri}` : iriIsCorrect ? 'You should fill all fields' : 'Iri is incorrect'}
+          title={canCreateOntology ? `Create ontology ${iri}` : iriIsCorrect ? 'You should fill all fields' : 'Iri is incorrect'}
           onClick={() => {
             this.createOntology();
           }}
@@ -323,20 +283,20 @@ export class CreateOntology extends React.Component<CreateOntologyProps, CreateO
     } else if (this.props.postAction === 'redirect') {
       navigateToResource(
         Rdf.iri(iri),
-        getPostActionUrlQueryParams(this.props)
-      ).onValue(v => v);
+        extractParams(this.props)
+      ).observe({});
     } else {
-      let params = getPostActionUrlQueryParams(this.props);
+      let params = extractParams(this.props);
       params['ontologyIri'] = iri;
       navigateToResource(
         Rdf.iri(this.props.postAction),
         params
-      ).onValue(v => v);
+      ).observe({});
     }
   }
 }
 
-function normalizeIri(rawIri: string) {
+export function normalizeIri(rawIri: string) {
   if (!rawIri) { return undefined; }
   let url: URL;
 
@@ -354,7 +314,7 @@ function normalizeIri(rawIri: string) {
   }
 }
 
-function checkIri(iri: string) {
+export function checkIri(iri: string) {
   try {
     if (!iri) {
       return false;
@@ -372,25 +332,43 @@ function checkIri(iri: string) {
   }
 }
 
-export default CreateOntology;
-
-const POST_ACTION_QUERY_PARAM_PREFIX = 'urlqueryparam';
-
 /**
- * Extracts user-defined `urlqueryparam-<KEY>` query params from
- * a form configuration to provide them on post action navigation.
+ * create the ontology IRI based on the title provided by the user.
+ *
+ * Pattern:
+ *
+ * %currentIri% + %ESCAPED_LOWER_CASE_TITLE%
  */
-function getPostActionUrlQueryParams(props: CreateOntologyProps) {
-  const params: { [paramKey: string]: string } = {};
-
-  for (const key in props) {
-    if (Object.hasOwnProperty.call(props, key)) {
-      if (key.indexOf(POST_ACTION_QUERY_PARAM_PREFIX) === 0) {
-        const queryKey = key.substring(POST_ACTION_QUERY_PARAM_PREFIX.length).toLowerCase();
-        params[queryKey] = props[key as keyof CreateOntologyProps];
+export function iriFromTitle(iri: string, title: string, previousTitle: string): string {
+  if (!iri) { return ''; }
+  // decode URI component, replace space with _, and non-alphanumeric with ""
+  const titleDecoded = decodeURIComponent(title.toLowerCase()
+    .replace(/ /g, '_').replace(/\W/g, ''));
+  const hashFragment = iri.lastIndexOf('#') > 1 ? iri.substring(iri.lastIndexOf('#')) : '';
+  try {
+    const url = new URL(iri);
+    if (!url.pathname) { url.pathname = '/'; }
+    if (!previousTitle) {
+      url.pathname = url.pathname + titleDecoded;
+    } else {
+      const previousTitleDecoded = decodeURIComponent(previousTitle.toLowerCase()
+        .replace(/ /g, '_').replace(/\W/g, ''));
+      // replace the last occurrence of the previous title string
+      // this is to avoid that shorter tokens to not replace strings in high/manually
+      // entered path elements
+      let pos = url.pathname.lastIndexOf(previousTitleDecoded);
+      if (pos !== -1) {
+        const str = url.pathname.substring(0, pos) + titleDecoded
+          + url.pathname.substring(pos + previousTitleDecoded.length);
+        url.pathname = str;
       }
     }
-  }
 
-  return params;
+    return url.toString() + hashFragment;
+  } catch { /* do nothing */ }
+
+  return iri; // in the worst case do nothing
+
 }
+
+export default CreateOntology;

@@ -51,14 +51,31 @@ import { FieldValue, CompositeValue, EmptyValue } from '../FieldValues';
 import { parseQueryStringAsUpdateOperation } from './PersistenceUtils';
 import { TriplestorePersistence, ModelDiffEntry, computeModelDiff } from './TriplestorePersistence';
 
+/**
+ * LDP persistence with options to specify the repository and container.
+ *
+ * Example:
+ * ```
+ * persistence='{
+ *   "type": "ldp",
+ *   "containerIri": "http://www.example.com/customContainer"
+ * }'
+ * ```
+ */
 export interface LdpPersistenceConfig {
-  type?: 'ldp';
+  type: 'ldp';
+  /**
+   * (Optional) ID of the repository in which the data should be updated.
+   */
   repository?: string;
+  /**
+   * IRI of the LDP container to use for persistence.
+  */
   containerIri?: string;
 }
 
 export class LdpPersistence implements TriplestorePersistence {
-  constructor(private config: LdpPersistenceConfig = {}) {}
+  constructor(private config: LdpPersistenceConfig = {type: 'ldp'}) {}
 
   persist(
     initialModel: CompositeValue | EmptyValue,

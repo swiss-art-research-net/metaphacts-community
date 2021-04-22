@@ -59,12 +59,12 @@ import { isSimpleClick } from './ResourceLink';
  */
 export interface ResourceLinkContainerConfig {
   /**
-   * resource IRI to navigate
+   * Resource IRI to navigate to.
    */
   iri: string;
   /**
-   * resource IRI to navigate
-   * @deprecated
+   * **Deprecated**: use `iri` property instead.
+   * @deprecated Use `iri` property instead.
    */
   uri?: string;
 

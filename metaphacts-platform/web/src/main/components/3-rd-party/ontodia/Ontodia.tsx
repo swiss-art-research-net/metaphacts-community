@@ -42,7 +42,6 @@ import { ClassAttributes, Children, createElement, cloneElement, ReactElement } 
 import * as Kefir from 'kefir';
 import { debounce } from 'lodash';
 import {
-  Rdf as OntodiaRdf,
   Workspace,
   WorkspaceProps,
   DataProvider,
@@ -65,7 +64,7 @@ import {
   LabelLanguageSelector,
   LinkModel,
   LinkTypeIri,
-  InternalApi,
+  HashSet,
   CancellationToken,
   parseTurtleText,
   getColorForValues,
@@ -155,7 +154,7 @@ import { OntodiaContext, OntodiaContextWrapper, OntodiaContextTypes } from './On
  * <ontodia iri='http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object'></ontodia>
  * ```
  */
-export interface BaseOntodiaConfig {
+export interface OntodiaConfig {
   /**
    * Used as source ID for emitted events.
    */
@@ -291,7 +290,7 @@ export interface BaseOntodiaConfig {
   children?: {};
 }
 
-export interface OntodiaProps extends BaseOntodiaConfig, ClassAttributes<Ontodia> {
+export interface OntodiaProps extends OntodiaConfig, ClassAttributes<Ontodia> {
   onLoadWorkspace?: (workspace: Workspace) => void;
   children?: React.ReactNode;
 }
@@ -853,9 +852,14 @@ export class Ontodia extends Component<OntodiaProps, State> {
         target: id,
       })
     ).observe({
-      value: event => {
-        const {targetIri, elementData} = event.data;
-        editor.changeEntityData(targetIri as ElementIri, elementData as ElementModel);
+      value: async event => {
+        const targetIri = event.data.targetIri as ElementIri;
+        const newData = event.data.elementData as ElementModel;
+        const result = await model.dataProvider.elementInfo({elementIds: [targetIri]});
+        if (this.cancellation.aborted) { return; }
+        if (Object.prototype.hasOwnProperty.call(result, targetIri)) {
+          editor.changeEntityData(result[targetIri], newData);
+        }
       },
     });
 
@@ -865,8 +869,25 @@ export class Ontodia extends Component<OntodiaProps, State> {
         target: id,
       })
     ).observe({
-      value: event => {
-        editor.deleteEntity(event.data.iri as ElementIri);
+      value: async event => {
+        const targetIri = event.data.iri as ElementIri;
+        const result = await model.dataProvider.elementInfo({elementIds: [targetIri]});
+        if (this.cancellation.aborted) { return; }
+        if (Object.prototype.hasOwnProperty.call(result, targetIri)) {
+          editor.deleteEntity(result[targetIri]);
+        }
+      },
+    });
+
+    this.cancellation.map(
+      listen({eventType: OntodiaEvents.ResetElement, target: id})
+    ).observe({
+      value: async event => {
+        const targetIri = event.data.iri as ElementIri;
+        const change = editor.authoringState.elements.get(targetIri);
+        if (change) {
+          editor.discardChange(change);
+        }
       },
     });
   }
@@ -1427,7 +1448,7 @@ function getGraphBySparqlQuery(
   return Kefir.combine(
     repositories.map(repository => SparqlClient.construct(query, {context: {repository}}))
   ).map(triples => {
-    const quadSet = new InternalApi.HashSet(OntodiaRdf.hashQuad, OntodiaRdf.equalQuads);
+    const quadSet = new HashSet<Rdf.Quad>(Rdf.hashTerm, Rdf.equalTerms);
     const uniqueQuads: Rdf.Quad[] = [];
 
     for (const repositoryGraph of triples) {

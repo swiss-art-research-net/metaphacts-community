@@ -40,10 +40,10 @@
 import { ElementModel, ElementIri, LinkModel, sameLink } from '../data/model';
 
 import { Element, Link, LinkType } from './elements';
-import { Vector, SizeProvider, isPolylineEqual } from './geometry';
+import { Vector, isPolylineEqual } from './geometry';
 import { Command } from './history';
 import { DiagramModel } from './model';
-import { LayoutFunction, LayoutFunctionParams, applyLayout } from '../viewUtils/layout';
+import { CalculateLayoutParams, calculateLayout, applyLayout } from '../viewUtils/layout';
 
 export class RestoreGeometry implements Command {
     readonly title = 'Move elements and links';
@@ -121,18 +121,16 @@ export function changeLinkTypeVisibility(params: {
     linkType: LinkType;
     visible: boolean;
     showLabel: boolean;
-    preventLoading?: boolean;
 }): Command {
-    const {linkType, visible, showLabel, preventLoading} = params;
+    const {linkType, visible, showLabel} = params;
     return Command.create('Change link type visibility', () => {
         const previousVisible = linkType.visible;
         const previousShowLabel = linkType.showLabel;
-        linkType.setVisibility({visible, showLabel, preventLoading});
+        linkType.setVisibility({visible, showLabel});
         return changeLinkTypeVisibility({
             linkType,
             visible: previousVisible,
             showLabel: previousShowLabel,
-            preventLoading,
         });
     });
 }
@@ -164,10 +162,11 @@ export function setLinkData(model: DiagramModel, oldData: LinkModel, newData: Li
     });
 }
 
-export function performLayout(layoutFunction: LayoutFunction, params: LayoutFunctionParams) {
+export function performLayout(params: CalculateLayoutParams) {
     return Command.create('Perform layout', () => {
         const capturedGeometry = RestoreGeometry.capture(params.model);
-        applyLayout(params.model, layoutFunction(params));
+        const calculatedLayout = calculateLayout(params);
+        applyLayout(params.model, calculatedLayout);
         return capturedGeometry.filterOutUnchanged();
     });
 }

@@ -3,15 +3,12 @@
     "description": "**Example**:\n```\n<mp-collapsible-div expanded='true'>\n   <mp-collapsible-div-trigger expanded-class=\"x\" collapsed-class=\"y\">\n     <i class=\"fa fa-question-circle\" aria-hidden=\"true\"></i>\n   </mp-collapsible-div-trigger>\n   <mp-collapsible-div-content>Content</mp-collapsible-panel-content>\n</mp-collapsible-div>\n```",
     "properties": {
         "expanded": {
-            "default": true,
+            "default": false,
             "description": "Whether panel should be expanded by default.",
             "type": "boolean"
         }
     },
     "propertyOrder": [
-        "expanded"
-    ],
-    "required": [
         "expanded"
     ],
     "type": "object"

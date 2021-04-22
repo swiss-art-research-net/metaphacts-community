@@ -62,7 +62,7 @@ import {
   FieldDefinitionConfig, FieldDefinitionProp, FieldDependency, MultipleFieldConstraint,
 } from './FieldDefinition';
 import { DataState, FieldValue, FieldError, CompositeValue } from './FieldValues';
-import { CompositeChange, readyToSubmit } from './FormModel';
+import { CompositeChange, SubjectTemplateSettings, readyToSubmit } from './FormModel';
 import { validateModelConstraints } from './FormValidation';
 import { SemanticForm, SemanticFormProps } from './SemanticForm';
 import { ValuePatch, computeValuePatch, applyValuePatch } from './Serialization';
@@ -104,7 +104,7 @@ interface ResourceEditorFormConfigBase {
    */
   subject?: Rdf.Iri | string;
   /**
-   * URI template to customize subject generation.
+   * IRI template to customize subject generation.
    *
    * The template allows to reference form values, e.g if there is field ABC that uniquely
    * identify record, we can specify subject template as `http://example.com/records/{{ABC}}`,
@@ -116,6 +116,25 @@ interface ResourceEditorFormConfigBase {
    * If it's set as '.' the IRI will be equal to the parent form IRI.
    */
   newSubjectTemplate?: string;
+  /**
+   * Settings to customize how new-subject-template will be generated.
+   *
+   * Allows to define configurations for individual fields.
+   *
+   * **Example**: omit all non-(letter, digit or underscore) characters
+   * in the value of field `myFieldName`:
+   * ```
+   * new-subject-template-settings='{
+   *   "placeholders": {
+   *     "myFieldName": {
+   *       "disallowRegex": "[^a-zA-Z0-9_]",
+   *       "replaceCharacter": ""
+   *     }
+   *   }
+   * }'
+   * ```
+   */
+  newSubjectTemplateSettings?: SubjectTemplateSettings;
   /**
    * Used as source id for emitted events.
    */
@@ -177,61 +196,6 @@ interface ResourceEditorFormConfigBase {
 /**
  * Form component to create and edit resources represented by input fields.
  *
- * The component supports submitting or reverting the form to the initial
- * state by specifying <button> element as child with the following name attribute:
- *   - `reset` - revert form content to initial state;
- *   - `submit` - persist form content as new or edited resource.
- *
- * This functionality can be used to backup form data,
- * to clone forms and to create multiple similar forms
- * without read access to the repository:
- *   - `load-state` - load file from disk;
- *   - `save-state` - save file to disk.
- *
- * **Example**:
- * ```
- * <semantic-form subject='http://exmaple.com/thing/foo' fields='{[...]}'>
- *   <!-- all the children will be passed down to SemanticForm -->
- *   <semantic-form-text-input for='person-name'></semantic-form-text-input>
- *   <div style='color: blue;'>
- *     <semantic-form-datetime-input for='event-date'>
- *     </semantic-form-datetime-input>
- *   </div>
- *   <!-- Button's onClick handler binds by 'name' attribute -->
- *   <semantic-form-errors></semantic-form-errors>
- *   <button name='reset' type='button' class='btn btn-secondary'>Reset</button>
- *   <button name='submit' type='button' class='btn btn-primary'>Submit</button>
- *   <button name='load-state' type='button' class='btn btn-info'>Load to file</button>
- *   <button name='save-state' type='button' class='btn btn-info'>Save to file</button>
- * </semantic-form>
- * ```
- *
- * **Example**:
- * ```
- * <!-- enable storing and recovering intermediate inputs from client persistence layer -->
- * <semantic-form
- *   subject='http://exmaple.com/thing/foo'
- *   fields='{[...]}'
- *   browser-persistence=true>
- *   <semantic-form-recover-notification></semantic-form-recover-notification>
- *   <!-- ... -->
- * </semantic-form>
- * ```
- *
- * **Example**:
- * ```
- * <!-- custom form identifier for client persistence when
- *      using multiple forms on the same page -->
- * <semantic-form
- *   subject='http://exmaple.com/thing/foo'
- *   fields='{[...]}'
- *   browser-persistence=true
- *   form-id='form123'>
- *   <semantic-form-recover-notification></semantic-form-recover-notification>
- *   <!-- ... -->
- * </semantic-form>
- * ```
- *
  * @patternProperties {
  *   "^urlqueryparam": {"type": "string"}
  * }
@@ -243,18 +207,20 @@ export interface ResourceEditorFormConfig extends ResourceEditorFormConfigBase {
   fields: ReadonlyArray<FieldDefinitionConfig>;
   /**
    * Persistence and operation mode to use for creating and modifying data.
-   * Both modes require dedicated ACL permissions.
+   * All modes require dedicated ACL permissions.
    *
    * In `ldp` mode, all generated statements for a form subject are being stored into
    * a dedicated LDP container and as such can easily be updated or even reverted and
    * have provenance information attached.
-   * However, `ldp` requires to enable quads mode in the graph database.
    *
-   * In the `sparql` mode no provenance can be captured.
+   * In the `sparql` mode statements about the subject are created through the defined
+   * SPARQL update patterns. This allows more control over how data is accessed and
+   * persisted (for instance w.r.t. handling of named graphs). Note that provenance information
+   * is not captured automatically, but can be added manually as part of the query patterns.
    *
    * @default "ldp"
    */
-  persistence?: TriplestorePersistenceConfig['type'];
+  persistence?: TriplestorePersistenceConfig['type'] | TriplestorePersistenceConfig;
 }
 
 /**
@@ -380,6 +346,7 @@ export class ResourceEditorForm extends Component<ResourceEditorFormProps, State
       fieldDependencies: this.props.fieldDependencies,
       model: this.state.model || FieldValue.fromLabeled({value: getSubject(this.props)}),
       newSubjectTemplate: this.props.newSubjectTemplate,
+      newSubjectTemplateSettings: this.props.newSubjectTemplateSettings,
       onChanged: model => {
         this.setState({model});
       },

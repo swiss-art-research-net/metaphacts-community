@@ -50,6 +50,7 @@ import { KeyedObserver, observeElementTypes, observeProperties } from '../viewUt
 
 import { setElementExpanded } from './commands';
 import { Element, ElementRedrawMode } from './elements';
+import { Size } from './geometry';
 import { RenderingLayer, RenderingState } from './renderingState';
 import { DiagramView, IriClickIntent } from './view';
 
@@ -86,8 +87,9 @@ interface RedrawBatch {
 }
 
 interface SizeUpdateRequest {
-    element: Element;
-    node: HTMLDivElement;
+    readonly element: Element;
+    readonly node: HTMLDivElement;
+    computedSize?: Size;
 }
 
 export class ElementLayer extends React.Component<Props, State> {
@@ -249,15 +251,16 @@ export class ElementLayer extends React.Component<Props, State> {
     }
 
     private recomputeQueuedSizes = () => {
+        const {renderingState} = this.props;
         const batch = this.sizeRequests;
         this.sizeRequests = new Map<string, SizeUpdateRequest>();
-        batch.forEach(({element, node}) => {
-            const {clientWidth, clientHeight} = node;
-            this.props.renderingState.setElementSize(
-                element,
-                {width: clientWidth, height: clientHeight}
-            );
-        });
+        for (const request of batch.values()) {
+            const {clientWidth, clientHeight} = request.node;
+            request.computedSize = {width: clientWidth, height: clientHeight};
+        }
+        for (const request of batch.values()) {
+            renderingState.setElementSize(request.element, request.computedSize!);
+        }
     }
 }
 

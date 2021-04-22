@@ -3,8 +3,6 @@ var baseConfig = require('./webpack.base.config');
 
 // if BUNDLE_PEERS is set, we'll produce bundle with all dependencies
 const BUNDLE_PEERS = Boolean(process.env.BUNDLE_PEERS);
-// always include IE support in full bundle
-const SUPPORT_IE = BUNDLE_PEERS || Boolean(process.env.SUPPORT_IE);
 
 module.exports = {
     mode: BUNDLE_PEERS ? 'production' : 'none',
@@ -15,7 +13,6 @@ module.exports = {
         path: path.join(__dirname, 'dist'),
         filename: (
             BUNDLE_PEERS ? 'ontodia-full.min.js' :
-            SUPPORT_IE ? 'ontodia-ie.js' :
             'ontodia.js'
         ),
         library: 'Ontodia',

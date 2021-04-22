@@ -72,7 +72,7 @@ export interface AsyncModelEvents extends DiagramModelEvents {
     createLoadedLink: {
         source: AsyncModel;
         model: LinkModel;
-        cancel(): void;
+        setLink(mappedLink: LinkModel | null): void;
     };
 }
 
@@ -80,7 +80,7 @@ export class AsyncModel extends DiagramModel {
     declare readonly events: Events<AsyncModelEvents>;
 
     private _dataProvider!: DataProvider;
-    private fetcher!: DataFetcher;
+    private fetcher: DataFetcher | undefined;
 
     private linkSettings: { [linkTypeId: string]: LinkTypeOptions } = {};
 
@@ -97,16 +97,6 @@ export class AsyncModel extends DiagramModel {
     }
 
     get dataProvider() { return this._dataProvider; }
-
-    subscribeGraph() {
-        super.subscribeGraph();
-
-        this.graphListener.listen(this.graph.events, 'linkTypeEvent', ({data}) => {
-            if (data.changeVisibility) {
-                this.onLinkTypeVisibilityChanged(data.changeVisibility);
-            }
-        });
-    }
 
     private setDataProvider(dataProvider: DataProvider) {
         this._dataProvider = dataProvider;
@@ -177,9 +167,13 @@ export class AsyncModel extends DiagramModel {
         const layoutData = makeLayoutData(this.graph.getElements(), this.graph.getLinks());
         const linkTypeOptions = this.graph.getLinkTypes()
             // do not serialize default link type options
-            .filter(linkType => (!linkType.visible || !linkType.showLabel) && linkType.id !== PLACEHOLDER_LINK_TYPE)
+            .filter(linkType =>
+                !(linkType.visible && linkType.showLabel) &&
+                linkType.id !== PLACEHOLDER_LINK_TYPE
+            )
             .map(({id, visible, showLabel}): LinkTypeOptions =>
-                ({'@type': 'LinkTypeOptions', property: id, visible, showLabel}));
+                ({'@type': 'LinkTypeOptions', property: id, visible, showLabel})
+            );
         return makeSerializedDiagram({layoutData, linkTypeOptions});
     }
 
@@ -292,7 +286,7 @@ export class AsyncModel extends DiagramModel {
     }
 
     requestElementData(elementIris: ReadonlyArray<ElementIri>): Promise<void> {
-        return this.fetcher.fetchElementData(elementIris);
+        return this.fetcher!.fetchElementData(elementIris);
     }
 
     requestLinksOfType(linkTypeIds?: LinkTypeIri[]): Promise<void> {
@@ -307,7 +301,9 @@ export class AsyncModel extends DiagramModel {
             return super.getClass(classId)!;
         }
         const classModel = super.createClass(classId);
-        this.fetcher.fetchClass(classModel);
+        if (this.fetcher) {
+            this.fetcher.fetchClass(classModel);
+        }
         return classModel;
     }
 
@@ -319,9 +315,11 @@ export class AsyncModel extends DiagramModel {
         const setting = this.linkSettings[linkType.id];
         if (setting) {
             const {visible, showLabel = true} = setting;
-            linkType.setVisibility({visible, showLabel, preventLoading: true});
+            linkType.setVisibility({visible, showLabel});
         }
-        this.fetcher.fetchLinkType(linkType);
+        if (this.fetcher) {
+            this.fetcher.fetchLinkType(linkType);
+        }
         return linkType;
     }
 
@@ -330,32 +328,23 @@ export class AsyncModel extends DiagramModel {
             return super.createProperty(propertyIri);
         }
         const property = super.createProperty(propertyIri);
-        this.fetcher.fetchPropertyType(property);
+        if (this.fetcher) {
+            this.fetcher.fetchPropertyType(property);
+        }
         return property;
     }
 
-    private onLinkTypeVisibilityChanged = (e: LinkTypeEvents['changeVisibility']) => {
-        if (e.source.visible) {
-            if (!e.preventLoading) {
-                this.requestLinksOfType([e.source.id]);
-            }
-        } else {
-            for (const link of this.linksOfType(e.source.id)) {
-                this.graph.removeLink(link.id);
-            }
-        }
-    }
-
     private onLinkInfoLoaded(links: LinkModel[]) {
-        let allowToCreate: boolean;
-        const cancel = () => { allowToCreate = false; };
-
+        let mappedLink: LinkModel | null = null;
+        const setLink = (link: LinkModel | null) => {
+            mappedLink = link;
+        };
         for (const linkModel of links) {
             this.createLinkType(linkModel.linkTypeId);
-            allowToCreate = true;
-            this.asyncSource.trigger('createLoadedLink', {source: this, model: linkModel, cancel});
-            if (allowToCreate) {
-                this.createLinks(linkModel);
+            mappedLink = linkModel;
+            this.asyncSource.trigger('createLoadedLink', {source: this, model: linkModel, setLink});
+            if (mappedLink) {
+                this.createLinks(mappedLink);
             }
         }
     }

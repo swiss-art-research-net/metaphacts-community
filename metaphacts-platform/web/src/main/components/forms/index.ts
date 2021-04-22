@@ -41,8 +41,9 @@ export * from './FieldDefinition';
 export * from './FieldMapping';
 export * from './FieldValues';
 export {
-  CompositeChange, createDefaultValue, readyToSubmit, fieldInitialState, generateSubjectByTemplate,
-  wasSubjectGeneratedByTemplate, computeIfSubjectWasSuggested,
+  CompositeChange, SubjectTemplateSettings, createDefaultValue, readyToSubmit, fieldInitialState,
+  makeDefaultSubjectReplacer, generateSubjectByTemplate, wasSubjectGeneratedByTemplate,
+  computeIfSubjectWasSuggested,
 } from './FormModel';
 export { clearSubjectErrors, setSubjectError, validateSubjectByQuery } from './FormValidation';
 export * from './ResourceEditorForm';

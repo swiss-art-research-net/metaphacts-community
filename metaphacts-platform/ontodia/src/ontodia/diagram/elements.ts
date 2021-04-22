@@ -370,10 +370,7 @@ export interface LinkTemplateState {
 export interface LinkTypeEvents {
     changeLabel: PropertyChange<LinkType, ReadonlyArray<Rdf.Literal>>;
     changeIsNew: PropertyChange<LinkType, boolean>;
-    changeVisibility: {
-        source: LinkType;
-        preventLoading: boolean;
-    };
+    changeVisibility: PropertyChange<LinkType, { visible: boolean; showLabel: boolean }>;
 }
 
 export class LinkType {
@@ -410,17 +407,18 @@ export class LinkType {
     setVisibility(params: {
         visible: boolean;
         showLabel: boolean;
-        preventLoading?: boolean;
     }) {
-        const same = (
-            this._visible === params.visible &&
-            this._showLabel === params.showLabel
-        );
-        if (same) { return; }
-        const preventLoading = Boolean(params.preventLoading) || this._visible === params.visible;
+        const previousVisible = this._visible;
+        const previousShowLabel = this._showLabel;
+        if (previousVisible === params.visible && previousShowLabel === params.showLabel) {
+            return;
+        }
         this._visible = params.visible;
         this._showLabel = params.showLabel;
-        this.source.trigger('changeVisibility', {source: this, preventLoading});
+        this.source.trigger('changeVisibility', {
+            source: this,
+            previous: {visible: previousVisible, showLabel: previousShowLabel},
+        });
     }
 
     get isNew() { return this._isNew; }

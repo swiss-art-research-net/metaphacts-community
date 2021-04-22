@@ -1,0 +1,27 @@
+@base   <http://example.org/>.
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/>.
+
+# shape data for foaf:Person 
+[] a sh:NodeShape ;
+   sh:targetClass foaf:Person ;
+   sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1;
+   ];
+   sh:property [
+        sh:datatype xsd:date ;
+        sh:path schema:birthDate 
+   ];
+   sh:property [
+        sh:path foaf:knows ;
+        sh:class foaf:Person 
+   ];
+   sh:property [
+        sh:path foaf:topic_interest ;
+        sh:minCount 0
+   ].

@@ -153,6 +153,9 @@
             "type": "object"
         }
     },
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
     "properties": {
         "InstancesSearch.SetCriteria": {
             "description": "Instance search panel listens to this event and expects to have\nSearchCriteria object as an input.",

@@ -1,10 +1,11 @@
 {
   "scripts": {
     "dev": "node server.js",
+    "dev-build": "webpack --config webpack.dev.config.js",
     "dev-stop": "node server.stop.js",
-    "dll-dev": "better-npm-run dll:dev",
     "prod": "better-npm-run prod",
-    "dll-prod": "./node_modules/.bin/webpack --bail --config webpack.dll.prod.js",
+    "dll-dev": "better-npm-run dll:dev",
+    "dll-prod": "better-npm-run dll:prod",
     "prod-highcharts": "better-npm-run prod:highcharts",
     "test": "node --max-old-space-size=4096 ./node_modules/karma/bin/karma start ./karma/karma.config.dev.js",
     "test-ci": "node --max-old-space-size=4096 ./node_modules/karma/bin/karma start ./karma/karma.config.ci.js",
@@ -16,51 +17,44 @@
   },
   "betterScripts": {
     "dll:dev": {
-      "command": "webpack --bail --config webpack.dll.dev.js",
+      "command": "webpack --config webpack.dll.dev.js",
       "env": {
         "UV_THREADPOOL_SIZE": 100
       }
     },
+    "dll:prod": {
+      "command": "webpack --config webpack.dll.prod.js"
+    },
     "prod": {
-      "command": "webpack --bail --config webpack.prod.config.js",
+      "command": "webpack --config webpack.prod.config.js",
       "env": {
         "BUNDLE_HIGHCHARTS": true
       }
     },
     "inspect-chunks": {
-      "command": "webpack --bail --config webpack.chunk.config.js --json",
+      "command": "webpack --config webpack.chunk.config.js --json",
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=2048"
       }
     }
   },
   "devDependencies": {
-    "@types/jasmine": "^2.5.53",
     "assets-webpack-plugin": "3.6.0",
     "autoprefixer": "6.7.7",
     "better-npm-run": "0.0.15",
-    "bundle-loader": "0.5.6",
     "cache-loader": "^1.0.3",
     "chai": "3.5.0",
     "chai-string": "1.2.0",
     "cheerio": "0.20.0",
     "circular-dependency-plugin": "^5.2.0",
-    "copy-loader": "0.1.3",
-    "copy-webpack-plugin": "^4.5.1",
     "css-loader": "webpack-contrib/css-loader",
-    "del": "1.2.1",
     "enzyme": "3.10.0",
     "enzyme-adapter-react-16": "^1.14.0",
-    "exports-loader": "0.7.0",
     "expose-loader": "0.7.5",
     "file-loader": "1.1.11",
-    "fork-ts-checker-webpack-plugin": "3.1.1",
-    "glob": "7.1.1",
-    "html-webpack-plugin": "^3.2.0",
-    "imports-loader": "0.8.0",
-    "istanbul-instrumenter-loader": "^3.0.1",
+    "fork-ts-checker-webpack-plugin": "5.2.1",
     "json-stable-stringify": "^1.0.1",
-    "karma": "1.6.0",
+    "karma": "6.1.1",
     "karma-chai-plugins": "0.9.0",
     "karma-chrome-launcher": "2.2.0",
     "karma-firefox-launcher": "1.0.1",
@@ -68,11 +62,10 @@
     "karma-mocha": "1.3.0",
     "karma-mocha-reporter": "2.2.3",
     "karma-sourcemap-loader": "0.3.7",
-    "karma-webpack": "2.0.3",
+    "karma-webpack": "4.0.2",
     "koa-compress": "^3.0.0",
     "license-report": "3.0.0",
-    "licensecheck": "0.3.0",
-    "lodash": "^4.17.20",
+    "lodash": "4.17.21",
     "mini-css-extract-plugin": "^0.4.0",
     "mocha": "2.5.3",
     "node-sass": "4.13.0",
@@ -84,19 +77,18 @@
     "script-loader": "0.7.2",
     "sinon": "2.1.0",
     "style-loader": "0.21.0",
+    "terser-webpack-plugin": "4.2.3",
     "thread-loader": "^2.1.3",
-    "ts-loader": "6.2.1",
-    "tslint": "5.17.0",
-    "tslint-loader": "^3.6.0",
-    "typescript": "3.9.6",
+    "ts-loader": "8.0.17",
+    "tslint": "5.20.0",
+    "typescript": "4.0.7",
     "typescript-json-schema": "0.43.0",
     "typescript-tslint-plugin": "^0.5.0",
     "typings-for-css-modules-loader": "1.7.0",
-    "uglifyjs-webpack-plugin": "^1.2.5",
     "url-loader": "1.0.1",
-    "webpack": "4.41.3",
+    "webpack": "4.46.0",
     "webpack-bundle-analyzer": "^2.13.1",
-    "webpack-cli": "3.3.10",
+    "webpack-cli": "4.5.0",
     "webpack-notifier": "1.8.0",
     "webpack-serve": "^1.0.3",
     "ws": "^7.2.1"

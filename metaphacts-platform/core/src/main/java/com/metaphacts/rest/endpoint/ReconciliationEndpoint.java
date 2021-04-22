@@ -42,7 +42,10 @@ package com.metaphacts.rest.endpoint;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -55,18 +58,17 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import com.metaphacts.util.LanguageHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.shiro.SecurityUtils;
@@ -81,12 +83,10 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.JSONP;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Maps;
 import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.metaphacts.cache.DescriptionService;
 import com.metaphacts.cache.LabelService;
 import com.metaphacts.config.Configuration;
@@ -98,10 +98,12 @@ import com.metaphacts.lookup.model.LookupMultiResponse;
 import com.metaphacts.lookup.model.LookupQuery;
 import com.metaphacts.lookup.model.LookupRequest;
 import com.metaphacts.lookup.model.LookupResponse;
+import com.metaphacts.lookup.model.LookupServiceManifest;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.Permissions;
 import com.metaphacts.security.PlatformTaskWrapper;
 import com.metaphacts.ui.templates.ST;
+import com.metaphacts.util.LanguageHelper;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -411,7 +413,7 @@ public class ReconciliationEndpoint {
             )
         }
     )
-    @Produces({MediaType.TEXT_HTML})
+    @Produces("text/html; charset=UTF-8")
     @JSONP(queryParam="callback")
     @RequiresPermissions(value = {Permissions.RECONCILIATION_SERVICE.READ_DESCRIPTION})
     public Response getDescription(
@@ -596,12 +598,12 @@ public class ReconciliationEndpoint {
         Integer maxThreads = config.getLookupConfig().getMaxParallelSearch();
 
         return Executors.newFixedThreadPool(
-            numRequests > maxThreads ? maxThreads : numRequests
+                numRequests > maxThreads ? maxThreads : numRequests,
+                new ThreadFactoryBuilder().setNameFormat("reconciliation-%d").build()
         );
     }
 
-    // TODO: extend service manifest
-    private JsonNode getServiceManifest(@Nullable String lookupServiceName) throws EntityTypesFetchingException {
+    private LookupServiceManifest getServiceManifest(@Nullable String lookupServiceName) throws EntityTypesFetchingException {
         return createServiceManifest(lookupServiceName);
     }
 
@@ -625,36 +627,32 @@ public class ReconciliationEndpoint {
         return new LookupMultiRequest(requests);
     }
 
-    protected JsonNode createServiceManifest(@Nullable String lookupServiceName) throws EntityTypesFetchingException {
-        ObjectMapper mapper = new ObjectMapper();
-        final ObjectNode serviceManifest = mapper.createObjectNode();
-        serviceManifest.put("name", "mp-reconciliation");
-        serviceManifest.put("identifierSpace", "http://www.metaphacts.com/ontologies/platform/reconciliation#");
-        serviceManifest.put("schemaSpace", "http://www.metaphacts.com/ontologies/platform/reconciliation-schema#");
-
-        serviceManifest.putArray("defaultTypes").addAll(
-                mapper.convertValue(getLookupService(lookupServiceName).getAvailableEntityTypes(), ArrayNode.class)
-        );
-
+    protected LookupServiceManifest createServiceManifest(@Nullable String lookupServiceName) throws EntityTypesFetchingException {
         try {
-            final ObjectNode previewService = serviceManifest.putObject("preview");
-            previewService.put("url", uriInfo.resolve(new URI("reconciliation/description")).toString() + "?uri={{id}}");
-            previewService.put("width", 300);
-            previewService.put("height", 200);
+            return new LookupServiceManifest(
+                "mp-reconciliation",
+                "http://www.metaphacts.com/ontologies/platform/reconciliation#",
+                "http://www.metaphacts.com/ontologies/platform/reconciliation-schema#",
+                getLookupService(lookupServiceName).getAvailableEntityTypes(),
+                new LookupServiceManifest.BasicService(uriInfo.resolve(new URI("../resource/")).toString() + "?uri={{id}}"),
+                new LookupServiceManifest.PreviewService(
+                    uriInfo.resolve(new URI("reconciliation/description")).toString() + "?uri={{id}}",
+                    300,
+                    200
+                ),
+                new LookupServiceManifest.BasicService(
+                    uriInfo.resolve(new URI("./data/rdf/utils/getLabelsForRdfValue")).toString()
+                ),
+                new LookupServiceManifest.BasicService(
+                    uriInfo.resolve(new URI("./data/rdf/utils/getDescriptionForRdfValue")).toString()
+                ),
+                new LookupServiceManifest.BasicService(
+                    uriInfo.resolve(new URI("./data/rdf/utils/getTypesForRdfValue")).toString()
+                )
+            );
         } catch (URISyntaxException e) {
-            logger.warn("Failed to create preview URL: {}", e.getMessage());
-            logger.debug("Details: ",  e);
+            throw new EntityTypesFetchingException("Failed to create URL: " + e.getMessage(), e);
         }
-
-        try {
-            final ObjectNode view = serviceManifest.putObject("view");
-            view.put("url", uriInfo.resolve(new URI("../resource/")).toString() + "?uri={{id}}");
-        } catch (URISyntaxException e) {
-            logger.warn("Failed to create view URL: {}", e.getMessage());
-            logger.debug("Details: ",  e);
-        }
-
-        return serviceManifest;
     }
 
     /**

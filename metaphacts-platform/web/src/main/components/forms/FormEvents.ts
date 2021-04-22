@@ -39,19 +39,22 @@
  */
 import { EventMaker } from 'platform/api/events';
 
-export interface FormEventData {
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
+export interface SemanticFormEventData {
   /**
-   * If the post-action='event' for SemanticFormComponent, Component fires this event after a
-   * new form is submitted
+   * If the `post-action='event'` for `<semantic-form>` then the form emits
+   * this event after a new resource is submitted.
    */
   'Form.ResourceCreated': { iri: string };
   /**
-   * If the post-action='event' for SemanticFormComponent.
-   * Component fires this event on each update of the form including creation
+   * If the `post-action='event'` for `<semantic-form>` then the form emits
+   * this event on each update of the resource including creation.
    */
   'Form.ResourceUpdated': { iri: string };
 }
-const event: EventMaker<FormEventData> = EventMaker;
+const event: EventMaker<SemanticFormEventData> = EventMaker;
 
 export const FormResourceCreated = event('Form.ResourceCreated');
 export const FormResourceUpdated = event('Form.ResourceUpdated');

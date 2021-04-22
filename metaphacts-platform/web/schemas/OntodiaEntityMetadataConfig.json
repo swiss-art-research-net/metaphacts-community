@@ -1,5 +1,57 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "SubjectTemplateFieldSettings": {
+            "properties": {
+                "default": {
+                    "default": "",
+                    "description": "Default value to substitute if there is no such field or it is empty.",
+                    "type": "string"
+                },
+                "disallowRegex": {
+                    "description": "Regex pattern to match character sets to replace with `replaceValue`\nwhen substituting the field value in the IRI.\n\nDefault pattern matches:\n   - ASCII control characters and space: `0x00-0x20`\n   - common illegal path characters: `<` `>` `:` `?` `*` `\"` `|`\n   - path separators: `/` `\\`\n   - recommended to avoid by AWS S3: `&` `$` `@` `=` `;` `+` `,` `#` `0x7f-0xFF`\n   - escape character: `%`\n\n**Default**:\n```\n{\n   \"transform\": \"sanitize\",\n   \"disallowRegex\": \"[\\\\u0000-\\\\u0020<>:?*\\\"|/\\\\\\\\&$@=+,#\\\\u007f-\\\\u00ff%\\\\s]\",\n   \"replaceCharacter\": \"_\"\n}\n```",
+                    "type": "string"
+                },
+                "replaceCharacter": {
+                    "default": "_",
+                    "description": "Character to replace with when sanitizing value.\n\nSequences of this string are collapsed into a single value.",
+                    "type": "string"
+                },
+                "transform": {
+                    "default": "sanitize",
+                    "description": "Defines how substituted values are transformed:\n   - `none`: no transformation;\n   - `sanitize`: replace IRI-unsafe characters as defined\n     by `disallowRegex` with `replaceCharacter`;",
+                    "enum": [
+                        "none",
+                        "sanitize"
+                    ],
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "default",
+                "transform",
+                "disallowRegex",
+                "replaceCharacter"
+            ],
+            "type": "object"
+        },
+        "SubjectTemplateSettings": {
+            "properties": {
+                "placeholders": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/SubjectTemplateFieldSettings"
+                    },
+                    "propertyOrder": [
+                    ],
+                    "type": "object"
+                }
+            },
+            "propertyOrder": [
+                "placeholders"
+            ],
+            "type": "object"
+        }
+    },
     "description": "**Example**:\n```\n<!-- entity with auto-generated form -->\n<ontodia-entity-metadata\n   entity-type-iri='http://example.com/Person'\n   fields='[\"field-iri-1\", \"field-iri-2\", ...]'\n   label-iri='http://www.example.com/fields/personName'\n   new-subject-template='http://www.example.com/person/{{UUID}}'>\n</ontodia-entity-metadata>\n```\n\n**Example**:\n```\n<ontodia-entity-metadata\n   entity-type-iri='http://example.com/Company'\n   fields='[\"field-iri-1\", \"field-iri-2\", ...]'\n   label-iri='http://www.example.com/fields/companyName'\n   image-iri='http://www.example.com/fields/hasType'\n   new-subject-template='http://www.example.com/company/{{UUID}}'\n   force-iris='[\"datatype-field-1\", ...]'>\n\n   <semantic-form-text-input for='http://www.example.com/fields/companyName'>\n   </semantic-form-text-input>\n\n   <semantic-form-composite-input\n     for='http://www.example.com/fields/companyAddress'\n     fields='...'>\n     <!-- inputs for addressCountry, addressCity, etc) -->\n   </semantic-form-composite-input>\n\n   <semantic-form-errors></semantic-form-errors>\n   <button name=\"submit\" class=\"btn btn-secondary\">Save</button>\n   <button name=\"reset\" class=\"btn btn-secondary\">Reset</button>\n</ontodia-entity-metadata>\n```",
     "properties": {
         "children": {
@@ -29,16 +81,27 @@
             "type": "array"
         },
         "imageIri": {
-            "description": "Field Iri for entity image override",
+            "description": "Field IRI for entity image override.",
             "type": "string"
         },
         "labelIri": {
-            "description": "Field Iri for entity label override",
+            "description": "Field IRI for entity label override.",
             "type": "string"
         },
         "newSubjectTemplate": {
             "description": "Subject template override for generating IRIs for new entities of this type.",
             "type": "string"
+        },
+        "newSubjectTemplateSettings": {
+            "$ref": "#/definitions/SubjectTemplateSettings",
+            "description": "Subject template settings override for generating IRIs for new entities of this type."
+        },
+        "ownedFields": {
+            "description": "**Experimental** Field IRIs the values of which should be tracked as owned by this entity.\n\nBeing owned by entity means:\n   - all changes in owned entities will be reflected as change in owner entity;\n   - discarding changes for owner entity will also discard all changes in owned entities;",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
         }
     },
     "propertyOrder": [
@@ -46,7 +109,9 @@
         "fields",
         "labelIri",
         "imageIri",
+        "ownedFields",
         "newSubjectTemplate",
+        "newSubjectTemplateSettings",
         "editableWhen",
         "children"
     ],

@@ -17,56 +17,36 @@
  */
 
 const webpack = require('webpack');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const defaultsFn = require('./defaults');
 
 /**
  * @param {{ [key: string]: string }} env
  */
 module.exports = function (env) {
-    const defaults = defaultsFn();
-    const config = require('./webpack.config.js')(defaults, {buildMode: 'prod'});
+  const defaults = defaultsFn();
+  const config = require('./webpack.config.js')(defaults, {buildMode: 'prod'});
 
-    //reset source-maps
-    delete config.devtool;
+  // Reset source-maps
+  delete config.devtool;
 
-    /** @type {Set<string>} */
-    const stableBundleNames = new Set();
-    for (const project of defaults.WEB_PROJECTS) {
-      if (project.stableEntryNames) {
-        for (const entryName of project.stableEntryNames) {
-          stableBundleNames.add(entryName);
-        }
+  /** @type {Set<string>} */
+  const stableBundleNames = new Set();
+  for (const project of defaults.WEB_PROJECTS) {
+    if (project.stableEntryNames) {
+      for (const entryName of project.stableEntryNames) {
+        stableBundleNames.add(entryName);
       }
     }
+  }
 
-    /*
-     * Add chunk hash to filename to make sure that we bust
-     * browser cache on redeployment.
-     */
-    config.output.filename = function (chunkData) {
-        return stableBundleNames.has(chunkData.chunk.name)
-          ? '[name]-bundle.js'
-          : "[name]-[chunkhash]-bundle.js";
-    };
-    config.output.chunkFilename = "[name]-[chunkhash]-bundle.js";
-
-  config.optimization = {
-    minimizer: [
-      new UglifyJsPlugin({
-        parallel: true,
-        sourceMap: false,
-        uglifyOptions: {
-          output: {
-            comments: false
-          },
-          compress: {
-            keep_fnames: true
-          }
-        }
-      }),
-    ]
+  // Add chunk hash to filename to make sure that we bust
+  // browser cache on redeployment
+  config.output.filename = function (chunkData) {
+    return stableBundleNames.has(chunkData.chunk.name)
+      ? '[name]-bundle.js'
+      : "[name]-[chunkhash]-bundle.js";
   };
+  config.output.chunkFilename = "[name]-[chunkhash]-bundle.js";
 
     //enable assets optimizations
     config.plugins.push(
@@ -77,14 +57,14 @@ module.exports = function (env) {
         }),
     );
 
-    //enable react production mode.
-    config.plugins.push(
-        new webpack.DefinePlugin({
-            BUNDLE_HIGHCHARTS: process.env.BUNDLE_HIGHCHARTS,
-            'process.env': {
-                NODE_ENV: '"production"'
-            }
-        })
-    );
-    return config;
+  // Enable react production mode
+  config.plugins.push(
+    new webpack.DefinePlugin({
+      BUNDLE_HIGHCHARTS: process.env.BUNDLE_HIGHCHARTS,
+      'process.env': {
+        NODE_ENV: '"production"'
+      }
+    })
+  );
+  return config;
 };

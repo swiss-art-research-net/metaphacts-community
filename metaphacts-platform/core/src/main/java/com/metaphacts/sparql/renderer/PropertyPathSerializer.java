@@ -55,7 +55,7 @@ import com.metaphacts.util.QueryUtil;
 public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeException> {
 
     protected StringBuilder builder;
-    protected Stack<Var> currentSubjectVarStack = new Stack<Var>();
+    protected Stack<VarInfo> currentSubjectVarStack = new Stack<>();
     protected AbstractSerializableParsedQuery currentQueryProfile;
 
     public String serialize(ArbitraryLengthPath path, AbstractSerializableParsedQuery currentQueryProfile) {
@@ -86,16 +86,23 @@ public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeExc
 
     @Override
     public void meet(ArbitraryLengthPath node) throws RuntimeException {
-        currentSubjectVarStack.push(node.getSubjectVar());
+        currentSubjectVarStack.push(new VarInfo(node.getSubjectVar(), false));
         builder.append("(");
         node.getPathExpression().visit(this);
+
+        while (!currentSubjectVarStack.isEmpty()) {
+            VarInfo currentSubjectVar = currentSubjectVarStack.pop();
+            if (currentSubjectVar.inverse) {
+                builder.append(")");
+            }
+        }
+
         builder.append(")");
         if (node.getMinLength() == 0) {
             builder.append("*");
         } else {
             builder.append("+");
         }
-        currentSubjectVarStack.pop();
         // super.meet(node);
     }
 
@@ -110,13 +117,13 @@ public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeExc
 
     @Override
     public void meet(Union node) throws RuntimeException {
-        Var currentSubjectVar = currentSubjectVarStack.peek();
+        VarInfo currentSubjectVar = currentSubjectVarStack.peek();
         boolean containsZeroLength = (node.getLeftArg() instanceof ZeroLengthPath);
         if (!containsZeroLength) {
             builder.append("(");
         }
         currentSubjectVarStack.push(currentSubjectVar);
-        Var currentObjectVarLeft, currentObjectVarRight;
+        VarInfo currentObjectVarLeft, currentObjectVarRight;
         node.getLeftArg().visit(this);
         currentObjectVarLeft = currentSubjectVarStack.pop();
         if (!containsZeroLength) {
@@ -125,11 +132,9 @@ public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeExc
         currentSubjectVarStack.push(currentSubjectVar);
         node.getRightArg().visit(this);
         currentObjectVarRight = currentSubjectVarStack.pop();
-        if (!currentObjectVarLeft.getName().equals(currentObjectVarRight.getName())) {
-            throw new RuntimeException(
-                    "Error while processing a Union node: "
-                    + "object variables for left and right operands are not the same: "
-                            + node.toString());
+
+        if (currentObjectVarRight.inverse) {
+            builder.append(")");
         }
         if (!containsZeroLength) {
             builder.append(")");
@@ -141,14 +146,15 @@ public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeExc
 
     @Override
     public void meet(StatementPattern node) throws RuntimeException {
-        Var subjVar = currentSubjectVarStack.pop();
+        VarInfo subjVar = currentSubjectVarStack.peek();
 
         Var predicate = node.getPredicateVar();
-        if (subjVar.getName().equals(node.getObjectVar().getName())) {
-            builder.append("^");
-            currentSubjectVarStack.push(node.getSubjectVar());
+        if (subjVar.var.getName().equals(node.getObjectVar().getName())) {
+            // => push inverse marker to stack
+            builder.append("^(");
+            currentSubjectVarStack.push(new VarInfo(node.getSubjectVar(), true));
         } else {
-            currentSubjectVarStack.push(node.getObjectVar());
+            currentSubjectVarStack.push(new VarInfo(node.getObjectVar(), false));
         }
 
         if (predicate.hasValue()) {
@@ -183,8 +189,22 @@ public class PropertyPathSerializer extends AbstractQueryModelVisitor<RuntimeExc
 
     @Override
     public void meet(ZeroLengthPath node) throws RuntimeException {
-        Var subjVar = currentSubjectVarStack.pop();
-        currentSubjectVarStack.push(node.getObjectVar());
+        VarInfo subjVar = currentSubjectVarStack.pop();
+        if (subjVar.inverse) {
+            builder.append(")");
+        }
+        currentSubjectVarStack.push(new VarInfo(node.getObjectVar(), false));
         
+    }
+
+    static class VarInfo {
+        Var var;
+        boolean inverse;
+
+        VarInfo(Var var, boolean inverse) {
+            super();
+            this.var = var;
+            this.inverse = inverse;
+        }
     }
 }

@@ -1,5 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Component which allows users to create a new ontology\nby defining IRI and rdf:label of ontology.",
+    "patternProperties": {
+        "^urlqueryparam": {
+            "type": "string"
+        }
+    },
     "properties": {
         "baseIri": {
             "default": "http://ontologies.metaphacts.com/",
@@ -7,7 +13,7 @@
             "type": "string"
         },
         "postAction": {
-            "description": "Optional post-action to be performed after a new ontology have been created.\nCan be either 'reload' or 'redirect' (redirects to the newly created resource)\nor any IRI string to which the form will redirect.",
+            "description": "Optional post-action to be performed after a new ontology has been created.\nCan be either 'reload' or 'redirect' (redirects to the newly created resource)\nor any IRI string to which the form will redirect, in which case the created\nontology is provided as `ontologyIri` parameter.",
             "enum": [
                 "none",
                 "redirect",

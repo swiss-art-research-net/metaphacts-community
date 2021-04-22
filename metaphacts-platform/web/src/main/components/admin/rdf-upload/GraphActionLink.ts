@@ -136,7 +136,7 @@ export class GraphActionLink extends Component<Props, State> {
         createElement(OverlayDialog, {
           show: true,
           title: 'Delete graph',
-          bsSize: 'sm',
+          bsSize: 'lg',
           onHide,
           children: D.div({style: {textAlign: 'center'}},
             D.p({}, `Are you sure that you want to delete the named graph "${this.props.graphuri}"?`),

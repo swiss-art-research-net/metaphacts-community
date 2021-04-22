@@ -39,10 +39,13 @@
  */
 package com.metaphacts.servlet;
 
+
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -90,22 +93,41 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.metaphacts.api.sparql.ServletRequestUtil;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
+import com.metaphacts.api.sparql.SparqlOperationBuilder.SparqlMagicVariables;
 import com.metaphacts.api.sparql.SparqlUtil;
 import com.metaphacts.api.sparql.SparqlUtil.SparqlOperation;
 import com.metaphacts.cache.CacheManager;
+import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
 import com.metaphacts.di.MainGuiceModule.MainTemplateProvider;
 import com.metaphacts.repository.RepositoryManager;
 import com.metaphacts.security.PermissionUtil;
 import com.metaphacts.servlet.SparqlRequestHandler.SparqlRequestContext;
 import com.metaphacts.util.ExceptionUtils;
+import com.metaphacts.util.LanguageHelper;
 
 
 
 /**
+ * Servlet defining a standards compliant SPARQL endpoint.
+ * 
+ * <p>
+ * This servlet supports certain magic variables as defined in
+ * {@link SparqlMagicVariables} and injects those as bindings to the evaluation.
+ * </p>
+ * 
  * @author Johannes Trame <jt@metaphacts.com>
+ * @see SparqlMagicVariables
  */
 public class SparqlServlet extends HttpServlet {
+
+    /**
+     * Header that can be used as part of client request to send the user preferred
+     * language. Supports a single language tag (or a comma separated list) as
+     * value.
+     */
+    public static final String HEADER_MPH_USER_PREFERRED_LANGUAGE = "MPH-UserPreferredLanguage";
+
 
     private static final long serialVersionUID = 9086920765942724466L;
 
@@ -125,6 +147,9 @@ public class SparqlServlet extends HttpServlet {
     @Inject
     private CacheManager cacheManger;
     
+    @Inject
+    private Configuration configuration;
+
     @Inject(optional=true)
     SparqlRequestHandler sparqlHandler;
 
@@ -320,9 +345,11 @@ public class SparqlServlet extends HttpServlet {
         
         try (RepositoryConnection con = repositoryManager.getRepository(repId).getConnection()) {
             Operation sparqlOperation = 
-                    SparqlOperationBuilder.create(queryString).
-                      setDataset(dataset).
-                      resolveUser(nsRegistry.getUserIRI()).build(con);
+                    SparqlOperationBuilder.create(queryString)
+                      .setDataset(dataset)
+                      .resolveUser(nsRegistry.getUserIRI())
+                      .resolveUserPreferredLanguage(userPreferredLanguageOrSystem(req))
+                      .build(con);
             SparqlOperation operationType = SparqlUtil.getOperationType(sparqlOperation);
             if (logger.isTraceEnabled()) {
                 logger.trace("Query with hash \"{}\" is of type \"{}\"",queryString.hashCode(), operationType);
@@ -407,6 +434,26 @@ public class SparqlServlet extends HttpServlet {
             resp.sendError(Status.INTERNAL_SERVER_ERROR.getStatusCode(), message);
             return;
         }
+
+    }
+
+    /**
+     * Resolve to the request's <i>{@value #HEADER_MPH_USER_PREFERRED_LANGUAGE}</i>
+     * header, and resort to the system preferred language as fallback.
+     * 
+     * @param request
+     * @return a supplier for the first resolved preferred language tag (e.g. "de",
+     *         or "en")
+     */
+    protected Supplier<String> userPreferredLanguageOrSystem(HttpServletRequest request) {
+        String userPreferredLanguage = request.getHeader(HEADER_MPH_USER_PREFERRED_LANGUAGE);
+
+        // Note: use supplier to have lazy evaluation only if actually used in query
+        return () -> {
+            List<String> languages = LanguageHelper.getPreferredLanguages(userPreferredLanguage,
+                configuration.getUiConfig().getPreferredLanguages());
+            return languages.get(0);
+        };
 
     }
 

@@ -243,7 +243,7 @@ export class ViewModel {
         this.defaultSetIri(),
         searchForSetsAndItems({
           setItemsQuery, setItemsMetadataQuery, setCountQuery, context,
-          rootSet, isSet: this.isSet,
+          rootSet, isSet: this.isSet.bind(this),
         }),
       ])),
     ).observe({
@@ -398,7 +398,7 @@ export class ViewModel {
           setItemsMetadataQuery,
           context: this.getContext(),
           rootSet: rootSetIri,
-          isSet: this.isSet,
+          isSet: this.isSet.bind(this),
           setToSearch: state.openedSet,
           filterPatterns,
         }),

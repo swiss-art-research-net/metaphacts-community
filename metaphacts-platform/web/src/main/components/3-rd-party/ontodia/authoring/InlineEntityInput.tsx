@@ -62,7 +62,7 @@ import {
 } from './FieldConfigurationCommon';
 import {
   convertCompositeValueToElementModel, convertElementModelToCompositeValue,
-  addEmptyValuesForRequiredFields,
+  convertElementModelToAtomicValue, addEmptyValuesForRequiredFields,
 } from './OntodiaPersistenceCommon';
 import { SuggestEntitySelector, EditEntityButton } from './SuggestEntitySelector';
 
@@ -102,6 +102,8 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
   declare readonly context:
     ComponentContext & OntodiaContextWrapper & Ontodia.WorkspaceContextWrapper;
 
+  private compositeRef: Forms.CompositeInput | null = null;
+
   private readonly onValueChangeLoader = new Forms.OnValueChangeLoader();
   private loadingEntityCancellation = Cancellation.cancelled;
 
@@ -123,8 +125,21 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
 
   dataState(): Forms.DataState {
     const {loadingMetadata, loadingEntity} = this.state;
-    return (loadingMetadata || loadingEntity)
-      ? Forms.DataState.Loading : Forms.DataState.Ready;
+    if (loadingMetadata || loadingEntity) {
+      return Forms.DataState.Loading;
+    }
+    if (this.compositeRef) {
+      return this.compositeRef.dataState();
+    }
+    return Forms.DataState.Ready;
+  }
+
+  inspect(): Forms.InspectedInputTree {
+    const inspectedComposite: Forms.InspectedInputTree[] = [];
+    if (this.compositeRef) {
+      inspectedComposite.push(this.compositeRef.inspect());
+    }
+    return {...super.inspect(), children: {composite: inspectedComposite}};
   }
 
   componentDidMount() {
@@ -158,10 +173,11 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
     this.loadingEntityCancellation.cancelAll();
   }
 
-  private shouldLoadEntity() {
+  private shouldLoadEntity(): boolean {
     const {dataState, value} = this.props;
     if (this.onValueChangeLoader.shouldLoadInState(dataState)) {
-      return !Forms.FieldValue.isComposite(value);
+      const loadedEntity = getLoadedFromEntity(value);
+      return !(loadedEntity || Forms.FieldValue.isComposite(value));
     }
     return false;
   }
@@ -192,40 +208,62 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
     );
     if (inlineEntity === null) { return; }
 
-    let converted = convertElementModelToCompositeValue(inlineEntity.model, handler.metadata);
-    converted = addEmptyValuesForRequiredFields(converted);
-    if (inlineEntity.newIri) {
-      const subject = Rdf.iri(inlineEntity.newIri);
-      converted = Forms.CompositeValue.set(converted, {subject});
-    }
-
-    const {makePersistence} = this.context.ontodiaContext;
-    const persistence = makePersistence();
-    if (inlineEntity.status === 'new' || persistence.supportsIriEditing) {
-      converted = Forms.computeIfSubjectWasSuggested(
-        converted, handler.metadata.newSubjectTemplate
-      );
-    }
-
-    if (entityIri) {
-      converted = setLoadedFromEntity(converted, inlineEntity);
-    }
-
-    const mode = getValueMode(targetValue);
-    if (mode === undefined) {
+    let targetMode = getValueMode(targetValue);
+    if (targetMode === undefined) {
       const selectExisting = this.props.allowSelectExisting && inlineEntity.status !== 'new';
-      converted = setValueMode(converted, selectExisting ? 'select' : 'create');
-    } else {
-      converted = setValueMode(converted, mode);
+      targetMode = selectExisting ? 'select' : 'create';
     }
+
+    let converted: Forms.FieldValue = targetValue;
+    if (!Forms.FieldValue.isEmpty(converted)) {
+      converted = convertElementModelToAtomicValue(inlineEntity.model, handler.metadata);
+    }
+
+    converted = setValueMode(converted, targetMode);
+    converted = setLoadedFromEntity(converted, inlineEntity);
 
     const editSource = getEditSource(targetValue);
     if (editSource) {
       converted = setEditSource(converted, targetValue);
     }
 
-    this.props.updateValue(() => converted);
+    if (targetMode === 'create') {
+      converted = this.transformIntoComposite(converted);
+    }
+
+    // update internal state before calling `updateValue()` because
+    // `this.dataState()` will be called synchronously to propagate loading state changes
     this.setState({loadingEntity: false});
+    this.props.updateValue(() => converted);
+  }
+
+  private transformIntoComposite(value: Forms.FieldValue): Forms.CompositeValue {
+    const inlineEntity = getLoadedFromEntity(value);
+    if (!inlineEntity) {
+      throw new Error('Missing metadata about where entity was loaded from');
+    }
+    const handler = this.props.handler as InlineEntityInputHandler;
+    let transformed = convertElementModelToCompositeValue(inlineEntity.model, handler.metadata);
+    transformed = addEmptyValuesForRequiredFields(transformed);
+    if (inlineEntity.newIri) {
+      const subject = Rdf.iri(inlineEntity.newIri);
+      transformed = Forms.CompositeValue.set(transformed, {subject});
+    }
+
+    const {makePersistence} = this.context.ontodiaContext;
+    const persistence = makePersistence();
+    if (inlineEntity.status === 'new' || persistence.supportsIriEditing) {
+      transformed = Forms.computeIfSubjectWasSuggested(
+        transformed,
+        handler.metadata.newSubjectTemplate,
+        handler.metadata.newSubjectTemplateSettings
+      );
+    }
+
+    transformed = setLoadedFromEntity(transformed, inlineEntity);
+    transformed = setValueMode(transformed, getValueMode(value));
+    transformed = setEditSource(transformed, getEditSource(value));
+    return transformed;
   }
 
   render() {
@@ -259,12 +297,12 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
       return <Spinner />;
     }
     const handler = passedHandler as InlineEntityInputHandler;
-    const inlineEntity = Forms.FieldValue.isComposite(inputProps.value)
-      ? getLoadedFromEntity(inputProps.value) : undefined;
+    const inlineEntity = getLoadedFromEntity(inputProps.value);
     const className = classnames(styles.component, (
       !inlineEntity || inlineEntity.status === 'new' ? styles.statusNew :
       inlineEntity.status === 'changed' ? styles.statusChanged :
       inlineEntity.status === 'deleted' ? styles.statusDeleted :
+      inlineEntity.status === 'missing' ? styles.statusDeleted :
       undefined
     ));
     const mode = getValueMode(inputProps.value);
@@ -273,35 +311,47 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
     );
     return (
       <>
-        {mode === 'select' ? this.renderExistingEntitySelector(inlineEntity) : null}
+        {mode === 'select' ? this.renderExistingEntitySelector() : null}
+        {this.renderMissingOrDeletedWarning()}
         {showForm ? (
-          <Forms.CompositeInput {...inputProps}
+          <Forms.CompositeInput ref={this.onCompositeMount}
+            {...inputProps}
             className={className}
             fields={handler.fields}
             handler={handler.compositeHandler}
             newSubjectTemplate={handler.metadata.newSubjectTemplate}
+            newSubjectTemplateSettings={handler.metadata.newSubjectTemplateSettings}
             onValidateSubject={this.onValidateSubject}>
             {inlineEntity?.status === 'deleted' ? '(deleted)' : handler.formMarkup}
           </Forms.CompositeInput>
         ) : null}
-        {mode === 'select' ? this.renderEditSelectedValueToggle(inlineEntity) : null}
+        {mode === 'select' ? this.renderEditSelectedValueToggle() : null}
       </>
     );
   }
 
-  private renderExistingEntitySelector(inlineEntity: LoadedEntity | undefined) {
+  private onCompositeMount = (composite: Forms.CompositeInput | null) => {
+    this.compositeRef = composite;
+  }
+
+  private renderExistingEntitySelector() {
     const {view} = this.context.ontodiaWorkspace;
-    let value: Forms.LabeledValue | undefined;
+    const {value} = this.props;
+    const inlineEntity = Forms.FieldValue.isEmpty(value)
+      ? undefined : getLoadedFromEntity(value);
+
+    let selectedValue: Forms.LabeledValue | undefined;
     if (inlineEntity) {
       const label = view.formatLabel(
         inlineEntity.model.label.values,
         inlineEntity.newIri ?? inlineEntity.model.id
       );
-      value = {value: Rdf.iri(inlineEntity.model.id), label};
+      selectedValue = {value: Rdf.iri(inlineEntity.model.id), label};
     }
+
     return (
       <SuggestEntitySelector
-        value={value}
+        value={selectedValue}
         onSelect={this.onSelectedExistingEntity}
         loadSuggestions={this.loadSuggestions}
       />
@@ -336,21 +386,25 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
     }).toProperty();
   }
 
-  private renderEditSelectedValueToggle(inlineEntity: LoadedEntity | undefined) {
+  private renderEditSelectedValueToggle() {
     const {allowEditExisting, value, updateValue, definition} = this.props;
     const {editor} = this.context.ontodiaWorkspace;
+    const inlineEntity = Forms.FieldValue.isEmpty(value)
+      ? undefined : getLoadedFromEntity(value);
     const editSource = getEditSource(value);
-    const entityLabel = (Forms.getPreferredLabel(definition.label) ?? 'entity').toLowerCase();
     return (
       <>
-        {(allowEditExisting && inlineEntity && !editSource) ? (
+        {(allowEditExisting && inlineEntity && inlineEntity.status === 'changed' && !editSource) ? (
           <EditEntityButton entityIri={Rdf.iri(inlineEntity.model.id)}
-            entityLabel={entityLabel}
+            entityLabel={this.getEntityTypeLabel()}
             loadCanEdit={cancellation => {
               const ct = deriveCancellationToken(cancellation);
               return editor.metadataApi.canEditElement(inlineEntity.model, ct);
             }}
-            onEdit={() => updateValue(v => setEditSource(v, v))}
+            onEdit={() => updateValue(v => {
+              const composite = this.transformIntoComposite(v);
+              return setEditSource(composite, v);
+            })}
           />
         ) : null}
         {editSource ? (
@@ -366,6 +420,11 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
     );
   }
 
+  private getEntityTypeLabel(): string {
+    const {definition} = this.props;
+    return (Forms.getPreferredLabel(definition.label) ?? 'entity').toLowerCase();
+  }
+
   private setMode(nextMode: ValueMode) {
     this.props.updateValue(v => {
       const currentMode = getValueMode(v);
@@ -376,6 +435,24 @@ export class InlineEntityInput extends Forms.SingleValueInput<InlineEntityInputP
       const nextValue = this.cachedValues.get(nextMode) ?? Forms.FieldValue.empty;
       return setValueMode(nextValue, nextMode);
     });
+  }
+
+  private renderMissingOrDeletedWarning() {
+    const {value} = this.props;
+    const inlineEntity = getLoadedFromEntity(value);
+    let message: React.ReactNode | undefined;
+    switch (inlineEntity?.status) {
+      case 'deleted':
+        message = <>Selected {this.getEntityTypeLabel()} was deleted.</>;
+        break;
+      case 'missing':
+        message = <>Selected {this.getEntityTypeLabel()} is missing.</>;
+        break;
+    }
+    if (message === undefined) {
+      return null;
+    }
+    return <div className={styles.entityWarning}>&#x26A0;&nbsp;{message}</div>;
   }
 
   private onValidateSubject = (
@@ -482,6 +559,7 @@ class InlineEntityInputHandler implements Forms.SingleValueHandler {
         fields: this._fields,
         children: this._formMarkup,
         newSubjectTemplate: metadata.newSubjectTemplate,
+        newSubjectTemplateSettings: metadata.newSubjectTemplateSettings,
       },
     });
     this.initialized = true;
@@ -540,6 +618,9 @@ class InlineEntityInputHandler implements Forms.SingleValueHandler {
     value: Forms.FieldValue,
     owner: Forms.CompositeValue | Forms.EmptyValue
   ): Kefir.Property<Forms.FieldValue> {
+    if (!Forms.FieldValue.isComposite(value)) {
+      return Kefir.constant(value);
+    }
     return this.compositeHandler.finalize(value, owner).map(result => {
       if (!Forms.FieldValue.isComposite(result)) {
         return result;
@@ -615,15 +696,15 @@ const LOADED_FROM_ENTITY: unique symbol = Symbol('InlineEntityInput.loadedFromEn
 interface LoadedFormEntityExtension { [LOADED_FROM_ENTITY]?: LoadedEntity }
 
 function getLoadedFromEntity(
-  model: Forms.CompositeValue & LoadedFormEntityExtension
+  model: Forms.FieldValue & LoadedFormEntityExtension
 ): LoadedEntity | undefined {
   return model[LOADED_FROM_ENTITY];
 }
 
-function setLoadedFromEntity(
-  model: Forms.CompositeValue & LoadedFormEntityExtension,
+function setLoadedFromEntity<V extends Forms.FieldValue & LoadedFormEntityExtension>(
+  model: V,
   entity: LoadedEntity | undefined
-): Forms.CompositeValue & LoadedFormEntityExtension {
+): V {
   return {...model, [LOADED_FROM_ENTITY]: entity};
 }
 

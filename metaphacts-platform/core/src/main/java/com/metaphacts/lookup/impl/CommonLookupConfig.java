@@ -39,21 +39,24 @@
  */
 package com.metaphacts.lookup.impl;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
-import com.metaphacts.util.LanguageHelper;
-import org.apache.logging.log4j.util.Strings;
-import org.eclipse.rdf4j.model.*;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.Models;
 
 import com.google.common.cache.CacheBuilderSpec;
 import com.metaphacts.lookup.spi.AbstractLookupServiceConfig;
 import com.metaphacts.lookup.spi.LookupServiceConfigException;
-import org.eclipse.rdf4j.model.vocabulary.RDF;
+import com.metaphacts.util.LanguageHelper;
 
 /**
  * Common configuration options for a LookupService.

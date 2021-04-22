@@ -10,9 +10,6 @@ import {N3Parser, renderExample, tryLoadLayoutFromLocalStorage} from './resource
 
 const data = require('./resources/orgOntology.ttl');
 
-const RdfXmlParser: any = require('rdf-parser-rdfxml');
-const JsonLdParser: any = require('rdf-parser-jsonld');
-
 
 interface CustomToolbarProps {
     commands: EventTrigger<CanvasCommands>;
@@ -105,8 +102,6 @@ class ToolbarCustomizationExample extends React.Component {
                 ],
                 acceptBlankNodes: false,
                 parsers: {
-                    'application/rdf+xml': new RdfXmlParser(),
-                    'application/ld+json': new JsonLdParser(),
                     'text/turtle': new N3Parser(),
                 },
             }),

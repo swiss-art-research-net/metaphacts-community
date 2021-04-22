@@ -39,47 +39,41 @@
  */
 package com.metaphacts.resource;
 
+import static org.eclipse.rdf4j.model.util.Values.iri;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 
 import org.apache.logging.log4j.Level;
 import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.vocabulary.FOAF;
+import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.repository.Repository;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.github.sdorra.shiro.ShiroRule;
-import com.github.sdorra.shiro.SubjectAware;
 import com.metaphacts.cache.CacheManager;
-import com.metaphacts.config.Configuration;
+import com.metaphacts.cache.ResourceDescriptionCacheHolder;
 import com.metaphacts.junit.AbstractRepositoryBackedIntegrationTest;
 import com.metaphacts.junit.Log4jRule;
-import com.metaphacts.junit.MetaphactsShiroRule;
 import com.metaphacts.junit.NamespaceRule;
 import com.metaphacts.junit.PlatformStorageRule;
-import com.metaphacts.junit.RepositoryRule;
-import com.metaphacts.services.storage.api.ObjectKind;
-import com.metaphacts.templates.PageViewConfigManager;
-import com.metaphacts.templates.PageViewConfigSettings;
+import com.metaphacts.junit.TestPlatformStorage;
+import com.metaphacts.services.fields.FieldDefinitionGeneratorChain;
+import com.metaphacts.services.storage.api.StoragePath;
+import com.metaphacts.templates.TemplateUtil;
 
 public class DefaultResourceDescriptionServiceTest extends AbstractRepositoryBackedIntegrationTest
         implements ResourcesTestData {
-    private final String templatePermissionShiroFile = "classpath:com/metaphacts/security/shiro-templates-rights.ini";
-
-    @Rule
-    public ShiroRule shiroRule = new ShiroRule();
-
-    @Inject
-    public Configuration configuration;
-
     @Inject
     @Rule
     public PlatformStorageRule platformStorageRule;
@@ -92,10 +86,16 @@ public class DefaultResourceDescriptionServiceTest extends AbstractRepositoryBac
     protected CacheManager cacheManager;
 
     @Inject
-    protected PageViewConfigSettings pageRenderConfig;
+    protected FieldDefinitionGeneratorChain fieldDefinitionGeneratorChain;
 
     @Inject
-    protected PageViewConfigManager pageViewConfigManager;
+    protected DescriptionRenderer descriptionRenderer;
+
+    @Inject
+    protected ResourceDescriptionCacheHolder labelService;
+
+    @Inject
+    protected DefaultModelService modelService;
 
     @Inject
     protected DefaultResourceDescriptionService descriptionService;
@@ -103,17 +103,13 @@ public class DefaultResourceDescriptionServiceTest extends AbstractRepositoryBac
     @Rule
     public Log4jRule log4j = Log4jRule.create(Level.INFO);
 
-    @Inject
-    @Rule
-    public RepositoryRule repositoryRule;
-
     @Before
     public void before() throws Exception {
-
-        platformStorageRule.storeContentFromResource(ObjectKind.CONFIG.resolve(PageViewConfigSettings.CONFIG_FILE_NAME),
-                "/com/metaphacts/templates/pageViewConfig.ini");
-
-        pageRenderConfig.reloadConfiguration();
+        // set up test template
+        String descriptionTemplate = "[[[label]]] ([[[type]]]): [[occupation.0.value]] ([[date-formatYear dateOfBirth.0.value]])[[#if marriedTo]], married to [[marriedTo.0.value]][[/if]]";
+        StoragePath descriptionTemplatePath = DescriptionTemplateByIriLoader
+                .descriptionTemplatePathFromIri(iri(TemplateUtil.convertResourceToTemplateIdentifier(EXAMPLE_PERSON)));
+        platformStorageRule.storeContent(descriptionTemplatePath, descriptionTemplate, TestPlatformStorage.STORAGE_ID);
 
         namespaceRule.set("ex", "http://example.org/");
 
@@ -121,48 +117,98 @@ public class DefaultResourceDescriptionServiceTest extends AbstractRepositoryBac
         addStatementsFromResources(TEST_ONTOLOGY_FILE, TEST_DATA_FILE);
     }
 
-    @Rule
-    public MetaphactsShiroRule rule = new MetaphactsShiroRule(() -> configuration).withCacheManager(() -> cacheManager)
-            .withPlatformStorageRule(() -> platformStorageRule);
-
     @Test
-    @SubjectAware(username = "admin", password = "admin", configuration = templatePermissionShiroFile)
-    public void testBasicInstanceType() throws Exception {
+    public void testSimpleDescription() throws Exception {
         Repository repository = repositoryRule.getRepository();
-        Iterable<IRI> types = descriptionService.getInstanceTypes(repository, ALICE);
-        assertThat(types, containsInAnyOrder(EXAMPLE_PERSON));
 
-        types = descriptionService.getInstanceTypes(repository, BOB);
-        assertThat(types, containsInAnyOrder(FOAF.PERSON, EXAMPLE_PERSON));
+        Optional<Literal> description = descriptionService.getDescription(ALICE, repository, "en");
+        assertTrue("There should be a description for Alice", description.isPresent());
+        assertThat(description.get().stringValue(),
+                equalTo("Alice (en) (Person): Researcher (1980), married to Charlie (en)"));
     }
 
     @Test
-    @SubjectAware(username = "admin", password = "admin", configuration = templatePermissionShiroFile)
-    public void testTypeDescription() throws Exception {
+    public void testCaching() {
         Repository repository = repositoryRule.getRepository();
-        Iterable<IRI> types = descriptionService.getInstanceTypes(repository, ALICE);
-        assertThat(types, containsInAnyOrder(EXAMPLE_PERSON));
+        final ConcurrentMap<IRI, AtomicInteger> loadCounters = new ConcurrentHashMap<>();
 
-        Optional<TypeDescription> typeDescriptionHolder = descriptionService.getTypeDescription(repository,
-                EXAMPLE_PERSON);
-        assertTrue(typeDescriptionHolder.isPresent());
-        TypeDescription typeDescription = typeDescriptionHolder.get();
-        assertThat(typeDescription.getTypeIRI(), equalTo(EXAMPLE_PERSON));
-    }
+        // initialize counters
+        loadCounters.put(ALICE, new AtomicInteger());
+        loadCounters.put(DONALD, new AtomicInteger());
 
-    @Test
-    @SubjectAware(username = "admin", password = "admin", configuration = templatePermissionShiroFile)
-    public void testBasicDescriptionProperties() throws Exception {
-        // TODO implement
-    }
+        DefaultResourceDescriptionService resourceDescriptionService = new DefaultResourceDescriptionService(config,
+                cacheManager, platformStorageRule.getPlatformStorage(), namespaceRule.getNamespaceRegistry(),
+                fieldDefinitionGeneratorChain, descriptionRenderer, labelService, modelService) {
+            @Override
+            protected java.util.Optional<Literal> lookupDescription(Repository repository, IRI resourceIri,
+                    java.util.List<String> preferredLanguages) {
+                loadCounters.computeIfAbsent(resourceIri, t -> new AtomicInteger()).incrementAndGet();
+                return super.lookupDescription(repository, resourceIri, preferredLanguages);
+            }
 
-    // TODO cover more cases
+            @Override
+            protected java.util.Optional<ResourceDescription> lookupResourceDescription(Repository repository, com.metaphacts.cache.LiteralCacheKey cacheKey) {
+                return super.lookupResourceDescription(repository, cacheKey);
+            }
+        };
 
-    @Test
-    @SubjectAware(username = "admin", password = "admin", configuration = templatePermissionShiroFile)
-    public void dummyTest() {
-        // override this method so we can provide a subject and password
-        // otherwise we'll get an exception
-        super.dummyTest();
+        Optional<Literal> description;
+
+        // here we test whether both positive results (description for Alice) as
+        // well as negative results (no description for Donald) are cached and
+        // whether invalidating the cache triggers another load
+
+        // no type descriptions loaded yet
+        assertEquals("description for Donald should not have been loaded yet", 0, loadCounters.get(DONALD).intValue());
+        assertEquals("description for Alice should not have been loaded yet", 0,
+                loadCounters.get(ALICE).intValue());
+
+        // load type descriptions for first time
+        description = resourceDescriptionService.getDescription(DONALD, repository, "de");
+        assertFalse("There should be no description for Donald", description.isPresent());
+        assertEquals("description for Donald should have been loaded once", 1, loadCounters.get(DONALD).intValue());
+
+        description = resourceDescriptionService.getDescription(ALICE, repository, "de");
+        assertTrue("There should be a description for Alice", description.isPresent());
+        assertEquals("description for Alice should have been loaded once", 1,
+                loadCounters.get(ALICE).intValue());
+        assertThat(description.get().stringValue(),
+                equalTo("Alice (de) (Person): Researcher (1980), married to Charlie (de)"));
+
+        // load type descriptions for second time, should be cached
+        description = resourceDescriptionService.getDescription(DONALD, repository, "de");
+        assertFalse("There should be no description for Donald", description.isPresent());
+        assertEquals("description for Donald should have been loaded once only", 1,
+                loadCounters.get(DONALD).intValue());
+
+        description = resourceDescriptionService.getDescription(ALICE, repository, "de");
+        assertTrue("There should be a description for Alice", description.isPresent());
+        assertEquals("description for Alice should have been loaded once only", 1,
+                loadCounters.get(ALICE).intValue());
+
+        // invalidate caches
+        cacheManager.invalidateAll();
+
+        // load type descriptions for third time
+        description = resourceDescriptionService.getDescription(DONALD, repository, "de");
+        assertFalse("There should be no description for Donald", description.isPresent());
+        assertEquals("description for Donald should have been loaded once again", 2,
+                loadCounters.get(DONALD).intValue());
+
+        description = resourceDescriptionService.getDescription(ALICE, repository, "de");
+        assertTrue("There should be a description for Alice", description.isPresent());
+        assertEquals("description for Alice should have been loaded once again", 2,
+                loadCounters.get(ALICE).intValue());
+
+        // load type descriptions for fourth time, should be cached
+        description = resourceDescriptionService.getDescription(DONALD, repository, "de");
+        assertFalse("There should be no description for Donald", description.isPresent());
+        assertEquals("description for Donald should have been loaded once only", 2,
+                loadCounters.get(DONALD).intValue());
+
+        description = resourceDescriptionService.getDescription(ALICE, repository, "de");
+        assertTrue("There should be a description for Alice", description.isPresent());
+        assertEquals("description for Alice should have been loaded once only", 2,
+                loadCounters.get(ALICE).intValue());
     }
 }

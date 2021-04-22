@@ -37,7 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Component, Children } from 'react';
+import { Component } from 'react';
+import * as Kefir from 'kefir';
 
 import { Cancellation } from 'platform/api/async';
 import { Util as Security } from 'platform/api/services/security';
@@ -45,16 +46,30 @@ import { Util as Security } from 'platform/api/services/security';
 /**
  * Displays child component if user has the required permission; otherwise displays nothing.
  *
- * **Example**:
+ * If multiple options of `permission`, `any-of` and `all-of` are provided, they all need
+ * to be fulfilled.
+ *
+ * **Examples**:
  * ```
  * <mp-has-permission permission='delete:all:data'></mp-has-permission>
+ * <mp-has-permission any-of='["data:create", "data:update"]'></mp-has-permission>
  * ```
  */
 interface HasPermissionConfig {
   /**
    * Required permission key to display a child component.
    */
-  permission: string;
+  permission?: string;
+
+  /**
+   * At least one of these permissions needs to be granted.
+   */
+  anyOf?: ReadonlyArray<string>;
+
+  /**
+   * All of these permissions need to be granted.
+   */
+  allOf?: ReadonlyArray<string>;
 }
 
 export type HasPermissionProps = HasPermissionConfig;
@@ -72,14 +87,45 @@ export class HasPermission extends Component<HasPermissionProps, State> {
   }
 
   componentWillMount() {
-    this.cancellation.map(
-      Security.isPermitted(this.props.permission)
-    ).onValue(allowedToSee => this.setState({allowedToSee}));
+    const {permission, anyOf, allOf} = this.props;
+    let permissions = permission ? [permission] : [];
+    permissions = permissions.concat(anyOf ?? [], allOf ?? []);
+    if (permissions.length === 0) {
+      this.setState({allowedToSee: true});
+    } else {
+      this.cancellation.map(
+        Kefir.combine(
+          permissions.map(perm => Security.isPermitted(perm))
+        ).takeErrors(1)
+      ).observe({
+        value: (result) => {
+          const permissionMap = new Map<string, boolean>();
+          permissions.forEach((permissionName, i) => {
+            permissionMap.set(permissionName, result[i]);
+          });
+          this.setState({allowedToSee: this.checkPermissions(permissionMap)});
+        }
+      });
+    }
+  }
+
+  private checkPermissions(permissions: Map<string, boolean>): boolean {
+    const {permission, anyOf, allOf} = this.props;
+    if (permission && !permissions.get(permission)) {
+      return false;
+    }
+    if (anyOf && !anyOf.some(perm => permissions.get(perm))) {
+      return false;
+    }
+    if (allOf && !allOf.every(perm => permissions.get(perm))) {
+      return false;
+    }
+    return true;
   }
 
   render() {
     if (this.state.allowedToSee) {
-      return Children.only(this.props.children);
+      return this.props.children;
     } else {
       return null;
     }

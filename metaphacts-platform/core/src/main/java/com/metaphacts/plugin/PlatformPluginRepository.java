@@ -59,12 +59,14 @@ public class PlatformPluginRepository extends DefaultPluginRepository {
     public List<Path> getPluginPaths() {
 
         pluginsRoots.forEach(pluginsRoot -> {
+            logger.debug("Searching for apps in {}", pluginsRoot);
 
             // expand plugins zip files
             File[] pluginZips = pluginsRoot.toFile().listFiles(new ZipFileFilter());
             if ((pluginZips != null) && pluginZips.length > 0) {
                 for (File pluginZip : pluginZips) {
                     try {
+                        logger.debug("Extracting app zip {}", pluginZip.getCanonicalPath());
                         PluginZipUtils.expandAndDeleteIfValidZipApp(pluginZip.toPath());
                     } catch (Exception e) {
                         logger.error("Cannot expand plugin zip '{}'", pluginZip);
@@ -72,6 +74,9 @@ public class PlatformPluginRepository extends DefaultPluginRepository {
                         logger.debug("Details: {}", e);
                     }
                 }
+            }
+            else {
+                logger.debug("No app zips found");
             }
         });
 

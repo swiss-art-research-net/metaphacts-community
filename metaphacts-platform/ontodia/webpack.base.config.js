@@ -1,22 +1,9 @@
 const path = require('path');
 
-// if BUNDLE_PEERS is set, we'll produce bundle with all dependencies
-const BUNDLE_PEERS = Boolean(process.env.BUNDLE_PEERS);
-// always include IE support in full bundle
-const SUPPORT_IE = BUNDLE_PEERS || Boolean(process.env.SUPPORT_IE);
-
-const aliases = {};
-if (!SUPPORT_IE) {
-    const emptyModule = path.resolve(__dirname, 'src', 'ontodia', 'emptyModule.ts');
-    aliases['canvg-fixed'] = emptyModule;
-    aliases['es6-promise/auto'] = emptyModule;
-}
-
 var cssModulesDir = path.join(__dirname, 'src');
 
 module.exports = {
     resolve: {
-        alias: aliases,
         extensions: ['.ts', '.tsx', '.js'],
     },
     module: {

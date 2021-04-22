@@ -37,7 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-import { Props as ReactProps, Component, createElement, FunctionComponent } from 'react';
+import { Component, createElement, FunctionComponent } from 'react';
+import * as Kefir from 'kefir';
 import * as D from 'react-dom-factories';
 import * as URI from 'urijs';
 import { findDOMNode } from 'react-dom';
@@ -70,7 +71,7 @@ export interface YasqeValue {
   queryMode: string;
 }
 
-export interface SparqlEditorProps extends ReactProps<SparqlEditor> {
+export interface SparqlEditorProps {
   onChange?: (value: YasqeValue) => void;
   onBlur?: (value: YasqeValue) => void;
   backdrop?: boolean;
@@ -306,24 +307,44 @@ Yasqe.Autocompleters['prefixes'].get = () => {
   });
 };
 Yasqe.Autocompleters['property'].get = (yasqe, token) => {
-  return SparqlClient.select(`SELECT ?property WHERE {
-  { ?property a owl:DatatypeProperty }
-  UNION
-  { ?property a owl:ObjectProperty }
-  FILTER(REGEX(STR(?property), "${token.autocompletionString}.*", "i"))
-} LIMIT 10`).map(res =>
-    res.results.bindings.map(item => item['property'].value)
-  ).toPromise();
-}
+  return getSuggestions([
+    'http://www.w3.org/2002/07/owl#DatatypeProperty',
+    'http://www.w3.org/2002/07/owl#ObjectProperty',
+  ], token).toPromise();
+};
+
 Yasqe.Autocompleters['class'].get = (yasqe, token) => {
-  return SparqlClient.select(`SELECT ?class WHERE {
-  { ?class a rdfs:Class }
-  UNION
-  { ?class a owl:Class }
-  FILTER(REGEX(STR(?class), "${token.autocompletionString}.*", "i"))
-} LIMIT 10`).map(res =>
-    res.results.bindings.map(item => item['class'].value)
-  ).toPromise();
+  return getSuggestions([
+    'http://www.w3.org/2000/01/rdf-schema#Class',
+    'http://www.w3.org/2002/07/owl#Class',
+  ], token).toPromise();
+};
+
+
+function getSuggestions(
+  types: string[],
+  token: { autocompletionString?: string, tokenPrefixUri?: string }
+): Kefir.Property<string[]> {
+  const tokenString = token.autocompletionString?.replace(/"/g, '');
+  if (!tokenString) {
+    return Kefir.constant([]);
+  }
+  // tokenPrefixUri is also set for simple names, if the default prefix is defined
+  const prefixIsPartOfCompletion = token.tokenPrefixUri &&
+    token.autocompletionString.startsWith(token.tokenPrefixUri);
+  const prefix = prefixIsPartOfCompletion ? token.tokenPrefixUri?.replace(/"/g, '') : null;
+  const localName = prefix ? tokenString.substring(prefix.length) : tokenString;
+
+  return SparqlClient.select(`SELECT DISTINCT ?subject WHERE {
+    { ${types.map(type => `?subject a <${type}>`).join('} UNION {')} }
+    OPTIONAL { ?subject rdfs:label ?label . }
+    ${prefix
+      ? `FILTER(REGEX(STR(?subject), "^${prefix}") && (REGEX(STR(?subject), "^${prefix}.*${localName}.*", "i") || REGEX(?label, "${localName}", "i")))`
+      : `FILTER(REGEX(STR(?subject), "${tokenString}", "i") || REGEX(?label, "${tokenString}", "i"))`}
+  } ORDER BY ASC(STRLEN(STR(?subject))) ASC(STR(?subject)) LIMIT 30`
+  ).map(
+    res => res.results.bindings.map(item => item['subject'].value)
+  );
 }
 
 function createFullscreenButton(id: string) {

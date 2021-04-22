@@ -21,6 +21,7 @@ const fs = require('fs');
 const webpack = require('webpack');
 const ThreadLoader = require('thread-loader');
 const AssetsPlugin = require('assets-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const autoprefixer = require('autoprefixer');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
@@ -68,8 +69,17 @@ module.exports = function (defaults, platformOptions) {
      * @type {{ [schemaName: string]: string }}
      */
     const jsonSchemas = {};
-    /** @type {{ [componentTag: string]: string | { propsSchema?: string } }} */
+    /** @type {{ [componentTag: string]: string | import('./defaults').ComponentMetadata }} */
     const components = {};
+
+    /**
+     * @param {import('./defaults').WebProject} project
+     * @param {string} schemaName
+     */
+    const addJsonSchema = (project, schemaName) => {
+      const schemaPath = `${project.schemasAlias}/${schemaName}.json`;
+      jsonSchemas[schemaName] = schemaPath;
+    };
 
     for (const project of WEB_PROJECTS) {
       if (project.entries) {
@@ -92,9 +102,8 @@ module.exports = function (defaults, platformOptions) {
       }
 
       if (project.generatedJsonSchemas) {
-        for (const schemaName of project.generatedJsonSchemas) {
-          const schemaPath = `${project.schemasAlias}/${schemaName}.json`;
-          jsonSchemas[schemaName] = schemaPath;
+        for (const entry of project.generatedJsonSchemas) {
+          addJsonSchema(project, typeof entry === 'object' ? entry.schemaName : entry);
         }
       }
 
@@ -106,10 +115,15 @@ module.exports = function (defaults, platformOptions) {
 
         for (const componentName of Object.keys(componentsJson)) {
           const metadata = componentsJson[componentName];
-          if (typeof metadata === 'object' && metadata.propsSchema) {
-            const schemaName = metadata.propsSchema;
-            const schemaPath = `${project.schemasAlias}/${schemaName}.json`;
-            jsonSchemas[schemaName] = schemaPath;
+          if (typeof metadata === 'object') {
+            if (metadata.propsSchema) {
+              addJsonSchema(project, metadata.propsSchema);
+            }
+            if (metadata.additionalSchemas) {
+              for (const schemaName of metadata.additionalSchemas) {
+                addJsonSchema(project, schemaName);
+              }
+            }
           }
         }
       }
@@ -142,9 +156,9 @@ module.exports = function (defaults, platformOptions) {
       'css-loader',
     ]);
 
+    /** @type {import('webpack').Configuration} */
     const config = {
-        /** @type {'production' | 'development'} */
-        // @ts-ignore
+        bail: buildMode === 'prod',
         mode: buildMode === 'prod' ? 'production' : 'development',
         resolveLoader: {
             modules: [path.resolve(__dirname, 'node_modules'), __dirname]
@@ -282,24 +296,11 @@ module.exports = function (defaults, platformOptions) {
                 {
                     test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                     loader: "file-loader",
-                    exclude: [/.*ketcher\.svg$/, /.*library\.svg$/]
                 },
                 {
                     test: path.join(METAPHACTORY_ROOT_DIR, 'node_modules/codemirror/lib/codemirror.js'),
                     loader: "expose-loader?CodeMirror"
                 },
-                {
-                  test: /.*ketcher\.svg$/,
-                  loader: 'raw-loader'
-                },
-                {
-                  test: /.*library\.svg$/,
-                  loader: 'raw-loader'
-                },
-                {
-                  test: /.*library\.sdf$/,
-                  loader: 'raw-loader'
-                }
               ]
         },
         resolve: {
@@ -317,9 +318,6 @@ module.exports = function (defaults, platformOptions) {
                 'platform-tests': METAPHACTORY_DIRS.test,
                 'basil.js': 'basil.js/src/basil.js',
                 'handlebars': 'handlebars/dist/handlebars.js',
-                'ketcher.svg': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/ketcher/dist/ketcher.svg'),
-                'library.sdf': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/ketcher/dist/library.sdf'),
-                'library.svg': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/ketcher/dist/library.svg'),
                 'jsonld': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/jsonld/dist/jsonld.js'),
                 'tslib': path.join(METAPHACTORY_ROOT_DIR, 'node_modules/tslib/tslib.es6.js'),
                 // workaround: properly resolve React and React-DOM for Ontodia
@@ -331,6 +329,19 @@ module.exports = function (defaults, platformOptions) {
         },
         externals: {
             'google': 'false',
+        },
+        optimization: {
+          minimize: buildMode === 'prod',
+          minimizer: buildMode === 'prod' ? [
+            new TerserPlugin({
+              extractComments: false,
+              terserOptions: {
+                output: {
+                  comments: false,
+                }
+              }
+            })
+          ] : [],
         },
         plugins: [
           // order matters see karma.config.js
@@ -385,6 +396,7 @@ module.exports = function (defaults, platformOptions) {
             path: defaults.DIST
           }),
 
+          // @ts-ignore
           new CircularDependencyPlugin({
             // exclude detection of files based on a RegExp
             exclude: /node_modules/,
@@ -398,17 +410,20 @@ module.exports = function (defaults, platformOptions) {
           }),
         ],
         watchOptions: {
-          // check for changes every second (seems to fix busy CPU issue)
-          poll: 1000,
-          ignored: 'node_modules',
+          ignored: '**/node_modules',
         },
     };
 
     if (!(buildMode === 'dev' && defaults.ROOT_BUILD_CONFIG.noTsCheck)) {
       config.plugins.push(new ForkTsCheckerWebpackPlugin({
-        tsconfig: path.resolve(__dirname, '../../tsconfig.json'),
-        checkSyntacticErrors: true,
-        useTypescriptIncrementalApi: true,
+        async: buildMode === 'dev',
+        typescript: {
+          configFile: path.resolve(__dirname, '../../tsconfig.json'),
+          diagnosticOptions: {
+            syntactic: true,
+            semantic: true,
+          }
+        },
       }));
     }
 

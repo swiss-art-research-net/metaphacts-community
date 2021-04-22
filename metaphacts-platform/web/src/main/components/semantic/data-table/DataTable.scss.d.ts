@@ -28,3 +28,8 @@ export const filterSidebarFilter: string;
 export const filterSidebarFilterLabel: string;
 export const filterSidebarActions: string;
 export const filterSidebarClose: string;
+export const footer: string;
+export const pageSizeSelectorContainer: string;
+export const pageSizeSelectorLabelBefore: string;
+export const pageSizeSelectorLabelAfter: string;
+export const pageSizeSelector: string;

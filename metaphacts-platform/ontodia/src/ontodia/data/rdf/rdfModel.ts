@@ -270,31 +270,36 @@ function escapeLiteralValue(value: string): string {
 }
 
 export function hashTerm(node: Term): number {
-    let hash = 0;
+    /* tslint:disable: no-bitwise */
+    let h = 0;
     switch (node.termType) {
         case 'NamedNode':
         case 'BlankNode':
-            hash = hashFnv32a(node.value);
+            h = hashFnv32a(node.value);
             break;
         case 'Literal':
-            hash = hashFnv32a(node.value);
+            h = hashFnv32a(node.value);
             if (node.datatype) {
                 // tslint:disable-next-line: no-bitwise
-                hash = (hash * 31 + hashFnv32a(node.datatype.value)) | 0;
+                h = (h * 31 + hashFnv32a(node.datatype.value)) | 0;
             }
             if (node.language) {
                 // tslint:disable-next-line: no-bitwise
-                hash = (hash * 31 + hashFnv32a(node.language)) | 0;
+                h = (h * 31 + hashFnv32a(node.language)) | 0;
             }
             break;
         case 'Variable':
-            hash = hashFnv32a(node.value);
+            h = hashFnv32a(node.value);
             break;
         case 'Quad':
-            hash = hashQuad(node);
+            h = (h * 31 + hashTerm(node.subject)) | 0;
+            h = (h * 31 + hashTerm(node.predicate)) | 0;
+            h = (h * 31 + hashTerm(node.object)) | 0;
+            h = (h * 31 + hashTerm(node.graph)) | 0;
             break;
     }
-    return hash;
+    return h;
+    /* tslint:enable: no-bitwise */
 }
 
 export function equalTerms(a: Term, b: Term): boolean {
@@ -316,30 +321,24 @@ export function equalTerms(a: Term, b: Term): boolean {
                 && a.language === language;
         }
         case 'Quad': {
-            return equalQuads(a, b as Quad);
+            const {subject, predicate, object, graph} = b as Quad;
+            return (
+                equalTerms(a.subject, subject) &&
+                equalTerms(a.predicate, predicate) &&
+                equalTerms(a.object, object) &&
+                equalTerms(a.graph, graph)
+            );
         }
     }
     return false;
 }
 
 export function hashQuad(q: Quad): number {
-    /* tslint:disable: no-bitwise */
-    let h = 0;
-    h = (h * 31 + hashTerm(q.subject)) | 0;
-    h = (h * 31 + hashTerm(q.predicate)) | 0;
-    h = (h * 31 + hashTerm(q.object)) | 0;
-    h = (h * 31 + hashTerm(q.graph)) | 0;
-    return h;
-    /* tslint:enable: no-bitwise */
+    return hashTerm(q);
 }
 
 export function equalQuads(a: Quad, b: Quad): boolean {
-    return (
-        equalTerms(a.subject, b.subject) &&
-        equalTerms(a.predicate, b.predicate) &&
-        equalTerms(a.object, b.object) &&
-        equalTerms(a.graph, b.graph)
-    );
+    return equalTerms(a, b);
 }
 
 export function compareTerms(a: Term, b: Term): number {

@@ -171,7 +171,7 @@
 <semantic-context repository='assets'
     named-graphs='["http://graph1", "http://graph2"]'
     default-graphs='["http://graph1", "http://graph2", "http://graph3"]'
-    bindings='{"var1": "http://some-iri","var2": "\"42\"^^http://www.w3.org/2001/XMLSchema#integer"}'>
+    bindings='{"var1": "<http://some-iri>","var2": "\"42\"^^<http://www.w3.org/2001/XMLSchema#integer>"}'>
 	<semantic-table query="SELECT * WHERE { GRAPH ?g {?a a ?b} BIND(?var1 as ?binding1) BIND(?var2 as ?binding2) }" no-result-template='No result: Most likely you do not have graphs as specified in your repository.'></semantic-table>
 </semantic-context>
 ]]>

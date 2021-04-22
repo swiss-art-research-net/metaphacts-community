@@ -1,11 +1,30 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "description": "`ontodia` listens to events.",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
     "properties": {
         "Ontodia.ClearAll": {
             "description": "Event which should be triggered to delete all elements from the diagram.",
             "properties": {
             },
+            "type": "object"
+        },
+        "Ontodia.DeleteElement": {
+            "description": "Event which should be triggered to delete an entity.",
+            "properties": {
+                "iri": {
+                    "description": "IRI of an entity to be deleted.",
+                    "type": "string"
+                }
+            },
+            "propertyOrder": [
+                "iri"
+            ],
+            "required": [
+                "iri"
+            ],
             "type": "object"
         },
         "Ontodia.FocusOnElement": {
@@ -40,10 +59,20 @@
             ],
             "type": "object"
         },
-        "Ontodia.Redo": {
-            "description": "Event which should be triggered to redo changes on the diagram.",
+        "Ontodia.ResetElement": {
+            "description": "Event which should be triggered to discard authoring changes from an entity.",
             "properties": {
+                "iri": {
+                    "description": "IRI of an entity to discard authoring changes from.",
+                    "type": "string"
+                }
             },
+            "propertyOrder": [
+                "iri"
+            ],
+            "required": [
+                "iri"
+            ],
             "type": "object"
         },
         "Ontodia.Save": {
@@ -160,39 +189,33 @@
             "properties": {
             },
             "type": "object"
-        },
-        "Ontodia.Undo": {
-            "description": "Event which should be triggered to undo changes on the diagram.",
-            "properties": {
-            },
-            "type": "object"
         }
     },
     "propertyOrder": [
-        "Ontodia.Undo",
-        "Ontodia.Redo",
         "Ontodia.FocusOnElement",
         "Ontodia.Save",
         "Ontodia.ClearAll",
         "Ontodia.SetAuthoringMode",
         "Ontodia.OpenConnectionsMenu",
-        "Ontodia.ShowElementInfo",
-        "Ontodia.StartEntityEditing",
-        "Ontodia.StartLinkEditing",
-        "Ontodia.StopEditing"
-    ],
-    "required": [
-        "Ontodia.ClearAll",
-        "Ontodia.FocusOnElement",
-        "Ontodia.OpenConnectionsMenu",
-        "Ontodia.Redo",
-        "Ontodia.Save",
-        "Ontodia.SetAuthoringMode",
         "Ontodia.ShowElementInfo",
         "Ontodia.StartEntityEditing",
         "Ontodia.StartLinkEditing",
         "Ontodia.StopEditing",
-        "Ontodia.Undo"
+        "Ontodia.DeleteElement",
+        "Ontodia.ResetElement"
+    ],
+    "required": [
+        "Ontodia.ClearAll",
+        "Ontodia.DeleteElement",
+        "Ontodia.FocusOnElement",
+        "Ontodia.OpenConnectionsMenu",
+        "Ontodia.ResetElement",
+        "Ontodia.Save",
+        "Ontodia.SetAuthoringMode",
+        "Ontodia.ShowElementInfo",
+        "Ontodia.StartEntityEditing",
+        "Ontodia.StartLinkEditing",
+        "Ontodia.StopEditing"
     ],
     "type": "object"
 }

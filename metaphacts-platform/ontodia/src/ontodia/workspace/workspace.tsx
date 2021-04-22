@@ -55,7 +55,7 @@ import { OverlayController, PropertyEditor, LinkEditor } from '../editor/overlay
 import { EditorController } from '../editor/editorController';
 
 import { EventSource, EventObserver } from '../viewUtils/events';
-import { forceLayout } from '../viewUtils/layout';
+import { LayoutFunctionParams, layoutForce } from '../viewUtils/layout';
 
 import { CanvasMethods } from './canvas';
 import { DefaultWorkspaceLayout } from './defaultWorkspaceLayout';
@@ -82,6 +82,12 @@ export interface WorkspaceProps {
 
     history?: CommandHistory;
     groupBy?: GroupBy[];
+    /**
+     * Layout algorithm to perform on opened group element.
+     *
+     * Defaults to force layout.
+     */
+    groupLayout?: (params: LayoutFunctionParams) => void;
 
     /**
      * RDF/JS data factory to create IRI, Literal and other terms.
@@ -214,11 +220,11 @@ export class Workspace extends React.Component<WorkspaceProps, {}> implements Wo
     }
 
     componentDidMount() {
-        const {onWorkspaceEvent} = this.props;
+        const {groupLayout = layoutForce, onWorkspaceEvent} = this.props;
 
         this.listener.listen(this.model.events, 'layoutGroupContent', ({group}) => {
             this.forAnyCanvas(canvas => {
-                canvas.performLayout(forceLayout, {group});
+                canvas.performLayout({layoutFunction: groupLayout, group});
             });
         });
 

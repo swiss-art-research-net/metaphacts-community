@@ -39,6 +39,8 @@
  */
 package com.metaphacts.resource;
 
+import java.util.Set;
+
 import org.eclipse.rdf4j.model.IRI;
 
 /**
@@ -46,6 +48,13 @@ import org.eclipse.rdf4j.model.IRI;
  * 
  * <p>
  * The property is identified by an IRI which is typically a predicate IRI.
+ * </p>
+ * 
+ * <p>
+ * Additionally, a property can be annotated with so-called property roles which
+ * further specify hints on the contexts in which this property may be useful.
+ * See <a href="http://datashapes.org/propertyroles.html">DataShapes
+ * PropertyRoles</a> for more details.
  * </p>
  * 
  * @author Wolfgang Schell <ws@metaphacts.com>
@@ -65,4 +74,20 @@ public interface PropertyDescription {
      * @return projection name
      */
     String getProjectionName();
+
+    /**
+     * Get roles for this property.
+     * 
+     * @return set of property roles. May be empty, but never null
+     */
+    Set<IRI> getPropertyRoles();
+
+    /**
+     * Determine whether the property has a certain role.
+     * 
+     * @param role role to check for
+     * @return <code>true</code> if the property has a certain role,
+     *         <code>false</code> otherwise
+     */
+    boolean hasPropertyRole(IRI role);
 }

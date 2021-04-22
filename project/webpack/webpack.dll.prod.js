@@ -17,7 +17,6 @@
  */
 
 const webpack = require('webpack');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const makeDefaults = require('./defaults');
 
 /**
@@ -26,32 +25,17 @@ const makeDefaults = require('./defaults');
 module.exports = function (env) {
     const defaults = makeDefaults();
     const config = require('./webpack.dll.js')(defaults, {buildMode: 'prod'});
-    config.mode = 'production';
-
-    config.optimization = {
-      minimizer: [
-        new UglifyJsPlugin({
-          parallel: true,
-          sourceMap: false,
-          uglifyOptions: {
-            output: {
-              comments: false
-            }
-          }
-        }),
-      ]
-    };
 
     config.plugins.push(
-        /**
-         * Enable react production mode
-         */
-        new webpack.DefinePlugin({
-            BUNDLE_HIGHCHARTS: process.env.BUNDLE_HIGHCHARTS,
-            'process.env': {
-                NODE_ENV: '"production"'
-            }
-        })
+      /**
+       * Enable react production mode
+       */
+      new webpack.DefinePlugin({
+          BUNDLE_HIGHCHARTS: process.env.BUNDLE_HIGHCHARTS,
+          'process.env': {
+              NODE_ENV: '"production"'
+          }
+      })
     );
 
     /*

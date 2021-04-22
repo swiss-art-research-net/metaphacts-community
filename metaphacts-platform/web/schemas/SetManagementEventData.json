@@ -1,0 +1,101 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ItemsFilteredData": {
+            "properties": {
+                "iris": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "iris"
+            ],
+            "type": "object"
+        }
+    },
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
+    "properties": {
+        "Components.SetManagement.ItemAdded": {
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Components.SetManagement.ItemRemoved": {
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Components.SetManagement.ItemSelected": {
+            "type": "string"
+        },
+        "Components.SetManagement.ItemsFetched": {
+            "properties": {
+                "iris": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "iris"
+            ],
+            "required": [
+                "iris"
+            ],
+            "type": "object"
+        },
+        "Components.SetManagement.ItemsFiltered": {
+            "$ref": "#/definitions/ItemsFilteredData"
+        },
+        "Components.SetManagement.ItemsReordered": {
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Components.SetManagement.SetAdded": {
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Components.SetManagement.SetRemoved": {
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Components.SetManagement.SetRenamed": {
+            "properties": {
+            },
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "Components.SetManagement.SetAdded",
+        "Components.SetManagement.SetRenamed",
+        "Components.SetManagement.SetRemoved",
+        "Components.SetManagement.ItemAdded",
+        "Components.SetManagement.ItemRemoved",
+        "Components.SetManagement.ItemSelected",
+        "Components.SetManagement.ItemsReordered",
+        "Components.SetManagement.ItemsFiltered",
+        "Components.SetManagement.ItemsFetched"
+    ],
+    "required": [
+        "Components.SetManagement.ItemAdded",
+        "Components.SetManagement.ItemRemoved",
+        "Components.SetManagement.ItemSelected",
+        "Components.SetManagement.ItemsFetched",
+        "Components.SetManagement.ItemsFiltered",
+        "Components.SetManagement.ItemsReordered",
+        "Components.SetManagement.SetAdded",
+        "Components.SetManagement.SetRemoved",
+        "Components.SetManagement.SetRenamed"
+    ],
+    "type": "object"
+}
+

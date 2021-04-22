@@ -19,11 +19,13 @@
 const webpack = require('webpack');
 const WebpackNotifierPlugin = require('webpack-notifier');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
+const defaultsFn = require('./defaults');
 
 /**
- * @param {ReturnType<import('./defaults')>} defaults
+ * @param {{ [key: string]: string }} env
  */
-module.exports = function(defaults) {
+module.exports = function (env) {
+  const defaults = defaultsFn();
   const config = require('./webpack.config.js')(defaults, {buildMode: 'dev'});
 
   config.plugins.push(

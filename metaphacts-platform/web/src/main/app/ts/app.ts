@@ -76,6 +76,7 @@ import {
   listen, init as initNavigation, getCurrentUrl, getCurrentResource,
 } from 'platform/api/navigation';
 import { ConfigHolder } from 'platform/api/services/config-holder';
+import { propagatePreferredUserLanguage } from 'platform/api/services/language';
 import { getRegisteredPrefixes } from 'platform/api/services/namespace';
 import * as TemplateService from 'platform/api/services/template';
 import * as SecurityService from 'platform/api/services/security';
@@ -402,6 +403,7 @@ window.addEventListener('DOMContentLoaded', function () {
     try {
       SparqlUtil.init(prefixes);
       ConfigHolder.initializeConfig(rawConfig);
+      propagatePreferredUserLanguage();
     } catch (e) {
       return Kefir.constantError<any>(e);
     }

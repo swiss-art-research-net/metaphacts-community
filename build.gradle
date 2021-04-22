@@ -24,7 +24,7 @@ project.ext {
 	buildConfig = parseBuildConfig(project.file(buildJsonPath))
 }
 
-version = '4.0.0'
+version = '4.1.0'
 group = 'com.metaphacts'
 project.ext.vendor = 'metaphacts GmbH'
 project.ext.buildDate = new Date()
@@ -38,7 +38,7 @@ logger.lifecycle("Run 'gradlew help' to get further help")
 apply plugin: 'java'
 
 // determine types of sub projects for specific configurations
-def javaProjects = subprojects.findAll { it.parent != null && (it.name == 'core' || it.name == 'client-api') }
+def javaProjects = subprojects.findAll { it.parent != null && (it.name == 'core') }
 def webProjects = subprojects.findAll { it.parent != null && (it.name == 'web' || it.name == 'webpack' || it.name == 'ontodia') }
 def appProjects = subprojects.findAll { it.parent != null && it.parent.name == 'apps' }
 def selectedRuntimeApps = findRuntimeAppProjects()
@@ -63,13 +63,13 @@ configure(allprojects) {
 	
 	// version constants
 	project.ext {
-		RDF4J_VERSION = "3.5.0"
+		RDF4J_VERSION = "3.6.2"
 		LOG4J_VERSION = "2.13.3"
  		JERSEY_VERSION = "2.33"
 		JACKSON_VERSION = "2.11.4"
 		GUICE_VERSION = "4.2.3"
 		GUAVA_VERSION = "30.1-jre"
-		SHIRO_VERSION = "1.7.0"
+		SHIRO_VERSION = "1.7.1"
 		PAC4J_VERSION = "4.3.0"
 		JGIT_VERSION = "5.9.0.202009080501-r"
 	}
@@ -361,14 +361,11 @@ configure(appProjects) {
 		// common platform dependencies
 		// note: all dependencies in configuration 'api' are inherited automatically
 		compileOnly project(":metaphacts-platform:core")
-		compileOnly project(":metaphacts-platform:client-api")
 		compileOnly group: 'org.pf4j', name: 'pf4j', version: '3.2.0', transitive: false
 		compileOnly group: 'org.apache.logging.log4j', name: 'log4j-api', version: LOG4J_VERSION, transitive: false
 		compileOnly group: 'com.github.jknack', name: 'handlebars', version: '4.0.5'
 		testImplementation project(":metaphacts-platform:core").sourceSets.test.output
 		testImplementation project(path: ":metaphacts-platform:core", configuration: 'testRuntime')
-		testImplementation project(":metaphacts-platform:client-api").sourceSets.test.output
-		testImplementation project(path: ":metaphacts-platform:client-api", configuration: 'testRuntime')
 	}
 	
 	eclipse {
@@ -435,7 +432,7 @@ configure(appProjects) {
  * for the platform
  */
 configure(project(':jetty')) {
-
+	apply plugin: "java-library"
 	apply plugin: "org.gretty"
 	apply plugin: "war"
 	
@@ -444,9 +441,17 @@ configure(project(':jetty')) {
 			url "https://plugins.gradle.org/m2/"
 		}
 	}
+	ext {
+		JETTY_VERSION = '9.4.36.v20210114'
+	}
 	
 	dependencies {
 		implementation project(':' + rootProject.ext.buildConfig.distribution + ':core')
+		// make dependencies available for source code resolution when debugging Jetty code in the IDE
+		// this code is not used for compilation or other access
+		runtimeOnly group: 'org.eclipse.jetty', name: 'jetty-server', version: JETTY_VERSION
+		runtimeOnly group: 'org.eclipse.jetty', name: 'jetty-servlet', version: JETTY_VERSION
+		
 	}
 	
 	sourceCompatibility = 11
@@ -460,6 +465,8 @@ configure(project(':jetty')) {
 		loggingLevel='INFO'
 		contextPath=''
 		httpPort=10214
+		jetty94Version = JETTY_VERSION
+		
 		
 		// external configurations
 		def runtimeDir = rootProject.file(setting('runtimeDirectory', 'RUNTIME_DIRECTORY', 'runtime'))

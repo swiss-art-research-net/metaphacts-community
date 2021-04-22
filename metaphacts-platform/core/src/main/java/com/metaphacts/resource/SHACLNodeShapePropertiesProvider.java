@@ -40,17 +40,21 @@
 package com.metaphacts.resource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.inject.Inject;
+import javax.lang.model.SourceVersion;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Value;
-import org.eclipse.rdf4j.model.vocabulary.SHACL;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
@@ -87,7 +91,7 @@ import com.metaphacts.vocabulary.PLATFORM;
  * PREFIX ex: &lt;http://example.org/&gt;
  * PREFIX Platform: &lt;http://www.metaphacts.com/ontologies/platform#&gt;
  * 
- * SELECT ?property ?descriptionPropertyName WHERE {
+ * SELECT ?property ?projectionVariableName ?propertyRole WHERE {
  *     {
  *       ?nodeShape sh:targetClass ?targetClass .
  *       ?nodeShape sh:property ?propShape .
@@ -95,8 +99,8 @@ import com.metaphacts.vocabulary.PLATFORM;
  *       ?targetClass sh:property ?propShape .
  *     }
  *     ?propShape sh:path ?property .
- *     OPTIONAL { ?propShape sh:name ?descriptionPropertyName . }  
- *     ?propShape dash:propertyRole dash:DescriptionRole .
+ *     OPTIONAL { ?propShape Platform:projectionVariableName ?projectionVariableName . }  
+ *     OPTIONAL { ?propShape dash:propertyRole ?propertyRole . }
  * }
  * </pre>
  * </p>
@@ -112,16 +116,16 @@ import com.metaphacts.vocabulary.PLATFORM;
  *         sh:path ex:hasProject ;
  *     ], [
  *         sh:path ex:dateOfBirth ;
- *         sh:name "dateOfBirth" ;
+ *         Platform:projectionVariableName "dateOfBirth" ;
  *         dash:propertyRole dash:DescriptionRole ;
  *     ], [
  *         sh:path ex:dateOfDeath ;
- *         sh:name "dateOfDeath" ;
+ *         Platform:projectionVariableName "dateOfDeath" ;
  *         sh:datatype xsd:date ;
  *         dash:propertyRole dash:DescriptionRole ;
  *     ], [
  *         sh:path ex:occupation ;
- *         sh:name "occupation" ;
+ *         Platform:projectionVariableName "occupation" ;
  *         dash:propertyRole dash:DescriptionRole ;
  *     ] .
  * </pre>
@@ -129,7 +133,7 @@ import com.metaphacts.vocabulary.PLATFORM;
  * 
  * @author Wolfgang Schell <ws@metaphacts.com>
  */
-public class SHACLNodeShapePropertiesProvider implements DescriptionPropertiesProvider, Orderable, TargetRepositoryAware {
+public class SHACLNodeShapePropertiesProvider implements TypePropertyProvider, Orderable, TargetRepositoryAware {
     private static final Logger logger = LogManager.getLogger(SHACLNodeShapePropertiesProvider.class);
 
     public static final String TARGET_CLASS = "targetClass";
@@ -140,7 +144,12 @@ public class SHACLNodeShapePropertiesProvider implements DescriptionPropertiesPr
 
     protected String repositoryId = "default";
 
+    // query to catch all properties
+    private final String propertyQuery;
+
     public SHACLNodeShapePropertiesProvider() {
+        this.propertyQuery = getPropertyQuery();
+        logger.trace("Property query: {}", propertyQuery);
     }
 
     @Inject
@@ -168,53 +177,65 @@ public class SHACLNodeShapePropertiesProvider implements DescriptionPropertiesPr
     }
 
     @Override
-    public Optional<List<PropertyDescription>> getDescriptionProperties(Repository repository, IRI typeIRI) {
+    public Optional<List<PropertyDescription>> getProperties(Repository repository, IRI typeIRI) {
         Optional<Repository> repo = getRepository();
         if (repo.isEmpty()) {
             return Optional.empty();
         }
         // query to execute. The provided typeIRI will be injected as ?targetClass
 
-        final String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
-                + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
-                + "PREFIX sh: <http://www.w3.org/ns/shacl#>\n"
-                + "PREFIX ex: <http://example.org/>\n"
-                + "PREFIX Platform: <http://www.metaphacts.com/ontologies/platform#>\n"
-                + "\n"
-                + "SELECT ?property ?descriptionPropertyName WHERE {\n"
-                + "    {\n"
-                + "       ?nodeShape sh:targetClass ?targetClass .\n"
-                + "       ?nodeShape sh:property ?propShape .\n"
-                + "    } UNION {\n"
-                + "       ?targetClass sh:property ?propShape .\n"
-                + "    }\n"
-                + "    ?propShape sh:path ?property .\n"
-                + "    OPTIONAL { ?propShape <" + SHACL.NAME.stringValue() + "> ?descriptionPropertyName . } \n"
-                + "    ?propShape <" + DASH.propertyRole.stringValue() + "> <" + DASH.DescriptionRole + "> .  \n"
-                + "}";
+        logger.trace("Fetching properties for type {}", typeIRI);
 
-        logger.debug("Fetching description properties for type {}", typeIRI);
-
-        List<PropertyDescription> props = new ArrayList<>();
         try (RepositoryConnection con = repo.get().getConnection()) {
-            SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder.<TupleQuery>create(query, TupleQuery.class)
+            SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder
+                    .<TupleQuery>create(propertyQuery, TupleQuery.class)
                     .setBinding(TARGET_CLASS, typeIRI);
             try (TupleQueryResult result = builder.build(con).evaluate()) {
+                Map<IRI, DefaultPropertyDescription> props = new HashMap<>();
+                Set<String> projectionVariableNames = new HashSet<>();
                 for (BindingSet bindingSet : result) {
                     Value property = bindingSet.getValue("property");
-                    Value descriptionPropertyName = bindingSet.getValue("descriptionPropertyName");
+                    Value projectionVariableName = bindingSet.getValue("projectionVariableName");
+                    Value propertyRole = bindingSet.getValue("propertyRole");
                     if (property instanceof IRI) {
                         IRI propertyIRI = (IRI) property;
-                        String propertyProjectionName = (descriptionPropertyName instanceof Literal
-                                ? descriptionPropertyName.stringValue()
+                        String propertyProjectionName = (projectionVariableName instanceof Literal
+                                ? projectionVariableName.stringValue()
                                 : propertyIRI.getLocalName());
-                        props.add(new DefaultPropertyDescription(propertyIRI, propertyProjectionName));
-                        logger.trace("Found description property {} ({}) for type {}", propertyIRI.stringValue(),
-                                propertyProjectionName, typeIRI);
+                        // ensure that there are no duplicates for projection variables
+                        if ((propertyProjectionName != null)
+                                && projectionVariableNames.contains(propertyProjectionName)) {
+                            logger.debug("Property {} for type {}: ignoring duplicate projection variable name {}",
+                                    propertyIRI.stringValue(), typeIRI, propertyProjectionName);
+                            propertyProjectionName = null;
+                        }
+                        // ensure that the projection variable name is a proper identifier
+                        // (this is based on Java rules, but this should also suffice for SPARQL)
+                        if ((propertyProjectionName != null) && !SourceVersion.isIdentifier(propertyProjectionName)) {
+                            logger.debug("Property {} for type {}: ignoring invalid projection variable name {}",
+                                    propertyIRI.stringValue(), typeIRI, propertyProjectionName);
+                            propertyProjectionName = null;
+                        }
+                        if (propertyProjectionName != null) {
+                            projectionVariableNames.add(propertyProjectionName);
+                        }
+                        DefaultPropertyDescription propertyDescription = props.get(propertyIRI);
+                        if (propertyDescription == null) {
+                            propertyDescription = new DefaultPropertyDescription(propertyIRI, propertyProjectionName);
+                            props.put(propertyIRI, propertyDescription);
+                        }
+                        // store property role
+                        if (propertyRole instanceof IRI) {
+                            propertyDescription.addPropertyRole((IRI) propertyRole);
+                        }
+                        logger.trace("Found property {} ({}) for type {} with role {}", propertyIRI.stringValue(),
+                                propertyProjectionName, typeIRI, propertyRole);
                     }
                 }
+
+                List<PropertyDescription> propsList = new ArrayList<>(props.values());
                 // only return a non-empty result if we actually have some properties
-                return Optional.of(props).filter(p -> !props.isEmpty());
+                return Optional.of(propsList).filter(list -> !list.isEmpty());
             }
         }
         catch (Exception e) {
@@ -223,6 +244,48 @@ public class SHACLNodeShapePropertiesProvider implements DescriptionPropertiesPr
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Get the SPARQL query to use for fetching information from the model.
+     * 
+     * <p>
+     * The query will get the target class injected using variable
+     * {@value #TARGET_CLASS}.
+     * </p>
+     * <p>
+     * The query should return the following projection:
+     * <ul>
+     * <li><code>?property</code>: IRI of the property</li>
+     * <li><code>?projectionVariableName</code>: (optional) name of a projection
+     * variable for the property (e.g. to be used in description templates)</li>
+     * <li><code>?propertyRole</code>: IRI of a property role (e.g. as defined in
+     * Datashapes)</li>
+     * </ul>
+     * </p>
+     * 
+     * @return SPARQL query
+     */
+    protected String getPropertyQuery() {
+        final String query = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+                + "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+                + "PREFIX sh: <http://www.w3.org/ns/shacl#>\n"
+                + "PREFIX ex: <http://example.org/>\n"
+                + "PREFIX Platform: <http://www.metaphacts.com/ontologies/platform#>\n"
+                + "\n"
+                + "SELECT ?property ?projectionVariableName ?propertyRole WHERE {\n"
+                + "    {\n"
+                + "       ?nodeShape sh:targetClass/^rdfs:subClassOf* ?targetClass .\n"
+                + "       ?nodeShape sh:property ?propShape .\n"
+                + "    } UNION {\n"
+                + "       ?targetClass ^rdfs:subClassOf*/sh:property ?propShape .\n"
+                + "    }\n"
+                + "    ?propShape sh:path ?property .\n"
+                + "    OPTIONAL { ?propShape <" + PLATFORM.PROJECTION_VARIABLE_NAME.stringValue()
+                + "> ?projectionVariableName . } \n"
+                + "    OPTIONAL { ?propShape <" + DASH.propertyRole.stringValue() + "> ?propertyRole . }  \n"
+                + "}";
+        return query;
     }
 
     @Override

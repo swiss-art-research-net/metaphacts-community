@@ -95,6 +95,7 @@ public class NamespaceRegistry {
 
     static final String DFLT_PLATFORM_NAMESPACE = "http://www.metaphacts.com/ontologies/platform#";
     public static final String DFLT_REPOSITORY_NAMESPACE = "http://www.metaphacts.com/ontologies/repository#";
+    public static final String DFLT_SERVICE_NAMESPACE = "http://www.metaphacts.com/ontologies/platform/service/";
     public static final String DFLT_HELP_NAMESPACE = "http://help.metaphacts.com/resource/";
     static final String DFLT_ADMIN_NAMESPACE = "http://www.metaphacts.com/resource/admin/";
     static final String DFLT_ASSETS_NAMESPACE = "http://www.metaphacts.com/resource/assets/";
@@ -109,13 +110,18 @@ public class NamespaceRegistry {
         public static final String DEFAULT = "Default";
         public static final String USER = "User";
         public static final String PLATFORM = "Platform";
+        /**
+         * Namespace for exposed platform service instances. Prefix Service is pre-registered. 
+         */
+        public static final String SERVICE = "Service";
         public static final String REPOSITORY = "Repository";
         public static final String HELP = "Help";
         public static final String ADMIN = "Admin";
         public static final String ASSETS = "Assets";
         public static final String LDP = "LdpBase";
 
-        public static final Set<String> ALL = ImmutableSet.of(EMPTY, DEFAULT, PLATFORM, REPOSITORY, USER, HELP, ADMIN, ASSETS);
+        public static final Set<String> ALL = ImmutableSet.of(EMPTY, DEFAULT, PLATFORM, SERVICE, REPOSITORY, USER, HELP,
+                ADMIN, ASSETS);
     }
 
     private static final List<NamespaceRecord> DEFAULT_NAMESPACES = ImmutableList.of(
@@ -123,6 +129,7 @@ public class NamespaceRegistry {
         new NamespaceRecord(RuntimeNamespace.DEFAULT, DFLT_DEFAULT_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.USER, DFLT_USER_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.PLATFORM, DFLT_PLATFORM_NAMESPACE),
+        new NamespaceRecord(RuntimeNamespace.SERVICE, DFLT_SERVICE_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.REPOSITORY, DFLT_REPOSITORY_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.HELP, DFLT_HELP_NAMESPACE),
         new NamespaceRecord(RuntimeNamespace.ADMIN, DFLT_ADMIN_NAMESPACE),

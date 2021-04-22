@@ -39,14 +39,6 @@
  */
 import * as Rdf from './rdfModel';
 
-function workaroundForRDFXmlParser(body: string) {
-    // For some strange reason we've encountered xml parser errors
-    // when parsing rdf/xml file with Collection tag.
-    // As I remember, file came from x3c Ontology
-    // and this workaround helps to get file through xml parsing.
-    return body.replace(/parseType=["']Collection["']/ig, 'parseType="Collection1"');
-}
-
 const POSTFIX_TO_MIME: { [key: string]: string } = {
     'xml': 'application/rdf+xml',
     'rdf': 'application/rdf+xml',
@@ -65,29 +57,8 @@ function getMimeTypeByFileName(fileName: string): string | undefined {
 }
 
 export interface RdfParser {
-    parse(body: string): Promise<Rdf.Quad[] | RdfExtLegacyGraph>;
+    parse(body: string): Promise<Rdf.Quad[]>;
 }
-
-/** An RDF graph type from `rdf-ext@0.3.0` library */
-export interface RdfExtLegacyGraph {
-    toArray(): RdfExtLegacyTriple[];
-}
-
-export interface RdfExtLegacyTriple {
-    subject: RdfExtLegacyTerm;
-    predicate: RdfExtLegacyTerm;
-    object: RdfExtLegacyTerm;
-}
-
-export type RdfExtLegacyTerm =
-    { interfaceName: 'NamedNode'; nominalValue: string } |
-    { interfaceName: 'BlankNode'; nominalValue: string } |
-    {
-        interfaceName: 'Literal';
-        nominalValue: string;
-        language: string | null;
-        datatype: { interfaceName: 'NamedNode'; nominalValue: string };
-    };
 
 export class RdfCompositeParser {
     constructor(
@@ -100,11 +71,8 @@ export class RdfCompositeParser {
     }
 
     async parse(body: string, mimeType?: string, fileName?: string): Promise<Rdf.Quad[]> {
-        let parsedGraph: Rdf.Quad[] | RdfExtLegacyGraph;
+        let parsedGraph: Rdf.Quad[];
         if (mimeType) {
-            if (mimeType === 'application/rdf+xml') {
-                body = workaroundForRDFXmlParser(body);
-            }
             if (!this.parsers[mimeType]) {
                 throw Error('There is no parser for this MIME type');
             }
@@ -112,12 +80,10 @@ export class RdfCompositeParser {
         } else {
             parsedGraph = await this.tryToGuessMimeType(body, fileName);
         }
-
-        const quads = convertRdfExtLegacyGraph(this.factory, parsedGraph);
-        return quads;
+        return parsedGraph;
     }
 
-    private tryToGuessMimeType(body: string, fileName?: string): Promise<Rdf.Quad[] | RdfExtLegacyGraph> {
+    private tryToGuessMimeType(body: string, fileName?: string): Promise<Rdf.Quad[]> {
         let mimeTypeIndex = 0;
         let mimeTypes = Object.keys(this.parsers);
 
@@ -130,14 +96,11 @@ export class RdfCompositeParser {
 
         const errors: Array<{ mimeType: string; error: Error }> = [];
 
-        const recursion = (): Promise<Rdf.Quad[] | RdfExtLegacyGraph> => {
+        const recursion = (): Promise<Rdf.Quad[]> => {
             if (mimeTypeIndex < mimeTypes.length) {
                 const mimeType = mimeTypes[mimeTypeIndex++];
                 try {
-                    const bodyToParse = mimeType === 'application/rdf+xml' ?
-                        workaroundForRDFXmlParser(body) : body;
-
-                    return this.parsers[mimeType].parse(bodyToParse).catch((error: Error) => {
+                    return this.parsers[mimeType].parse(body).catch((error: Error) => {
                         errors.push({ mimeType, error });
                         return recursion();
                     });
@@ -151,44 +114,5 @@ export class RdfCompositeParser {
             }
         };
         return recursion();
-    }
-}
-
-function convertRdfExtLegacyGraph(factory: Rdf.DataFactory, graph: Rdf.Quad[] | RdfExtLegacyGraph): Rdf.Quad[] {
-    if (Array.isArray(graph)) {
-        return graph;
-    }
-    return graph.toArray().map(t => convertRdfExtLegacyTriple(factory, t));
-}
-
-function convertRdfExtLegacyTriple(factory: Rdf.DataFactory, triple: RdfExtLegacyTriple): Rdf.Quad {
-    const subject = convertRdfExtLegacyTerm(factory, triple.subject);
-    if (!(subject.termType === 'NamedNode' || subject.termType === 'BlankNode')) {
-        throw new Error('RDF quad subject must be either NamedNode or BlankNode');
-    }
-    const predicate = convertRdfExtLegacyTerm(factory, triple.predicate);
-    if (!(predicate.termType === 'NamedNode')) {
-        throw new Error('RDF quad predicate must be NamedNode');
-    }
-    const object = convertRdfExtLegacyTerm(factory, triple.object);
-    return factory.quad(subject, predicate, object);
-}
-
-function convertRdfExtLegacyTerm(
-    factory: Rdf.DataFactory,
-    term: RdfExtLegacyTerm
-): Rdf.NamedNode | Rdf.Literal | Rdf.BlankNode {
-    switch (term.interfaceName) {
-        case 'NamedNode':
-            return factory.namedNode(term.nominalValue);
-        case 'BlankNode':
-            return factory.blankNode(term.nominalValue);
-        case 'Literal':
-            const languageOrDatatype = term.language
-                ? term.language
-                : factory.namedNode(term.datatype.nominalValue);
-            return factory.literal(term.nominalValue, languageOrDatatype);
-        default:
-            throw new Error(`Unexpected rdf-ext term type: ${(term as RdfExtLegacyTerm).interfaceName}`);
     }
 }

@@ -49,6 +49,7 @@ import { Rdf } from 'platform/api/rdf';
 import { SparqlUtil } from 'platform/api/sparql';
 import { DefaultRepositoryInfo } from 'platform/api/services/repository';
 import { ConfigHolder } from 'platform/api/services/config-holder';
+import { propagatePreferredUserLanguage } from 'platform/api/services/language';
 import { getRegisteredPrefixes } from 'platform/api/services/namespace';
 import PageViewer from '../page/PageViewer';
 import * as D from 'react-dom-factories';
@@ -124,6 +125,7 @@ function initPlatform(baseUrl?: string) {
     try {
       SparqlUtil.init(prefixes);
       ConfigHolder.initializeConfig(rawConfig);
+      propagatePreferredUserLanguage();
     } catch (e) {
       return Kefir.constantError<any>(e);
     }

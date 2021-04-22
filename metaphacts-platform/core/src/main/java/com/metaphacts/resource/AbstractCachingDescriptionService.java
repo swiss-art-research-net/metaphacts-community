@@ -39,7 +39,10 @@
  */
 package com.metaphacts.resource;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +58,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.inject.Inject;
 import com.metaphacts.cache.CacheManager;
+import com.metaphacts.cache.LiteralCache;
 import com.metaphacts.cache.LiteralCacheKey;
 import com.metaphacts.cache.PlatformCache;
 import com.metaphacts.cache.RepositoryBasedCache;
@@ -78,47 +82,28 @@ import com.metaphacts.util.LanguageHelper;
  * @author Wolfgang Schell <ws@metaphacts.com>
  */
 public abstract class AbstractCachingDescriptionService implements ResourceDescriptionService {
-    protected static final String TYPEDESCRIPTION_CACHE_ID = "repository.typeDescriptionCaches";
-    protected static final String INSTANCEDESCRIPTION_CACHE_ID = "repository.instanceDescriptionCaches";
-    protected static final String INSTANCETYPES_CACHE_ID = "repository.instanceTypesCaches";
-    protected final RepositoryBasedCache<IRI, TypeDescription> typeDescriptionCaches;
-    protected final RepositoryBasedCache<LiteralCacheKey, ResourceDescription> resourceDescriptionCaches;
-    private Configuration config;
+    protected static final String RESOURCEDESCRIPTION_CACHE_ID = "repository.resourceDescriptionCache";
+    protected static final String DESCRIPTION_CACHE_ID = "repository.compositeDescriptionCache";
+    protected final RepositoryBasedCache<LiteralCacheKey, ResourceDescription> resourceDescriptionCache;
+    protected final LiteralCache descriptionCache;
+    protected Configuration config;
+    protected ModelService modelService;
 
     @Inject
-    public AbstractCachingDescriptionService(Configuration config, CacheManager cacheManager) {
+    public AbstractCachingDescriptionService(Configuration config, CacheManager cacheManager,
+            ModelService modelService) {
         this.config = config;
-        this.typeDescriptionCaches = new RepositoryBasedCache<IRI, TypeDescription>(TYPEDESCRIPTION_CACHE_ID) {
+        this.modelService = modelService;
+        // cache for resource descriptions
+        this.resourceDescriptionCache = new RepositoryBasedCache<LiteralCacheKey, ResourceDescription>(
+                RESOURCEDESCRIPTION_CACHE_ID) {
             @Override
-            protected Optional<CacheLoader<IRI, TypeDescription>> createCacheLoader(Repository repository) {
-                return Optional.of(new CacheLoader<IRI, TypeDescription>() {
-                    @Override
-                    public TypeDescription load(IRI resource) throws Exception {
-                        return lookupTypeDescription(repository, resource).orElseThrow(
-                                () -> notFound("Failed to load description for type " + resource.stringValue()));
-                    }
-                });
-            }
-
-            protected void configureCacheBuilder(CacheBuilder<Object, Object> cacheBuilder) {
-                cacheBuilder.maximumSize(1000).expireAfterWrite(10, TimeUnit.MINUTES);
-            }
-
-            @Override
-            protected Optional<CacheManager> getCacheManager() {
-                return Optional.of(cacheManager);
-            }
-        };
-        this.resourceDescriptionCaches = new RepositoryBasedCache<LiteralCacheKey, ResourceDescription>(
-                INSTANCEDESCRIPTION_CACHE_ID) {
-            @Override
-            protected Optional<CacheLoader<LiteralCacheKey, ResourceDescription>> createCacheLoader(
+            protected Optional<CacheLoader<LiteralCacheKey, Optional<ResourceDescription>>> createCacheLoader(
                     Repository repository) {
-                return Optional.of(new CacheLoader<LiteralCacheKey, ResourceDescription>() {
+                return Optional.of(new CacheLoader<LiteralCacheKey, Optional<ResourceDescription>>() {
                     @Override
-                    public ResourceDescription load(LiteralCacheKey cacheKey) throws Exception {
-                        return lookupResourceDescription(repository, cacheKey).orElseThrow(
-                                () -> notFound("Failed to load description for instance " + cacheKey.getIri().stringValue()));
+                    public Optional<ResourceDescription> load(LiteralCacheKey cacheKey) throws Exception {
+                        return lookupResourceDescription(repository, cacheKey);
                     }
                 });
             }
@@ -132,57 +117,87 @@ public abstract class AbstractCachingDescriptionService implements ResourceDescr
                 return Optional.of(cacheManager);
             }
         };
+        // cache for composed textual descriptions
+        // note: namespaceRegistry is not required when overriding queryAll(), so it's
+        // set to null to avoid another injected dependency here
+        this.descriptionCache = new LiteralCache(DESCRIPTION_CACHE_ID, null) {
+            @Override
+            protected List<String> getPreferredProperties() {
+                // not required
+                return Collections.emptyList();
+            }
+
+            @Override
+            protected List<String> resolvePreferredLanguages(@Nullable String preferredLanguage) {
+                return resolvePreferredLanguage(preferredLanguage);
+            }
+
+            /**
+             * Provide customized cache specification for description cache
+             */
+            @Override
+            protected CacheBuilder<Object, Object> createCacheBuilder() {
+                return cacheManager.newBuilder(DESCRIPTION_CACHE_ID, config.getCacheConfig().getDescriptionCacheSpec());
+            };
+
+            @Override
+            protected Map<LiteralCacheKey, Optional<Literal>> queryAll(Repository repository,
+                    Iterable<? extends LiteralCacheKey> keys) {
+                Map<LiteralCacheKey, Optional<Literal>> descriptions = new HashMap<>();
+                for (LiteralCacheKey literalCacheKey : keys) {
+                    descriptions.put(literalCacheKey, lookupDescription(repository, literalCacheKey.getIri(),
+                            literalCacheKey.getPreferredLanguages()));
+                }
+                return descriptions;
+            }
+        };
+
+        String simpleName = getClass().getSimpleName();
         cacheManager.register(new PlatformCache() {
 
             @Override
             public void invalidate() {
-                resourceDescriptionCaches.invalidate();
-                typeDescriptionCaches.invalidate();
+                descriptionCache.invalidate();
+                resourceDescriptionCache.invalidate();
             }
 
             @Override
             public void invalidate(Set<IRI> iris) {
-                resourceDescriptionCaches.invalidate(iris);
-                typeDescriptionCaches.invalidate(iris);
+                descriptionCache.invalidate(iris);
+                resourceDescriptionCache.invalidate(iris);
             }
 
             @Override
             public String getId() {
-                return "platform." + getClass().getSimpleName();
+                return "platform." + simpleName;
             }
 
         });
     }
 
     @Override
-    public Optional<TypeDescription> getTypeDescription(Repository repository, IRI typeIRI) {
-        return typeDescriptionCaches.get(repository, typeIRI);
-    }
-
-    @Override
     public Optional<ResourceDescription> getResourceDescription(Repository repository, IRI instanceIRI,
             String preferredLanguage) {
         List<String> preferredLanguages = resolvePreferredLanguage(preferredLanguage);
-        return resourceDescriptionCaches.get(repository, new LiteralCacheKey(instanceIRI, preferredLanguages));
-    }
-
-    @Override
-    public Iterable<IRI> getInstanceTypes(Repository repository, IRI instanceIRI) {
-        return getTypeService().getTypes(instanceIRI, repository);
-    }
-
-    @Override
-    public Optional<IRI> getPrimaryInstanceType(Repository repository, IRI instanceIRI) {
-        return getTypeService().getPrimaryType(instanceIRI, repository);
+        return resourceDescriptionCache.get(repository, new LiteralCacheKey(instanceIRI, preferredLanguages));
     }
 
     @Override
     public Optional<Literal> getDescription(IRI resourceIri, Repository repository, String preferredLanguage) {
+        return descriptionCache.getLiteral(resourceIri, repository, preferredLanguage);
+    }
+
+    protected Optional<Literal> lookupDescription(Repository repository, IRI resourceIri,
+            List<String> preferredLanguages) {
+
         if (!canProvideDescription(resourceIri, repository)) {
             return Optional.empty();
         }
-        return getResourceDescription(repository, resourceIri, preferredLanguage)
-                .map(instanceDescription -> instanceDescription.getDescription())
+
+        // fetch ResourceDescription from cache and get its textual description
+        return resourceDescriptionCache.get(repository, new LiteralCacheKey(resourceIri, preferredLanguages))
+                .filter(resourceDescription -> resourceDescription != null)
+                .map(resourceDescription -> resourceDescription.getDescription())
                 .filter(description -> description != null)
                 .map(description -> Values.literal(description));
     }
@@ -212,16 +227,6 @@ public abstract class AbstractCachingDescriptionService implements ResourceDescr
     }
 
     /**
-     * Lookup type description for the specified resource in the specified
-     * repository.
-     * 
-     * @param repository repository for which to get the type descriptions
-     * @param resource   resource for which to fetch the type description.
-     * @return {@link TypeDescription} or empty if not available
-     */
-    protected abstract Optional<TypeDescription> lookupTypeDescription(Repository repository, IRI resource);
-
-    /**
      * Lookup instance description for the specified resource in the specified
      * repository.
      * 
@@ -232,13 +237,4 @@ public abstract class AbstractCachingDescriptionService implements ResourceDescr
      */
     protected abstract Optional<ResourceDescription> lookupResourceDescription(Repository repository,
             LiteralCacheKey cacheKey);
-
-    /**
-     * Get TypeService instance to be used for looking up the primary or all types
-     * of an instance.
-     * 
-     * @return TypeService for looking up types
-     */
-    protected abstract TypeService getTypeService();
-
 }

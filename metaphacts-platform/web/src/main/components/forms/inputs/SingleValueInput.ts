@@ -45,7 +45,8 @@ import { Rdf, vocabularies, XsdDataTypeValidation } from 'platform/api/rdf';
 import { FieldDefinition } from '../FieldDefinition';
 import { DependencyContext } from '../FieldDependencies';
 import {
-  FieldValue, AtomicValue, CompositeValue, LabeledValue, EmptyValue, DataState, ErrorKind,
+  FieldValue, AtomicValue, CompositeValue, LabeledValue, EmptyValue, ErrorKind, DataState,
+  InspectedInputTree,
 } from '../FieldValues';
 
 export interface SingleValueInputConfig {
@@ -109,6 +110,15 @@ export abstract class SingleValueInput<P extends SingleValueInputProps, S> exten
 
   dataState(): DataState {
     return DataState.Ready;
+  }
+
+  inspect(): InspectedInputTree {
+    return {
+      self: this,
+      dataState: DataState[this.dataState()] as keyof typeof DataState,
+      handler: this.props.handler,
+      children: {},
+    };
   }
 
   protected canEdit() {

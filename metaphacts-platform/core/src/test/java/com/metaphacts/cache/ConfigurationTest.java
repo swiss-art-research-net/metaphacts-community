@@ -233,4 +233,22 @@ public class ConfigurationTest extends AbstractRepositoryBackedIntegrationTest {
         Assert.assertEquals(dummyQuery, config.getUiConfig().getTemplateIncludeQuery());
     }
 
+    @Test
+    public void testSparqlHttpConnectionTimeoutException()
+            throws UnknownConfigurationException, ConfigurationException {
+
+        final String valueStr = "1o";
+        final List<String> values = ConfigurationUtil.configValueAsList(valueStr);
+        
+        MpAssert.assertThrows(
+                Matchers.containsString(
+                        "Please enter a valid positive number as HTTP connection timeout."),
+                RuntimeException.class, () -> {
+
+                    config.getEnvironmentConfig().setParameter("sparqlHttpConnectionTimeout", values,
+                            TestPlatformStorage.STORAGE_ID);
+
+                });
+    }
+
 }

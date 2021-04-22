@@ -39,16 +39,17 @@
  */
 package com.metaphacts.lookup.impl;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.shiro.subject.Subject;
 
 import com.google.common.collect.Lists;
 import com.metaphacts.lookup.api.LookupProcessingException;
@@ -58,6 +59,7 @@ import com.metaphacts.lookup.model.LookupCandidate;
 import com.metaphacts.lookup.model.LookupRequest;
 import com.metaphacts.lookup.model.LookupResponse;
 import com.metaphacts.lookup.spi.LookupServiceConfigException;
+import com.metaphacts.security.SecurityService;
 
 /**
  * LookupService delegating to a federated set of LookupServices.
@@ -85,32 +87,61 @@ public class FederatedLookupService extends AbstractLookupService<FederatedLooku
      */
     @Override
     protected LookupResponse doLookup(LookupRequest request) throws LookupProcessingException {
-        List<Throwable> errors = Lists.newCopyOnWriteArrayList();
-        Collection<Map.Entry<LookupServiceMember, LookupService>> lookupEntries = getLookupServices().entrySet();
-        if (lookupEntries == null || lookupEntries.isEmpty()) {
+
+        List<LookupServiceWithConfig> lookupServices = getLookupServices();
+        if (lookupServices == null || lookupServices.isEmpty()) {
             // no services, return empty result
             return new LookupResponse(request.getQueryId(), Collections.emptyList());
         }
-        if (lookupEntries.size() == 1) {
+        if (lookupServices.size() == 1) {
             // only one service, simply pass through
-            Map.Entry<LookupServiceMember, LookupService> entry = lookupEntries.iterator().next();
-            LookupServiceMember member = entry.getKey();
-            LookupService singleLookupService = entry.getValue();
-            LookupResponse memberResponse = singleLookupService.lookup(request);
-            return this.adjustScoresForSpecificService(memberResponse, member);
+            LookupServiceWithConfig l = lookupServices.iterator().next();
+            return executeRequest(request, l.lookupService, l.memberConfig);
         }
-        // process all lookup requests in parallel using system ForkJoin pool (parallel stream)
-        List<LookupResponse> results = lookupEntries.parallelStream()
-            // skip any federated services to avoid cycles
-            .filter(entry -> !(entry.getValue() instanceof FederatedLookupService))
-            .map(entry -> {
-                LookupService service = entry.getValue();
 
+        return executeRequests(request, lookupServices);
+    }
+
+    /**
+     * Execute the given {@link LookupRequest} at the supplied relevant services
+     * 
+     * <p>
+     * The default implementation executes the request at all lookup services in
+     * parallel and simply combines all results.
+     * </p>
+     * 
+     * @param request        the request
+     * @param lookupServices a list with more than one lookup service
+     * @return the combined lookup results
+     */
+    protected LookupResponse executeRequests(LookupRequest request, List<LookupServiceWithConfig> lookupServices) {
+
+        List<Throwable> errors = Lists.newCopyOnWriteArrayList();
+        
+        // obtain the current context's subject
+        final Optional<Subject> subject = SecurityService.getSubject();
+
+        // process all lookup requests in parallel using system ForkJoin pool (parallel stream)
+        // Note: we explicitly make sure to associate all threads with the current subject
+        // (if the subject is available in the current context)
+        List<LookupResponse> results = lookupServices.parallelStream()
+            // skip any federated services to avoid cycles
+            .filter(item -> !(item.lookupService instanceof FederatedLookupService))
+            .map(item -> {
+                
+                Callable<LookupResponse> action = () -> {
+                        return executeRequest(request, item.lookupService, item.memberConfig);
+                };
+            
+                if (subject.isPresent()) {
+                    action = subject.get().associateWith(action);
+                }
                 try {
-                    return this.adjustScoresForSpecificService(service.lookup(request), entry.getKey());
-                } catch (LookupProcessingException e) {
-                    logger.warn("Failed to lookup data from service {}: {}", service, e.getMessage());
-                    logger.debug("Details:",  e);
+                    return action.call();
+                } catch (Exception e) {
+                    logger.warn("Failed to lookup data from service {}: {}", item.memberConfig.getName(),
+                            e.getMessage());
+                    logger.debug("Details:", e);
                     errors.add(e);
                     // null will be filtered below and ignored
                     return null;
@@ -118,7 +149,33 @@ public class FederatedLookupService extends AbstractLookupService<FederatedLooku
             })
             .filter(result -> result != null)
             .collect(Collectors.toList());
+
         return combineResults(request, results, errors);
+    }
+
+    /**
+     * Execute the given {@link LookupRequest} in the provide {@link LookupService}.
+     * <p>
+     * This method is used to execute the request in a single member of the
+     * federated lookup. Results are combined by the caller.
+     * </p>
+     * 
+     * <p>
+     * Note that this method is responsible for adjusting scores, see
+     * {@link #adjustScoresForSpecificService(LookupResponse, LookupServiceMember)}.
+     * </p>
+     * 
+     * @param request
+     * @param lookupService
+     * @param memberConfig
+     * @return the lookup result for the given service
+     * @throws LookupProcessingException
+     */
+    protected LookupResponse executeRequest(LookupRequest request, LookupService lookupService,
+            LookupServiceMember memberConfig)
+            throws LookupProcessingException {
+        LookupResponse lookupResponse = lookupService.lookup(request);
+        return this.adjustScoresForSpecificService(lookupResponse, memberConfig);
     }
 
     /**
@@ -155,17 +212,33 @@ public class FederatedLookupService extends AbstractLookupService<FederatedLooku
         return new LookupResponse(request.getQueryId(), allCandidates);
     }
 
-    protected Map<LookupServiceMember, LookupService> getLookupServices() {
+    protected List<LookupServiceWithConfig> getLookupServices() {
         List<LookupServiceMember> serviceMembers = config.getServiceMembers();
         if (serviceMembers != null && !serviceMembers.isEmpty()) {
             // collect explicitly configured service members
-            return serviceMembers.stream()
-                .collect(Collectors.toMap(member -> member,
-                    member -> lookupServiceManager.getLookupServiceByName(member.getName())
-                        .orElseThrow(() -> new LookupServiceConfigException("No such LookupService: " + member.getName()))));
+            return serviceMembers.stream().map(memberConfig -> {
+                LookupService lookupService = lookupServiceManager.getLookupServiceByName(memberConfig.getName())
+                        .orElseThrow(() -> new LookupServiceConfigException(
+                                "No such LookupService: " + memberConfig.getName()));
+                return new LookupServiceWithConfig(memberConfig, lookupService);
+            }).collect(Collectors.toList());
         }
         // use all lookup services
-        return lookupServiceManager.getLookupServices().entrySet().stream()
-            .collect(Collectors.toMap(entry -> new LookupServiceMember(entry.getKey()), entry -> entry.getValue()));
+        return lookupServiceManager.getLookupServices().entrySet().stream().map(entry -> {
+            LookupServiceMember memberConfig = new LookupServiceMember(entry.getKey());
+            LookupService lookupService = entry.getValue();
+            return new LookupServiceWithConfig(memberConfig, lookupService);
+        }).collect(Collectors.toList());
+    }
+
+    protected static class LookupServiceWithConfig {
+        public final LookupServiceMember memberConfig;
+        public final LookupService lookupService;
+
+        public LookupServiceWithConfig(LookupServiceMember memberConfig, LookupService lookupService) {
+            super();
+            this.memberConfig = memberConfig;
+            this.lookupService = lookupService;
+        }
     }
 }

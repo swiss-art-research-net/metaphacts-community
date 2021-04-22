@@ -11,9 +11,6 @@ import {
     LinkModel,
  } from '../src/ontodia/index';
 
-const RdfXmlParser: any = require('rdf-parser-rdfxml');
-const JsonLdParser: any = require('rdf-parser-jsonld');
-
 import { N3Parser, renderExample, tryLoadLayoutFromLocalStorage } from './resources/common';
 import { ExampleWorkspaceLayout } from './resources/exampleWorkspaceLayout';
 
@@ -113,8 +110,6 @@ class CompositeExample extends React.Component {
             ],
             parsers: {
                 'text/turtle': new N3Parser(),
-                'application/rdf+xml': new RdfXmlParser(),
-                'application/ld+json': new JsonLdParser(),
             },
         });
 

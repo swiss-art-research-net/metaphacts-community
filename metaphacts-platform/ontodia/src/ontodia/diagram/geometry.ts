@@ -272,18 +272,16 @@ export function findElementAtPoint(
     return undefined;
 }
 
-export function computeGrouping(elements: ReadonlyArray<Element>): Map<string, Element[]> {
-    const grouping = new Map<string, Element[]>();
+export function computeGrouping(elements: ReadonlyArray<Element>): Map<string | undefined, Element[]> {
+    const grouping = new Map<string | undefined, Element[]>();
     for (const element of elements) {
         const group = element.group;
-        if (typeof group === 'string') {
-            let children = grouping.get(group);
-            if (!children) {
-                children = [];
-                grouping.set(group, children);
-            }
-            children.push(element);
+        let children = grouping.get(group);
+        if (!children) {
+            children = [];
+            grouping.set(group, children);
         }
+        children.push(element);
     }
     return grouping;
 }

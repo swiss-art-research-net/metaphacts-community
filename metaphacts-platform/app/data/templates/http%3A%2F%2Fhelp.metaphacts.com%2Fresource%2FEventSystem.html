@@ -273,13 +273,14 @@
 
   <h3>Close a dialog after form submission</h3>
 
-    <p>The following example demonstrates how the event system can be used to close a dialog upon submitting a form. The form itself is defined as content of the dialog, and we make use of the <code>mp-event-proxy</code> component to react on the <code>Form.ResourceCreated/code> event to trigger a <code>Dialog.HideAll</code>.</p>
+    <p>The following example demonstrates how the event system can be used to close a dialog upon submitting a form. The form itself is defined as content of the dialog, and we make use of the <code>mp-event-proxy</code> component to react on the <code>Form.ResourceCreated</code> event to trigger a <code>Dialog.HideAll</code>.</p>
 
 <mp-code-example>
 <mp-overlay-dialog title="Demo Form" type="modal" bs-size="large">
   <mp-overlay-dialog-trigger><button>Show form</button></mp-overlay-dialog-trigger>
   <mp-overlay-dialog-content>
     <mp-event-proxy on-event-type="Form.ResourceCreated" proxy-event-type="Dialog.HideAll"></mp-event-proxy>
+    <bs-alert variant="info">Please note that this example form can only be submitted as authenticated user with form permissions.</bs-alert>
     <semantic-form
       id='formInDialog'
       post-action='event'

@@ -165,14 +165,17 @@ export function loadExistingPathInParallel<T extends TreeNode & Traversable<T>>(
   loadChildren: ChildrenLoader<T>,
   forest: KeyedForest<T>,
   path: KeyPath
-) {
+): Kefir.Property<KeyedForest<T>> {
+  if (path.length === 0) {
+    return Kefir.later(0, forest).toProperty();
+  }
   if (!forest.fromKeyPath(path)) {
     throw new Error('Cannot load path in parallel because it does not exists');
   }
 
   let current = forest;
   const tasks: Array<Kefir.Property<void>> = [];
-  for (let i = 1; i < path.length; i++) {
+  for (let i = 0; i < path.length; i++) {
     const targetPath = path.slice(0, i + 1);
     const parentPath = path.slice(0, i);
     let levelForest = forest.updateChildren(parentPath, () => []);

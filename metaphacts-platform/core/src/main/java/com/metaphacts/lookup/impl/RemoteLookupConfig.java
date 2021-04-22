@@ -50,10 +50,12 @@ import com.metaphacts.lookup.spi.LookupServiceConfigException;
  * 
  * @author Wolfgang Schell <ws@metaphacts.com>
  */
-public class RemoteLookupConfig extends CommonLookupConfig {
+public class RemoteLookupConfig extends RepositoryBasedLookupConfig {
     private String remoteServiceUrl;
+    private Boolean remoteInformationServiceEnabled;
     private String remoteServiceUser;
     private String remoteServicePassword;
+    private Integer remoteTimeout;
     private QueryMethod queryMethod = QueryMethod.postUrlEncodedForm;
 
     public RemoteLookupConfig() {
@@ -75,7 +77,44 @@ public class RemoteLookupConfig extends CommonLookupConfig {
     public void setRemoteServiceUrl(String remoteServiceUrl) {
         this.remoteServiceUrl = remoteServiceUrl;
     }
-    
+
+    /**
+     * Get read- and connection timeout (in seconds)
+     * 
+     * @return read- connection timeout (in seconds) or <code>null</code> if unset
+     */
+    public Integer getRemoteTimeout() {
+        return remoteTimeout;
+    }
+
+    /**
+     * Set read- and connection timeout (in seconds)
+     * 
+     * @param timeout read- and connection timeout (in seconds) or <code>null</code>
+     *                for unspecified
+     */
+    public void setRemoteTimeout(Integer timeout) {
+        this.remoteTimeout = timeout;
+    }
+
+    /**
+     * Tell if remote label/description services should be used if possible. By
+     * default the remote description service is disabled.
+     * 
+     * @return boolean.
+     */
+    public boolean isRemoteInformationServiceEnabled() {
+        return remoteInformationServiceEnabled != null ? remoteInformationServiceEnabled : false;
+    }
+
+    protected Boolean getRemoteDescriptionServiceEnabled() {
+        return remoteInformationServiceEnabled;
+    }
+
+    public void setRemoteInformationServiceEnabled(boolean remoteInformationServiceEnabled) {
+        this.remoteInformationServiceEnabled = remoteInformationServiceEnabled;
+    }
+
     /**
      * Get user to authenticate into the remote lookup service.
      * @return user name or <code>null</code> if unset.
@@ -132,7 +171,14 @@ public class RemoteLookupConfig extends CommonLookupConfig {
         if (getQueryMethod() != null) {
             model.add(implNode, LOOKUP_REMOTESERVICE_QUERYMETHOD, VF.createLiteral(getQueryMethod().toString()));
         }
-        
+        if (getRemoteTimeout() != null) {
+            model.add(implNode, LOOKUP_REMOTESERVICE_TIMEOUT, VF.createLiteral(getRemoteTimeout()));
+        }
+
+        if (getRemoteDescriptionServiceEnabled() != null) {
+            model.add(implNode, LOOKUP_REMOTESERVICE_INFORMATIONENABLED,
+                    VF.createLiteral(isRemoteInformationServiceEnabled()));
+        }
         return implNode;
     }
     
@@ -151,6 +197,12 @@ public class RemoteLookupConfig extends CommonLookupConfig {
         
         Models.objectLiteral(model.filter(resource, LOOKUP_REMOTESERVICE_QUERYMETHOD, null))
             .ifPresent(literal -> setQueryMethod(QueryMethod.valueOf(literal.stringValue())));
+
+        Models.objectLiteral(model.filter(resource, LOOKUP_REMOTESERVICE_TIMEOUT, null))
+                .ifPresent(literal -> setRemoteTimeout(literal.intValue()));
+
+        Models.objectLiteral(model.filter(resource, LOOKUP_REMOTESERVICE_INFORMATIONENABLED, null))
+            .ifPresent(literal -> setRemoteInformationServiceEnabled(literal.booleanValue()));
     }
     
     public enum QueryMethod {

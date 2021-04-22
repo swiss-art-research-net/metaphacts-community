@@ -44,8 +44,9 @@ export interface JsonSchema {
   /** Schema reference, e.g. "#/definitions/SubInterface" */
   '$ref'?: string;
   description?: string;
+  format?: string;
   default?: unknown;
-  enum?: ReadonlyArray<string>;
+  enum?: ReadonlyArray<unknown>;
   anyOf?: ReadonlyArray<JsonSchema>;
   definitions?: { [typeName: string]: JsonSchema };
   properties?: { [propertyName: string]: JsonSchema };
@@ -54,7 +55,16 @@ export interface JsonSchema {
   required?: string[];
   propertyOrder?: string[];
 
+  mpSchemaMetadata?: MpSchemaMetadata;
   mpSeeResource?: MpSeeResource | MpSeeResource[];
+  /**
+   * Corresponding event type property name for event data property.
+   */
+  mpHasEventType?: string;
+}
+
+export interface MpSchemaMetadata {
+  kind?: 'events';
 }
 
 export interface MpSeeResource {

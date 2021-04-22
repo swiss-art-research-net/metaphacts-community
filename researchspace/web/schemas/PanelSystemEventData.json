@@ -1,0 +1,90 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
+    "properties": {
+        "PanelSystem.InitiateGraphAuthoring": {
+            "anyOf": [
+                {
+                    "properties": {
+                        "iris": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "propertyOrder": [
+                        "iris"
+                    ],
+                    "required": [
+                        "iris"
+                    ],
+                    "type": "object"
+                },
+                {
+                    "properties": {
+                        "diagram": {
+                            "type": "string"
+                        }
+                    },
+                    "propertyOrder": [
+                        "diagram"
+                    ],
+                    "required": [
+                        "diagram"
+                    ],
+                    "type": "object"
+                }
+            ]
+        },
+        "PanelSystem.InitiateIIIFViewer": {
+            "properties": {
+                "iris": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "propertyOrder": [
+                "iris"
+            ],
+            "required": [
+                "iris"
+            ],
+            "type": "object"
+        },
+        "PanelSystem.ShowResource": {
+            "properties": {
+                "pageId": {
+                    "type": "string"
+                },
+                "pageProps": {
+                }
+            },
+            "propertyOrder": [
+                "pageId",
+                "pageProps"
+            ],
+            "required": [
+                "pageId",
+                "pageProps"
+            ],
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "PanelSystem.ShowResource",
+        "PanelSystem.InitiateIIIFViewer",
+        "PanelSystem.InitiateGraphAuthoring"
+    ],
+    "required": [
+        "PanelSystem.InitiateGraphAuthoring",
+        "PanelSystem.InitiateIIIFViewer",
+        "PanelSystem.ShowResource"
+    ],
+    "type": "object"
+}
+

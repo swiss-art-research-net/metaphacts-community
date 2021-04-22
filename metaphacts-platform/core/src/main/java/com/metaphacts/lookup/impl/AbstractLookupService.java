@@ -66,9 +66,9 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheBuilderSpec;
 import com.metaphacts.cache.CacheManager;
+import com.metaphacts.cache.ExternalLabelDescriptionService;
 import com.metaphacts.cache.LiteralCacheKey;
 import com.metaphacts.cache.LookupResponseCacheEntry;
-import com.metaphacts.cache.ExternalLabelDescriptionService;
 import com.metaphacts.cache.PlatformCache;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.lookup.api.LookupProcessingException;
@@ -181,14 +181,22 @@ public abstract class AbstractLookupService<CFG extends CommonLookupConfig> impl
 
     protected String generateCacheId() {
         StringBuilder cacheId = new StringBuilder("LookupServiceCache.");
+        String serviceIdentifier = getServiceId();
+        cacheId.append(serviceIdentifier);
+        return cacheId.toString();
+    }
+
+    protected String getServiceId() {
+        String serviceIdentifier = null;
         if (config instanceof TargetRepositoryAware) {
             TargetRepositoryAware targetRepositoryAware = (TargetRepositoryAware) config;
-            cacheId.append(targetRepositoryAware.getTargetRepository());
+            serviceIdentifier = targetRepositoryAware.getTargetRepository();
         }
-        else {
-            cacheId.append(System.identityHashCode(this));
+        if (serviceIdentifier == null) {
+            // ensure we get a unique cache id
+            serviceIdentifier = "" + System.identityHashCode(this);
         }
-        return cacheId.toString();
+        return getClass().getSimpleName() + "." + serviceIdentifier;
     }
 
     /**
@@ -410,15 +418,9 @@ public abstract class AbstractLookupService<CFG extends CommonLookupConfig> impl
         }
         List<LookupCandidate> candidates = response.getResult().stream().map(lookupCandidate -> {
             double newScore = lookupCandidate.getScore() * scoreOptions.getScoreFactor() + scoreOptions.getScoreOffset();
-            return new LookupCandidate(
-                lookupCandidate.getId(),
-                lookupCandidate.getName(),
-                lookupCandidate.getTypes(),
-                newScore,
-                lookupCandidate.isMatch(),
-                lookupCandidate.getDataset(),
-                lookupCandidate.getDescription()
-            );
+            LookupCandidate candidate = lookupCandidate.clone();
+            candidate.setScore(newScore);
+            return candidate;
         }).collect(Collectors.toList());
         return new LookupResponse(response.getQueryId(), candidates);
     }

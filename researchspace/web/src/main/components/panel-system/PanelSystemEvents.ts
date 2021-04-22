@@ -17,6 +17,9 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface PanelSystemEventData {
   'PanelSystem.ShowResource': { pageId: string, pageProps: any };
   'PanelSystem.InitiateIIIFViewer': { iris: Array<string> };

@@ -66,7 +66,7 @@ public class MetaphactsHandlebars extends Handlebars{
 
     public static final String startDelimiter="[[";
     public static final String endDelimiter="]]";
-    
+
     @Inject
     public MetaphactsHandlebars(PlatformStorage platformStorage, NamespaceRegistry ns, HandlebarsHelperRegistry helperRegistry) {
         this(new TemplateByIriLoader(platformStorage, ns), helperRegistry);
@@ -106,6 +106,8 @@ public class MetaphactsHandlebars extends Handlebars{
 
     private void registerMetaphactsHelper(HandlebarsHelperRegistry helperRegistry) {
         helperRegistry.getHelpers().forEach(this::registerHelpers);
+        helperRegistry.getNamedHelpers().entrySet().forEach(entry ->
+            registerHelper(entry.getKey(), entry.getValue()));
 
         // register DocumentationHelper
         registerHelper("documentation", new DocumentationHelper());

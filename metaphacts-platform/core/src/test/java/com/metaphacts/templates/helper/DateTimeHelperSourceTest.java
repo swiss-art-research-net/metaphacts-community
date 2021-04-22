@@ -60,7 +60,7 @@ public class DateTimeHelperSourceTest {
         String targetFormat = "yyyy.MM.dd G 'at' HH:mm:ss";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{dateTimeFormat timestamp targetFormat}}", now, targetFormat);
+        String output = applyTemplate("{{date-format timestamp targetFormat}}", now, targetFormat);
         assertEquals(expected, output);
     }
 
@@ -71,7 +71,7 @@ public class DateTimeHelperSourceTest {
         String sourceFormat = "dd.MM.yyyy HH-mm-ss";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{dateTimeFormat timestamp targetFormat sourceFormat}}", now, targetFormat,
+        String output = applyTemplate("{{date-format timestamp targetFormat sourceFormat}}", now, targetFormat,
                 sourceFormat);
         assertEquals(expected, output);
     }
@@ -83,7 +83,7 @@ public class DateTimeHelperSourceTest {
         // as the timestamp cannot be parsed we expect an empty string
         String expected = "";
 
-        String output = applyTemplate("{{dateTimeFormat timestamp targetFormat}}", timestampString, targetFormat,
+        String output = applyTemplate("{{date-format timestamp targetFormat}}", timestampString, targetFormat,
                 DateTimeHelperSource.ISO_DATETIME_FORMAT);
         assertEquals(expected, output);
     }
@@ -94,7 +94,7 @@ public class DateTimeHelperSourceTest {
         String targetFormat = "yyyy";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{year timestamp}}", now, targetFormat);
+        String output = applyTemplate("{{date-formatYear timestamp}}", now, targetFormat);
         assertEquals(expected, output);
     }
 
@@ -105,7 +105,7 @@ public class DateTimeHelperSourceTest {
         // as the timestamp cannot be parsed we expect an empty string
         String expected = "";
 
-        String output = applyTemplate("{{year timestamp}}", timestampString, targetFormat,
+        String output = applyTemplate("{{date-formatYear timestamp}}", timestampString, targetFormat,
                 DateTimeHelperSource.ISO_DATETIME_FORMAT);
         assertEquals(expected, output);
     }
@@ -117,17 +117,17 @@ public class DateTimeHelperSourceTest {
         String sourceFormat = "dd.MM.yyyy HH-mm-ss";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{year timestamp sourceFormat}}", now, targetFormat, sourceFormat);
+        String output = applyTemplate("{{date-formatYear timestamp sourceFormat}}", now, targetFormat, sourceFormat);
         assertEquals(expected, output);
     }
-    
+
     @Test
     public void testMonth() throws Exception {
         Date now = new Date();
         String targetFormat = "MM";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{month timestamp}}", now, targetFormat);
+        String output = applyTemplate("{{date-formatMonth timestamp}}", now, targetFormat);
         assertEquals(expected, output);
     }
 
@@ -137,7 +137,7 @@ public class DateTimeHelperSourceTest {
         String targetFormat = "dd";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{day timestamp}}", now, targetFormat);
+        String output = applyTemplate("{{date-formatDay timestamp}}", now, targetFormat);
         assertEquals(expected, output);
     }
 
@@ -147,7 +147,7 @@ public class DateTimeHelperSourceTest {
         String targetFormat = "HH";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{hours timestamp}}", now, targetFormat);
+        String output = applyTemplate("{{date-formatHour timestamp}}", now, targetFormat);
         assertEquals(expected, output);
     }
 
@@ -157,7 +157,7 @@ public class DateTimeHelperSourceTest {
         String targetFormat = "mm";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{minutes timestamp}}", now, targetFormat);
+        String output = applyTemplate("{{date-formatMinute timestamp}}", now, targetFormat);
         assertEquals(expected, output);
     }
 
@@ -167,7 +167,7 @@ public class DateTimeHelperSourceTest {
         String targetFormat = "ss";
         String expected = new SimpleDateFormat(targetFormat).format(now);
 
-        String output = applyTemplate("{{seconds timestamp}}", now, targetFormat);
+        String output = applyTemplate("{{date-formatSecond timestamp}}", now, targetFormat);
         assertEquals(expected, output);
     }
 
@@ -184,7 +184,9 @@ public class DateTimeHelperSourceTest {
     protected String applyTemplate(String templateText, String timestampString, String targetFormat,
             String sourceFormat)
             throws IOException {
-        Handlebars handlebars = new Handlebars().registerHelpers(DateTimeHelperSource.class);
+        Handlebars handlebars = new Handlebars();
+        DateTimeHelperSource.getHelpers().entrySet().forEach(entry ->
+            handlebars.registerHelper(entry.getKey(), entry.getValue()));
         Template template = handlebars.compileInline(templateText);
         Map<String, Object> model = new HashMap<String, Object>();
 

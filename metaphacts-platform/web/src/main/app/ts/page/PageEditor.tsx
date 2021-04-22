@@ -44,6 +44,7 @@ import * as React from 'react';
 import { ReactElement, Component } from 'react';
 import { Button, ButtonToolbar } from 'react-bootstrap';
 import * as uri from 'urijs';
+import * as moment from 'moment';
 
 import { navigateToResource, navigateToUrl } from 'platform/api/navigation';
 import { Rdf, vocabularies } from 'platform/api/rdf';
@@ -118,10 +119,13 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
       pageSource: {
         appId: undefined,
         revision: undefined,
+        date: undefined,
+        author: undefined,
         source: '',
         definedByApps: [],
         applicableTemplates: [],
         appliedTemplate: undefined,
+        appliedKnowledgePanelTemplate: undefined,
       },
       includes: [],
       loadingIncludes: true,
@@ -183,7 +187,10 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
           <WorkspaceRow>
             <WorkspaceItem id='page-editor-main-part' undocked={true}>
               <div className='page-editor__main-part'>
-                {this.renderEditorSettings()}
+                <div className='page-editor__header'>
+                  {this.renderEditorSettings()}
+                  {this.renderRevisionInfo()}
+                </div>
                 <MonacoEditor ref={this.onEditorDidMount}
                   className='template-editor'
                   language='mp-template'
@@ -230,6 +237,9 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
               </WorkspaceItem>
               <WorkspaceItem id='page-editor-templates' heading='Applicable templates'>
                 {this.renderAppliedTemplates()}
+              </WorkspaceItem>
+              <WorkspaceItem id='page-editor-panel-templates' heading='Knowledge Panel templates'>
+                {this.renderKnowledgePanelTemplates()}
               </WorkspaceItem>
             </WorkspaceColumn>
           </WorkspaceRow>
@@ -602,7 +612,7 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
   private applicableTemplateLinks = (
     templates: string[],
     appliedTemplate: string
-  ): ReactElement<any>  => {
+  ): ReactElement<any> => {
     if (templates.length === 0) {
       return <span />;
     }
@@ -613,12 +623,56 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
         <ul>
           {templates.map(res => {
             const props = (appliedTemplate === res)
-              ? {
-                  style: {backgroundColor : '#FFC857'},
-                  title: 'This template will currently be applied.',
-                } as const
+              ? this.getAppliedTemplateProps()
               : {};
             return <li key={res} {...props}>
+              <ResourceLink resource={Rdf.iri(res)}
+                action={ResourceLinkAction.edit}>
+                {res}
+              </ResourceLink>
+            </li>;
+          })}
+        </ul>
+      </div>
+    );
+  }
+
+  private getAppliedTemplateProps() {
+    return {
+      style: { backgroundColor: '#FFC857' },
+      title: 'This template will currently be applied.',
+    } as const;
+  }
+
+  private renderKnowledgePanelTemplates() {
+    const { applicableTemplates, appliedKnowledgePanelTemplate } = this.state.pageSource;
+    return (
+      <div className='page-editor__applicable-templates'>
+        {this.applicableKnowledgePanelLinks(applicableTemplates, appliedKnowledgePanelTemplate)}
+      </div>
+    );
+  }
+
+  private applicableKnowledgePanelLinks = (
+    templates: string[],
+    appliedTemplate: string
+  ): ReactElement<any> => {
+
+    const panelTemplates = templates.map(template => 'Panel' + template)
+      .filter(template => template !== appliedTemplate);
+
+    return (
+      <div>
+        <div>Applicable Knowledge Panels:</div>
+        <ul>
+          <li {...this.getAppliedTemplateProps()}>
+            {appliedTemplate ? <ResourceLink resource={Rdf.iri(appliedTemplate)}
+              action={ResourceLinkAction.edit}>
+              {appliedTemplate}
+            </ResourceLink> : null}
+          </li>
+          {panelTemplates.map(res => {
+            return <li key={res}>
               <ResourceLink resource={Rdf.iri(res)}
                 action={ResourceLinkAction.edit}>
                 {res}
@@ -676,6 +730,26 @@ class PageEditorComponent extends Component<PageEditorProps, PageEditorState> {
         </ResourceLink>
       </div>
     );
+  }
+
+  private renderRevisionInfo() {
+    const { date, author } = this.state.pageSource;
+    if (!date) {
+      return null;
+    }
+
+    const parsedDate = moment(date);
+    const monthAgo = moment().subtract(1, 'month');
+    const showRelativeTime = parsedDate.isAfter(monthAgo);
+
+    const changedAgo = parsedDate.fromNow();
+    const changedDate = parsedDate.format('LLL');
+
+    return <div className='page-editor__revision-info'>
+      Last changed {showRelativeTime ? <span title={changedDate} className='page-editor__change-date'>
+        {changedAgo}
+      </span> : <>on {changedDate}</>}
+      {author ? ` by ${author}` : null}</div>;
   }
 }
 

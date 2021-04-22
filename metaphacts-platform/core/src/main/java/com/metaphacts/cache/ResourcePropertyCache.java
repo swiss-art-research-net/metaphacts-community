@@ -68,6 +68,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.metaphacts.api.sparql.SparqlOperationBuilder;
 import com.metaphacts.config.PropertyPattern;
 
@@ -104,7 +105,7 @@ public abstract class ResourcePropertyCache<Key, Property> implements PlatformCa
         try {
             // obtain iri-to-property map
             return repositoryMap.get(repository).getAll(resourceIRIs);
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | UncheckedExecutionException e) {
             logger.warn("Execution error while populating cache: " + e.getMessage());
             Throwables.throwIfUnchecked(e);
             throw new RuntimeException(e);
@@ -114,7 +115,7 @@ public abstract class ResourcePropertyCache<Key, Property> implements PlatformCa
     private void initializeCache(Repository repository) {
         if (repositoryMap.containsKey(repository)) { return; }
 
-        logger.debug("Initializing cache for repository: {}", repository);
+        logger.debug("Initializing cache {} for repository: {}", cacheId, repository);
         repositoryMap.put(repository,
                 createCacheBuilder()
                         .build(new CacheLoader<Key, Optional<Property>>() {

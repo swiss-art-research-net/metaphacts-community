@@ -243,7 +243,7 @@ export class SetManagement extends Component<SetManagementProps, ViewState> {
         baseClass={CLASS_NAME}
         set={set}
         showItems={false}
-        template={this.model.templateForKind}
+        template={this.model.templateForKind.bind(this.model)}
         onOpen={iri => this.model.openAndLoadSet(iri)}
         onDragStart={this.onDragStart}
         onDragEnd={this.onDragEnd}
@@ -257,7 +257,7 @@ export class SetManagement extends Component<SetManagementProps, ViewState> {
         <ItemsView key={'default-set-items'}
           baseClass={CLASS_NAME}
           set={sets ? sets.get(defaultSet.value) : undefined}
-          template={this.model.templateForKind}
+          template={this.model.templateForKind.bind(this.model)}
           onDragStart={this.onDragStart}
           onDragEnd={this.onDragEnd}
           itemsOrdering={itemsOrdering}
@@ -306,7 +306,7 @@ export class SetManagement extends Component<SetManagementProps, ViewState> {
           key={set.iri.value}
           baseClass={CLASS_NAME}
           set={set}
-          template={this.model.templateForKind}
+          template={this.model.templateForKind.bind(this.model)}
           highlightedTerm={this.state.search.searchText}
           onOpen={iri => this.model.openAndLoadSet(iri)}
           onDragStart={this.onDragStart}
@@ -340,7 +340,7 @@ export class SetManagement extends Component<SetManagementProps, ViewState> {
     return (
       <OpenedSetView set={set}
         baseClass={CLASS_NAME}
-        template={this.model.templateForKind}
+        template={this.model.templateForKind.bind(this.model)}
         onDragStart={this.onDragStart}
         onDragEnd={this.onDragEnd}
         onEditCompleted={newName => this.model.onSetEditCompleted(set, newName)}

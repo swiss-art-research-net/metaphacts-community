@@ -64,6 +64,11 @@ public class PLATFORM {
     public static final IRI SET_TYPE;
     public static final IRI SET_ITEM_TYPE;
     
+    /**
+     * Predicates
+     */
+    public static final IRI PROJECTION_VARIABLE_NAME;
+
     static {
         ValueFactory f = SimpleValueFactory.getInstance();
         FIELD = f.createIRI(NAMESPACE, "Field");
@@ -71,6 +76,7 @@ public class PLATFORM {
         SYSTEM_USER_INDIVIDUAL = f.createIRI(NAMESPACE, "systemUser");
         SET_TYPE = f.createIRI(NAMESPACE, "Set");
         SET_ITEM_TYPE = f.createIRI(NAMESPACE, "SetItem");
+        PROJECTION_VARIABLE_NAME = f.createIRI(NAMESPACE, "projectionVariableName");
     }
 
 }

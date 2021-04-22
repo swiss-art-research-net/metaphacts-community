@@ -39,6 +39,9 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface SplitPaneEventData {
   'SplitPane.Open': {};
   'SplitPane.Close': {};

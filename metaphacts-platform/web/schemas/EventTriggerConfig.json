@@ -4,7 +4,8 @@
     "properties": {
         "data": {
             "additionalProperties": true,
-            "description": "Data that will be sent to all targets",
+            "description": "Data that will be sent to all targets.",
+            "mpHasEventType": "type",
             "properties": {
             },
             "type": "object"
@@ -22,6 +23,7 @@
         },
         "type": {
             "description": "Type of the event to trigger.",
+            "format": "mp-event-type",
             "type": "string"
         }
     },

@@ -57,14 +57,16 @@
     "deferAttributes": {
       "value-template": true,
       "form-template": true
-    }
+    },
+    "additionalSchemas": ["AssertionEventData"]
   },
   "rs-premise": {
     "path": "researchspace/components/arguments/premise/PremiseComponent.tsx",
     "deferAttributes": {
       "assertion-based-belief-template": true,
       "field-based-belief-template": true
-    }
+    },
+    "additionalSchemas": ["PremiseEventData"]
   },
 
   "rs-object-representations":  {
@@ -80,7 +82,6 @@
       "toggle-collapsible-template": true
     }
   },
-  "rs-semantic-narrative-editor": "researchspace/components/narratives/SemanticNarrativeEditor.tsx",
   "rs-browse-history": "researchspace/widgets/BrowseHistoryComponent.tsx",
 
   "rs-alignment-tool": {
@@ -117,6 +118,7 @@
       }
     },
     "propsSchema": "SemanticFacetConfig",
+    "additionalSchemas": ["SemanticSearchFacetEventData"],
     "helpResource": "http://help.metaphacts.com/resource/SemanticSearch"
   },
   "semantic-search-facet-breadcrumbs": {
@@ -148,6 +150,7 @@
       }
     },
     "propsSchema": "SemanticQueryBuilderConfig",
+    "additionalSchemas": ["SemanticSearchQueryBuilderEventData"],
     "helpResource": "http://help.metaphacts.com/resource/StructuredSearch"
   },
   "semantic-search-action-use-result-in-extended-search": "researchspace/components/search/web-components/SemanticSearchUseResultInExtendedSearchAction.tsx",
@@ -171,9 +174,15 @@
     "helpResource": "http://help.metaphacts.com/resource/SemanticTimeline"
   },
 
-  "rs-guided-tour": "researchspace/components/guided-tour/GuidedTour.tsx",
+  "rs-guided-tour": {
+    "path": "researchspace/components/guided-tour/GuidedTour.tsx",
+    "additionalSchemas": ["GuidedTourEventData"]
+  },
 
-  "rs-panel-system": "researchspace/components/panel-system/PanelSystem.tsx",
+  "rs-panel-system": {
+    "path": "researchspace/components/panel-system/PanelSystem.tsx",
+    "additionalSchemas": ["PanelSystemEventData"]
+  },
   "rs-panel-system-holder": "researchspace/components/panel-system/PanelSystemHolder.tsx",
   "rs-iiif-viewer-panel": "researchspace/components/panel-system/IIIFViewerPanel.tsx",
   "rs-ontodia-panel": "researchspace/components/panel-system/OntodiaPanel.tsx",

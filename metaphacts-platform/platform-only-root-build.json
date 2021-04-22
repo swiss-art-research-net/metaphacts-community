@@ -3,7 +3,7 @@
   "distributionTitle": "metaphacts Platform",
   "includeProjects": ["metaphacts-platform", "researchspace"],
   "ontodiaDist": "metaphacts-platform/ontodia",
-  "bundleAppsFrom": ["researchspace","metaphacts-platform"],
+  "bundleAppsFrom": ["metaphacts-platform"],
   "mainWebapp": "metaphacts-platform/webapp",
   "applyThemeFrom": "metaphacts-platform",
   "license": {

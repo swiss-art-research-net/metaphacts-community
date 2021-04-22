@@ -210,8 +210,8 @@ export class TemplateScope {
     const visitTemplate = (template: ExtractedTemplate) => {
       if (!localReferences.has(template)) {
         localReferences.add(template);
+        template.localReferences.forEach(visitLocalReference);
       }
-      template.localReferences.forEach(visitLocalReference);
     };
 
     const visitLocalReference = (localName: string) => {

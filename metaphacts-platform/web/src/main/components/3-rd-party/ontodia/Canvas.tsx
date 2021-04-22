@@ -47,33 +47,37 @@ import {
   Canvas as OntodiaCanvas, CanvasProps as OntodiaCanvasProps, CanvasCommands,
   Element, ElementTemplate, TemplateProps, AuthoredEntity, AuthoredEntityContext,
   Link, LinkTemplate, LinkStyle, LinkLabel, LinkMarkerStyle, LinkTypeIri,
-  Property, PropertyTypeIri, EventObserver, EventSource, IriClickIntent, setElementExpanded,
+  PropertyTypeIri, EventObserver, EventSource, IriClickIntent, setElementExpanded,
 } from 'ontodia';
 
 import { Cancellation } from 'platform/api/async';
 import { Component, ComponentContext, ContextTypes } from 'platform/api/components';
 import { listen, trigger } from 'platform/api/events';
-import { mapHtmlTreeToReact } from 'platform/api/module-loader/Registry';
 import { Rdf } from 'platform/api/rdf';
-import { CompiledTemplate, mergeInContextOverride } from 'platform/api/services/template';
+import { CompiledTemplate } from 'platform/api/services/template';
 
 import { Spinner } from 'platform/components/ui/spinner';
 import { TemplateItem } from 'platform/components/ui/template';
 import { ErrorNotification } from 'platform/components/ui/notification/ErrorNotification';
 import { componentHasType, isValidChild, universalChildren } from 'platform/components/utils';
 
+import {
+  EdgePropertyStyle, EdgePropertyGroup, ResolvedEdgePropertyGroup, ResolvedEdgePropertyGroupItem,
+  ResourceLabelCache, fetchOntodiaResourceLabels, findChangedResources, computeEdgeProperties,
+  DEFAULT_EDGE_PROPERTY_GROUP_TEMPLATE,
+} from './EdgePropertyGroup';
 import { NavigationMenu } from './NavigationMenu';
 import { OntodiaContext, OntodiaContextWrapper, OntodiaContextTypes } from './OntodiaContext';
 import * as OntodiaEvents from './OntodiaEvents';
-
 import * as CanvasEvents from './CanvasEvents';
+
 import * as styles from './Canvas.scss';
 import * as elementStyles from './TabbyTemplate.scss';
 
 /**
  * Renders graph, allows navigating through data.
  */
-interface CanvasConfig {
+export interface OntodiaCanvasConfig {
   /**
    * Unique ID.
    */
@@ -190,73 +194,6 @@ export interface EdgeConnectionStyle {
   properties?: EdgePropertyStyle[];
 }
 
-export interface EdgePropertyStyle {
-  readonly position?: number;
-  readonly title?: string;
-  /**
-   * @TJS-type ["string", "null"]
-   */
-  readonly content?: string | null;
-  readonly rectStyle?: { [cssProperty: string]: any };
-  readonly textStyle?: { [cssProperty: string]: any };
-}
-
-export interface EdgePropertyGroup {
-  /**
-   * A set of edge types to apply this group if possible.
-   *
-   * If empty then the group will not be matched against any edge types.
-   * If undefined then the group will be matched against all edge types.
-   */
-  readonly edgeTypes?: ReadonlyArray<string>;
-  /**
-   * An ordered list of edge property type IRIs to group values from.
-   *
-   * The group becomes applicable only if there is a matched or default value
-   * for each property on the edge.
-   */
-  readonly properties: ReadonlyArray<EdgePropertyGroupItem>;
-  /**
-   * Style override for edge property group.
-   */
-  readonly style?: EdgePropertyStyle;
-  /**
-   * Template for rendering edge property group.
-   *
-   * Note: edge properties are currently rendered in the SVG context thus
-   * only SVG-compatible components are supported inside directly.
-   *
-   * **Default**:
-   * ```
-   * {{#each properties}}
-   *   {{#if @first}}{{label}}:{{/if}}
-   *   {{#each (lookup ../values typeIri)}}
-   *     {{label}}{{#unless @last}};{{/unless}}
-   *   {{/each}}
-   *   {{#unless @last}};{{/unless}}
-   * {{/each}}
-   * ```
-   */
-  readonly template?: string;
-}
-
-export interface EdgePropertyGroupItem {
-  /**
-   * Edge property type IRI to group values from.
-   */
-  readonly type: string;
-  /**
-   * Default value for edge property.
-   *
-   * Undefined value means there is no default for corresponding property
-   * and the value is required to match this group.
-   *
-   * If present, value will be converted to RDF literal
-   * with `xsd:string` datatype.
-   */
-  readonly default?: string;
-}
-
 export const DEFAULT_CANVAS_STYLE: React.CSSProperties = {
   backgroundColor: 'whitesmoke',
 };
@@ -293,16 +230,6 @@ const DEFAULT_EDGE_PROPERTY_STYLE: EdgePropertyStyle = {
     fontSize: 11,
   }
 };
-
-const DEFAULT_EDGE_PROPERTY_GROUP_TEMPLATE = `
-{{#each properties}}
-  {{#if @first}}{{label}}:{{/if}}
-  {{#each (lookup ../values typeIri)}}
-    {{label}}{{#unless @last}};{{/unless}}
-  {{/each}}
-  {{#unless @last}};{{/unless}}
-{{/each}}
-`;
 
 function getTabbyTemplate(options: {
   showInfoButton?: boolean;
@@ -364,7 +291,7 @@ function getTabbyTemplate(options: {
   `;
 }
 
-export interface CanvasProps extends CanvasConfig {
+export interface CanvasProps extends OntodiaCanvasConfig {
   /**
    * Canvas widgets.
    */
@@ -400,30 +327,6 @@ interface OntodiaElementTemplateData extends TemplateProps {
   canDelete: boolean;
 }
 
-// exported for documentation
-interface OntodiaEdgePropertyGroupTemplateData {
-  properties: Array<{
-    typeIri: string;
-    label: string;
-  }>;
-  values: {
-    [typeIri: string]: Array<{
-      term: Rdf.Iri | Rdf.Literal | Rdf.BNode;
-      label: string;
-    }>;
-  };
-}
-
-interface ResolvedEdgePropertyGroup extends EdgePropertyGroup {
-  readonly properties: ReadonlyArray<ResolvedEdgePropertyGroupItem>;
-  readonly compiledTemplate: CompiledTemplate;
-}
-
-interface ResolvedEdgePropertyGroupItem extends EdgePropertyGroupItem {
-  readonly type: PropertyTypeIri;
-  readonly defaultTerm: Rdf.Node | null;
-}
-
 type DefaultProps = Pick<CanvasProps,
   'zoomOptions' |
   'defaultEdgeStyle' |
@@ -450,10 +353,11 @@ export class Canvas extends Component<CanvasProps, CanvasState> {
     useDefaultNavigationMenu: true,
   };
 
-  static contextTypes = {...ContextTypes, ...OntodiaContextTypes};
-  readonly context: ComponentContext & OntodiaContextWrapper;
+  static contextTypes = {...ContextTypes, ...OntodiaContextTypes, ...WorkspaceContextTypes};
+  readonly context: ComponentContext & OntodiaContextWrapper & WorkspaceContextWrapper;
 
   protected readonly cancellation = new Cancellation();
+  protected readonly listener = new EventObserver();
   protected readonly commands = new EventSource<CanvasCommands>();
 
   private nodeTemplates: {[type: string]: ElementTemplate} = {};
@@ -462,6 +366,10 @@ export class Canvas extends Component<CanvasProps, CanvasState> {
   private resolvedEdgeGroups: ReadonlyArray<ResolvedEdgePropertyGroup> | undefined;
   private resolvedDefaultEdgeTemplate: CompiledTemplate | undefined;
   private resolvedDefaultEdgePropertyStyle: EdgePropertyStyle | undefined;
+
+  private readonly labelCache = new ResourceLabelCache(
+    iris => fetchOntodiaResourceLabels(iris, this.context.ontodiaWorkspace)
+  );
 
   constructor(props: CanvasProps, context: any) {
     super(props, context);
@@ -475,11 +383,14 @@ export class Canvas extends Component<CanvasProps, CanvasState> {
     const {id} = this.props;
     this.prepareElementTemplates();
     this.resolveEdgePropertyStyles();
-    this.cancellation.map(
-      listen({eventType: CanvasEvents.ForceLayout, target: id})
-    ).observe({
-      value: ({data}) => this.commands.trigger('forceLayout', data),
+
+    const {editor} = this.context.ontodiaWorkspace;
+    this.listener.listen(editor.events, 'changeAuthoringState', e => {
+      const changedIris = findChangedResources(e.previous, editor.authoringState);
+      this.labelCache.invalidateLabels(changedIris);
     });
+
+    this.subscribeToLayoutEvents();
     this.cancellation.map(
       listen({eventType: CanvasEvents.ZoomIn, target: id})
     ).observe({
@@ -537,8 +448,19 @@ export class Canvas extends Component<CanvasProps, CanvasState> {
     });
   }
 
+  protected subscribeToLayoutEvents() {
+    const {id} = this.props;
+    this.cancellation.map(
+      listen({eventType: CanvasEvents.ForceLayout, target: id})
+    ).observe({
+      value: ({data}) => this.commands.trigger('forceLayout', data),
+    });
+  }
+
   componentWillUnmount() {
     this.cancellation.cancelAll();
+    this.listener.stopListening();
+    this.labelCache.dispose();
   }
 
   render() {
@@ -672,7 +594,8 @@ export class Canvas extends Component<CanvasProps, CanvasState> {
             this.resolvedEdgeGroups,
             onlyGroupedEdgeProperties,
             this.resolvedDefaultEdgeTemplate,
-            this.resolvedDefaultEdgePropertyStyle
+            this.resolvedDefaultEdgePropertyStyle,
+            this.labelCache
           );
         }
         return {...linkStyle, label, properties};
@@ -824,121 +747,6 @@ export function mapTemplateComponent(
   }
 
   return mapElement(component);
-}
-
-function computeEdgeProperties(
-  link: Link,
-  groups: ReadonlyArray<ResolvedEdgePropertyGroup>,
-  onlyGroupedProperties: boolean,
-  defaultTemplate: CompiledTemplate,
-  defaultStyle: EdgePropertyStyle
-): LinkLabel[] {
-  const labels: LinkLabel[] = [];
-  let groupedProperties: Set<PropertyTypeIri> | undefined;
-  if (groups.length > 0) {
-    groupedProperties = new Set<PropertyTypeIri>();
-    for (const group of groups) {
-      const groupData = matchEdgeGroup(link, group);
-      if (groupData) {
-        for (const item of group.properties) {
-          groupedProperties.add(item.type);
-        }
-        labels.push({
-          ...group.style,
-          content: <EdgeProperty template={group.compiledTemplate} templateData={groupData} />
-        });
-      }
-    }
-  }
-  if (!onlyGroupedProperties) {
-    for (const propertyTypeIri in link.data.properties) {
-      if (!Object.prototype.hasOwnProperty.call(link.data.properties, propertyTypeIri)) {
-        continue;
-      }
-      const typeIri = propertyTypeIri as PropertyTypeIri;
-      if (groupedProperties && groupedProperties.has(typeIri)) { continue; }
-      const property = link.data.properties[typeIri];
-      const groupData: OntodiaEdgePropertyGroupTemplateData = {
-        properties: [{typeIri, label: ''}],
-        values: {
-          [typeIri]: property.values.map(v => ({term: v, label: getDefaultLabelForTerm(v)})),
-        },
-      };
-      labels.push({
-        ...defaultStyle,
-        content: <EdgeProperty template={defaultTemplate} templateData={groupData} />
-      });
-    }
-  }
-  return labels;
-}
-
-function matchEdgeGroup(
-  link: Link,
-  group: ResolvedEdgePropertyGroup
-): OntodiaEdgePropertyGroupTemplateData | undefined {
-  if (group.edgeTypes && group.edgeTypes.indexOf(link.typeId) < 0) {
-    // ignore groups for different edge types
-    return undefined;
-  }
-  const properties: OntodiaEdgePropertyGroupTemplateData['properties'] = [];
-  const values: OntodiaEdgePropertyGroupTemplateData['values'] = {};
-  for (const {type: propertyTypeIri, defaultTerm} of group.properties) {
-    const terms: Array<{ term: Rdf.Iri | Rdf.Literal | Rdf.BNode; label: string }> = [];
-    if (Object.prototype.hasOwnProperty.call(link.data.properties, propertyTypeIri)) {
-      for (const term of link.data.properties[propertyTypeIri].values) {
-        const label = getDefaultLabelForTerm(term);
-        terms.push({term, label});
-      }
-    } else if (!(defaultTerm === undefined || defaultTerm === null)) {
-      const label = getDefaultLabelForTerm(defaultTerm);
-      terms.push({term: defaultTerm, label});
-    } else {
-      return undefined;
-    }
-    properties.push({
-      typeIri: propertyTypeIri,
-      label: Rdf.getLocalName(propertyTypeIri),
-    });
-    values[propertyTypeIri] = terms;
-  }
-  return {properties, values};
-}
-
-function getDefaultLabelForTerm(term: Rdf.Iri | Rdf.Literal | Rdf.BNode): string {
-  return Rdf.isIri(term) ? Rdf.getLocalName(term.value) : term.value;
-}
-
-interface EdgePropertyProps {
-  readonly templateData: OntodiaEdgePropertyGroupTemplateData;
-  readonly template: CompiledTemplate;
-}
-
-interface EdgePropertyState {}
-
-class EdgeProperty extends Component<EdgePropertyProps, EdgePropertyState> {
-  static contextTypes = {...ContextTypes, ...WorkspaceContextTypes};
-  readonly context: ComponentContext & WorkspaceContextWrapper;
-
-  constructor(props: EdgePropertyProps, context: any) {
-    super(props, context);
-    this.state = {};
-  }
-
-  render() {
-    const {view} = this.context.ontodiaWorkspace;
-    const {template, templateData} = this.props;
-    const properties = templateData.properties.map(property => {
-      const propertyType = view.model.createProperty(property.typeIri as PropertyTypeIri);
-      const typeLabel = view.formatLabel(propertyType.label, propertyType.id);
-      return {...property, label: typeLabel};
-    });
-    const labelledData: OntodiaEdgePropertyGroupTemplateData = {...templateData, properties};
-    // don't use TemplateItem to avoid wrapping string results in non-SVG span tag
-    const nodes = template(mergeInContextOverride(this.appliedDataContext, labelledData));
-    const markup = mapHtmlTreeToReact(nodes);
-    return markup;
-  }
 }
 
 export function subscribeOnCanvasCommands(

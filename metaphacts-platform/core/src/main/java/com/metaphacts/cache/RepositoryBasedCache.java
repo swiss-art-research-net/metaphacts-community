@@ -46,6 +46,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
@@ -70,7 +72,7 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
     
     private static final Logger logger = LogManager.getLogger(RepositoryBasedCache.class);
     
-    private final Map<Repository, Cache<KEY, VALUE>> repositoryMap  = Maps.newConcurrentMap();
+    private final Map<Repository, Cache<KEY, Optional<VALUE>>> repositoryMap = Maps.newConcurrentMap();
     
     private final String cacheId;
 
@@ -88,7 +90,18 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
 	 */
     public Optional<VALUE> getIfPresent(Repository repository, KEY key) {
         initializeCache(repository);
-        return Optional.ofNullable(repositoryMap.get(repository).getIfPresent(key));
+        Cache<KEY, Optional<VALUE>> cache = repositoryMap.get(repository);
+        return getIfPresent(cache, key);
+    }
+
+    protected Optional<VALUE> getIfPresent(Cache<KEY, Optional<VALUE>> cache, KEY key) {
+        @Nullable
+        Optional<VALUE> optionalValue = cache.getIfPresent(key);
+        if (optionalValue == null) {
+            // even though this is an Optional, it may still be null, if not loaded already
+            optionalValue = Optional.empty();
+        }
+        return optionalValue;
     }
 
 	/**
@@ -105,12 +118,12 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
 	 * @return value or empty if there was none and could not be loaded
 	 */
 	public Optional<VALUE> get(Repository repository, KEY key) {
-		initializeCache(repository);
-		Cache<KEY, VALUE> cache = repositoryMap.get(repository);
-		if (cache instanceof LoadingCache) {
-			try {
-				LoadingCache<KEY, VALUE> loadingCache = (LoadingCache<KEY, VALUE>) cache;
-				return Optional.ofNullable(loadingCache.get(key));
+        initializeCache(repository);
+        Cache<KEY, Optional<VALUE>> cache = repositoryMap.get(repository);
+        if (cache instanceof LoadingCache) {
+            try {
+                LoadingCache<KEY, Optional<VALUE>> loadingCache = (LoadingCache<KEY, Optional<VALUE>>) cache;
+                return loadingCache.get(key);
             } catch (UncheckedExecutionException | ExecutionException e) {
                 if (e.getCause() instanceof NoSuchElementException) {
                     logger.trace("Element not found: " + e.getMessage());
@@ -119,10 +132,10 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
                     logger.debug("Failed to load cache {} for key {}", cacheId, key);
                     logger.trace("Details: ", e);
                 }
-				return Optional.empty();
-			}
-		}
-		return Optional.ofNullable(cache.getIfPresent(key));
+                return Optional.empty();
+            }
+        }
+        return getIfPresent(cache, key);
 	}
 
     protected NoSuchElementException notFound(String message) {
@@ -138,7 +151,7 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
      * 
      * @return map of values
      */
-    public Map<KEY, VALUE> getAllPresent(Repository repository, Iterable<? extends KEY> keys) {
+    public Map<KEY, Optional<VALUE>> getAllPresent(Repository repository, Iterable<? extends KEY> keys) {
         initializeCache(repository);
         return repositoryMap.get(repository).getAllPresent(keys);
     }
@@ -149,7 +162,7 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
      * @param repository repository for which to get the cache
      * @return per-repository cache
      */
-    public Cache<KEY, VALUE> getCache(Repository repository) {
+    public Cache<KEY, Optional<VALUE>> getCache(Repository repository) {
         initializeCache(repository);
         return repositoryMap.get(repository);
     }
@@ -157,9 +170,9 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
     protected void initializeCache(Repository repository) {
         if (repositoryMap.containsKey(repository)) { return; }
 
-        logger.debug("Initializing cache for repository: {}", repository);
-        Cache<KEY, VALUE> cache = createCacheLoader(repository)
-            .map(loader -> (Cache<KEY, VALUE>) createCacheBuilder().build(loader))
+        logger.debug("Initializing cache {} for repository: {}", cacheId, repository);
+        Cache<KEY, Optional<VALUE>> cache = createCacheLoader(repository)
+                .map(loader -> (Cache<KEY, Optional<VALUE>>) createCacheBuilder().build(loader))
             .orElse(createCacheBuilder().build());
         repositoryMap.put(repository, cache);
     }
@@ -169,7 +182,7 @@ public abstract class RepositoryBasedCache<KEY, VALUE> implements PlatformCache 
      * @param repository repository for which to create the CacheLoader
      * @return CacheLoader or empty for a non-loading cache
      */
-    protected abstract Optional<CacheLoader<KEY, VALUE>> createCacheLoader(Repository repository);
+    protected abstract Optional<CacheLoader<KEY, Optional<VALUE>>> createCacheLoader(Repository repository);
 
     /**
      * Create the {@link CacheBuilder}.

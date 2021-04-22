@@ -240,7 +240,10 @@ export class LinkLayer extends Component<LinkLayerProps, {}> {
     }
 }
 
-function computeDeepNestedElements(grouping: Map<string, DiagramElement[]>, groupId: string): { [id: string]: true } {
+function computeDeepNestedElements(
+    grouping: Map<string | undefined, DiagramElement[]>,
+    groupId: string
+): { [id: string]: true } {
     const deepChildren: { [elementId: string]: true } = {};
 
     function collectNestedItems(parentId: string) {
@@ -299,7 +302,7 @@ class LinkView extends Component<LinkViewProps, {}> {
         const {view, renderingState, model, route} = this.props;
         const source = view.model.getElement(model.sourceId);
         const target = view.model.getElement(model.targetId);
-        if (!(source && target)) {
+        if (!(this.linkType.visible && source && target)) {
             return null;
         }
 
@@ -755,5 +758,45 @@ class LinkMarker extends Component<LinkMarkerProps, {}> {
         }
 
         marker.appendChild(path);
+    }
+}
+
+export interface LinkExampleProps {
+    readonly link: DiagramLink;
+    readonly pathAttributes: SVGAttributes<SVGPathElement>;
+    readonly view: DiagramView;
+    readonly renderingState: RenderingState;
+}
+
+export class LinkExample extends Component<LinkExampleProps> {
+    render() {
+        const {link, pathAttributes, view, renderingState} = this.props;
+        const linkType = view.model.createLinkType(link.typeId);
+        const linkTemplate = renderingState.createLinkTemplate(linkType);
+        const linkStyle = linkTemplate.renderLink(link, view);
+        const {markerSource, markerSourceId, markerTarget, markerTargetId} = linkTemplate;
+        return (
+            <>
+                <defs>
+                    {markerSource ? (
+                        <LinkMarker markerId={markerSourceId}
+                            style={markerSource}
+                            isStartMarker={true}
+                        />
+                    ) : null}
+                    {markerTarget ? (
+                        <LinkMarker markerId={markerTargetId}
+                            style={markerTarget}
+                            isStartMarker={false}
+                        />
+                    ) : null}
+                </defs>
+                <path {...getPathAttributes(link, linkStyle)}
+                    {...pathAttributes}
+                    markerStart={markerSource ? `url(#${markerSourceId})` : undefined}
+                    markerEnd={markerTarget ? `url(#${markerTargetId})` : undefined}
+                />
+            </>
+        );
     }
 }

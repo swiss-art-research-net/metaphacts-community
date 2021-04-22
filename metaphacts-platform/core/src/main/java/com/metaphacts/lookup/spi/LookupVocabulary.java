@@ -84,6 +84,9 @@ public interface LookupVocabulary {
     static final IRI LOOKUP_REMOTESERVICE_USER = VF.createIRI(LOOKUP_NAMESPACE, "remoteServiceUser");
     static final IRI LOOKUP_REMOTESERVICE_PASSWORD = VF.createIRI(LOOKUP_NAMESPACE, "remoteServicePassword");
     static final IRI LOOKUP_REMOTESERVICE_QUERYMETHOD = VF.createIRI(LOOKUP_NAMESPACE, "remoteQueryMethod");
+    static final IRI LOOKUP_REMOTESERVICE_TIMEOUT = VF.createIRI(LOOKUP_NAMESPACE, "remoteTimeout");
+    static final IRI LOOKUP_REMOTESERVICE_INFORMATIONENABLED = VF.createIRI(LOOKUP_NAMESPACE,
+            "remoteInformationServiceEnabled");
 
     static final IRI LOOKUP_SERVICE_MEMBER = VF.createIRI(LOOKUP_NAMESPACE, "serviceMember");
 

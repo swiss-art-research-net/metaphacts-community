@@ -41,19 +41,6 @@ import { uniqueId } from 'lodash';
 
 import { DiagramModel } from '../diagram/model';
 import { Rect, Vector, SizeProvider, boundsOf } from '../diagram/geometry';
-import { isIE11 } from './polyfills';
-import { htmlToSvg } from './htmlToSvg';
-
-type CanvgRender = (canvas: HTMLCanvasElement, svg: string, options?: CanvgOptions) => void;
-interface CanvgOptions {
-    offsetX?: number;
-    offsetY?: number;
-    scaleWidth?: number;
-    scaleHeight?: number;
-    ignoreDimensions?: boolean;
-    ignoreClear?: boolean;
-}
-const canvg: CanvgRender = require('canvg-fixed');
 
 const SVG_NAMESPACE: 'http://www.w3.org/2000/svg' = 'http://www.w3.org/2000/svg';
 
@@ -65,7 +52,6 @@ export interface ToSVGOptions {
     getOverlayedElement: (id: string) => HTMLElement;
     preserveDimensions?: boolean;
     convertImagesToDataUris?: boolean;
-    blacklistedCssAttributes?: string[];
     elementsToRemoveSelector?: string;
     mockImages?: boolean;
     watermarkSvg?: string;
@@ -91,7 +77,6 @@ export function toSVG(options: ToSVGOptions): Promise<string> {
 function exportSVG(options: ToSVGOptions): Promise<SVGElement> {
     const {contentBox: bbox, watermarkSvg} = options;
     const {svgClone, imageBounds} = clonePaperSvg(options, FOREIGN_OBJECT_SIZE_PADDING);
-    if (isIE11()) { clearAttributes(svgClone); }
 
     const paddedWidth = bbox.width + 2 * BORDER_PADDING;
     const paddedHeight = bbox.height + 2 * BORDER_PADDING;
@@ -117,10 +102,8 @@ function exportSVG(options: ToSVGOptions): Promise<SVGElement> {
     }
 
     const images: HTMLImageElement[] = [];
-    if (!isIE11()) {
-        const nodes = svgClone.querySelectorAll('img');
-        foreachNode(nodes, node => images.push(node));
-    }
+    const nodes = svgClone.querySelectorAll('img');
+    foreachNode(nodes, node => images.push(node));
 
     const convertingImages = Promise.all(images.map(img => {
         const exportKey = img.getAttribute('export-key');
@@ -184,50 +167,6 @@ function addWatermark(svg: SVGElement, viewBox: Rect, watermarkSvg: string) {
     svg.insertBefore(image, svg.firstChild);
 }
 
-function clearAttributes(svg: SVGElement) {
-    const availableIds: { [ key: string ]: boolean } = {};
-    const prohibitedIds: { [ key: string ]: boolean } = {};
-    const defss = svg.querySelectorAll('defs');
-    foreachNode(defss, defs => {
-        foreachNode(defs.childNodes, def => {
-            const id = (def as SVGElement).getAttribute('id');
-            if (id) {
-                availableIds[id] = true;
-                if (isIE11() && def instanceof SVGFilterElement) {
-                    availableIds[id] = false;
-                }
-            }
-        });
-    });
-    const paths = svg.querySelectorAll('*');
-    foreachNode(paths, path => {
-        const markerStart = extractId(path.getAttribute('marker-start'));
-        if (markerStart && !availableIds[markerStart]) {
-            path.removeAttribute('marker-start');
-        }
-        const markerEnd = extractId(path.getAttribute('marker-end'));
-        if (markerEnd && !availableIds[markerEnd]) {
-            path.removeAttribute('marker-end');
-        }
-        const filterId = extractId(path.getAttribute('filter'));
-        if (filterId && !availableIds[filterId]) {
-            path.removeAttribute('filter');
-        }
-    });
-
-    function extractId(attributeValue: string | null) {
-        if (attributeValue) {
-            if (isIE11()) {
-                return (attributeValue.match(/#(.*?)"/) || [])[1];
-            } else {
-                return (attributeValue.match(/#(.*?)\)/) || [])[1];
-            }
-        } else {
-            return undefined;
-        }
-    }
-}
-
 function extractCSSFromDocument(targetSubtree: Element): string {
     const exportedRules = new Set<CSSStyleRule>();
     for (let i = 0; i < document.styleSheets.length; i++) {
@@ -282,15 +221,17 @@ function clonePaperSvg(options: ToSVGOptions, elementSizePadding: number): {
         if (!overlayedView) { continue; }
 
         const elementRoot = document.createElementNS(SVG_NAMESPACE, 'g');
-        const overlayedViewContent = overlayedView.firstChild!.cloneNode(true) as HTMLElement;
+        const overlayedViewContent: HTMLElement[] = [];
+        foreachNode(overlayedView.childNodes, child => {
+            if (child instanceof HTMLElement) {
+                overlayedViewContent.push(child.cloneNode(true) as HTMLElement);
+            }
+        });
         elementRoot.setAttribute('class', 'ontodia-exported-element');
 
-        let newRoot;
-        if (isIE11()) {
-            newRoot = htmlToSvg(overlayedView, [], options.mockImages);
-        } else {
-            newRoot = document.createElementNS(SVG_NAMESPACE, 'foreignObject');
-            newRoot.appendChild(overlayedViewContent);
+        const newRoot = document.createElementNS(SVG_NAMESPACE, 'foreignObject');
+        for (const child of overlayedViewContent) {
+            newRoot.appendChild(child);
         }
         const {x, y, width, height} = boundsOf(element, sizeProvider);
         newRoot.setAttribute('transform', `translate(${x},${y})`);
@@ -300,10 +241,10 @@ function clonePaperSvg(options: ToSVGOptions, elementSizePadding: number): {
         elementRoot.appendChild(newRoot);
         viewport.appendChild(elementRoot);
 
-        const originalNodes = (overlayedView.firstChild as HTMLElement).querySelectorAll('img');
-        const clonedNodes = overlayedViewContent.querySelectorAll('img');
+        const originalNodes = overlayedView.querySelectorAll('img');
+        const clonedNodes = newRoot.querySelectorAll('img');
 
-        foreachNode(overlayedView.querySelectorAll('img'), (img, index) => {
+        foreachNode(originalNodes, (img, index) => {
             const exportKey = uniqueId('export-key-');
             clonedNodes[index].setAttribute('export-key', exportKey);
             imageBounds[exportKey] = {
@@ -383,7 +324,7 @@ export async function toDataURL(options: ToSVGOptions & ToDataURLOptions): Promi
     const svgOptions = {
         ...options,
         convertImagesToDataUris: true,
-        mockImages: isIE11(),
+        mockImages: false,
         preserveDimensions: true,
     };
     const svg = await exportSVG(svgOptions);
@@ -407,24 +348,9 @@ export async function toDataURL(options: ToSVGOptions & ToDataURLOptions): Promi
         options.backgroundColor,
     );
 
-    if (isIE11()) {
-        if (!canvg) {
-            throw new Error('"canvg-fixed" dependency required to support exporting in the IE.');
-        }
-        canvg(canvas, svgString, {
-            offsetX: offset.x,
-            offsetY: offset.y,
-            scaleWidth: innerSize.width,
-            scaleHeight: innerSize.height,
-            ignoreDimensions: true,
-            ignoreClear: true,
-        });
-        return canvas.toDataURL(mimeType, options.quality);
-    } else {
-        const image = await loadImage('data:image/svg+xml,' + encodeURIComponent(svgString));
-        context.drawImage(image, offset.x, offset.y, innerSize.width, innerSize.height);
-        return canvas.toDataURL(mimeType, options.quality);
-    }
+    const image = await loadImage('data:image/svg+xml,' + encodeURIComponent(svgString));
+    context.drawImage(image, offset.x, offset.y, innerSize.width, innerSize.height);
+    return canvas.toDataURL(mimeType, options.quality);
 
     function createCanvas(canvasWidth: number, canvasHeight: number, backgroundColor?: string) {
         const cnv = document.createElement('canvas');

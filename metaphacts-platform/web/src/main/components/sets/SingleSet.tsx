@@ -286,7 +286,7 @@ export class SingleSet extends Component<SingleSetProps, ViewState> {
       <ItemsView key={'default-set-items'}
         baseClass={CLASS_NAME}
         set={set}
-        template={this.model.templateForKind}
+        template={this.model.templateForKind.bind(this.model)}
         highlightedTerm={highlightedTerm}
         onDragStart={this.onDragStart}
         onDragEnd={this.onDragEnd}

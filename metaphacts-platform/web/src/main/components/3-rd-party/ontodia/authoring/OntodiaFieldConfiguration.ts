@@ -99,7 +99,7 @@ interface OntodiaFieldConfigurationConfigBase {
   defaultImageIri?: string;
 
   /**
-   * Default template to create Iri for new entities.
+   * Default template to create IRIs for new entities and links.
    *
    * @mpSeeResource {
    *   "name": "Semantic Form - new-subject-template",
@@ -107,6 +107,11 @@ interface OntodiaFieldConfigurationConfigBase {
    * }
    */
   defaultSubjectTemplate?: string;
+
+  /**
+   * Default template settings for generating IRIs for new entities and links.
+   */
+  defaultSubjectTemplateSettings?: Forms.SubjectTemplateSettings;
 
   /**
    * Forces certain fields of `xsd:anyUri` datatype to be treated as entity properties
@@ -184,7 +189,8 @@ export async function extractFieldConfiguration(
   }
 
   const {
-    typeIri, defaultLabelIri, defaultImageIri, defaultSubjectTemplate,
+    typeIri, defaultLabelIri, defaultImageIri,
+    defaultSubjectTemplate, defaultSubjectTemplateSettings,
     allowRequestFields = true,
     fields: passedFields = [],
     forceDatatypeFields = [],
@@ -234,7 +240,7 @@ export async function extractFieldConfiguration(
       );
     }
     const fetchedFields = await observableToCancellablePromise(
-      FieldService.getGeneratedFieldDefinitions(requestedFields), ct
+      FieldService.getGeneratedFieldDefinitions({fields: requestedFields}), ct
     );
     allFields = allFields.concat(fetchedFields);
   }
@@ -256,6 +262,7 @@ export async function extractFieldConfiguration(
     defaultLabelIri,
     defaultImageIri,
     defaultSubjectTemplate,
+    defaultSubjectTemplateSettings,
     datatypeFields: forceDatatypeFields,
     cancellationToken: ct,
     collectedEntities,

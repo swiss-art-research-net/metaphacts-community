@@ -41,7 +41,7 @@ import * as React from 'react';
 import { ErrorPresenter } from 'platform/components/ui/notification';
 import { Alert } from 'react-bootstrap';
 import * as Kefir from 'kefir';
-import * as _ from 'lodash';
+import * as classnames from 'classnames';
 
 import * as SparqlJs from 'sparqljs';
 
@@ -70,6 +70,9 @@ import * as inputStyles from './SemanticTreeInput.scss';
 import * as lazyTreeStyles from './SemanticLazyTree.scss';
 import { LinkComponent } from 'platform/components/navigation/Link';
 import { constructUrlForResourceSync } from 'platform/api/navigation/Navigation';
+
+import * as SemanticLazyTreeEvents from './SemanticLazyTreeEvents';
+import { listen } from 'platform/api/events';
 
 /**
  * Tree visualization component which provides ability to lazily render and
@@ -107,6 +110,11 @@ import { constructUrlForResourceSync } from 'platform/api/navigation/Navigation'
  * ```
  */
 interface SemanticLazyTreeConfig extends TreeQueryPatterns, NodeDataPatterns {
+  /**
+   * ID for component events
+   */
+  id?: string;
+
   /**
    * Optional custom class for the tree.
    */
@@ -172,6 +180,7 @@ interface SemanticLazyTreeTemplateData {
   label?: string;
   expanded: boolean;
   hasError: boolean;
+  focused: boolean;
   highlight?: string;
 }
 
@@ -198,6 +207,7 @@ interface State {
   searchText?: string;
   awaitingForResponse?: boolean;
   searchResult?: SearchResult;
+  focusedIri?: string;
 }
 
 interface CompiledTemplates {
@@ -226,11 +236,12 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
       ...this.createQueryModel(this.props),
       forest: Node.readyToLoadForest,
       confirmedSelection: TreeSelection.empty(Node.emptyForest),
+      focusedIri: props.focusedIri,
     };
   }
 
   componentDidMount() {
-    const {nodeTemplate, noResultTemplate, focusedIri} = this.props;
+    const {id, nodeTemplate, noResultTemplate, focusedIri} = this.props;
     if (nodeTemplate || noResultTemplate) {
       const noTemplate = Kefir.constant<CompiledTemplate | undefined>(undefined);
       this.cancellation.map(Kefir.combine<CompiledTemplates>({
@@ -248,6 +259,19 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
     }
     if (focusedIri) {
       this.focusOnItem(focusedIri);
+    }
+
+    if (id) {
+      this.cancellation.map(
+        listen({
+          eventType: SemanticLazyTreeEvents.FocusOn,
+          target: id,
+        })
+      ).observe({
+        value: ({data: {iri}}) => {
+          this.focusOnItem(iri);
+        }
+      });
     }
   }
 
@@ -310,22 +334,24 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   }
 
   private focusOnItem(focusedIri: string | undefined) {
+    this.setState({focusedIri});
     this.loadingFocusItemCancellation.cancelAll();
     if (!focusedIri) {
+      return;
+    }
+    if (this.scrollToNode(focusedIri)) {
       return;
     }
     const scrollToFocusedIfPossible = () => requestAnimationFrame(
       () => this.scrollToNode(focusedIri)
     );
+
     this.setState(state => {
-      const leaf: Node = {
-        iri: Rdf.iri(focusedIri),
-        data: {},
-      };
       this.loadingFocusItemCancellation.cancelAll();
       this.loadingFocusItemCancellation = new Cancellation();
       this.loadingFocusItemCancellation.map(
-        state.model.loadFromLeafs([leaf], {transitiveReduction: false})
+        state.model.loadNode(Rdf.iri(focusedIri))
+          .flatMap(leaf => state.model.loadFromLeafs([leaf], {transitiveReduction: false}))
           .map(treeRoot => KeyedForest.create(Node.keyOf, treeRoot))
           .flatMap(forest => (
             loadExistingPathInParallel(
@@ -341,23 +367,25 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
           this.requestChildrenCancellation = new Cancellation();
           const path = forest.getKeyPath(forest.getFirst(focusedIri));
           this.setState({
-            forest: expandPath(forest, path),
+            forest: expandPath(forest, path)
+              .updateNode(path, node => TreeNode.set(node, {expanded: true})),
             loadingFocusItem: false,
           }, scrollToFocusedIfPossible);
         },
         error: loadError => this.setState({loadingFocusItem: false, loadError}),
       });
-      return {loadingFocusItem: true};
+      return {loadingFocusItem: true, ...this.getUnsetSearchState()};
     }, scrollToFocusedIfPossible);
   }
 
-  private scrollToNode(iri: string) {
-    const {forest} = this.state;
+  private scrollToNode(iri: string): boolean {
+    const forest = this.getRenderedForest();
     const nodes = forest.nodes.get(iri);
     if (nodes && nodes.size > 0) {
       const path = forest.getKeyPath(nodes.first());
-      this.treeSelector.scrollToPath(path);
+      return this.treeSelector.scrollToPath(path);
     }
+    return false;
   }
 
   render() {
@@ -398,18 +426,22 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
       onClear: () => {
         if (this.state.searchText) {
           this.setState(() => {
-            const newState: State = {
-              awaitingForResponse: false,
-              searchText: undefined,
-              searchResult: undefined,
-            };
-            return newState;
+            return this.getUnsetSearchState();
           });
         }
       },
     };
 
     return <ClearableInput {...textFieldProps}></ClearableInput>;
+  }
+
+  private getUnsetSearchState():
+    Pick<State, 'awaitingForResponse' | 'searchText' | 'searchResult'> {
+    return {
+      awaitingForResponse: false,
+      searchText: undefined,
+      searchResult: undefined,
+    };
   }
 
   private searchFor(text: string) {
@@ -514,13 +546,12 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
 
   private renderTree(): React.ReactElement<any> {
     const {searchResult, loadingFocusItem} = this.state;
-    const renderedForest = searchResult ?
-      searchResult.forest : this.state.forest;
+    const renderedForest = this.getRenderedForest();
     const searchTerm = (searchResult && this.state.searchText)
       ? this.state.searchText.toLowerCase() : undefined;
 
     if (loadingFocusItem) {
-      return <Spinner />;
+      return <Spinner className={lazyTreeStyles.treeSpinner} />;
     }
 
     const config: LazyTreeSelectorProps<Node> = {
@@ -551,6 +582,10 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
     return <LazyTreeSelector ref={this.onTreeSelectorMount} {...traversableConfig} />;
   }
 
+  private getRenderedForest() {
+    return this.state.searchResult ? this.state.searchResult.forest : this.state.forest;
+  }
+
   private onTreeSelectorMount = (treeSelector: LazyTreeSelector | null) => {
     this.treeSelector = treeSelector ?? undefined;
   }
@@ -578,12 +613,13 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   }
 
   private renderItem(node: Node, highlightedTerm: string | undefined): React.ReactNode {
-    const {compiledTemplates} = this.state;
+    const {compiledTemplates, focusedIri} = this.state;
     if (compiledTemplates.nodeTemplate) {
       const templateData: SemanticLazyTreeTemplateData = {
         iri: node.iri.value,
         data: node.data,
         label: node.label ? node.label.value : undefined,
+        focused: Boolean(focusedIri && node.iri.value === focusedIri),
         expanded: Boolean(node.expanded && node.children && node.children.length > 0),
         hasError: Boolean(node.error || node.dataError),
         highlight: highlightedTerm,
@@ -597,6 +633,7 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
   }
 
   private defaultRenderItem(node: Node, highlightedTerm: string) {
+    const {focusedIri} = this.state;
     const rawText = node.label ? node.label.value : node.iri.value;
 
     const resourceUrl = constructUrlForResourceSync(
@@ -616,11 +653,13 @@ export class SemanticLazyTree extends Component<SemanticLazyTreeProps, State> {
         </LinkComponent>;
       }
     }
-    return <span
-      title={node.iri.value}
-      className={(node.error || node.dataError) ? inputStyles.error : undefined}>
-      {text}
-    </span>;
+    const className = classnames(
+      (node.error || node.dataError)
+        ? inputStyles.error : undefined,
+      focusedIri && node.iri.value === focusedIri
+        ? lazyTreeStyles.focusedItem : undefined
+    );
+    return <span className={className} title={node.iri.value}>{text}</span>;
   }
 
   private requestChildren(path: KeyPath) {

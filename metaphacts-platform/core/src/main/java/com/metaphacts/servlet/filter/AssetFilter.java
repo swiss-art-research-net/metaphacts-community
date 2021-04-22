@@ -56,8 +56,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
-import com.metaphacts.services.storage.api.*;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -66,6 +64,10 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.metaphacts.config.Configuration;
+import com.metaphacts.services.storage.api.ObjectKind;
+import com.metaphacts.services.storage.api.PlatformStorage;
+import com.metaphacts.services.storage.api.SizedStream;
+import com.metaphacts.services.storage.api.StoragePath;
 
 /**
  * @author Johannes Trame <jt@metaphacts.com>
@@ -159,7 +161,8 @@ public class AssetFilter implements Filter {
                         }
                     }
                 }
-
+                // request was handled
+                return;
             }
         }
 

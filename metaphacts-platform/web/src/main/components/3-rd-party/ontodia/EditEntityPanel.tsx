@@ -157,6 +157,9 @@ export class EditEntityPanel extends Component<EditEntityPanelProps, State> {
       return;
     }
 
+    if (loadedEntity.status === 'missing') {
+      throw new Error(`Failed to get entity <${iri}>`);
+    }
     const loadedModel = loadedEntity.model;
     const { editor } = this.context.ontodiaWorkspace;
     const editOptions: EditOptions = {

@@ -39,6 +39,9 @@
  */
 package com.metaphacts.lookup.api;
 
+import static org.eclipse.rdf4j.model.util.Values.iri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -52,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -95,10 +99,13 @@ public class LookupServiceTest extends AbstractRepositoryBackedIntegrationTest {
     private static final IRI ALICE_2 = vf.createIRI("http://www.metaphacts.com/Alice2");
     private static final IRI ALICE_3 = vf.createIRI("http://www.metaphacts.com/Alice3");
     private static final IRI ALICE_4 = vf.createIRI("http://www.metaphacts.com/Alice4");
+    private static final IRI MONA_LISA = vf.createIRI("http://www.wikidata.org/entity/Q12418");
+    private static final IRI PAINTING = vf.createIRI("http://www.wikidata.org/entity/Q3305213");
     private static final Literal ALICE_NAME_1 = vf.createLiteral("Alice");
     private static final Literal ALICE_NAME_2 = vf.createLiteral("Alice from");
     private static final Literal ALICE_NAME_3 = vf.createLiteral("Alice from Wonderland");
     private static final Literal ALICE_NAME_4 = vf.createLiteral("Alice from Mirrorland");
+    private static final Literal PAINTING_NAME = vf.createLiteral("painting");
     private static final Literal AGE = vf.createLiteral(18);
 
     @Inject
@@ -111,7 +118,7 @@ public class LookupServiceTest extends AbstractRepositoryBackedIntegrationTest {
 
     private static final String REFERENCE_REGEX_QUERY = "SELECT\n" +
         "?candidate\n" +
-        "(GROUP_CONCAT(DISTINCT ?type ; separator=\",\") as ?types)\n" +
+        "(GROUP_CONCAT(DISTINCT STR(?type) ; separator=\",\") as ?types)\n" +
         "(MAX(?score_private) as ?score)\n" +
     "WHERE {\n" +
         "?candidate a ?__type__.\n" +
@@ -128,7 +135,7 @@ public class LookupServiceTest extends AbstractRepositoryBackedIntegrationTest {
 
     private static final String REFERENCE_BLAZEGRAPH_QUERY = "SELECT\n" +
         "?candidate\n" +
-        "(GROUP_CONCAT(DISTINCT ?type ; separator=\",\") as ?types)\n" +
+        "(GROUP_CONCAT(DISTINCT STR(?type) ; separator=\",\") as ?types)\n" +
         "(MAX(?score_private) as ?score)\n" +
     "WHERE {\n" +
         "?candidate a ?__type__.\n" +
@@ -168,7 +175,10 @@ public class LookupServiceTest extends AbstractRepositoryBackedIntegrationTest {
             vf.createStatement(ALICE_4, RDFS.LABEL, ALICE_NAME_4),
             vf.createStatement(ALICE_4, RDF.TYPE, FOAF.AGENT),
             vf.createStatement(ALICE_4, FOAF.AGE, AGE),
-            vf.createStatement(ALICE_4, FOAF.KNOWS, ALICE_3)
+            vf.createStatement(ALICE_4, FOAF.KNOWS, ALICE_3),
+            
+            vf.createStatement(MONA_LISA, RDF.TYPE, PAINTING),
+            vf.createStatement(PAINTING, RDFS.LABEL, PAINTING_NAME)
         ));
         queryCounter = 0;
     }
@@ -600,8 +610,11 @@ public class LookupServiceTest extends AbstractRepositoryBackedIntegrationTest {
         Optional<LookupService> lookupService = lookupServiceManager.getDefaultLookupService();
 
         List<LookupEntityType> types = lookupService.get().getAvailableEntityTypes();
-        assertEquals(1, types.size());
-        LookupEntityType type = types.get(0);
-        assertEquals(FOAF.AGENT.stringValue(), type.getId());
+        assertEquals(2, types.size());
+        
+        List<IRI> typeIds = types.stream().map(type -> iri(type.getId())).collect(Collectors.toList());
+        List<String> typeNames = types.stream().map(type -> type.getName()).collect(Collectors.toList());
+        assertThat(typeIds, containsInAnyOrder(FOAF.AGENT, PAINTING));
+        assertThat(typeNames, containsInAnyOrder("Agent", PAINTING_NAME.stringValue()));
     }
 }

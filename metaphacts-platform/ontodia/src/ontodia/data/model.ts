@@ -132,6 +132,10 @@ export function sameLink(left: LinkModel, right: LinkModel) {
     );
 }
 
+export function sameLinkWithProperties(left: LinkModel, right: LinkModel) {
+    return sameLink(left, right) && samePropertyDictionaries(left.properties, right.properties);
+}
+
 export function hashLink(link: LinkModel): number {
     const {linkTypeId, sourceId, targetId, linkIri} = link;
     let hash = hashFnv32a(linkTypeId);
@@ -182,9 +186,9 @@ function samePropertyDictionaries(
     left: { [id: string]: Property | undefined },
     right: { [id: string]: Property | undefined }
 ): boolean {
-    for (const propertyIri in left.properties) {
-        if (!Object.prototype.hasOwnProperty.call(left.properties, propertyIri)) { continue; }
-        if (!Object.prototype.hasOwnProperty.call(right.properties, propertyIri)) {
+    for (const propertyIri in left) {
+        if (!Object.prototype.hasOwnProperty.call(left, propertyIri)) { continue; }
+        if (!Object.prototype.hasOwnProperty.call(right, propertyIri)) {
             return false;
         }
         const leftProperty = left[propertyIri];
@@ -201,9 +205,9 @@ function samePropertyDictionaries(
             return false;
         }
     }
-    for (const propertyIri in right.properties) {
-        if (!Object.prototype.hasOwnProperty.call(right.properties, propertyIri)) { continue; }
-        if (!Object.prototype.hasOwnProperty.call(left.properties, propertyIri)) {
+    for (const propertyIri in right) {
+        if (!Object.prototype.hasOwnProperty.call(right, propertyIri)) { continue; }
+        if (!Object.prototype.hasOwnProperty.call(left, propertyIri)) {
             return false;
         }
     }

@@ -72,9 +72,9 @@ interface ResourceLabelConfig {
    */
   highlight?: string;
   /**
-   * Props for highlighted substring span
+   * Props for highlighted substring span.
    */
-  highlightProps?: {};
+  highlightProps?: { [propName: string]: any };
 }
 
 export interface ResourceLabelProps extends ResourceLabelConfig {

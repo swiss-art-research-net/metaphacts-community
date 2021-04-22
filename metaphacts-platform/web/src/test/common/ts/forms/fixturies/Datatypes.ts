@@ -276,6 +276,7 @@ export const DATATYPES_FIXTURIES: DataTypeSuit[] = [
       valid: [
         'http://data.com', 'http://data.com/bar#foo', 'urn:example:org', 'mailto:info@data.com',
         'http://www.metaphacts.com/resource/test34a7e382-2a7e-4334-b3d1-5a6426c2e5e4/test',
+        'http://test.com/Ümläüts',
       ],
       invalid: ['http://data.com#foo#foo', 'http://data.com#f% foo'],
     },

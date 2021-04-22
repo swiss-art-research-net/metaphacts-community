@@ -201,7 +201,7 @@ export class EditEntityForm extends React.Component<EditEntityFormProps, State> 
     private onApply = () => {
         const {editor} = this.context.ontodiaWorkspace;
         const {entity, onFinish} = this.props;
-        editor.changeEntityData(entity.id, this.state.elementModel);
+        editor.changeEntityData(entity, this.state.elementModel);
         onFinish();
     }
 

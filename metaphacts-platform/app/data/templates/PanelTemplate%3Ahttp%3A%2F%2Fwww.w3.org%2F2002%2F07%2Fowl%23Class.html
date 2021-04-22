@@ -42,7 +42,7 @@
             </div>
           </template>
         </semantic-if>
-        
+
 
         <div class='ontologyKnowledgePanel__infoSection'>
           <div class='ontologyKnowledgePanel__contentLabel'>Description</div>
@@ -54,10 +54,10 @@
       <div class='ontologyKnowledgePanel__content'>
         [[#> Platform:OntologyPropertyTable noDataMessage='This class has no attributes.']]
           [[#*inline "query"]]
-            SELECT ?relation ?inherited ?source ?target ?minCount ?maxCount WHERE {
-              ?relation a owl:DatatypeProperty.
+            SELECT (?attribute as ?relation) ?inherited ?source ?target ?minCount ?maxCount WHERE {
 
-              ?sh <http://www.w3.org/ns/shacl#path> ?relation .
+              ?sh <http://www.w3.org/ns/shacl#path> ?attribute .
+
               OPTIONAL { ?sh <http://www.w3.org/ns/shacl#datatype> ?target . }
               OPTIONAL { ?sh <http://www.w3.org/ns/shacl#minCount> ?minCount . }
               OPTIONAL { ?sh <http://www.w3.org/ns/shacl#maxCount> ?maxCount . }
@@ -70,7 +70,8 @@
               }
               <[[this]]> rdfs:subClassOf* ?source .
               BIND(IF(?source != <[[this]]>, ?source, "") as ?inherited)
-            } ORDER BY DESC(?inherited) ?source ?relation ?target'
+              FILTER NOT EXISTS { ?sh <http://www.w3.org/ns/shacl#class> ?relationTarget . }
+            } ORDER BY DESC(?inherited) ?source ?attribute ?target'
           [[/inline]]
         [[/Platform:OntologyPropertyTable]]
       </div>
@@ -80,10 +81,11 @@
         [[#> Platform:OntologyPropertyTable noDataMessage='This class has no relations.']]
           [[#*inline "query"]]
             SELECT ?relation ?inherited ?source ?target ?minCount ?maxCount WHERE {
-              ?relation a owl:ObjectProperty.
 
               ?sh <http://www.w3.org/ns/shacl#path> ?relation .
-              OPTIONAL { ?sh <http://www.w3.org/ns/shacl#class> ?target . }
+
+              ?sh <http://www.w3.org/ns/shacl#class> ?target .
+
               OPTIONAL { ?sh <http://www.w3.org/ns/shacl#minCount> ?minCount . }
               OPTIONAL { ?sh <http://www.w3.org/ns/shacl#maxCount> ?maxCount . }
 

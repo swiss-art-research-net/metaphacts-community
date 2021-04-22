@@ -17,76 +17,92 @@ ex:Person_Test_Ontology a owl:Ontology ;
 ex:Person a owl:Class ;
     rdfs:label "Person"@en, "Person"@de .
 
-ex:hasProject a owl:ObjectProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range ex:Project .
-
 ex:dateOfBirth a owl:DatatypeProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range xsd:date .
+    rdfs:domain ex:Person .
 
 ex:dateOfDeath a owl:DatatypeProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range xsd:date .
+    rdfs:domain ex:Person .
 
 ex:occupation a owl:DatatypeProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range xsd:string .
+    rdfs:domain ex:Person .
 
 ex:hasHobby a owl:DatatypeProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range xsd:string .
+    rdfs:domain ex:Person .
 
 ex:placeOfBirth a owl:ObjectProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range xsd:anyURI .
+    rdfs:domain ex:Person .
 
 ex:placeOfDeath a owl:ObjectProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range xsd:anyURI .
+    rdfs:domain ex:Person .
 
 ex:hasPreferredIcecreamFlavor a owl:DatatypeProperty ;
-    rdfs:domain ex:Person ;
-    rdfs:range xsd:string .
+    rdfs:domain ex:Person .
 
 ex:belongsTo a owl:ObjectProperty ;
-    rdfs:domain ex:Project ;
-    rdfs:range foaf:Organization .
+    rdfs:domain ex:Project .
 
+ex:Employee a owl:Class ;
+    rdfs:subClassOf ex:Person ; 
+    rdfs:label "Employee"@en, "Angestelle(r)"@de .
+
+ex:hasProject a owl:ObjectProperty ;
+    rdfs:domain ex:Employee .
+
+ex:worksFor a owl:ObjectProperty ;
+    rdfs:domain ex:Employee .
+
+ex:Manager a owl:Class ;
+    rdfs:subClassOf ex:Employee ; 
+    rdfs:label "Manager"@en, "Manager"@de .
+
+ex:hasTeamMember a owl:ObjectProperty ;
+    rdfs:domain ex:Manager .
 
 ex:PersonShape
     a sh:NodeShape ;
     sh:targetClass ex:Person ;
     sh:property [
-        sh:path ex:hasProject ;
+        sh:path rdfs:label ;
+        Platform:projectionVariableName "name" ;
+        dash:propertyRole dash:LabelRole ;
     ], [
         sh:path ex:dateOfBirth ;
-        sh:name "dateOfBirth" ;
+        sh:datatype xsd:date ;
+        Platform:projectionVariableName "dateOfBirth" ;
         dash:propertyRole dash:DescriptionRole ;
     ], [
         sh:path ex:dateOfDeath ;
-        sh:name "dateOfDeath" ;
+        sh:datatype xsd:date ;
+        Platform:projectionVariableName "dateOfDeath" ;
         dash:propertyRole dash:DescriptionRole ;
         sh:datatype xsd:date ;
     ], [
         sh:path ex:occupation ;
-        sh:name "occupation" ;
-        dash:propertyRole dash:DescriptionRole ;
+        sh:datatype xsd:string ;
+        Platform:projectionVariableName "occupation" ;
+        dash:propertyRole dash:DescriptionRole, 
+                          dash:KeyInfoRole ;
     ], [
-        sh:class ex:Person ;
+        # invalid projection variable
         sh:path ex:hasHobby ;
+        sh:datatype xsd:string ;
+        Platform:projectionVariableName "has hobby" ;
     ], [
         sh:path ex:placeOfBirth ;
-        sh:name "placeOfBirth" ;
+        Platform:projectionVariableName "placeOfBirth" ;
         dash:propertyRole dash:DescriptionRole ;
     ], [
         sh:path ex:marriedTo ;
-        sh:name "marriedTo" ;
+        sh:class ex:Person ;
+        Platform:projectionVariableName "marriedTo" ;
         dash:propertyRole dash:DescriptionRole ;
     ], [
+        # no projection variable
         sh:path ex:placeOfDeath ;
     ], [
+        # projection variable which differs from local name of corresponding property
         sh:path ex:hasPreferredIcecreamFlavor ;
+        Platform:projectionVariableName "preferredIcecreamFlavor" ;
         sh:datatype xsd:string ;
     ] .
 
@@ -98,9 +114,31 @@ ex:Project a owl:Class ;
     a sh:NodeShape ;
     sh:property [
         sh:path ex:belongsTo ;
-        sh:name "belongsTo" ;
+        sh:class foaf:Organization ;
+        Platform:projectionVariableName "belongsTo" ;
         dash:propertyRole dash:DescriptionRole ;
     ], [
         sh:path rdfs:label ;
         dash:propertyRole dash:DescriptionRole ;
+    ] .
+
+# this shape should implicitly include all properties from the parent class
+ex:EmployeeShape
+    a sh:NodeShape ;
+    sh:targetClass ex:Employee ;
+    sh:property [
+        sh:path ex:hasProject ;
+        sh:class ex:Project ;
+    ], [
+        sh:path ex:worksFor ;
+        sh:class foaf:Organization ;
+    ] .
+
+# this shape should implicitly include all properties from the parent classes
+ex:ManagerShape
+    a sh:NodeShape ;
+    sh:targetClass ex:Manager ;
+    sh:property [
+        sh:path ex:hasTeamMember ;
+        sh:class ex:Employee ;
     ] .

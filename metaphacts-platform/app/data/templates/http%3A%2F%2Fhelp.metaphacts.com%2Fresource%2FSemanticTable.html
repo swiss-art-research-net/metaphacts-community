@@ -91,6 +91,36 @@
       </div>
     </div>
 
+    <h3>Optional columns</h3>
+
+    <div class="documentation__example">
+      <div class="documentation__example__description">
+        Columns can be hidden by default with the <code>visible</code> parameter. The column selection tool is shown automatically if there are optional columns, but can also be explicitly enabled with the <code>showColumnToggle</code> option.
+      </div>
+      <div class="documentation__example__demo" id='demo2'>
+        <mp-code-example>
+<![CDATA[
+<semantic-table
+    query='
+      prefix person: <http://example.com/person/> 
+      prefix foaf: <http://xmlns.com/foaf/0.1/>
+      SELECT ?person ?age ?gender WHERE {                    
+        VALUES (?person ?prop ?age ?gender) { 
+          (person:alice foaf:age 35 "female")
+          (person:bob foaf:age 17 "male")
+        }
+      }'
+    column-configuration='[
+      {"variableName": "person", "displayName": "Person"},
+      {"variableName": "age", "displayName": "Age"},
+      {"variableName": "gender", "displayName": "Gender", "visible": false}
+    ]'>
+</semantic-table>
+]]>
+        </mp-code-example>
+      </div>
+    </div>
+
     <h3>Sorting and Filtering</h3>
 
 		<div class="documentation__example">
@@ -120,7 +150,8 @@ When specifying a <code>column-configuration</code> with a custom <code>cellTemp
 
     <div class="documentation__example">
       <div class="documentation__example__description">
-        This example demonstrates how filtering components can be disabled. Moreover, the number of displayed rows per page is configured to two.
+        <p>This example demonstrates how filtering components can be disabled. Moreover, the number of displayed rows per page is configured to two, with the option for the user to change it.</p>
+        <p>By setting <code>pageSizeSelection</code> to <code>true</code> the pre-defined default values are offered for selection. Optionally, this can be an array to customize the offered values, e.g. <code>[5, 10, 15, 20]</code>.</p>
       </div>
       <div class="documentation__example__demo" id='demo3'>
         <mp-code-example>
@@ -128,7 +159,7 @@ When specifying a <code>column-configuration</code> with a custom <code>cellTemp
 <semantic-table
   query="[[>Help:SemanticTableSampleQuery]]"
   number-of-displayed-rows=2
-  options='{"showFilter": false}'
+  options='{"showFilter": false, "pageSizeSelection": true}'
 ></semantic-table>
 ]]>
         </mp-code-example>

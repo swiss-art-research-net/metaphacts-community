@@ -52,17 +52,28 @@ import org.eclipse.rdf4j.model.IRI;
 public interface ResourcesTestData {
     static final String EXAMPLE_NS = "http://example.org/";
     static final IRI EXAMPLE_PERSON = iri(EXAMPLE_NS + "Person");
+    static final IRI EXAMPLE_EMPLOYEE = iri(EXAMPLE_NS + "Employee");
+    static final IRI EXAMPLE_MANAGER = iri(EXAMPLE_NS + "Manager");
     static final IRI EXAMPLE_PROJECT = iri(EXAMPLE_NS + "Project");
+    static final IRI EXAMPLE_ORGANIZATION = iri(EXAMPLE_NS + "Organization");
     static final IRI ALICE = iri(EXAMPLE_NS + "Alice");
     static final IRI BOB = iri(EXAMPLE_NS + "Bob");
     static final IRI CHARLIE = iri(EXAMPLE_NS + "Charlie");
+    static final IRI DONALD = iri(EXAMPLE_NS + "Donald");
 
     static final IRI EXAMPLE_OCCUPATION = iri(EXAMPLE_NS + "occupation");
     static final IRI EXAMPLE_DEATHDATE = iri(EXAMPLE_NS + "dateOfDeath");
     static final IRI EXAMPLE_BIRTHDATE = iri(EXAMPLE_NS + "dateOfBirth");
-    static final IRI EXAMPLE_BIRTHPLACE = iri(EXAMPLE_NS + "placeOfBirth");
+    static final IRI EXAMPLE_PLACEOFBIRTH = iri(EXAMPLE_NS + "placeOfBirth");
+    static final IRI EXAMPLE_PLACEOFDEATH = iri(EXAMPLE_NS + "placeOfDeath");
     static final IRI EXAMPLE_MARRIEDTO = iri(EXAMPLE_NS + "marriedTo");
     static final IRI EXAMPLE_BELONGSTO = iri(EXAMPLE_NS + "belongsTo");
+    static final IRI EXAMPLE_HASHOBBY = iri(EXAMPLE_NS + "hasHobby");
+    static final IRI EXAMPLE_HASPREFERREDICECREAMFLAVOR = iri(EXAMPLE_NS + "hasPreferredIcecreamFlavor");
+
+    static final IRI EXAMPLE_WORKSFOR = iri(EXAMPLE_NS + "worksFor");
+    static final IRI EXAMPLE_HASPROJECT = iri(EXAMPLE_NS + "hasProject");
+    static final IRI EXAMPLE_HASTEAMMEMBER = iri(EXAMPLE_NS + "hasTeamMember");
 
     public static final String LANG = "en";
 

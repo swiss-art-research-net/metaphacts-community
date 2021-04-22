@@ -241,10 +241,9 @@ function translateTemplateElement(node: ExtractedNode, result: OutputTranslation
           `{{/${SystemHelpers.ATTRIBUTE}}}`
         );
       } else {
-        const escapedAttrValue = escapePartialReferences(attrValue);
         result.parts.push(
           `{{#${SystemHelpers.ATTRIBUTE} "${attrName}"}}`,
-          escapedAttrValue,
+          attrValue,
           `{{/${SystemHelpers.ATTRIBUTE}}}`
         );
       }
@@ -523,13 +522,6 @@ class RemoteTemplateScanner extends Handlebars.Visitor {
     }
     return undefined;
   }
-}
-
-function escapePartialReferences(content: string): string {
-  if (content.indexOf('{{#>') >= 0) {
-    throw new Error('Partial blocks ({{#>) are disallowed in the inline templates');
-  }
-  return content.replace(/({{>[^}]+}})/g, `{{{{raw}}}}$1{{{{/raw}}}}`);
 }
 
 /**

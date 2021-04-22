@@ -4,23 +4,23 @@
         "D3TreeOptions": {
             "properties": {
                 "minHeight": {
-                    "default": "'300'",
-                    "description": "Numeric minHeight of the entire tree.\nIf the content is larger than the minimum height,\nthe min-height property has no effect.\nBy default the height will be estimated.",
+                    "default": 300,
+                    "description": "Minimum height of the entire tree in pixels.\n\nIf the content is larger than the minimum height, the min-height property has no effect.\nBy default the height will be estimated.",
                     "type": "number"
                 },
                 "nodeHeight": {
-                    "default": "'120'",
-                    "description": "Numeric height of each node (template) element.",
+                    "default": 120,
+                    "description": "Height of each node (template) element in pixels.",
                     "type": "number"
                 },
                 "nodeLeftMargin": {
-                    "default": "'8'",
-                    "description": "Numeric left margin of each node (template) element.",
+                    "default": 8,
+                    "description": "Left margin of each node (template) element in pixels.",
                     "type": "number"
                 },
                 "nodeWidth": {
-                    "default": "'30'",
-                    "description": "Numeric width of each node (template) element.",
+                    "default": 30,
+                    "description": "Width of each node (template) element in pixels.",
                     "type": "number"
                 }
             },
@@ -50,7 +50,7 @@
         },
         "d3TreeOptions": {
             "$ref": "#/definitions/D3TreeOptions",
-            "description": "Options for D3-based tree to customize, for example, the width of the nodes\nto fit longer labels.\n\nExample:\n```\nd3-tree-options='{\"nodeWidth\":160, \"nodeHeight\":25}'\n```\n**Make sure that numbers aren't quoted in `\"\"`**."
+            "description": "Options for D3-based tree to customize, for example, the width of the nodes\nto fit longer labels.\n\n**Example**:\n```\nd3-tree-options='{\"nodeWidth\": 160, \"nodeHeight\": 25}'\n```\n**Make sure that numbers aren't quoted in `\"\"`**."
         },
         "id": {
             "description": "ID for issuing component events.",
@@ -72,22 +72,22 @@
             "type": "string"
         },
         "nodeBindingName": {
-            "default": "'node'",
+            "default": "node",
             "description": "SPARQL Select projection variable name that is used to represent\n**child** value in parent-child relation",
             "type": "string"
         },
         "parentBindingName": {
-            "default": "'parent'",
+            "default": "parent",
             "description": "SPARQL Select projection variable name that is used to represent\n**parent** value in parent-child relation",
             "type": "string"
         },
         "provider": {
             "$ref": "#/definitions/SemanticTreeKind",
-            "default": "'html'",
+            "default": "html",
             "description": "Determines visual style of the tree. Defaults to HTML rendering if left unspecified."
         },
         "query": {
-            "description": "SPARQL Select query. The query should have at least two projection\nvariables -  `node` and `parent` i.e. the tree structure needs to be returned\nas adjacency list of node-parent relations.\nIt is possible to override the expected binding variable names (c.f. options below)\nExample:\n```\nSELECT ?node ?parent WHERE {\n  ?node a owl:Class .\n  OPTIONAL{?node rdfs:subClassOf ?parent }\n}\n```\nDepending on your data, you may need to traverse the graph using **SPARQL\nproperty path operations** (e.g. rdfs:subClassOf+ or rdsf:subClassOf*)\nin order to collect all node-parent relations.\n\nExample:\n```\nSELECT DISTINCT ?node ?parent WHERE {\n   { { ?? rdfs:subClassOf* ?node }\n   UNION\n   { ?node rdfs:subClassOf* ?? } }\n   OPTIONAL { ?node rdfs:subClassOf ?parent. FILTER(ISIRI(?parent)) }\n   FILTER(ISIRI(?node))\n}\n```",
+            "description": "SPARQL SELECT query for tree nodes.\n\nThe query should have at least two projection variables: `node` and `parent`\ni.e. the tree structure needs to be returned as adjacency list of node-parent relations.\n\nIt is possible to override the expected binding variable names (c.f. options below).\n**Example**:\n```\nSELECT ?node ?parent WHERE {\n   ?node a owl:Class .\n   OPTIONAL { ?node rdfs:subClassOf ?parent }\n}\n```\n\nDepending on your data, you may need to traverse the graph using **SPARQL\nproperty path operations** (e.g. `rdfs:subClassOf+` or `rdsf:subClassOf*`)\nin order to collect all node-parent relations.\n\n**Example**:\n```\nSELECT DISTINCT ?node ?parent WHERE {\n   { { ?? rdfs:subClassOf* ?node }\n   UNION\n   { ?node rdfs:subClassOf* ?? } }\n   OPTIONAL { ?node rdfs:subClassOf ?parent. FILTER(ISIRI(?parent)) }\n   FILTER(ISIRI(?node))\n}\n```",
             "type": "string"
         },
         "roots": {

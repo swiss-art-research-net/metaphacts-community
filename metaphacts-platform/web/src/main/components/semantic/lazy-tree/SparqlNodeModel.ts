@@ -43,7 +43,7 @@ import { orderBy } from 'lodash';
 import * as SparqlJs from 'sparqljs';
 
 import { Rdf } from 'platform/api/rdf';
-import { SparqlClient } from 'platform/api/sparql';
+import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { getLabels } from 'platform/api/services/resource-label';
 
 import { breakGraphCycles, transitiveReduction, findRoots } from './GraphAlgorithms';
@@ -207,8 +207,7 @@ export class SparqlNodeModel {
   }
 
   loadMoreChildren(parent: Node): Kefir.Property<Node> {
-    const parametrized = Node.keyOf(parent) === Node.rootKey
-      ? this.rootsQuery : SparqlClient.setBindings(this.childrenQuery, {'parent': parent.iri});
+    const parametrized = this.parametrizeChildrenQuery(Node.keyOf(parent));
 
     const hasLimit = typeof this.limit === 'number';
     if (hasLimit) {
@@ -245,6 +244,13 @@ export class SparqlNodeModel {
           });
         }
       }).toProperty();
+  }
+
+  private parametrizeChildrenQuery(parentKey: string): SparqlJs.SelectQuery {
+    const parametrized = parentKey === Node.rootKey
+      ? this.rootsQuery
+      : SparqlClient.setBindings(this.childrenQuery, {'parent': Rdf.iri(parentKey)});
+    return parametrized;
   }
 
   loadFromLeafs(
@@ -293,32 +299,63 @@ export class SparqlNodeModel {
       .toProperty();
   }
 
-  /** @returns parent key for the specified child key. */
-  loadParent(key: string): Kefir.Property<string> {
-    const parameters = [{item: Rdf.iri(key)}];
+  loadParent(childIri: Rdf.Iri): Kefir.Property<string> {
+    const parameters = [{item: childIri}];
     const parametrized = SparqlClient.prepareParsedQuery(parameters)(this.parentsQuery);
     return SparqlClient.selectStar(parametrized, this.sparqlOptions())
       .flatMap(({results}): Kefir.Observable<string> => {
         for (const {item, parent} of results.bindings) {
-          if (!(item && item.value === key)) { continue; }
-          if (!(parent && Rdf.isIri(parent))) {
-            return Kefir.constantError<any>(new Error(
-              `parentsQuery returned tuple without 'parent' (or it isn't an IRI)`
-            ));
+          if (!(item && item.value === childIri.value)) { continue; }
+          if (parent) {
+            if (Rdf.isIri(parent)) {
+              return Kefir.constant(parent.value);
+            } else {
+              return Kefir.constantError<any>(new Error(
+                `parentsQuery returned tuple with non-IRI 'parent'`
+              ));
+            }
           }
-          return Kefir.constant(parent.value);
         }
         return Kefir.constant(Node.rootKey);
       }).toProperty();
   }
 
   loadNode(iri: Rdf.Iri): Kefir.Property<Node> {
-    return requestNodeData([{iri}], this.nodeDataQuery, this.sparqlOptions())
-      .map(augmentNode => {
-        const node: Node = {iri, data: {}};
-        augmentNode(node);
-        return node;
-      });
+    return this.loadParent(iri)
+      .flatMap(parentKey => {
+        const childQuery = this.getSingleChildQuery(parentKey, iri);
+        return SparqlClient.selectStar(childQuery, this.sparqlOptions());
+      })
+      .flatMap(sparqlResult => {
+        const nodes = nodesFromQueryResult(sparqlResult);
+        const leaf: Node = nodes.find(node => node.iri.value === iri.value) ?? {iri, data: {}};
+        return requestNodeData([leaf], this.nodeDataQuery, this.sparqlOptions())
+          .map(augmentNode => {
+            augmentNode(leaf);
+            return leaf;
+          });
+      })
+      .toProperty();
+  }
+
+  private getSingleChildQuery(parentKey: string, childIri: Rdf.Iri): SparqlJs.SelectQuery {
+    const baseQuery = this.parametrizeChildrenQuery(parentKey);
+    const wrapperQuery = SparqlClient.setBindings(
+      SparqlUtil.parseQuery(`SELECT * WHERE { FILTER(?item = ?__targetIri__) }`),
+      {'__targetIri__': childIri}
+    ) as SparqlJs.SelectQuery;
+    const query: SparqlJs.SelectQuery = {
+      prefixes: baseQuery.prefixes,
+      type: baseQuery.type,
+      queryType: baseQuery.queryType,
+      variables: baseQuery.variables,
+      where: [
+        // make nested query without prefixes
+        {type: 'group', patterns: [{...baseQuery, prefixes: {}}]},
+        ...wrapperQuery.where,
+      ]
+    };
+    return query;
   }
 }
 
@@ -336,7 +373,7 @@ export function nodesFromQueryResult(result: SparqlClient.SparqlStarSelectResult
 }
 
 function compareChildrenByLabel({label: label1}: Node, {label: label2}: Node) {
-  return label1.value > label2.value ? 1 : label1.value < label2.value ? -1 : 0;
+  return label1.value.localeCompare(label2.value);
 }
 
 /**

@@ -27,6 +27,7 @@ module.exports = function (config) {
 
   config.set({
     ...karmaConfig,
+    autoWatch: false,
     logLevel: config.LOG_INFO,
     singleRun: true,
     reporters: ['junit'],
@@ -35,9 +36,18 @@ module.exports = function (config) {
       outputDir: 'project/webpack/tests_out/junit',
       outputFile: 'test-results.xml'
     },
+    webpackMiddleware: {
+      ...karmaConfig.webpackMiddleware,
+      watchOptions: {
+        // ignore everything as workaround for inability to
+        // disable watch mode for webpack-dev-middleware, see similar issue:
+        // https://github.com/webpack/webpack-dev-server/issues/1744
+        ignored: '**',
+      }
+    },
     files: [
       'project/webpack/assets/no_auth/dll.*',
-      ... defaults.TEST_DIRS.map(testDir => testDir + '/**/*.test.ts')
+      ...defaults.TEST_DIRS.map(testDir => testDir + '/**/*.test.ts')
     ],
   });
 };

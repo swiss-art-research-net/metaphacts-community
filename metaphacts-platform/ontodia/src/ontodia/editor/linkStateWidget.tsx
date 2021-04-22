@@ -101,15 +101,14 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
         this.listener.listen(editor.events, 'changeAuthoringState', this.scheduleUpdate);
         this.listener.listen(editor.events, 'changeTemporaryState', this.scheduleUpdate);
         this.listener.listen(editor.events, 'changeValidationState', this.scheduleUpdate);
-        this.listener.listen(renderingState.events, 'changeElementSize', () => {
-            this.scheduleUpdate();
-        });
+        this.listener.listen(renderingState.events, 'changeElementSize', this.scheduleUpdate);
+        this.listener.listen(renderingState.events, 'changeLinkLabelBounds', this.scheduleUpdate);
+        this.listener.listen(renderingState.events, 'updateRoutings', this.scheduleUpdate);
         this.listener.listen(renderingState.events, 'syncUpdate', ({layer}) => {
             if (layer === RenderingLayer.Editor) {
                 this.delayedUpdate.runSynchronously();
             }
         });
-        this.listener.listen(renderingState.events, 'changeLinkLabelBounds', this.scheduleUpdate);
     }
 
     private scheduleUpdate = () => {
@@ -143,6 +142,9 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
         const {model, editor} = this.context.ontodiaWorkspace;
 
         return model.links.map(link => {
+            if (!model.isLinkVisible(link)) {
+                return null;
+            }
             let renderedState: JSX.Element | null = null;
             const state = editor.authoringState.links.get(link.data);
             if (state) {
@@ -199,6 +201,9 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
     private renderLinkStateHighlighting() {
         const {model, editor} = this.context.ontodiaWorkspace;
         return model.links.map(link => {
+            if (!model.isLinkVisible(link)) {
+                return null;
+            }
             if (editor.temporaryState.links.has(link.data)) {
                 const path = this.calculateLinkPath(link);
                 return (
@@ -276,7 +281,8 @@ export class LinkStateWidget extends React.Component<LinkStateWidgetProps, {}> {
             transform: `scale(${scale},${scale})translate(${originX}px,${originY}px)`,
         };
         return <div className={styles.component}>
-            <TransformedSvgCanvas paperTransform={paperTransform} style={{overflow: 'visible', pointerEvents: 'none'}}>
+            <TransformedSvgCanvas paperTransform={paperTransform}
+                style={{overflow: 'visible', pointerEvents: 'none'}}>
                 {this.renderLinkStateHighlighting()}
             </TransformedSvgCanvas>
             <div className={styles.validationLayer} style={htmlTransformStyle}>

@@ -139,14 +139,16 @@ export class LazyTreeSelector extends Component<LazyTreeSelectorProps, State> {
     });
   }
 
-  scrollToPath(path: KeyPath) {
+  scrollToPath(path: KeyPath): boolean {
     const item = this.props.forest.fromKeyPath(path);
     if (item && this.list) {
       const rowIndex = this.state.indices.get(item);
       if (typeof rowIndex === 'number') {
         this.list.scrollToRow(rowIndex);
+        return true;
       }
     }
+    return false;
   }
 
   render() {

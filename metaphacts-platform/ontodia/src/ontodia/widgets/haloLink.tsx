@@ -69,7 +69,6 @@ export interface State {
     canEdit?: boolean;
 }
 
-
 type RequiredProps = HaloLinkProps & Required<PaperWidgetProps> & DefaultProps;
 type DefaultProps = Required<Pick<HaloLinkProps, 'id' | 'buttonSize' | 'buttonMargin'>>;
 
@@ -204,6 +203,7 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
 
             this.targetListener.listen(source.events, 'changePosition', this.updateAll);
             this.targetListener.listen(target.events, 'changePosition', this.updateAll);
+            this.targetListener.listen(link.events, 'changeVertices', this.updateAll);
             this.targetListener.listen(renderingState.events, 'changeElementSize', e => {
                 if (e.source === source || e.source === target) {
                     this.updateAll();
@@ -214,7 +214,11 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
                     this.updateAll();
                 }
             });
-            this.targetListener.listen(link.events, 'changeVertices', this.updateAll);
+            this.targetListener.listen(renderingState.events, 'updateRoutings', e => {
+                if (e.source.getRouting(link.id) !== e.previous.get(link.id)) {
+                    this.updateAll();
+                }
+            });
         }
     }
 
@@ -311,7 +315,7 @@ export class HaloLink extends React.Component<HaloLinkProps, State> {
             editor.inAuthoringMode &&
             !editor.temporaryState.links.has(target.data) &&
             !isDeletedLink(editor.authoringState, target) &&
-            this.state.canDelete    
+            this.state.canDelete
         );
 
         const {top, left} = this.getButtonPosition(polyline, 0);

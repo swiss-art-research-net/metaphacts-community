@@ -37,7 +37,7 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
-export { Ontodia, OntodiaProps, BaseOntodiaConfig } from './Ontodia';
+export { Ontodia, OntodiaProps, OntodiaConfig } from './Ontodia';
 export { Toolbar, ToolbarProps, ToolbarCommand, ToolbarStyles } from './Toolbar';
 export { OntodiaContext, OntodiaContextWrapper, OntodiaContextTypes } from './OntodiaContext';
 export { SaveButton } from './SaveButton';

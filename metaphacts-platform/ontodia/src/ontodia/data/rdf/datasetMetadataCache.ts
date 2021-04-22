@@ -115,7 +115,7 @@ export class DatasetMetadataCache {
                 }
             }
         });
-        return HashSet.toArray(result);
+        return Array.from(result);
     }
 
     isLabelPredicate(predicate: Rdf.NamedNode): boolean {

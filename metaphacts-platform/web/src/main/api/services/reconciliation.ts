@@ -84,6 +84,7 @@ export interface ReconciliationCandidate {
   match: boolean;
   dataset?: ReconciliationDataset;
   description?: string;
+  reference?: string;
 }
 
 export type ReconciliationResponse = {[requestId: string]: {result: ReconciliationCandidate[]}};

@@ -49,10 +49,14 @@ import { getPreferredUserLanguage } from './language';
 export interface TemplateContent {
   appId: string | null;
   revision: string | null;
+  /** Modification date in ISO format, e.g. `2021-02-15T10:02:26Z` */
+  date: string | null;
+  author: string | null;
   source: string;
   definedByApps: ReadonlyArray<string>;
   applicableTemplates: string[];
   appliedTemplate: string;
+  appliedKnowledgePanelTemplate: string;
 }
 
 interface RenderedTemplate {
@@ -88,6 +92,7 @@ const REVISION_INFO_KEYS = Object.keys(REVISION_INFO_TEMPLATE);
 
 export interface TemplateInfo extends RevisionInfo {
   author: string;
+  /** Modification date in ISO format, e.g. `2021-02-15T10:02:26Z` */
   date?: string;
 }
 

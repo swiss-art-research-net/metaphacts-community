@@ -39,6 +39,10 @@
  */
 package com.metaphacts.resource;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.eclipse.rdf4j.model.IRI;
 
 /**
@@ -49,12 +53,24 @@ import org.eclipse.rdf4j.model.IRI;
 public class DefaultPropertyDescription implements PropertyDescription {
 
     protected final IRI propertyIRI;
-    protected final String projectionName;
+    protected String projectionName;
+    protected final Set<IRI> propertyRoles;
+
+    public DefaultPropertyDescription(IRI propertyIRI) {
+        this(propertyIRI, null, null);
+    }
 
     public DefaultPropertyDescription(IRI propertyIRI, String projectionName) {
+        this(propertyIRI, projectionName, null);
+    }
+
+    public DefaultPropertyDescription(IRI propertyIRI, String projectionName, Set<IRI> propertyRoles) {
         this.propertyIRI = propertyIRI;
         this.projectionName = projectionName;
-
+        this.propertyRoles = new HashSet<>();
+        if (propertyRoles != null) {
+            this.propertyRoles.addAll(propertyRoles);
+        }
     }
 
     @Override
@@ -67,6 +83,10 @@ public class DefaultPropertyDescription implements PropertyDescription {
         return projectionName;
     }
     
+    public void setProjectionName(String projectionName) {
+        this.projectionName = projectionName;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder()
@@ -77,4 +97,36 @@ public class DefaultPropertyDescription implements PropertyDescription {
                 .toString();
     }
 
+    @Override
+    public Set<IRI> getPropertyRoles() {
+        return propertyRoles;
+    }
+
+    public void setPropertyRoles(Collection<IRI> propertyRoles) {
+        this.propertyRoles.clear();
+        this.propertyRoles.addAll(propertyRoles);
+    }
+
+    public void clearPropertyRoles() {
+        this.propertyRoles.clear();
+    }
+
+    public void addPropertyRoles(Collection<IRI> propertyRoles) {
+        if (propertyRoles != null) {
+            this.propertyRoles.addAll(propertyRoles);
+        }
+    }
+
+    public void addPropertyRole(IRI... propertyRoles) {
+        if (propertyRoles != null) {
+            for (IRI propertyRole : propertyRoles) {
+                this.propertyRoles.add(propertyRole);
+            }
+        }
+    }
+
+    @Override
+    public boolean hasPropertyRole(IRI role) {
+        return (propertyRoles != null && propertyRoles.contains(role));
+    }
 }

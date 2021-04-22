@@ -39,24 +39,35 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface WorkflowEventData {
   /**
-   * WorflowCreateComponent listen to this event and once event is fired
+   * `<mp-workflow-create>` listens to this event and once event is emitted
    * the new workflow instantiations for specified iri is created
    */
   'Workflow.Create': { iri: string };
   /**
-   * WorflowCreateComponent fires this event after a
-   * new worflow instantiation is created
-   * where the iri is the workflow IRI
+   * `<mp-workflow-create>` emits this event after a
+   * new workflow instantiation is created.
    */
-  'Workflow.Created': { iri: string; };
+  'Workflow.Created': {
+    /**
+     * Workflow IRI.
+     */
+    iri: string;
+  };
   /**
-   * WorflowCreateComponent fires this event after a
-   * new worflow instantiation is created
-   * where the iri is the subject IRI
+   * `<mp-workflow-create>` emits this event after a
+   * new workflow instantiation is created.
    */
-  'Workflow.SubjectGetInWorkflow': { iri: string; };
+  'Workflow.SubjectGetInWorkflow': {
+    /**
+     * Workflow IRI.
+     */
+    iri: string;
+  };
 }
 const event: EventMaker<WorkflowEventData> = EventMaker;
 

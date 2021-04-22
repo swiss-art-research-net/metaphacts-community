@@ -223,7 +223,7 @@ export class AuthoredEntity extends React.Component<AuthoredEntityProps, State> 
         if (!target) { return; }
 
         const {editor} = this.context.ontodiaWorkspace;
-        editor.deleteEntity(target.iri);
+        editor.deleteEntity(target.data);
     }
 
     private onEstablishNewLink = (

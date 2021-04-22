@@ -228,7 +228,7 @@ export class SemanticGraph extends Component<SemanticGraphProps, State> {
     );
 
     const loadingImages = thumbnails.map(thumbnail =>
-      new Promise((resolve, reject) => {
+      new Promise<void>((resolve, reject) => {
         const img = new Image;
         img.onload = () => {
           resolve();

@@ -39,7 +39,17 @@ const fs = require('fs');
  * @prop {{ [entry: string]: string }} [aliases]
  * @prop {Array<string>} [extensions]
  * @prop {Array<string>} [cssModulesBasedComponents]
- * @prop {Array<string>} [generatedJsonSchemas]
+ * @prop {Array<string | { interfaceName: string; schemaName: string }>} [generatedJsonSchemas]
+ */
+
+/**
+ * @typedef {Object} ComponentMetadata
+ * @property {string} path
+ * @prop {{ [attributeName: string]: true }} [deferAttributes]
+ * @prop {{ [attributeName: string]: { [propertyName: string]: true } }} [deferJsonProperties]
+ * @prop {string} [propsSchema]
+ * @prop {Array<string>} [additionalSchemas]
+ * @prop {string} [helpResource]
  */
 
 module.exports = function () {

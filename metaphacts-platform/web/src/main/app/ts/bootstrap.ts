@@ -40,7 +40,6 @@
 // this module is initialized immediately after initialization of 3-rd party libraries
 // and just before the main application module
 import '@webcomponents/custom-elements';
-import 'core-js';
 
 // native Custom Elements support only ES6 classes
 // see https://github.com/webcomponents/webcomponentsjs#custom-elements-es5-adapterjs

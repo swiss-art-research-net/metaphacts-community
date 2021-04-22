@@ -47,8 +47,14 @@ import org.eclipse.rdf4j.model.IRI;
  * Additional DASH properties and values.
  * 
  * @author Wolfgang Schell <ws@metaphacts.com>
+ * @see http://datashapes.org/propertyroles.html
  */
 public class DASH extends org.eclipse.rdf4j.model.vocabulary.DASH {
     public static final IRI propertyRole = iri(NAMESPACE + "propertyRole");
+    public static final IRI KeyInfoRole = iri(NAMESPACE + "KeyInfoRole");
+    public static final IRI IDRole = iri(NAMESPACE + "IDRole");
+    public static final IRI LabelRole = iri(NAMESPACE + "LabelRole");
     public static final IRI DescriptionRole = iri(NAMESPACE + "DescriptionRole");
+    public static final IRI DepictionRole = iri(NAMESPACE + "DepictionRole");
+    public static final IRI IconRole = iri(NAMESPACE + "IconRole");
 }

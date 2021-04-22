@@ -39,10 +39,15 @@
  */
 import * as cola from 'webcola';
 
+import { hashFnv32a } from '../data/utils';
+
 import { DiagramModel } from '../diagram/model';
-import { Vector, Rect, Size, SizeProvider, boundsOf, getContentFittingBox, computeGrouping } from '../diagram/geometry';
+import {
+    Vector, Rect, Size, SizeProvider, boundsOf, getContentFittingBox, computeGrouping,
+} from '../diagram/geometry';
 import { Element } from '../diagram/elements';
-import { EventObserver } from './events';
+
+import { HashSet } from '../viewUtils/hashMap';
 
 export interface LayoutNode {
     id: string;
@@ -62,23 +67,45 @@ export interface LayoutEdge {
     target: LayoutNode;
 }
 
-export function groupForceLayout(params: {
-    nodes: LayoutNode[];
-    links: LayoutEdge[];
-    preferredLinkLength: number;
-    avoidOvelaps?: boolean;
-}) {
-    const layout = new cola.Layout()
-        .nodes(params.nodes)
-        .links(params.links)
-        .avoidOverlaps(Boolean(params.avoidOvelaps))
-        .convergenceThreshold(1e-9)
-        .jaccardLinkLengths(params.preferredLinkLength)
-        .handleDisconnected(true);
-    layout.start(30, 0, 10, undefined, false);
+export interface LayoutFunctionParams {
+    readonly nodes: LayoutNode[];
+    readonly links: LayoutEdge[];
 }
 
-export function groupRemoveOverlaps(nodes: LayoutNode[]) {
+export interface LayoutForceParams extends LayoutFunctionParams {
+    /** @default {"x": 50, "y": 50} */
+    readonly padding?: Vector | null;
+    /** @default 200 */
+    readonly preferredLinkLength?: number;
+    /** @default true */
+    readonly removeOverlaps?: boolean;
+    readonly transformLinks?: LayoutTransformLinksSettings;
+}
+
+export function layoutForce(params: LayoutForceParams): void {
+    const {
+        nodes,
+        transformLinks,
+        padding = {x: 50, y: 50},
+        preferredLinkLength = 200,
+        removeOverlaps = true,
+    } = params;
+    const links = layoutTransformLinks(params.links, transformLinks);
+    const runLayout = (avoidOverlaps: boolean) => {
+        const layout = new cola.Layout()
+            .nodes(nodes)
+            .links(links)
+            .avoidOverlaps(avoidOverlaps)
+            .convergenceThreshold(1e-9)
+            .jaccardLinkLengths(preferredLinkLength)
+            .handleDisconnected(true);
+        layout.start(30, 0, 10, undefined, false);
+    };
+    layoutColaPadded({nodes, links, padding, removeOverlaps, layout: runLayout});
+}
+
+export function layoutRemoveOverlaps(params: LayoutFunctionParams): void {
+    const {nodes} = params;
     const nodeRectangles: cola.Rectangle[] = [];
     for (const node of nodes) {
         nodeRectangles.push(new cola.Rectangle(
@@ -96,69 +123,43 @@ export function groupRemoveOverlaps(nodes: LayoutNode[]) {
     }
 }
 
-export function translateToPositiveQuadrant(positions: Map<string, Vector>, offset: Vector) {
-    let minX = Infinity, minY = Infinity;
-    positions.forEach(position => {
-        minX = Math.min(minX, position.x);
-        minY = Math.min(minY, position.y);
-    });
-
-    const {x, y} = offset;
-    positions.forEach((position, key) => {
-        positions.set(key, {
-            x: position.x - minX + x,
-            y: position.y - minY + y,
-        });
-    });
-}
-
-export function uniformGrid(params: {
-    rows: number;
-    cellSize: Vector;
-}): (cellIndex: number) => Rect {
-    return cellIndex => {
-        const row = Math.floor(cellIndex / params.rows);
-        const column = cellIndex - row * params.rows;
-        return {
-            x: column * params.cellSize.x,
-            y: row * params.cellSize.y,
-            width: params.cellSize.x,
-            height: params.cellSize.y,
-        };
-    };
-}
-
-export function padded(
+export function layoutPadded(
     nodes: LayoutNode[],
-    padding: { x: number; y: number } | undefined,
+    padding: Vector | undefined | null,
     transform: () => void,
 ) {
-    if (padding) {
-        for (const node of nodes) {
-            node.x -= padding.x;
-            node.y -= padding.y;
-            node.width += 2 * padding.x;
-            node.height += 2 * padding.y;
-        }
+    if (!(padding && padding.x !== 0 && padding.y !== 0)) {
+        transform();
+        return;
+    }
+
+    for (const node of nodes) {
+        node.x -= padding.x;
+        node.y -= padding.y;
+        node.width += 2 * padding.x;
+        node.height += 2 * padding.y;
     }
 
     transform();
 
-    if (padding) {
-        for (const node of nodes) {
-            node.x += padding.x;
-            node.y += padding.y;
-            node.width -= 2 * padding.x;
-            node.height -= 2 * padding.y;
-        }
+    for (const node of nodes) {
+        node.x += padding.x;
+        node.y += padding.y;
+        node.width -= 2 * padding.x;
+        node.height -= 2 * padding.y;
     }
 }
 
-export function biasFreePadded(
+export function layoutBiasFreePadded(
     nodes: LayoutNode[],
-    padding: { x: number; y: number } | undefined,
+    padding: Vector | undefined | null,
     transform: () => void,
 ) {
+    if (!(padding && padding.x !== 0 && padding.y !== 0)) {
+        transform();
+        return;
+    }
+
     const nodeSizeMap = new Map<string, Size>();
     const possibleCompression = {x: Infinity, y: Infinity};
     for (const node of nodes) {
@@ -173,9 +174,10 @@ export function biasFreePadded(
         node.height = maxSide;
         node.width = maxSide;
     }
-    padded(nodes, padding, () => transform());
 
-    const fittingBox = getContentFittingBoxForLayout(nodes);
+    layoutPadded(nodes, padding, () => transform());
+
+    const fittingBox = getLayoutContentFittingBox(nodes);
     for (const node of nodes) {
         const size = nodeSizeMap.get(node.id)!;
         node.x = (node.x - fittingBox.x) / possibleCompression.x + fittingBox.x;
@@ -185,61 +187,132 @@ export function biasFreePadded(
     }
 }
 
-export type CalculatedLayout = object & { readonly layoutBrand: void };
+export interface ColaPaddedParams extends LayoutFunctionParams {
+    readonly layout: (avoidOverlaps: boolean) => void;
+    readonly padding: Vector | undefined | null;
+    readonly removeOverlaps: boolean;
+}
 
-export type LayoutFunction = (params: LayoutFunctionParams) => CalculatedLayout;
+export function layoutColaPadded(params: ColaPaddedParams): void {
+    const {nodes, links, layout, padding, removeOverlaps} = params;
+    const hasFixedNode = nodes.some(node => node.fixed === 1);
+    if (hasFixedNode || !removeOverlaps) {
+        layoutBiasFreePadded(nodes, padding, () => layout(hasFixedNode && removeOverlaps));
+    } else {
+        layout(false);
+        layoutBiasFreePadded(nodes, padding, () => layoutRemoveOverlaps({nodes, links}));
+    }
+}
 
-export interface LayoutFunctionParams {
+export interface LayoutTransformLinksSettings {
+    /** @default [] */
+    readonly directLinks?: ReadonlyArray<string>;
+    /** @default [] */
+    readonly invertLinks?: ReadonlyArray<string>;
+    /** @default [] */
+    readonly removeLinks?: ReadonlyArray<string>;
+    /** @default false */
+    readonly removeOtherLinks?: boolean;
+    /** @default false */
+    readonly collapseMultiple?: boolean;
+}
+
+export function layoutTransformLinks(
+    links: LayoutEdge[],
+    settings: LayoutTransformLinksSettings | undefined
+): LayoutEdge[] {
+    if (!settings) {
+        return links;
+    }
+    const {
+        directLinks,
+        invertLinks,
+        removeLinks,
+        removeOtherLinks = false,
+        collapseMultiple = false,
+    } = settings;
+    const directLinkTypes = new Set<string>(directLinks);
+    const inverseLinkTypes = new Set<string>(invertLinks);
+
+    let transformedLinks: LayoutEdge[] = [];
+    for (const edge of links) {
+        if (directLinkTypes.has(edge.typeId)) {
+            transformedLinks.push(edge);
+        } else if (inverseLinkTypes.has(edge.typeId)) {
+            transformedLinks.push({...edge, source: edge.target, target: edge.source});
+        } else if (!removeOtherLinks) {
+            transformedLinks.push(edge);
+        }
+    }
+
+    if (removeLinks && removeLinks.length > 0) {
+        const removeLinkTypes = new Set<string>(removeLinks);
+        transformedLinks = transformedLinks.filter(link => !removeLinkTypes.has(link.typeId));
+    }
+
+    if (collapseMultiple) {
+        const filteredLinks = new HashSet(hashEdgeByDirection, equalEdgeByDirection);
+        for (const edge of transformedLinks) {
+            filteredLinks.add(edge);
+        }
+        transformedLinks = Array.from(filteredLinks);
+    }
+
+    return transformedLinks;
+}
+
+function hashEdgeByDirection(edge: LayoutEdge): number {
+    const {source, target} = edge;
+    let hash = hashFnv32a(source.id);
+    hash = hash * 31 + hashFnv32a(target.id);
+    return hash;
+}
+
+function equalEdgeByDirection(left: LayoutEdge, right: LayoutEdge) {
+    return (
+        left.source.id === right.source.id &&
+        left.target.id === right.target.id
+    );
+}
+
+export interface CalculateLayoutParams {
     readonly model: DiagramModel;
     readonly sizeProvider: SizeProvider;
-    readonly selectedElements?: ReadonlySet<Element>;
     readonly fixedElements?: ReadonlySet<Element>;
     readonly group?: string;
+    readonly selectedElements?: ReadonlySet<Element>;
+    readonly layoutFunction: (params: LayoutFunctionParams) => void;
 }
 
-export interface UnzippedCalculatedLayout {
-    readonly group?: string;
-    readonly keepAveragePosition: boolean;
+export interface CalculatedLayout {
+    readonly parts: ReadonlyArray<CalculatedLayoutPart>;
+}
+
+export interface CalculatedLayoutPart {
     readonly positions: Map<string, Vector>;
     readonly sizes: Map<string, Size>;
-    readonly nestedLayouts: UnzippedCalculatedLayout[];
+    readonly translateToPositive?: boolean;
+    readonly keepAveragePosition?: boolean;
 }
 
-export function calculateLayout(params: {
-    model: DiagramModel;
-    sizeProvider: SizeProvider;
-    layoutFunction: (nodes: LayoutNode[], links: LayoutEdge[], group: string | undefined) => void;
-    fixedElements?: ReadonlySet<Element>;
-    group?: string;
-    selectedElements?: ReadonlySet<Element>;
-}): CalculatedLayout {
-    const grouping = computeGrouping(params.model.elements);
+export function calculateLayout(params: CalculateLayoutParams): CalculatedLayout {
     const {model, sizeProvider, layoutFunction, fixedElements, selectedElements} = params;
 
     if (selectedElements && selectedElements.size <= 1) {
-        const unzipped: UnzippedCalculatedLayout = {
-            positions: new Map(),
-            sizes: new Map(),
-            nestedLayouts: [],
-            keepAveragePosition: false,
-        };
-        return unzipped as CalculatedLayout;
+        return {parts: []};
     }
-    return internalRecursion(params.group) as CalculatedLayout;
 
-    function internalRecursion(group: string | undefined): UnzippedCalculatedLayout {
-        const elementsToProcess = group
-            ? grouping.get(group)!
-            : model.elements.filter(el => el.group === undefined);
+    const grouping = computeGrouping(model.elements);
+    const orderedGroups = getOrderedLayoutGroups(grouping, params.group);
+    const parts: CalculatedLayoutPart[] = [];
+
+    for (const group of orderedGroups) {
+        const elementsToProcess = grouping.get(group)!;
         const elements = selectedElements
             ? elementsToProcess.filter(el => selectedElements.has(el))
             : elementsToProcess;
-
-        const nestedLayouts: UnzippedCalculatedLayout[] = [];
-        for (const element of elements) {
-            if (grouping.has(element.id)) {
-                nestedLayouts.push(internalRecursion(element.id));
-            }
+        if (elements.length === 0) {
+            continue;
         }
 
         const nodes: LayoutNode[] = [];
@@ -258,18 +331,20 @@ export function calculateLayout(params: {
 
         const links: LayoutEdge[] = [];
         for (const link of model.links) {
-            if (!model.isSourceAndTargetVisible(link)) {
+            const linkType = model.getLinkType(link.typeId);
+            const source = model.sourceOf(link);
+            const target = model.targetOf(link);
+            if (!(source && target && linkType && linkType.visible)) {
                 continue;
             }
-            const source = model.sourceOf(link)!;
-            const target = model.targetOf(link)!;
             const sourceNode = nodeById[source.id];
             const targetNode = nodeById[target.id];
             if (sourceNode && targetNode) {
                 links.push({typeId: link.typeId, source: sourceNode, target: targetNode});
             }
         }
-        layoutFunction(nodes, links, group);
+
+        layoutFunction({nodes, links});
 
         const positions: Map<string, Vector> = new Map();
         const sizes: Map<string, Size> = new Map();
@@ -279,50 +354,72 @@ export function calculateLayout(params: {
             sizes.set(node.id, {width, height});
         }
 
-        return {
+        parts.push({
             positions,
             sizes,
-            group,
-            nestedLayouts,
+            translateToPositive: group !== undefined,
             keepAveragePosition: Boolean(selectedElements),
-        };
+        });
     }
+
+    return {parts};
 }
 
-export function applyLayout(
-    model: DiagramModel,
-    layout: CalculatedLayout,
-) {
-    const {positions, sizes, group, nestedLayouts, keepAveragePosition} = layout as UnzippedCalculatedLayout;
-    const elements = model.elements.filter(({id}) => positions.has(id));
-    for (const nestedLayout of nestedLayouts) {
-        applyLayout(model, nestedLayout as CalculatedLayout);
-    }
+function getOrderedLayoutGroups(
+    grouping: Map<string | undefined, Element[]>,
+    rootGroup: string | undefined
+): Array<string | undefined> {
+    const visitedGroups = new Set<string | undefined>();
+    const orderedGroups: Array<string | undefined> = [];
+    const visit = (group: string | undefined) => {
+        visitedGroups.add(group);
+        const elements = grouping.get(group);
+        if (elements) {
+            for (const element of elements) {
+                if (!visitedGroups.has(element.id)) {
+                    visit(element.id);
+                }
+            }
+            orderedGroups.push(group);
+        }
+    };
+    visit(rootGroup);
+    return orderedGroups;
+}
 
-    const sizeProvider = makeSizeProviderForLayout(layout as UnzippedCalculatedLayout);
-    if (group) {
-        const offset: Vector = getContentFittingBox(elements, [], sizeProvider);
-        translateToPositiveQuadrant(positions, offset);
-    }
+export function applyLayout(model: DiagramModel, layout: CalculatedLayout) {
+    for (const part of layout.parts) {
+        const {positions, sizes, translateToPositive, keepAveragePosition} = part;
 
-    const averagePosition = keepAveragePosition ? calculateAveragePosition(elements, sizeProvider) : undefined;
-    for (const element of elements) {
-        element.setPosition(positions.get(element.id)!);
-    }
+        const elements = model.elements.filter(({id}) => positions.has(id));
 
-    if (keepAveragePosition) {
-        const newAveragePosition = calculateAveragePosition(elements, sizeProvider);
-        const averageDiff = {
-            x: averagePosition!.x - newAveragePosition.x,
-            y: averagePosition!.y - newAveragePosition.y,
-        };
-        positions.forEach((position, elementId) => {
-            const element = model.getElement(elementId)!;
-            element.setPosition({
-                x: position.x + averageDiff.x,
-                y: position.y + averageDiff.y,
+        const sizeProvider = makeSizeProviderFromSizes(sizes);
+        if (translateToPositive) {
+            const offset: Vector = getContentFittingBox(elements, [], sizeProvider);
+            translateToPositiveQuadrant(positions, offset);
+        }
+
+        const averagePosition = keepAveragePosition
+            ? calculateAveragePosition(elements, sizeProvider)
+            : undefined;
+        for (const element of elements) {
+            element.setPosition(positions.get(element.id)!);
+        }
+
+        if (averagePosition) {
+            const newAveragePosition = calculateAveragePosition(elements, sizeProvider);
+            const averageDiff = {
+                x: averagePosition.x - newAveragePosition.x,
+                y: averagePosition.y - newAveragePosition.y,
+            };
+            positions.forEach((position, elementId) => {
+                const element = model.getElement(elementId)!;
+                element.setPosition({
+                    x: position.x + averageDiff.x,
+                    y: position.y + averageDiff.y,
+                });
             });
-        });
+        }
     }
 
     for (const link of model.links) {
@@ -330,8 +427,7 @@ export function applyLayout(
     }
 }
 
-function makeSizeProviderForLayout(layout: UnzippedCalculatedLayout): SizeProvider {
-    const {sizes} = layout;
+function makeSizeProviderFromSizes(sizes: ReadonlyMap<string, Size>): SizeProvider {
     const EMPTY_SIZE: Size = {width: 0, height: 0};
     return {
         getElementSize: element => {
@@ -340,7 +436,7 @@ function makeSizeProviderForLayout(layout: UnzippedCalculatedLayout): SizeProvid
     };
 }
 
-export function calculateAveragePosition(position: ReadonlyArray<Element>, sizeProvider: SizeProvider): Vector {
+function calculateAveragePosition(position: ReadonlyArray<Element>, sizeProvider: SizeProvider): Vector {
     let xSum = 0;
     let ySum = 0;
     for (const element of position) {
@@ -352,6 +448,60 @@ export function calculateAveragePosition(position: ReadonlyArray<Element>, sizeP
     return {
         x: xSum / position.length,
         y: ySum / position.length,
+    };
+}
+
+function translateToPositiveQuadrant(positions: Map<string, Vector>, offset: Vector) {
+    let minX = Infinity, minY = Infinity;
+    positions.forEach(position => {
+        minX = Math.min(minX, position.x);
+        minY = Math.min(minY, position.y);
+    });
+
+    const {x, y} = offset;
+    positions.forEach((position, key) => {
+        positions.set(key, {
+            x: position.x - minX + x,
+            y: position.y - minY + y,
+        });
+    });
+}
+
+export function getLayoutContentFittingBox(
+    nodes: ReadonlyArray<LayoutNode>
+): { x: number; y: number; width: number; height: number } {
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    for (const node of nodes) {
+        const {x, y, width, height} = node;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + width);
+        maxY = Math.max(maxY, y + height);
+    }
+
+    return {
+        x: Number.isFinite(minX) ? minX : 0,
+        y: Number.isFinite(minY) ? minY : 0,
+        width: Number.isFinite(minX) && Number.isFinite(maxX) ? (maxX - minX) : 0,
+        height: Number.isFinite(minY) && Number.isFinite(maxY) ? (maxY - minY) : 0,
+    };
+}
+
+export function uniformGrid(params: {
+    rows: number;
+    cellSize: Vector;
+}): (cellIndex: number) => Rect {
+    return cellIndex => {
+        const row = Math.floor(cellIndex / params.rows);
+        const column = cellIndex - row * params.rows;
+        return {
+            x: column * params.cellSize.x,
+            y: row * params.cellSize.y,
+            width: params.cellSize.x,
+            height: params.cellSize.y,
+        };
     };
 }
 
@@ -413,75 +563,4 @@ export function placeElementsAround(params: {
             placeElementFromStack(outgoingAngle + angle);
         }
     }
-}
-
-export function removeOverlaps(params: {
-    model: DiagramModel;
-    sizeProvider: SizeProvider;
-    fixedElements?: ReadonlySet<Element>;
-    padding?: Vector;
-    group?: string;
-    selectedElements?: ReadonlySet<Element>;
-}): CalculatedLayout {
-    const {padding, model, sizeProvider, group, fixedElements, selectedElements} = params;
-    return calculateLayout({
-        model,
-        sizeProvider,
-        group,
-        fixedElements,
-        selectedElements,
-        layoutFunction: (nodes) => {
-            padded(nodes, padding, () => groupRemoveOverlaps(nodes));
-        },
-    });
-}
-
-export function forceLayout(params: {
-    model: DiagramModel;
-    sizeProvider: SizeProvider;
-    fixedElements?: ReadonlySet<Element>;
-    group?: string;
-    selectedElements?: ReadonlySet<Element>;
-}): CalculatedLayout {
-    const {model, sizeProvider, group, fixedElements, selectedElements} = params;
-    return calculateLayout({
-        model,
-        sizeProvider,
-        group,
-        fixedElements,
-        selectedElements,
-        layoutFunction: (nodes, links) => {
-            if (fixedElements && fixedElements.size > 0) {
-                biasFreePadded(nodes, {x: 50, y: 50}, () => groupForceLayout({
-                    nodes, links, preferredLinkLength: 200,
-                    avoidOvelaps: true,
-                }));
-            } else {
-                groupForceLayout({nodes, links, preferredLinkLength: 200});
-                biasFreePadded(nodes, {x: 50, y: 50}, () => groupRemoveOverlaps(nodes));
-            }
-        },
-    });
-}
-
-export function getContentFittingBoxForLayout(
-    nodes: ReadonlyArray<LayoutNode>
-): { x: number; y: number; width: number; height: number } {
-    let minX = Infinity, minY = Infinity;
-    let maxX = -Infinity, maxY = -Infinity;
-
-    for (const node of nodes) {
-        const {x, y, width, height} = node;
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + width);
-        maxY = Math.max(maxY, y + height);
-    }
-
-    return {
-        x: Number.isFinite(minX) ? minX : 0,
-        y: Number.isFinite(minY) ? minY : 0,
-        width: Number.isFinite(minX) && Number.isFinite(maxX) ? (maxX - minX) : 0,
-        height: Number.isFinite(minY) && Number.isFinite(maxY) ? (maxY - minY) : 0,
-    };
 }

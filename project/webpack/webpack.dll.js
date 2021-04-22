@@ -21,6 +21,7 @@ const webpack = require("webpack");
 const AssetsPlugin = require('assets-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const resolveTheme = require('./theme');
 
 /**
@@ -37,6 +38,8 @@ module.exports = function(defaults, platformOptions) {
     const {themeDir} = resolveTheme(defaults);
   const {buildMode} = platformOptions;
     return {
+        bail: true,
+        mode: buildMode === 'prod' ? 'production' : 'development',
         entry: {
             'basic_styling': ['basic-styles.scss'],
             vendor: [
@@ -44,7 +47,6 @@ module.exports = function(defaults, platformOptions) {
               '@webcomponents/webcomponentsjs/custom-elements-es5-adapter.js',
               'bem-cn',
               'classnames',
-              'core-js',
               'core.lambda',
               'data.maybe',
               'dom-serializer',
@@ -128,6 +130,19 @@ module.exports = function(defaults, platformOptions) {
             //   webpack://[name]C:/.../node_modules/file.js
             // and these invalid URLs causes Firefox to print way too many warnings
             devtoolNamespace: 'metaphacts-dll'
+        },
+        optimization: {
+          minimize: buildMode === 'prod',
+          minimizer: buildMode === 'prod' ? [
+            new TerserPlugin({
+              extractComments: false,
+              terserOptions: {
+                output: {
+                  comments: false,
+                }
+              }
+            })
+          ] : [],
         },
         plugins: [
           new MiniCssExtractPlugin({

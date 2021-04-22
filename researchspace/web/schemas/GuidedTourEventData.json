@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
+    "properties": {
+        "GuidedTour.RunIfNotSeen": {
+            "description": "Event which should be triggered when tour is run.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "GuidedTour.Start": {
+            "description": "Event which should be triggered when tour is started.",
+            "properties": {
+            },
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "GuidedTour.RunIfNotSeen",
+        "GuidedTour.Start"
+    ],
+    "required": [
+        "GuidedTour.RunIfNotSeen",
+        "GuidedTour.Start"
+    ],
+    "type": "object"
+}
+

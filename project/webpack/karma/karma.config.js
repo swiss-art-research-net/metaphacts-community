@@ -16,95 +16,86 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 
-var webpack = require('webpack'),
-    path = require('path'),
-    webpackConfigFn = require('../webpack.config.js');
+const webpack = require('webpack');
+const path = require('path');
+const webpackConfigFn = require('../webpack.config.js');
 
 /**
  * @param {ReturnType<import('../defaults')>} defaults
  * @returns {import('karma').ConfigOptions}
  */
 module.exports = function (defaults) {
-    const webpackConfig = webpackConfigFn(defaults, {buildMode: 'test'});
-    delete webpackConfig.entry;
+  const webpackConfig = webpackConfigFn(defaults, {buildMode: 'test'});
+  delete webpackConfig.entry;
 
-    // add test dependencies to webpack module resolution path
-    webpackConfig.resolve.modules.push(path.join(__dirname, '../node_modules'));
+  // add test dependencies to webpack module resolution path
+  webpackConfig.resolve.modules.push(path.join(__dirname, '../node_modules'));
 
-    // exclude Highcharts from tests
-    webpackConfig.plugins.push(
-        new webpack.DefinePlugin({
-            BUNDLE_HIGHCHARTS: Boolean(process.env.BUNDLE_HIGHCHARTS)
-        })
-    );
+  // exclude Highcharts from tests
+  webpackConfig.plugins.push(
+    new webpack.DefinePlugin({
+      BUNDLE_HIGHCHARTS: Boolean(process.env.BUNDLE_HIGHCHARTS),
+    })
+  );
 
-    return {
-        frameworks: ['mocha', 'chai', 'chai-as-promised'],
-        plugins: [
-            'karma-mocha',
-            'karma-mocha-reporter',
-            'karma-chai-plugins',
-            'karma-sourcemap-loader',
-            'karma-webpack',
-            'karma-chrome-launcher',
-            'karma-firefox-launcher',
-            'karma-junit-reporter'
-        ],
-        basePath: defaults.ROOT_DIR,
-        preprocessors: {
-            '**/*.test.ts': ['webpack']
-        },
-        webpack: webpackConfig,
-        webpackMiddleware: {
-            // webpack-dev-middleware configuration
-            // i. e.
-            noInfo: true,
-            stats: {
-                assets: false,
-                colors: true,
-                version: false,
-                hash: false,
-                timings: false,
-                chunks: false,
-                chunkModules: false,
-                warningsFilter: warning => {
-                  if (warning.indexOf('node_modules/@angular/core/src/linker/system_js_ng_module_factory_loader.js')) {
-                    // Filter out Angular-based Graphscope warnings:
-                    // "Critical dependency: the request of a dependency is an expression"
-                    // "System.import() is deprecated and will be removed soon. Use import() instead."
-                    return true;
-                  }
-                  return false;
-                },
-            }
-        },
-        browsers: ['ChromiumHeadlessNoSandbox'],
-        customLaunchers: {
-          ChromiumHeadlessNoSandbox: {
-            base: 'ChromiumHeadless',
-            flags: [
-                '--no-sandbox',
-                '--headless',
-                '--disable-gpu',
-                '--disable-translate',
-                '--disable-extensions',
-                '--no-proxy-server'
-                ]
-          }
-        },
-        client: {
-            captureConsole: false
-        },
+  return {
+    frameworks: ['mocha', 'chai', 'chai-as-promised'],
+    plugins: [
+      'karma-mocha',
+      'karma-mocha-reporter',
+      'karma-chai-plugins',
+      'karma-sourcemap-loader',
+      'karma-webpack',
+      'karma-chrome-launcher',
+      'karma-firefox-launcher',
+      'karma-junit-reporter'
+    ],
+    basePath: defaults.ROOT_DIR,
+    preprocessors: {
+      '**/*.test.ts': ['webpack']
+    },
+    webpack: webpackConfig,
+    webpackMiddleware: {
+      // webpack-dev-middleware configuration
+      // i. e.
+      noInfo: true,
+      stats: {
+        assets: false,
+        colors: true,
+        version: false,
+        hash: false,
+        timings: false,
+        chunks: false,
+        chunkModules: false,
+      }
+    },
+    browsers: ['ChromiumHeadlessNoSandbox'],
+    customLaunchers: {
+      ChromiumHeadlessNoSandbox: {
+        base: 'ChromiumHeadless',
+        flags: [
+          '--no-sandbox',
+          '--headless',
+          '--disable-gpu',
+          '--disable-translate',
+          '--disable-extensions',
+          '--no-proxy-server'
+        ]
+      }
+    },
+    client: {
+      captureConsole: false
+    },
 
-        // see https://github.com/angular/angular-cli/issues/2125#issuecomment-247395088
-        mime: {
-            'text/x-typescript': ['ts', 'tsx']
-        },
+    // see https://github.com/angular/angular-cli/issues/2125#issuecomment-247395088
+    mime: {
+      'text/x-typescript': ['ts', 'tsx']
+    },
 
-        // increase timeouts, especially relevant for CI build
-        browserDisconnectTimeout: 30000, // default 2000
-        browserDisconnectTolerance: 1, // default 0
-        browserNoActivityTimeout: 180000, //default 10000
-        captureTimeout: 180000
-    };
+    // increase timeouts, especially relevant for CI build
+    browserDisconnectTimeout: 30000, // default 2000
+    browserDisconnectTolerance: 1, // default 0
+    browserNoActivityTimeout: 180000, //default 10000
+    captureTimeout: 180000
+  };
 };

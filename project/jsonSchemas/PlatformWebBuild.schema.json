@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Defines schema for `platform-web-build.json` files in metaphactory platform",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "$schema": true,
     "entries": {
@@ -13,7 +14,7 @@
     },
     "stableEntryNames": {
       "type": "array",
-      "description": "Entry names which should not be rewritten by Webpack.",
+      "description": "Entry names which should not be rewritten by Webpack in production mode.",
       "items": {
         "type": "string"
       }
@@ -43,9 +44,28 @@
       "type": "array",
       "description": "TypeScript interface names to generate schemas from in addition to schemas for component props.",
       "items": {
-        "type": "string"
+        "anyOf": [
+          {"type": "string"},
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "interfaceName": {
+                "type": "string",
+                "description": "TypeScript interface names to generate schemas from."
+              },
+              "schemaName": {
+                "type": "string",
+                "description": "Schema name to register under."
+              }
+            },
+            "required": [
+              "interfaceName",
+              "schemaName"
+            ]
+          }
+        ]
       }
     }
-  },
-  "additionalProperties": false
+  }
 }

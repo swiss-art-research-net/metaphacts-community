@@ -48,14 +48,15 @@ import { componentHasType } from 'platform/components/utils';
 
 import { FieldDefinition, normalizeFieldDefinition } from '../FieldDefinition';
 import {
-  FieldValue, DataState, CompositeValue, EmptyValue, ErrorKind
+  FieldValue, DataState, CompositeValue, EmptyValue, ErrorKind, InspectedInputTree,
 } from '../FieldValues';
 import { queryValues } from '../QueryValues';
 
 import { CompositeInput, CompositeInputProps } from '../inputs/CompositeInput';
 import { HiddenInput, HiddenInputProps } from '../inputs/HiddenInput';
 import {
-  SingleValueInput, SingleValueInputProps, SingleValueHandler, SingleValueHandlerProps,
+  SingleValueInput, SingleValueInputProps, SingleValueInputConfig,
+  SingleValueHandler, SingleValueHandlerProps,
 } from '../inputs/SingleValueInput';
 
 import { FormSwitchCase, FormSwitchCaseProps } from './FormSwitchCase';
@@ -90,7 +91,7 @@ import { FormSwitchCase, FormSwitchCaseProps } from './FormSwitchCase';
  *  </semantic-form-switch>
  * ```
  */
-interface SemanticFormSwitchConfig {
+interface SemanticFormSwitchConfig extends SingleValueInputConfig {
   /**
    * Hidden field ID to determine entity type IRI from its default value for each case.
    */
@@ -132,6 +133,14 @@ export class FormSwitch extends SingleValueInput<FormSwitchProps, {}> {
       return this.refToInput.dataState();
     }
     return DataState.Ready;
+  }
+
+  inspect(): InspectedInputTree {
+    const inspectedCase: InspectedInputTree[] = [];
+    if (this.refToInput) {
+      inspectedCase.push(this.refToInput.inspect());
+    }
+    return {...super.inspect(), children: {switchCase: inspectedCase}};
   }
 
   componentDidMount() {

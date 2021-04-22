@@ -1,5 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
     "properties": {
         "SemanticUpdate.Error": {
             "description": "If the post-action='event' for SemanticUpdate, Component fires this event after a\nquery failed.",

@@ -39,7 +39,9 @@
  */
 package com.metaphacts.rest.endpoint;
 
+import static org.eclipse.rdf4j.model.util.Values.iri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
@@ -47,11 +49,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.util.ModelBuilder;
 import org.eclipse.rdf4j.model.vocabulary.FOAF;
@@ -65,7 +69,8 @@ import org.eclipse.rdf4j.rio.RDFFormat;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsEmptyCollection;
-import org.hamcrest.core.IsCollectionContaining;
+import org.hamcrest.collection.IsIterableContainingInOrder;
+import org.hamcrest.core.IsIterableContaining;
 import org.hamcrest.core.StringContains;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,14 +96,14 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
                 .setNamespace("field", FIELDS.NAMESPACE)
                 .setNamespace("ex", "http://example.org/")
                 .subject(FieldDefinitionContainer.IRI_STRING)
-                    .add("ldp:contains", "ex:field1")
-                    .add("ldp:contains", "ex:field2")
+                .add("ldp:contains", "ex:field1")
+                .add("ldp:contains", "ex:field2")
                 .subject("ex:field1")
-                    .add(RDF.TYPE, "field:Field")
-                    .add(RDFS.COMMENT, "a comment for field 1")
+                .add(RDF.TYPE, "field:Field")
+                .add(RDFS.COMMENT, "a comment for field 1")
                 .subject("ex:field2")
-                    .add(RDF.TYPE, "field:Field")
-                    .add(RDFS.COMMENT, "a comment for field 2")
+                .add(RDF.TYPE, "field:Field")
+                .add(RDFS.COMMENT, "a comment for field 2")
                 .build();
 
         Repositories.consume(repositoryRule.getAssetRepository(), conn -> conn.add(fields));
@@ -106,6 +111,7 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
         // add some example data to the default repository
         try (RepositoryConnection conn = repositoryRule.getRepository().getConnection()) {
             conn.add(this.getClass().getResourceAsStream("dummyData.ttl"), "", RDFFormat.TURTLE);
+            conn.add(this.getClass().getResourceAsStream("shapes-for-fieldendpoint.ttl"), "", RDFFormat.TURTLE);
         }
     }
 
@@ -161,6 +167,164 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
     }
 
     @Test
+    public void testRequestFieldDefinitionsForSubject() throws Exception {
+        // get all field definitions applicable to a particular instance.
+        Response response = target("fields/definitions").request()
+                .post(Entity.json("{ \"subject\": \"http://example.org/bob#me\" }"));
+
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
+
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(5));
+
+        // we expect five field definitions: rdfs:label, schema:birthDate, foaf:knows, foaf:topicOfInterest, and
+        // rdf:type. In that order.
+        List<String> fieldIRIs = fieldDefinitions.stream().map(fd -> (String) fd.get("iri"))
+                .collect(Collectors.toList());
+        assertThat(fieldIRIs,
+                IsIterableContainingInOrder.contains(RDFS.LABEL.stringValue(), "http://schema.org/birthDate",
+                        FOAF.KNOWS.stringValue(), FOAF.TOPIC_INTEREST.stringValue(), RDF.TYPE.stringValue()));
+
+        for (Map<String, Object> fieldDefinition : fieldDefinitions) {
+            IRI iri = iri((String) fieldDefinition.get("iri"));
+
+            assertThat(fieldDefinition.get("insertPattern").toString(),
+                    StringContains.containsString("INSERT { $subject <" + iri + "> $value"));
+
+            if (FOAF.KNOWS.equals(iri)) {
+                @SuppressWarnings("unchecked")
+                Collection<String> domain = (Collection<String>) fieldDefinition.get("domain");
+                assertThat(domain, IsIterableContaining.hasItem(FOAF.AGENT.stringValue()));
+            } else if (iri("http://schema.org/birthDate").equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.DATE.stringValue()));
+            } else if (FOAF.TOPIC_INTEREST.equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.ANYURI.stringValue()));
+            } else if (RDF.TYPE.equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.ANYURI.stringValue()));
+
+                @SuppressWarnings("unchecked")
+                var defaultValues = (Collection<String>) fieldDefinition.get("defaultValues");
+                assertThat(defaultValues.size(), Matchers.equalTo(1));
+                assertThat(defaultValues, IsIterableContaining.hasItem(FOAF.PERSON.stringValue()));
+                assertThat(defaultValues, IsIterableContaining.hasItem(FOAF.PERSON.stringValue()));
+            } else if (RDFS.LABEL.equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.STRING.stringValue()));
+            } else {
+                fail("unexpected iri: " + iri);
+            }
+        }
+    }
+
+    @Test
+    public void testRequestFieldDefinitionsForUnknownSubject() throws Exception {
+        // get all field definitions applicable to the subejct ex:UnknownResource
+        Response response = target("fields/definitions").request()
+                .post(Entity.json("{ \"subject\": \"http://example.org/UnknownResource\" }"));
+
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.BAD_REQUEST));
+    }
+
+    @Test
+    public void testRequestFieldDefinitionsForClass() throws Exception {
+
+        // get all field definitions applicable to the class foaf:Person.
+        Response response = target("fields/definitions").request()
+                .post(Entity.json("{ \"class\": \"" + FOAF.PERSON.stringValue() + "\" }"));
+
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
+
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(5));
+
+        // we expect five field definitions: rdfs:label, schema:birthDate, foaf:knows, foaf:topicOfInterest, and
+        // rdf:type. In that order.
+        List<String> fieldIRIs = fieldDefinitions.stream().map(fd -> (String) fd.get("iri"))
+                .collect(Collectors.toList());
+        assertThat(fieldIRIs,
+                IsIterableContainingInOrder.contains(RDFS.LABEL.stringValue(), "http://schema.org/birthDate",
+                FOAF.KNOWS.stringValue(), FOAF.TOPIC_INTEREST.stringValue(), RDF.TYPE.stringValue()));
+
+        for (Map<String, Object> fieldDefinition : fieldDefinitions) {
+            IRI iri = iri((String) fieldDefinition.get("iri"));
+
+            assertThat(fieldDefinition.get("insertPattern").toString(),
+                    StringContains.containsString("INSERT { $subject <" + iri + "> $value"));
+
+            if (FOAF.KNOWS.equals(iri)) {
+                @SuppressWarnings("unchecked")
+                Collection<String> domain = (Collection<String>) fieldDefinition.get("domain");
+                assertThat(domain, IsIterableContaining.hasItem(FOAF.AGENT.stringValue()));
+            } else if (iri("http://schema.org/birthDate").equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.DATE.stringValue()));
+            } else if (FOAF.TOPIC_INTEREST.equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.ANYURI.stringValue()));
+            } else if (RDF.TYPE.equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.ANYURI.stringValue()));
+
+                @SuppressWarnings("unchecked")
+                var defaultValues = (Collection<String>) fieldDefinition.get("defaultValues");
+                assertThat(defaultValues.size(), Matchers.equalTo(1));
+                assertThat(defaultValues, IsIterableContaining.hasItem(FOAF.PERSON.stringValue()));
+            } else if (RDFS.LABEL.equals(iri)) {
+                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.STRING.stringValue()));
+            } else {
+                fail("unexpected iri: " + iri);
+            }
+        }
+    }
+
+    @Test
+    public void testRequestFieldDefinitionsForUnknownClass() throws Exception {
+
+        // get all field definitions applicable to the class ex:UnknownClass
+        Response response = target("fields/definitions").request()
+                .post(Entity.json("{ \"class\": \"http://example.org/UnknownClass\" }"));
+
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.BAD_REQUEST));
+    }
+
+    @Test
+    public void testRequestFieldDefinitionsForClassPlusFields() throws Exception {
+
+        // get a subset of field definitions applicable to the class foaf:Person.
+        Response response = target("fields/definitions").request()
+                .post(Entity.json(
+                        "{ \"class\": \"" + FOAF.PERSON.stringValue() + "\", \"fields\": [ \"" + FOAF.KNOWS + "\"] }"));
+
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(2));
+
+        var fieldDefinition = fieldDefinitions.get(0);
+
+        IRI iri = iri((String) fieldDefinition.get("iri"));
+        assertEquals(FOAF.KNOWS, iri);
+
+        assertThat(fieldDefinition.get("insertPattern").toString(),
+                StringContains.containsString("INSERT { $subject <" + iri + "> $value"));
+
+        @SuppressWarnings("unchecked")
+        Collection<String> domain = (Collection<String>) fieldDefinition.get("domain");
+        assertThat(domain, IsIterableContaining.hasItem(FOAF.AGENT.stringValue()));
+
+        fieldDefinition = fieldDefinitions.get(1);
+        assertEquals(RDF.TYPE, iri((String) fieldDefinition.get("iri")));
+        assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.ANYURI.stringValue()));
+
+        @SuppressWarnings("unchecked")
+        var defaultValues = (Collection<String>) fieldDefinition.get("defaultValues");
+        assertThat(defaultValues.size(), Matchers.equalTo(1));
+        assertThat(defaultValues, IsIterableContaining.hasItem(FOAF.PERSON.stringValue()));
+        assertThat(defaultValues, IsIterableContaining.hasItem(FOAF.PERSON.stringValue()));
+    }
+
+    @Test
     public void testRequestFieldDefinitionForProperty() throws Exception {
 
         // we'll get field definitions for schema:birthDate and foaf:knows
@@ -173,29 +337,31 @@ public class FieldEndpointTest extends MetaphactsJerseyTest {
         Response response = target("fields/definitions").request().post(Entity.json(requestBody));
         assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
 
-        @SuppressWarnings("unchecked")
         List<Map<String, Object>> fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
         assertThat(fieldDefinitions.size(), Matchers.equalTo(2));
 
-        for (Map<String, Object> fieldDefinition : fieldDefinitions) {
+        // check that definitions are returned in expected order and with expected attributes
+        var fieldDefinition = fieldDefinitions.get(0);
+        assertThat(fieldDefinition.get("iri"), Matchers.equalTo(knows));
+        assertThat((Collection<String>) fieldDefinition.get("domain"),
+                IsIterableContaining.hasItem(FOAF.AGENT.stringValue()));
+        assertThat(fieldDefinition.get("insertPattern").toString(),
+                StringContains.containsString("INSERT { $subject <" + knows + "> $value"));
 
-            @SuppressWarnings("unchecked")
-            Collection<String> domain = (Collection<String>) fieldDefinition.get("domain");
+        fieldDefinition = fieldDefinitions.get(1);
+        assertThat(fieldDefinition.get("iri"), Matchers.equalTo(birthDate));
+        assertThat((Collection<String>) fieldDefinition.get("domain"), IsEmptyCollection.empty());
+        assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.DATE.stringValue()));
 
-            String iri = (String) fieldDefinition.get("iri");
+        // request fields the other way around to make sure ordering works
+        requestBody.put("fields", Arrays.asList(birthDate, knows));
+        response = target("fields/definitions").request().post(Entity.json(requestBody));
+        assertThat(response.getStatusInfo(), Matchers.equalTo(Status.OK));
+        fieldDefinitions = Arrays.asList(response.readEntity(Map[].class));
+        assertThat(fieldDefinitions.size(), Matchers.equalTo(2));
 
-            assertThat(fieldDefinition.get("insertPattern").toString(),
-                    StringContains.containsString("INSERT { $subject <" + iri + "> $value"));
-            if (knows.equals(iri)) {
-                assertThat(domain, IsCollectionContaining.hasItem(FOAF.AGENT.stringValue()));
-            } else if (birthDate.equals(iri)) {
-                assertThat(domain, IsEmptyCollection.empty());
-                assertThat(fieldDefinition.get("xsdDatatype"), Matchers.equalTo(XSD.DATE.stringValue()));
-            } else {
-                fail("unexpected iri: " + iri);
-            }
-
-        }
+        assertThat(fieldDefinitions.get(0).get("iri"), Matchers.equalTo(birthDate));
+        assertThat(fieldDefinitions.get(1).get("iri"), Matchers.equalTo(knows));
     }
 
     @Test

@@ -39,8 +39,6 @@
  */
 require('../../styles/main.scss');
 
-require('whatwg-fetch');
-require('es6-promise/auto');
 require('./viewUtils/polyfills');
 
 export { DefaultLinkTemplateBundle, defaultRenderLinkProperties } from './customization/defaultLinkStyles';
@@ -57,7 +55,7 @@ export { DIAGRAM_CONTEXT_URL_V1, PLACEHOLDER_ELEMENT_TYPE, PLACEHOLDER_LINK_TYPE
 export * from './data/composite/composite';
 export {
    Rdf, RdfDataProvider, RdfDataProviderOptions, RdfFile, LodDataProvider, LodDataProviderOptions,
-   RdfParser, RdfExtLegacyGraph, RdfExtLegacyTriple, RdfExtLegacyTerm,
+   RdfParser,
 } from './data/rdf';
 export { canonicalizeBlanks } from './data/rdf/blankHashing';
 export * from './data/sparql/sparqlDataProvider';
@@ -67,7 +65,9 @@ export * from './data/sparql/sparqlGraphBuilder';
 export { SparqlResponse } from './data/sparql/sparqlModels';
 export { parseTurtleText } from './data/sparql/turtle';
 
-export { RestoreGeometry, setElementExpanded, setElementData, setLinkData, performLayout } from './diagram/commands';
+export {
+    RestoreGeometry, setElementExpanded, setElementData, setLinkData, changeLinkTypeVisibility, performLayout,
+} from './diagram/commands';
 export { CanvasWidget, CanvasWidgetProps, WidgetDock, getCanvasWidgetPosition } from './diagram/canvasWidget';
 export {
     Cell, Element, ElementEvents, ElementTemplateState,
@@ -105,9 +105,11 @@ export * from './viewUtils/events';
 export { HashMap, HashSet, ReadonlyHashMap, ReadonlyHashSet } from './viewUtils/hashMap';
 export { ToDataURLOptions } from './viewUtils/toSvg';
 export {
-    LayoutFunction, LayoutFunctionParams, CalculatedLayout, UnzippedCalculatedLayout,
-    LayoutNode, LayoutEdge, calculateLayout, applyLayout, forceLayout, removeOverlaps,
-    placeElementsAround,
+    LayoutNode, LayoutEdge, LayoutFunctionParams, CalculatedLayout,
+    LayoutForceParams, layoutForce,
+    LayoutTransformLinksSettings, layoutTransformLinks,
+    layoutRemoveOverlaps, layoutPadded, layoutBiasFreePadded, layoutColaPadded,
+    calculateLayout, applyLayout,  getLayoutContentFittingBox, placeElementsAround,
 } from './viewUtils/layout';
 
 export {

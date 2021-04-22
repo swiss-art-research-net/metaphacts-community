@@ -196,6 +196,9 @@ function systemTemplateHelper(this: unknown, templateIndex: string, options: Sys
   }
 
   const context = RENDERING_CONTEXTS.get(data.root);
+  if (context.insideAttribute) {
+    throw new Error('Cannot render nested template inside templated attribute');
+  }
   const template = context.nodeSource.childTemplates[templateIndex];
   if (!template) {
     throw new Error('Invalid template index in system template helper');
@@ -219,6 +222,10 @@ function systemTextHelper(this: unknown, options: SystemHelperOptions) {
 
   const context = RENDERING_CONTEXTS.get(data.root);
   const textValue = options.fn(this);
+  if (context.insideAttribute) {
+    return textValue;
+  }
+
   context.node.children.push({
     type: 'text',
     data: textValue,
@@ -233,6 +240,10 @@ function systemDynamicHtmlHelper(this: unknown, options: SystemHelperOptions) {
 
   const context = RENDERING_CONTEXTS.get(data.root);
   const rawHtml = options.fn(this);
+  if (context.insideAttribute) {
+    return rawHtml;
+  }
+
   const nodes = parseHtml(rawHtml);
 
   const importedComponents = findImportedComponents(nodes);

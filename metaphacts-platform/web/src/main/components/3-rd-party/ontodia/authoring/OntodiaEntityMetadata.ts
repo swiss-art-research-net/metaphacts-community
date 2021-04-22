@@ -43,7 +43,7 @@ import * as Immutable from 'immutable';
 import { ElementTypeIri, CancellationToken } from 'ontodia';
 
 import { Rdf } from 'platform/api/rdf';
-import { FieldDefinition } from 'platform/components/forms';
+import * as Forms from 'platform/components/forms';
 
 import {
   FieldConfigurationContext, EntityMetadata,
@@ -100,19 +100,33 @@ interface OntodiaEntityMetadataConfig {
   fields: ReadonlyArray<string>;
 
   /**
-   * Field Iri for entity label override
+   * Field IRI for entity label override.
    */
   labelIri?: string;
 
   /**
-   * Field Iri for entity image override
+   * Field IRI for entity image override.
    */
   imageIri?: string;
+
+  /**
+   * **Experimental** Field IRIs the values of which should be tracked as owned by this entity.
+   *
+   * Being owned by entity means:
+   *   - all changes in owned entities will be reflected as change in owner entity;
+   *   - discarding changes for owner entity will also discard all changes in owned entities;
+   */
+  ownedFields?: ReadonlyArray<string>;
 
   /**
    * Subject template override for generating IRIs for new entities of this type.
    */
   newSubjectTemplate?: string;
+
+  /**
+   * Subject template settings override for generating IRIs for new entities of this type.
+   */
+  newSubjectTemplateSettings?: Forms.SubjectTemplateSettings;
 
   /**
    * Entity properties required for the entity to be editable
@@ -171,7 +185,9 @@ function extractAuthoringMetadata(
     editableWhen,
     labelIri = context.defaultLabelIri,
     imageIri = context.defaultImageIri,
+    ownedFields = [],
     newSubjectTemplate = context.defaultSubjectTemplate,
+    newSubjectTemplateSettings = context.defaultSubjectTemplateSettings,
   } = props;
 
   if (typeof entityTypeIri !== 'string') {
@@ -189,6 +205,14 @@ function extractAuthoringMetadata(
     throw new Error(
       `<ontodia-entity-metadata> for <${entityTypeIri}>: missing type field <${typeIri}>`
     );
+  }
+
+  for (const ownedField of ownedFields) {
+    if (!allFieldByIri.has(ownedField)) {
+      throw new Error(
+        `<ontodia-entity-metadata> for <${entityTypeIri}>: missing owned field <${ownedField}>`
+      );
+    }
   }
 
   const mappedFields = fields.map(fieldIri => {
@@ -211,7 +235,7 @@ function extractAuthoringMetadata(
 
   const entityFields = [...headFields, ...mappedFields];
   const fieldByIri = Immutable.Map(
-    entityFields.map(f => [f.iri, f] as [string, FieldDefinition])
+    entityFields.map(f => [f.iri, f] as [string, Forms.FieldDefinition])
   );
 
   const metadata: EntityMetadata = {
@@ -226,7 +250,9 @@ function extractAuthoringMetadata(
     typeField,
     labelField,
     imageField,
+    ownedFields: new Set(ownedFields),
     newSubjectTemplate,
+    newSubjectTemplateSettings,
     formChildren: props.children,
   };
 

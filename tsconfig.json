@@ -1,5 +1,4 @@
 {
-  "version": "2.0.0",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
@@ -37,10 +36,10 @@
       "sputniq": ["metaphactory/ontodia"]
     },
     "typeRoots": ["metaphacts-platform/web/node_modules/@types"],
-    "types": ["systemjs"],
-    "target": "es5",
+    "types": [],
+    "target": "ES2017",
     "module": "commonjs",
-    "lib": ["dom", "es2015"],
+    "lib": ["DOM", "ES2017"],
     "jsx": "react",
     "allowSyntheticDefaultImports": true,
     "declaration": false,
@@ -51,8 +50,6 @@
     "noFallthroughCasesInSwitch": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "importHelpers": true,
     "skipLibCheck": true,
     "plugins": [

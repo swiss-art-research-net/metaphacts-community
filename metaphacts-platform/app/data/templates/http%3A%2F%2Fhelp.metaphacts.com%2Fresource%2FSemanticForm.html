@@ -1,6 +1,5 @@
 [[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
 
-
 <div class="page">
   <div class='page__body'>
     <h1>Semantic Form</h1>
@@ -50,7 +49,9 @@
 ]]></mp-code-block>
 
     Furthermore, the following attributes can be configured:
-    <mp-documentation type='ResourceEditorFormConfig'></mp-documentation>
+    <div class='ResourceEditorFormConfig'>
+      <mp-documentation type='ResourceEditorFormConfig'></mp-documentation>
+    </div>
 
     <p>For <code>persistence</code> attribute the <code>'rest'</code> mode allows transferring the collected form data to a REST endpoint, e.g. to trigger an action. This requires additional configuration, see <semantic-link iri="[[resolvePrefix "Help:SemanticFormRestPersistence"]]">REST-based Form Persistence</semantic-link> for details.</p>
 
@@ -152,7 +153,7 @@
             ]]></mp-code-block>
           </td>
           <td>
-            <p>Component to select one or many values from a hierarchy represented by a tree selector.</p>
+            <p>Component to select one or many values from a hierarchy represented by a tree selector, using the <code>treePatterns</code> from the referenced field definition.</p>
           </td>
         </tr>
         <tr>
@@ -1497,5 +1498,65 @@
       ]]>
     </mp-code-example>
 
+    <h3>Example 11: Selecting SKOS concepts using a Tree Picker</h3>
+    <mp-code-example>
+      <![CDATA[
+      <bs-panel>
+        <semantic-form
+          new-subject-template='http://www.example.com/id/object-{{UUID}}'
+          post-action='redirect'
+          form-id='example-skos'
+          fields='[
+                    {
+                      "id": "name",
+                      "label": "Name",
+                      "xsdDatatype": "xsd:string",
+                      "minOccurs": 1,
+                      "maxOccurs": 1,
+                      "insertPattern": "INSERT { $subject rdfs:label ?value } WHERE {}"
+                    }, {
+                      "id": "classification",
+                      "label": "Classification",
+                      "insertPattern": "INSERT { $subject <http://www.example.com/classification> ?value } WHERE {}",
+                      "treePatterns": {
+                        "type": "full",
+                        "rootsQuery": "
+                              SELECT DISTINCT ?item ?hasChildren WHERE {
+                                ?item a skos:Concept .
+                                FILTER NOT EXISTS { ?item skos:broader ?broader }
+                                OPTIONAL { ?subItem skos:broader ?item }
+                                BIND(BOUND(?subItem) AS ?hasChildren)
+                              }",
+                        "childrenQuery": "
+                            SELECT ?item ?hasChildren WHERE {
+                              ?item skos:broader ?parent .
+                              OPTIONAL { ?subItem skos:broader ?item }
+                              BIND(BOUND(?subItem) AS ?hasChildren)
+                            }
+                        ",
+                        "parentsQuery": "
+                            SELECT ?item ?parent WHERE {
+                              ?item skos:broader ?parent .
+                            }
+                        ",
+                        "searchQuery": "
+                          SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
+                            ?item a skos:Concept ;
+                              skos:prefLabel ?label .
+                            BIND(false AS ?hasChildren)
+                            FILTER REGEX(STR(?label), ?__token__, \"i\")
+                          } ORDER BY DESC (?score) (?label) LIMIT 200
+                        "
+                      }
+                    }]'
+        >
+          <semantic-form-text-input for="name"></semantic-form-text-input>
+          <semantic-form-tree-picker-input for="classification"></semantic-form-tree-picker-input>
+          <button name="submit" class="btn btn-secondary">Save</button>
+          <button name="reset" class="btn btn-secondary">Reset</button>
+        </semantic-form>
+      </bs-panel>
+      ]]>
+    </mp-code-example>
   </div>
 </div>

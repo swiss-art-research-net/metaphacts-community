@@ -72,11 +72,13 @@ export namespace FieldMapping {
 
   export function isInputGroup(
     mapping: FieldMapping,
-    groupType: SingleValueInputGroup['inputGroupType']
+    groupType?: SingleValueInputGroup['inputGroupType']
   ): mapping is InputMapping {
     if (isInput(mapping) && mapping.singleValueInputType) {
       const inputGroup = mapping.singleValueInputType as Partial<SingleValueInputGroup>;
-      return inputGroup.inputGroupType === groupType;
+      return groupType
+        ? inputGroup.inputGroupType === groupType
+        : Boolean(inputGroup.inputGroupType);
     }
     return false;
   }

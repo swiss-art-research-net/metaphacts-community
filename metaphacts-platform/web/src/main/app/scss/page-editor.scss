@@ -80,9 +80,14 @@
     ul { padding-left: 25px; }
   }
 
-  &__editor-settings {
+  &__header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     padding: 5px;
+  }
 
+  &__editor-settings {
     > *:not(:last-child) {
       margin-right: 10px;
     }

@@ -255,3 +255,25 @@
   }
 
 }
+
+.footer {
+  display: flex;
+  flex-direction: row;
+}
+
+.page-size-selector-container {
+  margin-left: 15px;
+  display: flex;
+  flex-direction: row;
+}
+.page-size-selector-label-before {
+  padding: 0.5rem 0;
+  margin-right: 1ch;
+}
+.page-size-selector-label-after {
+  padding: 0.5rem 0;
+  margin-left: 1ch;
+}
+.page-size-selector button {
+  padding: 0.5rem 0.75rem;
+}

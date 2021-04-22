@@ -38,7 +38,7 @@
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
 import * as _ from 'lodash';
-import { Props as ReactProps, createElement } from 'react';
+import { ClassAttributes, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import * as maybe from 'data.maybe';
 
@@ -47,6 +47,7 @@ import { Rdf }  from 'platform/api/rdf';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
 import { Component } from 'platform/api/components';
 import { Cancellation } from 'platform/api/async';
+import { CompiledTemplate } from 'platform/api/services/template';
 
 import { breakGraphCycles, findRoots } from 'platform/components/semantic/lazy-tree';
 import { ErrorNotification } from 'platform/components/ui/notification';
@@ -59,27 +60,30 @@ import { D3Tree, D3TreeProviderKind, D3TreeOptions } from './D3Tree';
 export interface SemanticTreeConfig {
   /**
    * Determines visual style of the tree. Defaults to HTML rendering if left unspecified.
-   * @default 'html'
+   * @default "html"
    */
   provider?: SemanticTreeKind;
 
   /**
-   * SPARQL Select query. The query should have at least two projection
-   * variables -  `node` and `parent` i.e. the tree structure needs to be returned
-   * as adjacency list of node-parent relations.
-   * It is possible to override the expected binding variable names (c.f. options below)
-   * Example:
+   * SPARQL SELECT query for tree nodes.
+   *
+   * The query should have at least two projection variables: `node` and `parent`
+   * i.e. the tree structure needs to be returned as adjacency list of node-parent relations.
+   *
+   * It is possible to override the expected binding variable names (c.f. options below).
+   * **Example**:
    * ```
    * SELECT ?node ?parent WHERE {
-   *  ?node a owl:Class .
-   *  OPTIONAL{?node rdfs:subClassOf ?parent }
+   *   ?node a owl:Class .
+   *   OPTIONAL { ?node rdfs:subClassOf ?parent }
    * }
    * ```
+   *
    * Depending on your data, you may need to traverse the graph using **SPARQL
-   * property path operations** (e.g. rdfs:subClassOf+ or rdsf:subClassOf*)
+   * property path operations** (e.g. `rdfs:subClassOf+` or `rdsf:subClassOf*`)
    * in order to collect all node-parent relations.
    *
-   * Example:
+   * **Example**:
    * ```
    * SELECT DISTINCT ?node ?parent WHERE {
    *   { { ?? rdfs:subClassOf* ?node }
@@ -125,14 +129,14 @@ export interface SemanticTreeConfig {
   /**
    * SPARQL Select projection variable name that is used to represent
    * **parent** value in parent-child relation
-   * @default 'parent'
+   * @default "parent"
    */
   parentBindingName?: string;
 
   /**
    * SPARQL Select projection variable name that is used to represent
    * **child** value in parent-child relation
-   * @default 'node'
+   * @default "node"
    */
   nodeBindingName?: string;
 
@@ -152,9 +156,9 @@ export interface SemanticTreeConfig {
    * Options for D3-based tree to customize, for example, the width of the nodes
    * to fit longer labels.
    *
-   * Example:
+   * **Example**:
    * ```
-   * d3-tree-options='{"nodeWidth":160, "nodeHeight":25}'
+   * d3-tree-options='{"nodeWidth": 160, "nodeHeight": 25}'
    * ```
    * **Make sure that numbers aren't quoted in `""`**.
    */
@@ -168,10 +172,10 @@ export interface SemanticTreeConfig {
 
 export type SemanticTreeKind = 'html' | D3TreeProviderKind;
 
-export type Props = SemanticTreeConfig & ReactProps<SemanticTree>;
+export type Props = SemanticTreeConfig & ClassAttributes<SemanticTree>;
 
 export interface ProviderProps {
-  tupleTemplate: string;
+  tupleTemplate: string | CompiledTemplate;
   onNodeClick?: (node: TreeNode) => void;
   nodeData: ReadonlyArray<TreeNode>;
   collapsed: boolean;
@@ -188,6 +192,7 @@ interface State {
   data?: ReadonlyArray<TreeNode>;
   isLoading?: boolean;
   errorMessage?: Data.Maybe<string>;
+  tupleTemplate?: CompiledTemplate;
 }
 
 type DefaultProps = Required<Pick<Props,
@@ -195,6 +200,7 @@ type DefaultProps = Required<Pick<Props,
 >>;
 
 export class SemanticTree extends Component<Props, State> {
+  private cancellation = new Cancellation();
   private fetchOperation = Cancellation.cancelled;
   static readonly defaultProps: DefaultProps = {
     provider: 'html',
@@ -215,6 +221,9 @@ export class SemanticTree extends Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     if (this.props.query !== prevProps.query) {
       this.fetchData();
+    }
+    if (getTupleTemplate(this.props) !== getTupleTemplate(prevProps)) {
+      this.compileTupleTemplate();
     }
   }
 
@@ -249,19 +258,33 @@ export class SemanticTree extends Component<Props, State> {
     }
   }
 
+  private compileTupleTemplate() {
+    this.cancellation.map(
+      this.appliedTemplateScope.prepare(getTupleTemplate(this.props))
+    ).observe({
+      value: tupleTemplate => this.setState({tupleTemplate}),
+      error: errorMessage => this.setState({errorMessage})
+    });
+  }
+
   componentWillUnmount() {
+    this.cancellation.cancelAll();
     this.fetchOperation.cancelAll();
   }
 
   public componentDidMount() {
     this.fetchData();
+    this.compileTupleTemplate();
   }
 
   public render() {
     if (this.state.errorMessage.isJust) {
       return createElement(ErrorNotification, {errorMessage: this.state.errorMessage.get()});
     }
-    return this.state.isLoading ? createElement(Spinner) : this.renderTree();
+    if (this.state.isLoading || !this.state.tupleTemplate) {
+      return createElement(Spinner);
+    }
+    return this.renderTree();
   }
 
   private renderTree() {
@@ -271,7 +294,7 @@ export class SemanticTree extends Component<Props, State> {
     }
 
     const providerProps: ProviderProps = {
-      tupleTemplate: this.getTupleTemplate(),
+      tupleTemplate: this.state.tupleTemplate,
       onNodeClick: this.onNodeClick,
       nodeData: data,
       collapsed: this.props.collapsed,
@@ -341,22 +364,23 @@ export class SemanticTree extends Component<Props, State> {
     // empty default onNodeClick
   }
 
-  private handleDeprecatedLayout(): string {
-    if (_.has(this.props, 'layout')) {
-      console.warn(
-        'layout property in semantic-tree is deprecated, please use flat properties instead'
-      );
-      return (this.props as any)['layout']['tupleTemplate'];
-    }
-    return undefined;
-  }
+}
 
-  private getTupleTemplate(): string {
-    const { nodeBindingName, tupleTemplate } = this.props;
-    const deprecatedTemplate = this.handleDeprecatedLayout();
-    const defaultTemplate = `<semantic-link iri="{{${nodeBindingName}.value}}"></semantic-link>`;
-    return tupleTemplate || deprecatedTemplate || defaultTemplate;
+function handleDeprecatedLayout(props: Props): string {
+  if (_.has(props, 'layout')) {
+    console.warn(
+      'layout property in semantic-tree is deprecated, please use flat properties instead'
+    );
+    return (props as any)['layout']['tupleTemplate'];
   }
+  return undefined;
+}
+
+function getTupleTemplate(props: Props): string {
+  const { nodeBindingName, tupleTemplate } = props;
+  const deprecatedTemplate = handleDeprecatedLayout(props);
+  const defaultTemplate = `<semantic-link iri="{{${nodeBindingName}.value}}"></semantic-link>`;
+  return tupleTemplate || deprecatedTemplate || defaultTemplate;
 }
 
 interface MutableNode {
@@ -430,7 +454,7 @@ function synthesizeParentNode(key: string, nodeBindingName: string): MutableNode
 
 function findExpectedRoots(
   {map}: MutableGraph,
-  expectedRoots: ReadonlyArray<string>,
+  expectedRoots: ReadonlyArray<string>
 ) {
   const roots = new Set<MutableNode>();
   const notFound: string[] = [];

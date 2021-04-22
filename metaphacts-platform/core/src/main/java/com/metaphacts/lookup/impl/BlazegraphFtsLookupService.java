@@ -39,6 +39,8 @@
  */
 package com.metaphacts.lookup.impl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 
@@ -47,6 +49,9 @@ import com.metaphacts.lookup.model.LookupQuery;
 import com.metaphacts.lookup.util.LookupSparqlQueryBuilder;
 
 public class BlazegraphFtsLookupService extends AbstractSPARQLSearchLookupService {
+
+    private static final Logger logger = LogManager.getLogger(BlazegraphFtsLookupService.class);
+
     public BlazegraphFtsLookupService(SparqlQueryLookupConfig config) {
         super(config);
     }
@@ -55,6 +60,10 @@ public class BlazegraphFtsLookupService extends AbstractSPARQLSearchLookupServic
     protected TupleQuery createQuery(LookupQuery query, RepositoryConnection con) {
         LookupSparqlQueryBuilder.QueryPart parsedQuery = LookupSparqlQueryBuilder.parseQueryForBlazegraph(query);
 
+        if (logger.isTraceEnabled()) {
+            logger.trace("Creating the following Blazegraph lookup query: \n{}\nBindings: {}",
+                    parsedQuery.getAsString(), parsedQuery.getBindings());
+        }
         SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder.create(
             parsedQuery.getAsString(),
             TupleQuery.class
@@ -64,3 +73,4 @@ public class BlazegraphFtsLookupService extends AbstractSPARQLSearchLookupServic
         return  builder.build(con);
     }
 }
+

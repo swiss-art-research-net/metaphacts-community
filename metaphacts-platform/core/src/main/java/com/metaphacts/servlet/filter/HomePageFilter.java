@@ -93,8 +93,12 @@ public class HomePageFilter implements Filter {
             if (httpRequest.getQueryString() == null
                     && (path.isEmpty() || path.equals("/") || path.equals(config.getEnvironmentConfig().getResourceUrlMapping()) || path.startsWith("/;"))) {
                 redirectToStartPage(httpRequest, response);
+                // request was handled
+                return;
             }else if(httpRequest.getQueryString() != null && path.equals("/") ){
                 redirectToStartPage(httpRequest, response);
+                // request was handled
+                return;
             }
         }
         chain.doFilter(request, response);
@@ -119,7 +123,6 @@ public class HomePageFilter implements Filter {
         
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         httpServletResponse.sendRedirect(httpServletResponse.encodeRedirectURL(newPath));
-        return;
     }
     
     private IRI guessStartPage(String startPage){

@@ -42,25 +42,29 @@ package com.metaphacts.templates.helper;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
+import com.github.jknack.handlebars.Helper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.github.jknack.handlebars.Options;
 import com.metaphacts.resource.HandlebarsDescriptionRenderer;
 import com.metaphacts.templates.MetaphactsHandlebars;
+import org.apache.logging.log4j.util.Strings;
 
 /**
  * Helpers for date time handling and formatting.
- * 
+ *
  * <p>
  * These helpers are used in backend templating, e.g. from
  * {@link MetaphactsHandlebars} and {@link HandlebarsDescriptionRenderer}.
  * </p>
- * 
+ *
  * @author Wolfgang Schell <ws@metaphacts.com>
  * @author Olga Belyaeva <ob@metaphacts.com>
  */
@@ -74,12 +78,26 @@ public class DateTimeHelperSource {
     public final static String ISO_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
     public final static String ISO_DATE_FORMAT = "yyyy-MM-dd";
     public final static String OUTPUT_FORMAT = "yyyy-MM-dd HH:mm:ss X";
+    public final static String FALLBACK_PARAMETER_ID = "fallback";
+
+    public static Map<String, Helper<Object>> getHelpers() {
+        Map<String, Helper<Object>> helpersByName = new LinkedHashMap<>();
+        helpersByName.put("date-format", (context, options) -> dateTimeFormat((String) context, options));
+        helpersByName.put("date-formatYear", (context, options) -> dateFormatYear((String) context, options));
+        helpersByName.put("date-formatMonth", (context, options) -> dateFormatMonth((String) context, options));
+        helpersByName.put("date-formatDay", (context, options) -> dateFormatDay((String) context, options));
+        helpersByName.put("date-formatHour", (context, options) -> dateFormatHour((String) context, options));
+        helpersByName.put("date-formatMinute", (context, options) -> dateFormatMinute((String) context, options));
+        helpersByName.put("date-formatSecond", (context, options) -> dateFormatSecond((String) context, options));
+        helpersByName.put("currentDateTime", (context, options) -> currentDateTime(options));
+        return helpersByName;
+    }
 
     /**
      * Helper to render a timestamp using the provided format string.
-     * 
+     *
      * <p>
-     * General usage: <code>{{dateTimeFormat timestamp format sourceFormat}}</code>
+     * General usage: <code>{{date-format timestamp format sourceFormat}}</code>
      * </p>
      * <ul>
      * <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -93,25 +111,25 @@ public class DateTimeHelperSource {
      * (optional). If not provided a default value of {@value #ISO_DATETIME_FORMAT}
      * or {@value #ISO_DATE_FORMAT} is used</li>
      * </ul>
-     * 
+     *
      * <p>
      * Examples:
      * </p>
      * <p>
      * Render provided timestamp using German conventions:<br>
-     * <code>{{dateTimeFormat timestamp "dd.MM.yyyy HH:mm:ss"}}</code>
+     * <code>{{date-format timestamp "dd.MM.yyyy HH:mm:ss"}}</code>
      * </p>
      * <p>
      * Render provided timestamp using German conventions, parse the timestamp using
      * the provided format (last parameter):<br>
-     * <code>{{dateTimeFormat timestamp "dd.MM.yyyy HH:mm:ss" "yyyy-MM-dd'T'HH:mm:ss"}}</code>
+     * <code>{{date-format timestamp "dd.MM.yyyy HH:mm:ss" "yyyy-MM-dd'T'HH:mm:ss"}}</code>
      * </p>
      * <p>
      * Render provided timestamp using default format as defined in
      * {@value #OUTPUT_FORMAT}:<br>
-     * <code>{{dateTimeFormat timestamp}}</code>
+     * <code>{{date-format timestamp}}</code>
      * </p>
-     * 
+     *
      * @param dateTime timestamp as obtained e.g. from a RDF literal of type
      *                 <code>xsd:date</code> or <code>xsd:dateTime</code>
      * @param options  additional parameters
@@ -125,6 +143,7 @@ public class DateTimeHelperSource {
     public static CharSequence dateTimeFormat(String dateTime, Options options) {
         String outputFormat = options.param(0, OUTPUT_FORMAT);
         String sourceFormat = options.param(1, null);
+        String fallback = options.hash(FALLBACK_PARAMETER_ID);
 
         try {
             Date timestamp = tryParseTimestamp(dateTime, sourceFormat);
@@ -133,16 +152,18 @@ public class DateTimeHelperSource {
             logger.debug("Failed to render timestamp {} using sourceFormat {} to format {}: {}", dateTime, sourceFormat,
                     outputFormat, e.getMessage());
             logger.trace("Details: ", e);
-            // replace with empty result
+            if (Strings.isNotEmpty(fallback)) {
+                return fallback;
+            }
             return null;
         }
     }
 
     /**
      * Helper to render the year of a timestamp:<br>
-     * <code>{{year timestamp}}</code> or
-     * <code>{{year timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
-     * 
+     * <code>{{date-formatYear timestamp}}</code> or
+     * <code>{{date-formatYear timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
+     *
      * @param dateTime timestamp as obtained e.g. from a RDF literal of type
      *                 <code>xsd:date</code> or <code>xsd:dateTime</code>
      * @param options  optional argument to specify the source format of the
@@ -150,15 +171,15 @@ public class DateTimeHelperSource {
      * @return formatted timestamp or an empty string id there was a parsing or
      *         formatting error
      */
-    public static CharSequence year(String dateTime, Options options) {
+    public static CharSequence dateFormatYear(String dateTime, Options options) {
         return parseAndFormatTimestamp(dateTime, options, "yyyy");
     }
 
     /**
      * Helper to render the month of a timestamp:<br>
-     * <code>{{month timestamp}}</code> or
-     * <code>{{month timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
-     * 
+     * <code>{{date-formatMonth timestamp}}</code> or
+     * <code>{{date-formatMonth timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
+     *
      * @param dateTime timestamp as obtained e.g. from a RDF literal of type
      *                 <code>xsd:date</code> or <code>xsd:dateTime</code>
      * @param options  optional argument to specify the source format of the
@@ -166,15 +187,15 @@ public class DateTimeHelperSource {
      * @return formatted timestamp or an empty string id there was a parsing or
      *         formatting error
      */
-    public static CharSequence month(String dateTime, Options options) {
+    public static CharSequence dateFormatMonth(String dateTime, Options options) {
         return parseAndFormatTimestamp(dateTime, options, "MM");
     }
 
     /**
      * Helper to render the day of a timestamp:<br>
-     * <code>{{day timestamp}}</code> or
-     * <code>{{day timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
-     * 
+     * <code>{{date-formatDay timestamp}}</code> or
+     * <code>{{date-formatDay timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
+     *
      * @param dateTime timestamp as obtained e.g. from a RDF literal of type
      *                 <code>xsd:date</code> or <code>xsd:dateTime</code>
      * @param options  optional argument to specify the source format of the
@@ -182,15 +203,15 @@ public class DateTimeHelperSource {
      * @return formatted timestamp or an empty string id there was a parsing or
      *         formatting error
      */
-    public static CharSequence day(String dateTime, Options options) {
+    public static CharSequence dateFormatDay(String dateTime, Options options) {
         return parseAndFormatTimestamp(dateTime, options, "dd");
     }
 
     /**
      * Helper to render the hours of a timestamp:<br>
-     * <code>{{hours timestamp}}</code> or
-     * <code>{{hours timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
-     * 
+     * <code>{{date-formatHour timestamp}}</code> or
+     * <code>{{date-formatHour timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
+     *
      * @param dateTime timestamp as obtained e.g. from a RDF literal of type
      *                 <code>xsd:date</code> or <code>xsd:dateTime</code>
      * @param options  optional argument to specify the source format of the
@@ -198,15 +219,15 @@ public class DateTimeHelperSource {
      * @return formatted timestamp or an empty string id there was a parsing or
      *         formatting error
      */
-    public static CharSequence hours(String dateTime, Options options) {
+    public static CharSequence dateFormatHour(String dateTime, Options options) {
         return parseAndFormatTimestamp(dateTime, options, "HH");
     }
 
     /**
      * Helper to render the minutes of a timestamp:<br>
-     * <code>{{minutes timestamp}}</code> or
-     * <code>{{minutes timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
-     * 
+     * <code>{{date-formatMinute timestamp}}</code> or
+     * <code>{{date-formatMinute timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
+     *
      * @param dateTime timestamp as obtained e.g. from a RDF literal of type
      *                 <code>xsd:date</code> or <code>xsd:dateTime</code>
      * @param options  optional argument to specify the source format of the
@@ -214,15 +235,15 @@ public class DateTimeHelperSource {
      * @return formatted timestamp or an empty string id there was a parsing or
      *         formatting error
      */
-    public static CharSequence minutes(String dateTime, Options options) {
+    public static CharSequence dateFormatMinute(String dateTime, Options options) {
         return parseAndFormatTimestamp(dateTime, options, "mm");
     }
 
     /**
      * Helper to render the seconds of a timestamp:<br>
-     * <code>{{seconds timestamp}}</code> or
-     * <code>{{seconds timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
-     * 
+     * <code>{{date-formatSecond timestamp}}</code> or
+     * <code>{{date-formatSecond timestamp "yyyy-MM-dd'T'HH:mm:ss"}}</code>
+     *
      * @param dateTime timestamp as obtained e.g. from a RDF literal of type
      *                 <code>xsd:date</code> or <code>xsd:dateTime</code>
      * @param options  optional argument to specify the source format of the
@@ -230,7 +251,7 @@ public class DateTimeHelperSource {
      * @return formatted timestamp or an empty string id there was a parsing or
      *         formatting error
      */
-    public static CharSequence seconds(String dateTime, Options options) {
+    public static CharSequence dateFormatSecond(String dateTime, Options options) {
         return parseAndFormatTimestamp(dateTime, options, "ss");
     }
 
@@ -267,6 +288,7 @@ public class DateTimeHelperSource {
 
     protected static CharSequence parseAndFormatTimestamp(String dateTime, Options options, String outputFormat) {
         String sourceFormat = options.param(0, null);
+        String fallback = options.hash(FALLBACK_PARAMETER_ID);
 
         try {
             Date timestamp = tryParseTimestamp(dateTime, sourceFormat);
@@ -275,7 +297,9 @@ public class DateTimeHelperSource {
             logger.debug("Failed to render timestamp {} using sourceFormat {} to format {}: {}", dateTime, sourceFormat,
                     outputFormat, e.getMessage());
             logger.trace("Details: ", e);
-            // replace with empty result
+            if (Strings.isNotEmpty(fallback)) {
+                return fallback;
+            }
             return null;
         }
     }
@@ -288,7 +312,7 @@ public class DateTimeHelperSource {
      * [[currentDateTime format="MM-dd-yyyy"]]
      * </code></pre>
      */
-    public String currentDateTime(Options options) {
+    public static String currentDateTime(Options options) {
         String format = options.hash("format", "dd.MM.yyyy HH:mm:ss.SSS");
         SimpleDateFormat dateFormat = new SimpleDateFormat(format);
         Date date = new Date();

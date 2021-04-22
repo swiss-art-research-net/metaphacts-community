@@ -57,26 +57,30 @@ export interface D3TreeProps extends ProviderProps {
 
 export interface D3TreeOptions {
   /**
-   *  Numeric minHeight of the entire tree.
-   *  If the content is larger than the minimum height,
-   *  the min-height property has no effect.
-   *  By default the height will be estimated.
-   *  @default '300'
+   * Minimum height of the entire tree in pixels.
+   *
+   * If the content is larger than the minimum height, the min-height property has no effect.
+   * By default the height will be estimated.
+   *
+   * @default 300
    */
   minHeight?: number;
   /**
-   *  Numeric width of each node (template) element.
-   *  @default '30'
+   * Width of each node (template) element in pixels.
+   *
+   * @default 30
    */
   nodeWidth?: number;
   /**
-   *  Numeric height of each node (template) element.
-   *  @default '120'
+   * Height of each node (template) element in pixels.
+   *
+   * @default 120
    */
   nodeHeight?: number;
   /**
-   *  Numeric left margin of each node (template) element.
-   *  @default '8'
+   * Left margin of each node (template) element in pixels.
+   *
+   * @default 8
    */
   nodeLeftMargin?: number;
 }

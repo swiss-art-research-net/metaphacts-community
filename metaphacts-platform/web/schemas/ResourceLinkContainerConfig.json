@@ -13,7 +13,7 @@
             "type": "boolean"
         },
         "iri": {
-            "description": "resource IRI to navigate",
+            "description": "Resource IRI to navigate to.",
             "type": "string"
         },
         "target": {
@@ -26,7 +26,7 @@
             "type": "string"
         },
         "uri": {
-            "description": "resource IRI to navigate",
+            "description": "**Deprecated**: use `iri` property instead.",
             "type": "string"
         }
     },

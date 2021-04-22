@@ -98,26 +98,26 @@ public interface TypeService {
      * </p>
      * 
      * <p>
-     * It is up to the implementation what to consider the primary type on an
+     * It is up to the implementation what to consider the primary type of an
      * entity. This could be e.g. the most specific type if a resource has multiple
      * types which in turn represent a (sub)class hierarchy.
      * </p>
      * 
      * <p>
      * The default implementation simply returns the first element of the types as
-     * return by {@link #getTypes(IRI)}.
+     * returned by {@link #getTypes(IRI)}.
      * </p>
      * 
      * <p>
      * The result of this method is typically cached to speed up repeated lookups.
      * </p>
-     * 
-     * @param reasource  IRI of the entity of which to fetch the type
+     *
+     * @param resource   IRI of the entity of which to fetch the type
      * @param repository repository for which to get the type
      * @return IRI of the entity's type or empty of not available
      */
-    default Optional<IRI> getPrimaryType(IRI reasource, Repository repository) {
-        Iterator<IRI> iterator = getTypes(reasource, repository).iterator();
+    default Optional<IRI> getPrimaryType(IRI resource, Repository repository) {
+        Iterator<IRI> iterator = getTypes(resource, repository).iterator();
         if (!iterator.hasNext()) {
             return Optional.empty();
         }
@@ -133,4 +133,8 @@ public interface TypeService {
 	 *         for an IRI it would be still present as {@link Optional#empty}.
 	 */
 	Map<IRI, Optional<Iterable<IRI>>> getAllTypes(Iterable<? extends IRI> resourceIris, Repository repository);
+
+    interface Provider {
+        Optional<TypeService> getTypeService();
+    }
 }

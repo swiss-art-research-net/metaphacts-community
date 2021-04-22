@@ -8,9 +8,6 @@ import { N3Parser, renderExample, tryLoadLayoutFromLocalStorage } from './resour
 import { ExampleMetadataApi, ExampleValidationApi } from './resources/exampleMetadataApi';
 import { ExampleWorkspaceLayout } from './resources/exampleWorkspaceLayout';
 
-const RdfXmlParser: any = require('rdf-parser-rdfxml');
-const JsonLdParser: any = require('rdf-parser-jsonld');
-
 const data = require('./resources/orgOntology.ttl');
 
 const ENABLE_LOD_FETCHING = false;
@@ -66,8 +63,6 @@ class RdfExample extends React.Component {
             ],
             acceptBlankNodes: false,
             parsers: {
-                'application/rdf+xml': new RdfXmlParser(),
-                'application/ld+json': new JsonLdParser(),
                 'text/turtle': new N3Parser(),
             },
         });

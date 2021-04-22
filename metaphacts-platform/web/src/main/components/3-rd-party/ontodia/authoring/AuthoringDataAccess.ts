@@ -50,7 +50,7 @@ import { EntityMetadata } from './FieldConfigurationCommon';
 export interface LoadedEntity {
   model: Ontodia.ElementModel;
   newIri: Ontodia.ElementIri | undefined;
-  status: 'new' | 'changed' | 'deleted';
+  status: 'new' | 'changed' | 'deleted' | 'missing';
 }
 
 export async function generateAuthoredEntity(
@@ -72,12 +72,9 @@ export async function loadAuthoredEntity(
 
   let model: Ontodia.ElementModel | undefined;
   let newIri: Ontodia.ElementIri | undefined;
-  let status: 'new' | 'changed' | 'deleted';
+  let status: LoadedEntity['status'];
   const change = editor.authoringState.elements.get(elementIri);
   if (change) {
-    if (change.deleted) {
-      throw new Error(`Cannot edit deleted entity <${elementIri}>`);
-    }
     model = change.after;
     newIri = change.newIri;
     status = (
@@ -89,10 +86,7 @@ export async function loadAuthoredEntity(
     const pool = getOrCreateElementInfoPool(diagramModel.dataProvider);
     model = await pool.query(elementIri).toPromise();
     Ontodia.CancellationToken.throwIfAborted(ct);
-    if (!(model && model.types.length > 0)) {
-      throw new Error(`Failed to get entity <${elementIri}>`);
-    }
-    status = 'changed';
+    status = model && model.types.length > 0 ? 'changed' : 'missing';
   }
 
   return {model, newIri, status};

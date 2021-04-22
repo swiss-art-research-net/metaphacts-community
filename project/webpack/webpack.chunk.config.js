@@ -17,7 +17,7 @@
  */
 
 const webpackDevConfig = require('./webpack.dev.config');
-const makeDdefaults = require('./defaults');
+const makeDefaults = require('./defaults');
 
 /**
  * Returns webpack config for chunk content testing.
@@ -27,7 +27,8 @@ const makeDdefaults = require('./defaults');
  * @param {{ [key: string]: string }} env
  */
 module.exports = function (env) {
-  const config = webpackDevConfig(makeDdefaults());
+  const config = webpackDevConfig(makeDefaults());
+  config.bail = true;
 
   config.output.filename = "[name]-[chunkhash]-bundle.js";
   config.output.chunkFilename = "[name]-[chunkhash]-bundle.js";

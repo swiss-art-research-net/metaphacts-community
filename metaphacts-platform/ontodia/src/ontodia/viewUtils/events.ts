@@ -42,13 +42,13 @@ export type AnyListener<Data> = (data: Partial<Data>, key: string) => void;
 export type Unsubscribe = () => void;
 
 export interface PropertyChange<Source, Value> {
-    source: Source;
-    previous: Value;
+    readonly source: Source;
+    readonly previous: Value;
 }
 
 export interface AnyEvent<Data> {
-    key: string;
-    data: Partial<Data>;
+    readonly key: string;
+    readonly data: Partial<Data>;
 }
 
 export interface Events<Data> {

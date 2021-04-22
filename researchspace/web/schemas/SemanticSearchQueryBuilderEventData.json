@@ -1,0 +1,64 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
+    "properties": {
+        "Search.AndConjunctSelected": {
+            "description": "Event which should be triggered when AND conjunction is clicked.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Search.CategoryOrRelationSelected": {
+            "description": "Event which should be triggered when domain or range or predicate is selected.",
+            "type": "string"
+        },
+        "Search.DateFormatSelected": {
+            "description": "Event which should be triggered when date format is selected.",
+            "type": "string"
+        },
+        "Search.DateFormatSubmitted": {
+            "description": "Event which should be triggered when date format is submitted.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Search.OrDisjunctSelected": {
+            "description": "Event which should be triggered when AND conjunction is clicked.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Search.SelectDateFormatOpened": {
+            "description": "Event which should be triggered when date format dropdown is selected.",
+            "properties": {
+            },
+            "type": "object"
+        },
+        "Search.TreeInputSelected": {
+            "description": "Event which should be triggered when tree selector selection is submitted.",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "Search.CategoryOrRelationSelected",
+        "Search.TreeInputSelected",
+        "Search.AndConjunctSelected",
+        "Search.OrDisjunctSelected",
+        "Search.SelectDateFormatOpened",
+        "Search.DateFormatSelected",
+        "Search.DateFormatSubmitted"
+    ],
+    "required": [
+        "Search.AndConjunctSelected",
+        "Search.CategoryOrRelationSelected",
+        "Search.DateFormatSelected",
+        "Search.DateFormatSubmitted",
+        "Search.OrDisjunctSelected",
+        "Search.SelectDateFormatOpened",
+        "Search.TreeInputSelected"
+    ],
+    "type": "object"
+}
+

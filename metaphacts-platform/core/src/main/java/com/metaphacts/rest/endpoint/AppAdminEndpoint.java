@@ -140,14 +140,17 @@ public class AppAdminEndpoint {
     @RequiresAuthentication
     @Produces(MediaType.APPLICATION_JSON)
     public Response listApps() {
+        logger.trace("Listing apps");
         ArrayList<MetaObject> l = new ArrayList<MetaObject>();
         for (PluginWrapper p : pluginManager.getResolvedPlugins()) {
             String appId = p.getPluginId();
             if (checkPermission(APP.PREFIX_CONFIG_VIEW + appId)) {
+                logger.trace("Adding app {}", appId);
                 l.add(getStorageMetaOject(appId));
             }
         }
         for(String pId : Lists.<String>newArrayList("runtime")){
+            logger.trace("Adding app runtime");
             l.add(getStorageMetaOject(pId));
         }
         return Response.ok().entity(l).build();
@@ -161,21 +164,25 @@ public class AppAdminEndpoint {
     public Response uploadApp(@FormDataParam("file") InputStream fileInputStream,
             @FormDataParam("file") FormDataContentDisposition fileMetaData) {
         final String fileName = fileMetaData.getFileName();
+        logger.info("Uploading app from file {}", fileName);
         if (!StringUtils.endsWith(fileName, ".zip")) {
+            logger.warn("Failed to install uploaded app file {}: app artefact must be a zip file", fileName);
             return Response.serverError().entity("App artefact must be a zip file.").build();
         }
         File targetFile = new File(new File(Configuration.getAppsDirectory()), fileMetaData.getFileName());
         if (targetFile.exists()) {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(
-                    "\""+targetFile+"\" already exists. This either indicates that a previous installation was not completed successfully "+
-                    "and/or that there are some issues with the file system permissions (for example, in case the zip has been mounted into the platform)")
-                    .build();
+            String message = "\""+targetFile+"\" already exists. This either indicates that a previous installation was not completed successfully "+
+            "and/or that there are some issues with the file system permissions (for example, in case the zip has been mounted into the platform)";
+            logger.warn(message);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(message).build();
         }
         try (OutputStream out = new FileOutputStream(targetFile)) {
 
             IOUtils.copyLarge(fileInputStream,out);
             out.flush();
         } catch (IOException e) {
+            logger.warn("Failed to upload app {}: {}", fileName, e.getMessage());
+            logger.debug("Details: ", e);
             throw new WebApplicationException(
                     "Error while uploading the app: " + e.getMessage());
         }
@@ -196,20 +203,29 @@ public class AppAdminEndpoint {
             if (pluginManager.getPlugin(pluginName) == null) {
                 String pluginId = pluginManager.loadPlugin(targetFile.toPath());
                 if (StringUtils.isBlank(pluginId)) {
+                    logger.warn("Failed to load app from file {}, see  previous log output for hints", fileName);
                     return Response.ok(
                             "Uploaded the app artefact \""+fileName+"\" successfully. However, the unpackaging/installation was not successful. Please refer to the platform logs for details.")
                             .build();
                 } else {
+                    logger.info(
+                            "Successfully uploaded and unpackaged app {} (file artefact {}). A reload is required to make sure that the app is installed correctly.",
+                            pluginName, fileName);
                     return Response.ok("Uploaded and unpackaged the app artefact \""+fileName+"\" with the id \"" + pluginName
                             + "\" successfully. However, you will need to restart the platform to make sure that the app is installed correctly.")
                             .build();
                 }
             }
+            logger.info(
+                    "Successfully uploaded app {} (file artefact {}). As the app already exists and can not be updated during runtime a reload is required to activate it.",
+                    pluginName, fileName);
             return Response.ok(
                     "Uploaded app successfully. However, the app already exists and can not be updated during runtime. "
                             + "Please restart the platform to re-install the app properly.")
                     .build(); 
         }catch(Exception e) {
+            logger.warn("Failed to install/unpackage app artefact {}: {}", fileName, e.getMessage());
+            logger.debug("Details: ", e);
             return Response.serverError().entity("Error while installing/unpackaging the app artefact. Please refer to the platform logs for details.").build();
         }
 
@@ -224,14 +240,17 @@ public class AppAdminEndpoint {
         try {
             PluginWrapper plugin = pluginManager.getPlugin(pluginId);
             if (plugin == null) {
-                return Response.status(Status.NOT_FOUND).type("text/plain").entity(
-                        "Cannot remove application: The application \"" + pluginId + "\" is not found."
-                    ).build();
+                String message = "Cannot remove application: The application \"" + pluginId + "\" is not found.";
+                logger.warn(message);
+                return Response.status(Status.NOT_FOUND).type("text/plain").entity(message).build();
             }
             if (pluginManager.unloadPlugin(pluginId)) {
+                logger.info("Successfully unloaded app {}", pluginId);
                 FileUtils.deleteDirectory(plugin.getPluginPath().toFile());
+                logger.info("Successfully deleted app {}", pluginId);
                 return Response.ok().build();
             } else {
+                logger.warn("Failed to unload or delete app {}", pluginId);
                 return Response.status(Status.NOT_FOUND).type("text/plain")
                         .entity("Cannot remove application \" + pluginId + \". See logs for more details").build();
             }
@@ -264,9 +283,11 @@ public class AppAdminEndpoint {
     @RequiresAuthentication
     @Produces(MediaType.APPLICATION_JSON)
     public Response listStorages() {
+        logger.trace("Listing storages");
         ArrayList<MetaObject> list = Lists.newArrayList();
         for (String storageId : storageManager.getOverrideOrder()) {
             if (checkPermission(STORAGE.PREFIX_VIEW_CONFIG + storageId)) {
+                logger.trace("Adding storage {}", storageId);
                 list.add(getStorageMetaOject(storageId));
             }
         }
@@ -279,6 +300,7 @@ public class AppAdminEndpoint {
     @RequiresAuthentication
     public Response downloadAppStorage(@PathParam("storageId") String storageId) throws StorageException {
         if (!checkPermission(STORAGE.PREFIX_ZIP_EXPORT + storageId)) {
+            logger.debug("Denied downloading storage {}: no permissions for the current user", storageId);
             throw new ForbiddenException();
         }
         String fileName = new SimpleDateFormat("yyyy_MM_dd-HH_mm").format(new Date())+"-app_"+storageId+"_export.zip";
@@ -306,6 +328,8 @@ public class AppAdminEndpoint {
                         }
                     }
                 } catch (Exception e) {
+                    logger.warn("Failed to download storage {}: {}", storageId, e.getMessage());
+                    logger.debug("Details: ", e);
                     throw new RuntimeException(e);
                 } finally {
                     // flush and close

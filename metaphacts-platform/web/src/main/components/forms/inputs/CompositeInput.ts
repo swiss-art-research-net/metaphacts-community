@@ -53,14 +53,15 @@ import {
 } from '../FieldDefinition';
 import { DependencyContext, makeDependencyContext } from '../FieldDependencies';
 import {
-  FieldValue, EmptyValue, CompositeValue, FieldError, FieldState, DataState, mergeDataState
+  FieldValue, EmptyValue, CompositeValue, FieldError, FieldState, DataState, InspectedInputTree,
+  mergeDataState,
 } from '../FieldValues';
 import {
   FieldMappingContext, InputMapping, validateFieldConfiguration, renderFields,
 } from '../FieldMapping';
 import {
-  CompositeChange, fieldInitialState, generateSubjectByTemplate, wasSubjectGeneratedByTemplate,
-  loadDefaults,
+  CompositeChange, SubjectTemplateSettings, fieldInitialState, loadDefaults,
+  generateSubjectByTemplate, wasSubjectGeneratedByTemplate,
 } from '../FormModel';
 import {
   ValidationResult, findChangedValues, clearConstraintErrors, tryValidateSingleField,
@@ -81,6 +82,7 @@ interface BaseCompositeInputConfig extends SingleValueInputConfig {
   fieldConstraints?: ReadonlyArray<MultipleFieldConstraint>;
   fieldDependencies?: ReadonlyArray<FieldDependency>;
   newSubjectTemplate?: string;
+  newSubjectTemplateSettings?: SubjectTemplateSettings;
 }
 
 // TODO: move into base config
@@ -205,7 +207,10 @@ export class CompositeInput extends SingleValueInput<CompositeInputProps, {}> {
     );
     if (props.defaultEditSubject) {
       const subject = generateSubjectByTemplate(
-        props.newSubjectTemplate, undefined, rawComposite
+        props.newSubjectTemplate,
+        undefined,
+        rawComposite,
+        props.newSubjectTemplateSettings
       );
       rawComposite = CompositeValue.set(rawComposite, {
         subject,
@@ -260,7 +265,11 @@ export class CompositeInput extends SingleValueInput<CompositeInputProps, {}> {
 
     let newValue = reduceFieldValue(def.id, oldValue, reducer);
     newValue = clearConstraintErrors(newValue, def.id);
-    newValue = setSuggestedSubject(newValue, this.props.newSubjectTemplate);
+    newValue = setSuggestedSubject(
+      newValue,
+      this.props.newSubjectTemplate,
+      this.props.newSubjectTemplateSettings
+    );
 
     if (newValue.subject.value !== oldValue.subject.value) {
       if (this.tryStartValidatingSubject(newValue)) {
@@ -417,6 +426,22 @@ export class CompositeInput extends SingleValueInput<CompositeInputProps, {}> {
     return result;
   }
 
+  inspect(): InspectedInputTree {
+    const inspectedFields: { [fieldId: string]: InspectedInputTree[] } = {};
+    const fieldIds = this.getHandler().inputs.keySeq().toArray();
+    for (const fieldId of fieldIds) {
+      const inspectedChildren: InspectedInputTree[] = [];
+      const refs = this.inputRefs.get(fieldId);
+      if (refs) {
+        for (const ref of refs) {
+          inspectedChildren.push(ref.inspect());
+        }
+      }
+      inspectedFields[fieldId] = inspectedChildren;
+    }
+    return {...super.inspect(), children: inspectedFields};
+  }
+
   render() {
     const composite = this.props.value;
     if (!FieldValue.isComposite(composite)) {
@@ -468,7 +493,8 @@ export class CompositeInput extends SingleValueInput<CompositeInputProps, {}> {
           const subject = generateSubjectByTemplate(
             this.props.newSubjectTemplate,
             undefined,
-            {...model, subject: Rdf.iri('')}
+            {...model, subject: Rdf.iri('')},
+            this.props.newSubjectTemplateSettings
           );
           let newModel = CompositeValue.set(model, {subject, suggestSubject: true});
           if (this.tryStartValidatingSubject(newModel)) {
@@ -506,6 +532,7 @@ export class CompositeInput extends SingleValueInput<CompositeInputProps, {}> {
 
 class CompositeHandler implements SingleValueHandler {
   readonly newSubjectTemplate: string | undefined;
+  readonly newSubjectTemplateSettings: SubjectTemplateSettings | undefined;
 
   readonly definitions: Immutable.Map<string, FieldDefinition>;
   readonly constraints: ReadonlyArray<MultipleFieldConstraint>;
@@ -517,6 +544,7 @@ class CompositeHandler implements SingleValueHandler {
 
   constructor({baseInputProps}: SingleValueHandlerProps<CompositeInputProps>) {
     this.newSubjectTemplate = baseInputProps.newSubjectTemplate;
+    this.newSubjectTemplateSettings = baseInputProps.newSubjectTemplateSettings;
     this.definitions = normalizeDefinitions(baseInputProps.fields);
     this.constraints = baseInputProps.fieldConstraints || [];
     this.dependencies = baseInputProps.fieldDependencies || [];
@@ -605,7 +633,12 @@ class CompositeHandler implements SingleValueHandler {
 
     const ownerSubject = FieldValue.isComposite(owner) ? owner.subject : undefined;
     return CompositeValue.set(sourceValue, {
-      subject: generateSubjectByTemplate(this.newSubjectTemplate, ownerSubject, sourceValue),
+      subject: generateSubjectByTemplate(
+        this.newSubjectTemplate,
+        ownerSubject,
+        sourceValue,
+        this.newSubjectTemplateSettings
+      ),
     });
   }
 }
@@ -715,17 +748,22 @@ function computeValidatingFields(validations: ReadonlyMap<FieldConstraint, Valid
   return validatingFields;
 }
 
-function setSuggestedSubject(model: CompositeValue, newSubjectTemplate: string): CompositeValue {
+function setSuggestedSubject(
+  model: CompositeValue,
+  newSubjectTemplate: string | undefined,
+  newSubjectTemplateSettings: SubjectTemplateSettings | undefined
+): CompositeValue {
   if (!(model.editableSubject && model.suggestSubject)) {
     return model;
   }
-  if (doesSubjectEqualToSuggested(model, newSubjectTemplate)) {
+  if (doesSubjectEqualToSuggested(model, newSubjectTemplate, newSubjectTemplateSettings)) {
     return model;
   }
   const subject = generateSubjectByTemplate(
     newSubjectTemplate,
     undefined,
-    {...model, subject: Rdf.iri('')}
+    {...model, subject: Rdf.iri('')},
+    newSubjectTemplateSettings
   );
   if (Rdf.equalTerms(model.subject, subject)) {
     return model;
@@ -733,13 +771,18 @@ function setSuggestedSubject(model: CompositeValue, newSubjectTemplate: string):
   return CompositeValue.set(model, {subject});
 }
 
-function doesSubjectEqualToSuggested(model: CompositeValue, newSubjectTemplate: string): boolean {
+function doesSubjectEqualToSuggested(
+  model: CompositeValue,
+  newSubjectTemplate: string | undefined,
+  newSubjectTemplateSettings: SubjectTemplateSettings | undefined
+): boolean {
   if (CompositeValue.isPlaceholder(model.subject)) {
     return true;
   }
   return wasSubjectGeneratedByTemplate(
     model.subject.value,
     newSubjectTemplate,
+    newSubjectTemplateSettings,
     undefined,
     {...model, subject: Rdf.iri('')}
   );

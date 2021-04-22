@@ -189,7 +189,9 @@ export class SubjectSuggestionForm extends Component<SubjectSuggestionFormProps,
       const persistence = context.ontodiaContext.makePersistence();
       if (isNew || persistence.supportsIriEditing) {
         convertedModel = Forms.computeIfSubjectWasSuggested(
-          convertedModel, metadata.newSubjectTemplate
+          convertedModel,
+          metadata.newSubjectTemplate,
+          metadata.newSubjectTemplateSettings
         );
       }
 
@@ -296,6 +298,7 @@ export class SubjectSuggestionForm extends Component<SubjectSuggestionFormProps,
             key={formKey}
             ref={this.onFormMount}
             newSubjectTemplate={metadata.newSubjectTemplate}
+            newSubjectTemplateSettings={metadata.newSubjectTemplateSettings}
             fields={metadata.fields}
             model={model}
             onChanged={this.onModelUpdate}
@@ -358,7 +361,7 @@ export class SubjectSuggestionForm extends Component<SubjectSuggestionFormProps,
               Ontodia.AuthoringState.addElement(editor.authoringState, newModel)
             );
           } else {
-            originalIri = editor.changeEntityData(iriOfModelToEdit, newModel);
+            originalIri = editor.changeEntityData(data.model, newModel);
           }
           batch.store();
           const {onSubmit} = this.props.editOptions as EntityEditOptions;
@@ -378,10 +381,12 @@ export class SubjectSuggestionForm extends Component<SubjectSuggestionFormProps,
             data.metadata
           );
           newModel = {...newModel, linkIri: data.model.linkIri};
-          const batch = history.startBatch('Submit link form');
-          editor.changeLink(data.model, newModel);
-          editor.commitLink(newModel);
-          batch.store();
+          if (!Ontodia.sameLinkWithProperties(data.model, newModel)) {
+            const batch = history.startBatch('Submit link form');
+            editor.changeLink(data.model, newModel);
+            editor.commitLink(newModel);
+            batch.store();
+          }
           const {onSubmit} = this.props.editOptions as LinkEditOptions;
           onSubmit(newModel);
           addNotification({

@@ -48,15 +48,45 @@ import { CompositeValue, EmptyValue } from '../FieldValues';
 import { parseQueryStringAsUpdateOperation } from './PersistenceUtils';
 import { TriplestorePersistence, computeModelDiff } from './TriplestorePersistence';
 
+/**
+ * SPARQL persistence with options to specify the repository and named graphs.
+ *
+ * The SPARQL queries are executed against the regular `/sparql` endpoint
+ * and require corresponding permissions for the user.
+ *
+ * Optionally an `insertGraph` and a `deleteGraph` can be specified which are
+ * injected into the SPARQL UPDATE queries. If none are provided, data is written
+ * as specified through the queries in the field definitions.
+ *
+ * Example:
+ * ```
+ * persistence='{
+ *   "type": "client-side-sparql",
+ *   "insertGraph": "http://www.example.com/customNamedGraph",
+ *   "deleteGraph": "http://www.example.com/customNamedGraph"
+ * }'
+ * ```
+ */
 export interface RawSparqlPersistenceConfig {
-  type?: 'client-side-sparql';
+  type: 'client-side-sparql';
+  /**
+   * ID of the repository in which the data should be updated.
+   */
   repository?: string;
+  /**
+   * IRI of named graph used for INSERT queries. Specifying this modifies the INSERT queries
+   * to wrap the statements in a `GRAPH` block.
+   */
   insertGraph?: string;
+  /**
+   * IRI of named graph used for DELETE queries. Specifying this modifies the DELETE queries
+   * to wrap the statements in a `GRAPH` block.
+   */
   deleteGraph?: string;
 }
 
 export class RawSparqlPersistence implements TriplestorePersistence {
-  constructor(private config: RawSparqlPersistenceConfig = {}) {}
+  constructor(private config: RawSparqlPersistenceConfig = {type: 'client-side-sparql'}) {}
 
   persist(
     initialModel: CompositeValue | EmptyValue,

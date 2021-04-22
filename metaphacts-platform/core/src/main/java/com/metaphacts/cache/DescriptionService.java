@@ -39,13 +39,14 @@
  */
 package com.metaphacts.cache;
 
+import java.util.Map;
+import java.util.Optional;
+
+import javax.annotation.Nullable;
+
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.repository.Repository;
-
-import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Fetch descriptions for resources by their IRIs
@@ -80,4 +81,8 @@ public interface DescriptionService {
         Repository repository,
         @Nullable String preferredLanguage
     );
+
+    interface Provider {
+        Optional<DescriptionService> getDescriptionService();
+    }
 }

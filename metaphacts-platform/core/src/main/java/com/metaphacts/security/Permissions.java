@@ -589,6 +589,33 @@ public class Permissions {
 
     }
     
+    @PermissionsDocGroup(desc = "Permissions for managing vocabularies.")
+    public static class VOCABULARIES {
+        
+        public static final String PREFIX = "vocabularies:";
+        
+        @PermissionsDocField(
+                desc = "Permission for viewing the vocabulary catalog.",
+                pattern = "vocabularies:catalog:view")
+        public static final String VOCABULARY_CATALOG_VIEW = "vocabularies:catalog:view";
+
+        @PermissionsDocField(
+                desc = "Permission for viewing, creating, deleting and modifiying metadata of vocabularies.",
+                pattern = "vocabularies:{<vocabularyIri>}:vocabulary:{view|create|modify|delete}",
+                example = "/com/metaphacts/security/aclhelp/vocabularies_vocabulary.html")
+        public static final String VOCABULARY_PART = "vocabulary:";
+        
+        @PermissionsDocField(
+                desc = "Permission for creating, modifying and deleting terms.",
+                pattern = "vocabularies:{<vocabularyIri>}:term:{create|modify|delete}",
+                example = "/com/metaphacts/security/aclhelp/vocabularies_term.html")
+        public static final String TERM_PART = "term:";
+
+        public static final String termDeletePermission(IRI vocabularyIdentifier) {
+            return PREFIX + "<" + vocabularyIdentifier.stringValue() + ">:" + TERM_PART + "delete";
+        }
+    }
+    
     @PermissionsDocGroup(desc = "Permissions for managing and cataloging assets (e.g. ontologies).")
     public static class ASSETS {
 

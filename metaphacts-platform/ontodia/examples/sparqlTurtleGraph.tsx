@@ -7,9 +7,6 @@ import {
 import { N3Parser, renderExample } from './resources/common';
 import { ExampleWorkspaceLayout } from './resources/exampleWorkspaceLayout';
 
-const RdfXmlParser: any = require('rdf-parser-rdfxml');
-const JsonLdParser: any = require('rdf-parser-jsonld');
-
 const EXAMPLE = `@prefix fts: <https://w3id.org/datafabric.cc/ontologies/fts#> .
  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
  @prefix ex: <http://example.com/> .
@@ -74,8 +71,6 @@ class SparqlTurtleGraphExample extends React.Component {
             ],
             parsers: {
                 'text/turtle': new N3Parser(),
-                'application/rdf+xml': new RdfXmlParser(),
-                'application/ld+json': new JsonLdParser(),
             },
         });
         const lodDataProvider = new LodDataProvider({

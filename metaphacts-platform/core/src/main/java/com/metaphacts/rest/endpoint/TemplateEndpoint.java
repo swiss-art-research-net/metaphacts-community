@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -528,12 +529,20 @@ public class TemplateEndpoint extends ResourceConfig {
         String templateContent = "";
         String appId = null;
         String revision = null;
+        String author = null;
+        String createdOn = null;
 
         if (overrides.size() > 0) {
             PlatformStorage.FindResult result = overrides.get(overrides.size() - 1);
             templateContent = StorageUtils.readTextContent(result.getRecord());
             appId = result.getAppId();
             revision = result.getRecord().getRevision();
+            ObjectMetadata metadata = result.getRecord().getMetadata();
+            author = metadata.getAuthor();
+            Instant creationDate = metadata.getCreationDate();
+            if (creationDate != null) {
+                createdOn = formatCreationDate(creationDate);
+            }
         }
 
         List<String> definedByApps = overrides.stream()
@@ -552,14 +561,19 @@ public class TemplateEndpoint extends ResourceConfig {
                         ? TemplateUtil.convertResourceToTemplateIdentifier(DEFAULT_TEMPLATE) // this should only be shown if no other template is applied
                         : null
         );
+        PageViewConfig pageViewConfig = getPageViewConfig(iri, repositoryId);
+        String appliedKnowledgePanel = pageViewConfig.getKnowledgePanelTemplateIri();
 
         RawTemplate rawTemplate = new RawTemplate(
             appId,
             revision,
+            createdOn,
+            author,
             templateContent,
             definedByApps,
             orderedSetOfLocations,
-            appliedTemplate
+            appliedTemplate,
+            appliedKnowledgePanel
         );
 
         // set etag, currently without CC headers (not chaching needed here)
@@ -573,25 +587,34 @@ public class TemplateEndpoint extends ResourceConfig {
     public static class RawTemplate {
         private String appId;
         private String revision;
+        private String date;
+        private String author;
         private String source;
         private List<String> definedByApps;
         private Set<String> applicableTemplates;
         private String appliedTemplate;
+        private String appliedKnowledgePanelTemplate;
 
         public RawTemplate(
             String appId,
             String revision,
+            @Nullable String date,
+            @Nullable String author,
             String source,
             List<String> definedByApps,
             Set<String> applicableTemplates,
-            String appliedTemplate
+            String appliedTemplate,
+            String appliedKnowledgePanelTemplate
         ) {
             this.appId = appId;
             this.revision = revision;
+            this.date = date;
+            this.author = author;
             this.source = source;
             this.definedByApps = definedByApps;
             this.applicableTemplates = applicableTemplates;
             this.appliedTemplate= appliedTemplate;
+            this.appliedKnowledgePanelTemplate = appliedKnowledgePanelTemplate;
         }
 
         public String getAppId() {
@@ -600,6 +623,21 @@ public class TemplateEndpoint extends ResourceConfig {
 
         public String getRevision() {
             return revision;
+        }
+
+        /**
+         * Modification date in ISO format, e.g. {@code 2021-02-15T10:02:26Z}
+         * 
+         * @see DateTimeFormatter#ISO_INSTANT
+         */
+        @Nullable
+        public String getDate() {
+            return date;
+        }
+
+        @Nullable
+        public String getAuthor() {
+            return author;
         }
 
         public String getSource() {
@@ -616,6 +654,10 @@ public class TemplateEndpoint extends ResourceConfig {
 
         public String getAppliedTemplate() {
             return appliedTemplate;
+        }
+
+        public String getAppliedKnowledgePanelTemplate() {
+            return appliedKnowledgePanelTemplate;
         }
     }
 
@@ -729,8 +771,7 @@ public class TemplateEndpoint extends ResourceConfig {
 
             String creationDate = null;
             if (metadata.getCreationDate() != null) {
-                Instant roundedToSeconds = metadata.getCreationDate().with(ChronoField.NANO_OF_SECOND, 0);
-                creationDate = DateTimeFormatter.ISO_INSTANT.format(roundedToSeconds);
+                creationDate = formatCreationDate(metadata.getCreationDate());
             }
             TemplateInfo info = new TemplateInfo(
                 result.getAppId(),
@@ -745,19 +786,31 @@ public class TemplateEndpoint extends ResourceConfig {
         return list;
     }
 
+    private String formatCreationDate(Instant creationDate) {
+        Instant roundedToSeconds = creationDate.with(ChronoField.NANO_OF_SECOND, 0);
+        return DateTimeFormatter.ISO_INSTANT.format(roundedToSeconds);
+    }
+
     public static class TemplateInfo {
         public final String appId;
         public final String iri;
         public final String revision;
+        @Nullable
         public final String author;
+        /**
+         * Modification date in ISO format, e.g. {@code 2021-02-15T10:02:26Z}
+         * 
+         * @see DateTimeFormatter#ISO_INSTANT
+         */
+        @Nullable
         public final String date;
 
         public TemplateInfo(
             String appId,
             String iri,
             String revision,
-            String author,
-            String date
+            @Nullable String author,
+            @Nullable String date
         ) {
             this.appId = appId;
             this.iri = iri;

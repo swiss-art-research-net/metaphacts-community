@@ -41,5 +41,5 @@ import * as Rdf from './rdfModel';
 export { Rdf };
 
 export { LodDataProvider, LodDataProviderOptions } from './lodDataProvider';
-export { RdfParser, RdfExtLegacyGraph, RdfExtLegacyTriple, RdfExtLegacyTerm } from './rdfCompositeParser';
+export { RdfParser } from './rdfCompositeParser';
 export { RdfDataProvider, RdfDataProviderOptions, RdfFile } from './rdfDataProvider';

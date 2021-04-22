@@ -48,6 +48,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.repository.Repository;
 
@@ -61,6 +63,7 @@ import com.metaphacts.util.Orderable;
 import com.metaphacts.util.OrderableComparator;
 
 public class DefaultTypeService implements TypeService, Orderable {
+    private static final Logger logger = LogManager.getLogger(DefaultTypeService.class);
 
     public static final String DEFAULT_TYPE_SERVICE_CACHE_ID = "repository.DefaultTypeService";
 
@@ -86,6 +89,8 @@ public class DefaultTypeService implements TypeService, Orderable {
             if (Iterables.isEmpty(iris)) {
                 return Collections.emptyMap();
             }
+
+            DefaultTypeService.logger.trace("Fetching types for {}", iris);
 
             List<String> preferredTypes = config.getUiConfig().getPreferredTypes();
             try {

@@ -62,7 +62,7 @@ import { ReorderableList, Ordering } from 'platform/components/ui/reorderable-li
 import { FieldDefinition, getPreferredLabel } from '../FieldDefinition';
 import {
   FieldState, FieldValue, EmptyValue, CompositeValue, DataState, ErrorKind, FieldError,
-  mergeDataState,
+  InspectedInputTree, mergeDataState,
 } from '../FieldValues';
 
 import {
@@ -271,6 +271,21 @@ export class CardinalitySupport extends MultipleValuesInput<CardinalitySupportPr
       }
     }
     return result;
+  }
+
+  inspect(): InspectedInputTree {
+    const inspectedValues: { [valueKey: string]: InspectedInputTree[] } = {};
+    for (const key of this.valueKeys) {
+      const inspectedForKey: InspectedInputTree[] = [];
+      const refs = this.inputs.get(key);
+      if (refs) {
+        for (const ref of refs) {
+          inspectedForKey.push(ref.inspect());
+        }
+      }
+      inspectedValues[key] = inspectedForKey;
+    }
+    return {...super.inspect(), children: inspectedValues};
   }
 
   static makeHandler(

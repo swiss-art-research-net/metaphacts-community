@@ -113,25 +113,30 @@ export class Toolbar<P extends ToolbarProps = ToolbarProps, S = {}> extends Comp
 
   protected readonly listener = new EventObserver();
 
-  protected readonly canvasCommands: EventSource<CanvasCommands>;
+  protected canvasCommands: EventSource<CanvasCommands>;
 
   constructor(props: P, context: any) {
     super(props, context);
-    if (this.context.ontodiaCanvas) {
-      this.canvasCommands = this.context.ontodiaCanvas.canvas.getCommands();
-    } else {
-      this.canvasCommands = new EventSource();
-      subscribeOnCanvasCommands(this.canvasCommands, this.props);
-    }
   }
 
   componentDidMount() {
+    this.canvasCommands = this.initializeCommands();
     const {view} = this.context.ontodiaWorkspace;
     const history = view.model.history;
     if (history) {
-        this.listener.listen(history.events, 'historyChanged', () => {
-            this.forceUpdate();
-        });
+      this.listener.listen(history.events, 'historyChanged', () => {
+          this.forceUpdate();
+      });
+    }
+  }
+
+  protected initializeCommands(): EventSource<CanvasCommands> {
+    if (this.context.ontodiaCanvas) {
+      return this.context.ontodiaCanvas.canvas.getCommands();
+    } else {
+      const canvasCommands = new EventSource<CanvasCommands>();
+      subscribeOnCanvasCommands(canvasCommands, this.props);
+      return canvasCommands;
     }
   }
 

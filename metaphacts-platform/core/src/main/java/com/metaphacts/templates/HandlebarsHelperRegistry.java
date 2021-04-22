@@ -40,9 +40,11 @@
 package com.metaphacts.templates;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.github.jknack.handlebars.Helper;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Singleton;
 import com.metaphacts.cache.CacheManager;
@@ -71,6 +73,7 @@ import com.metaphacts.templates.helper.UrlParamHelperSource;
 @Singleton
 public class HandlebarsHelperRegistry {
     private List<Object> helpers;
+    private Map<String, Helper<Object>> namedHelpers;
 
     @Inject
     public HandlebarsHelperRegistry(
@@ -96,12 +99,17 @@ public class HandlebarsHelperRegistry {
             new IsRepositoryTypeHelperSource(repositoryManager),
             new UriComponentHelperSource(),
             new I18nHelperSource(config, platformStorage, cacheManager),
-            new DateTimeHelperSource(),
             new PageLayoutHelperSource(platformStorage)
         );
+
+        this.namedHelpers = DateTimeHelperSource.getHelpers();
     }
 
     public List<Object> getHelpers() {
         return this.helpers;
+    }
+
+    public Map<String, Helper<Object>> getNamedHelpers() {
+        return this.namedHelpers;
     }
 }

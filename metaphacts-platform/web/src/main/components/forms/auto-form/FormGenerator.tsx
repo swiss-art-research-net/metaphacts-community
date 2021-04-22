@@ -105,6 +105,9 @@ export function generateFormFromFields(params: GenerateFormFromFieldsParams): Re
 }
 
 function generateInputForField(field: FieldDefinition): React.ReactElement<any> {
+  if (field.id === rdf.type.value) {
+    return <Inputs.HiddenInput for={field.id} replaceValues={field.defaultValues} />;
+  }
   if (field.treePatterns) {
     return <Inputs.TreePickerInput for={field.id} />;
   }

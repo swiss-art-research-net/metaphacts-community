@@ -75,6 +75,7 @@ export interface FieldConfigurationContext {
   readonly defaultLabelIri?: string;
   readonly defaultImageIri?: string;
   readonly defaultSubjectTemplate?: string;
+  readonly defaultSubjectTemplateSettings?: Forms.SubjectTemplateSettings;
 
   readonly cancellationToken: Ontodia.CancellationToken;
   readonly collectedEntities: Map<Ontodia.ElementTypeIri, EntityMetadata>;
@@ -87,7 +88,9 @@ interface BaseTypeMetadata {
   readonly fields: ReadonlyArray<Forms.FieldDefinition>;
   readonly fieldByIri: Immutable.Map<string, Forms.FieldDefinition>;
   readonly typeField: Forms.FieldDefinition;
+  readonly ownedFields: ReadonlySet<string>;
   readonly newSubjectTemplate: string;
+  readonly newSubjectTemplateSettings?: Forms.SubjectTemplateSettings;
   readonly formChildren: React.ReactNode;
 }
 

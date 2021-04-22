@@ -39,6 +39,7 @@
  */
 import { BrowserPersistence } from 'platform/api/persistence/BrowserPersistence';
 import { Rdf } from 'platform/api/rdf';
+import { __unsafe__setPreferredUserLanguage } from 'platform/api/sparql/SparqlClient';
 
 import { ConfigHolder } from 'platform/api/services/config-holder';
 
@@ -65,8 +66,14 @@ export function setPreferredUserLanguage(bcp47LanguageTag: string | undefined) {
   LanguagePreferences.update(LS_LANGUAGE_PREFERENCES_KEY, {
     userLanguageTag: bcp47LanguageTag,
   });
+  propagatePreferredUserLanguage();
+}
+
+export function propagatePreferredUserLanguage() {
   // invalidate computed language preferences
   computedPreferences = undefined;
+  const computed = getOrComputePreferences();
+  __unsafe__setPreferredUserLanguage(computed.preferredLanguage);
 }
 
 function getOrComputePreferences(): typeof computedPreferences {

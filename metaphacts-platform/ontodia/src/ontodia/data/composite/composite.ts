@@ -156,7 +156,7 @@ export class CompositeDataProvider implements DataProvider {
             return this.queueProcessResults((previousResult: Dictionary<ElementModel>, dp: DPDefinition) => {
                 elementIds = elementIds.filter(id => !previousResult || !previousResult[id]);
                 return elementIds.length > 0 ? dp.dataProvider.elementInfo({ elementIds: elementIds }) : undefined;
-            }).then(response => mergeElementInfo(response, this.factory));
+            }).then(response => mergeElementInfo(response));
         }
     }
 
@@ -207,7 +207,7 @@ export class CompositeDataProvider implements DataProvider {
                 } else {
                     return undefined;
                 }
-            }).then(response => mergeFilter(response, this.factory));
+            }).then(response => mergeFilter(response));
         }
     }
 

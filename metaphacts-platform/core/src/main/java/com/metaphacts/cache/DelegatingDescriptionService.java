@@ -99,9 +99,10 @@ public class DelegatingDescriptionService extends AbstractDelegatingProvider<Des
             Map<IRI, Optional<Literal>> map = dc.getDescriptions(irisToFetch, repository, preferredLanguage);
             List<IRI> remainingIrisToFetch = new ArrayList<>();
             // Check results and put empty in the "remainingIrisToFetch"
-            for (var literal : map.entrySet()) {
-                if(literal.getValue().isEmpty()) {
-                    remainingIrisToFetch.add(literal.getKey());
+            for (var entry : map.entrySet()) {
+                Optional<Literal> literal = entry.getValue();
+                if (literal.isEmpty()) {
+                    remainingIrisToFetch.add(entry.getKey());
                 }
             }
             // Save relevant results
@@ -112,6 +113,12 @@ public class DelegatingDescriptionService extends AbstractDelegatingProvider<Des
             } else {
                 // Set IRIs with empty results to be fetched from other implementations
                 irisToFetch = remainingIrisToFetch;
+            }
+        }
+        // add negative result for all unresolved descriptions
+        for (IRI iri : resourceIris) {
+            if (!result.containsKey(iri)) {
+                result.put(iri, Optional.empty());
             }
         }
         return result;

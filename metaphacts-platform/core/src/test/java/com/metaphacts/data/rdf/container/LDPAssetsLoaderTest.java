@@ -42,10 +42,12 @@ package com.metaphacts.data.rdf.container;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 import javax.inject.Inject;
 
+import org.apache.shiro.realm.Realm;
 import org.eclipse.rdf4j.common.iteration.Iterations;
 import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
@@ -68,12 +70,17 @@ import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.inject.Injector;
+import com.metaphacts.cache.CacheManager;
 import com.metaphacts.data.rdf.container.LDPAssetsLoader.LDPModelComparator.StatementKey;
 import com.metaphacts.junit.AbstractIntegrationTest;
+import com.metaphacts.junit.MetaphactsShiroRule;
+import com.metaphacts.junit.PlatformStorageRule;
 import com.metaphacts.repository.RepositoryManager;
+import com.metaphacts.security.MetaphactsSecurityManagerTest.TestAuthenticatingRealm;
 import com.metaphacts.services.storage.api.ObjectKind;
 import com.metaphacts.services.storage.api.ObjectMetadata;
 import com.metaphacts.services.storage.api.PlatformStorage;
@@ -88,12 +95,26 @@ public class LDPAssetsLoaderTest extends AbstractIntegrationTest {
     private Injector injector;
     
     @Inject
+    @Rule
+    public PlatformStorageRule platformStorageRule;
+
+    @Inject
     private PlatformStorage platformStorage;
     
-    public LDPAssetsLoaderTest() {
-        
-    }
-    
+    @Inject
+    public com.metaphacts.config.Configuration configuration;
+
+    @Inject
+    private CacheManager cacheManager;
+
+    private TestAuthenticatingRealm testRealm = new TestAuthenticatingRealm();
+
+    @Rule
+    public MetaphactsShiroRule rule = new MetaphactsShiroRule(() -> Collections.<Realm>singletonList(testRealm),
+            () -> configuration).withCacheManager(() -> cacheManager)
+                    .withPlatformStorageRule(() -> platformStorageRule);
+
+
     @After
     public void tearDown() throws Exception {
         repositoryRule.delete();

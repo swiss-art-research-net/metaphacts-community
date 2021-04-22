@@ -293,7 +293,7 @@
     query-template='{
       "queryString": "
         PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-        SELECT ?subject ?painting WHERE {
+        SELECT ?subject WHERE {
           ?subject a foaf:Person
           FILTER(?familiarPerson)
         }
@@ -341,7 +341,7 @@
 	<!-- <semantic-search-facet></semantic-search-facet> -->
   <semantic-search-result-holder>
     <semantic-search-result> <!-- 3. result visualization -->
-      <semantic-table id='table' query='SELECT ?subject ?painting WHERE{}'></semantic-table>
+      <semantic-table id='table' query='SELECT ?subject WHERE{}'></semantic-table>
     </semantic-search-result>
   </semantic-search-result-holder>
 </semantic-search>

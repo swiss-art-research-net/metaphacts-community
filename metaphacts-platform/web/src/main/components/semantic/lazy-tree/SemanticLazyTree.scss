@@ -62,7 +62,19 @@
   flex-grow: 1;
 }
 
+.treeSpinner {
+  position: unset;
+  top: unset;
+  left: unset;
+  align-self: center;
+}
+
 .searchSpinner {
   width: min-content;
   white-space: nowrap;
+}
+
+.focusedItem {
+  background: #ffc55b;
+  padding: 2px;
 }

@@ -40,19 +40,25 @@
 import { HashMap } from '../../viewUtils/hashMap';
 import { Quad, Term, OntodiaDataFactory, hashTerm, equalTerms, hashQuad, equalQuads } from './rdfModel';
 
-export interface MemoryDataset {
+export interface MemoryDataset extends Iterable<Quad> {
     readonly size: number;
     add(quad: Quad): this;
     addAll(quads: ReadonlyArray<Quad>): this;
     delete(quad: Quad): this;
     clear(): void;
     has(quad: Quad): boolean;
+    hasMatches(
+        subject: Term | undefined | null,
+        predicate: Term | undefined | null,
+        object: Term | undefined | null,
+        graph?: Term | null
+    ): boolean;
     iterateMatches(
         subject: Term | undefined | null,
         predicate: Term | undefined | null,
         object: Term | undefined | null,
         graph?: Term | null
-    ): ReadonlyArray<Quad>;
+    ): Iterable<Quad>;
     forEach(callback: (t: Quad) => void): void;
 }
 
@@ -77,37 +83,35 @@ export function makeIndexedDataset(indexBy: IndexQuadBy): MemoryDataset {
     return new IndexedDataset(indexBy);
 }
 
-const EMPTY_QUADS: ReadonlyArray<Quad> = [];
-
 class IndexedDataset implements MemoryDataset {
     private _size = 0;
 
     private readonly byQuad: HashMap<Quad, Quad>;
-    private readonly bySubject: HashMap<Term, Set<Quad>> | undefined;
-    private readonly byPredicate: HashMap<Term, Set<Quad>> | undefined;
-    private readonly byObject: HashMap<Term, Set<Quad>> | undefined;
-    private readonly bySubjectPredicate: HashMap<SourcePredicateKey, Quad[]> | undefined;
-    private readonly byObjectPredicate: HashMap<SourcePredicateKey, Quad[]> | undefined;
+    private readonly bySubject: HashMap<Term, SmallQuadSet> | undefined;
+    private readonly byPredicate: HashMap<Term, SmallQuadSet> | undefined;
+    private readonly byObject: HashMap<Term, SmallQuadSet> | undefined;
+    private readonly bySubjectPredicate: HashMap<SourcePredicateKey, SmallQuadSet> | undefined;
+    private readonly byObjectPredicate: HashMap<SourcePredicateKey, SmallQuadSet> | undefined;
 
     constructor(indexBy: IndexQuadBy) {
         this.byQuad = new HashMap<Quad, Quad>(hashQuad, equalQuads);
         /* tslint:disable: no-bitwise */
         if (indexBy & IndexQuadBy.S) {
-            this.bySubject = new HashMap<Term, Set<Quad>>(hashTerm, equalTerms);
+            this.bySubject = new HashMap<Term, SmallQuadSet>(hashTerm, equalTerms);
         }
         if (indexBy & IndexQuadBy.P) {
-            this.byPredicate = new HashMap<Term, Set<Quad>>(hashTerm, equalTerms);
+            this.byPredicate = new HashMap<Term, SmallQuadSet>(hashTerm, equalTerms);
         }
         if (indexBy & IndexQuadBy.O) {
-            this.byObject = new HashMap<Term, Set<Quad>>(hashTerm, equalTerms);
+            this.byObject = new HashMap<Term, SmallQuadSet>(hashTerm, equalTerms);
         }
         if (indexBy & IndexQuadBy.SP) {
-            this.bySubjectPredicate = new HashMap<SourcePredicateKey, Quad[]>(
+            this.bySubjectPredicate = new HashMap<SourcePredicateKey, SmallQuadSet>(
                 SourcePredicateKey.hashCode, SourcePredicateKey.equals
             );
         }
         if (indexBy & IndexQuadBy.OP) {
-            this.byObjectPredicate = new HashMap<SourcePredicateKey, Quad[]>(
+            this.byObjectPredicate = new HashMap<SourcePredicateKey, SmallQuadSet>(
                 SourcePredicateKey.hashCode, SourcePredicateKey.equals
             );
         }
@@ -122,23 +126,23 @@ class IndexedDataset implements MemoryDataset {
         if (!this.byQuad.has(quad)) {
             this.byQuad.set(quad, quad);
             if (this.bySubject) {
-                pushToByTermIndex(this.bySubject, quad.subject, quad);
+                pushToIndex(this.bySubject, quad.subject, quad);
             }
             if (this.byPredicate) {
-                pushToByTermIndex(this.byPredicate, quad.predicate, quad);
+                pushToIndex(this.byPredicate, quad.predicate, quad);
             }
             if (this.byObject) {
-                pushToByTermIndex(this.byObject, quad.object, quad);
+                pushToIndex(this.byObject, quad.object, quad);
             }
             if (this.bySubjectPredicate) {
-                pushToSPIndex(
+                pushToIndex(
                     this.bySubjectPredicate,
                     {source: quad.subject, predicate: quad.predicate},
                     quad
                 );
             }
             if (this.byObjectPredicate) {
-                pushToSPIndex(
+                pushToIndex(
                     this.byObjectPredicate,
                     {source: quad.object, predicate: quad.predicate},
                     quad
@@ -161,23 +165,23 @@ class IndexedDataset implements MemoryDataset {
         if (existing) {
             this.byQuad.delete(existing);
             if (this.bySubject) {
-                deleteFromByTermIndex(this.bySubject, existing.subject, existing);
+                deleteFromIndex(this.bySubject, existing.subject, existing);
             }
             if (this.byPredicate) {
-                deleteFromByTermIndex(this.byPredicate, existing.predicate, existing);
+                deleteFromIndex(this.byPredicate, existing.predicate, existing);
             }
             if (this.byObject) {
-                deleteFromByTermIndex(this.byObject, existing.object, existing);
+                deleteFromIndex(this.byObject, existing.object, existing);
             }
             if (this.bySubjectPredicate) {
-                deleteFromSPIndex(
+                deleteFromIndex(
                     this.bySubjectPredicate,
                     {source: quad.subject, predicate: quad.predicate},
                     existing
                 );
             }
             if (this.byObjectPredicate) {
-                deleteFromSPIndex(
+                deleteFromIndex(
                     this.byObjectPredicate,
                     {source: quad.object, predicate: quad.predicate},
                     existing
@@ -212,35 +216,51 @@ class IndexedDataset implements MemoryDataset {
         return this.byQuad.has(quad);
     }
 
+    hasMatches(
+        subject: Quad['subject'] | undefined | null,
+        predicate: Quad['predicate'] | undefined | null,
+        object: Quad['object'] | undefined | null,
+        graph?: Quad['graph'] | null
+    ): boolean {
+        for (const q of this.iterateMatches(subject, predicate, object, graph)) {
+            return true;
+        }
+        return false;
+    }
+
     iterateMatches(
         subject: Quad['subject'] | undefined | null,
         predicate: Quad['predicate'] | undefined | null,
         object: Quad['object'] | undefined | null,
         graph?: Quad['graph'] | null
-    ): ReadonlyArray<Quad> {
-        let result: ReadonlyArray<Quad>;
+    ): Iterable<Quad> {
+        let result: Iterable<Quad>;
         if (subject && predicate && object && graph) {
             const found = this.byQuad.get(OntodiaDataFactory.quad(subject, predicate, object, graph));
             result = found ? [found] : [];
         } else if (this.bySubjectPredicate && subject && predicate) {
-            const indexed = this.bySubjectPredicate.get({source: subject, predicate}) || EMPTY_QUADS;
-            result = filterBySPO(indexed, null, null, object);
+            const indexed = this.bySubjectPredicate.get({source: subject, predicate});
+            result = filterBySPO(iterateSmallSet(indexed), null, null, object);
         } else if (this.byObjectPredicate && predicate && object) {
-            const indexed = this.byObjectPredicate.get({source: object, predicate}) || EMPTY_QUADS;
-            result = filterBySPO(indexed, subject, null, null);
+            const indexed = this.byObjectPredicate.get({source: object, predicate});
+            result = filterBySPO(iterateSmallSet(indexed), subject, null, null);
         } else if (this.bySubject && subject) {
             const indexed = this.bySubject.get(subject);
-            result = indexed ? filterBySPO(indexed, null, predicate, object) : [];
+            result = filterBySPO(iterateSmallSet(indexed), null, predicate, object);
         } else if (this.byPredicate && predicate) {
             const indexed = this.byPredicate.get(predicate);
-            result = indexed ? filterBySPO(indexed, subject, null, object) : [];
+            result = filterBySPO(iterateSmallSet(indexed), subject, null, object);
         } else if (this.byObject && object) {
             const indexed = this.byObject.get(object);
-            result = indexed ? filterBySPO(indexed, subject, predicate, null) : [];
+            result = filterBySPO(iterateSmallSet(indexed), subject, predicate, null);
         } else {
-            result = filterBySPO(this.byQuad, subject, predicate, object);
+            result = filterBySPO(this.byQuad.values(), subject, predicate, object);
         }
         return graph ? filterByGraph(result, graph) : result;
+    }
+
+    [Symbol.iterator](): Iterator<Quad> {
+        return this.byQuad.values();
     }
 
     forEach(callback: (t: Quad) => void): void {
@@ -262,73 +282,57 @@ namespace SourcePredicateKey {
     }
 }
 
-function pushToByTermIndex(index: HashMap<Term, Set<Quad>>, key: Term, quad: Quad) {
-    let items = index.get(key);
-    if (!items) {
-        items = new Set<Quad>();
-        index.set(key, items);
-    }
-    items.add(quad);
+type SmallQuadSet = Quad | Set<Quad> | undefined;
+
+function iterateSmallSet(set: SmallQuadSet): Iterable<Quad> {
+    return set instanceof Set ? set : (set ? [set] : []);
 }
 
-function deleteFromByTermIndex(index: HashMap<Term, Set<Quad>>, key: Term, quad: Quad) {
+function pushToIndex<K>(index: HashMap<K, SmallQuadSet>, key: K, quad: Quad) {
+    let bucket = index.get(key);
+    if (!bucket) {
+        bucket = quad;
+        index.set(key, bucket);
+    } else if (bucket instanceof Set) {
+        bucket.add(quad);
+    } else {
+        const single = bucket;
+        bucket = new Set<Quad>();
+        bucket.add(single);
+        bucket.add(quad);
+        index.set(key, bucket);
+    }
+}
+
+function deleteFromIndex<K>(index: HashMap<K, SmallQuadSet>, key: K, quad: Quad) {
     const items = index.get(key);
     if (items) {
-        items.delete(quad);
-    }
-}
-
-function pushToSPIndex(
-    index: HashMap<SourcePredicateKey, Quad[]>,
-    key: SourcePredicateKey,
-    quad: Quad
-) {
-    let items = index.get(key);
-    if (!items) {
-        items = [];
-        index.set(key, items);
-    }
-    items.push(quad);
-}
-
-function deleteFromSPIndex(
-    index: HashMap<SourcePredicateKey, Quad[]>,
-    key: SourcePredicateKey,
-    quad: Quad
-) {
-    const items = index.get(key);
-    if (items) {
-        for (let i = 0; i < items.length; i++) {
-            if (equalQuads(items[i], quad)) {
-                items.splice(i, 1);
-                break;
-            }
+        if (items instanceof Set) {
+            items.delete(quad);
+        } else {
+            index.delete(key);
         }
     }
 }
 
-function filterBySPO(
-    quads: { forEach(callback: (quad: Quad) => void): void },
+function *filterBySPO(
+    quads: Iterable<Quad>,
     subject: Term | undefined | null,
     predicate: Term | undefined | null,
     object: Term | undefined | null,
-): ReadonlyArray<Quad> {
-    const result: Quad[] = [];
-    quads.forEach(quad => {
-        if (subject && !equalTerms(subject, quad.subject)) { return; }
-        if (predicate && !equalTerms(predicate, quad.predicate)) { return; }
-        if (object && !equalTerms(object, quad.object)) { return; }
-        result.push(quad);
-    });
-    return result;
+): Iterable<Quad> {
+    for (const quad of quads) {
+        if (subject && !equalTerms(subject, quad.subject)) { continue; }
+        if (predicate && !equalTerms(predicate, quad.predicate)) { continue; }
+        if (object && !equalTerms(object, quad.object)) { continue; }
+        yield quad;
+    }
 }
 
-function filterByGraph(quads: ReadonlyArray<Quad>, graph: Term): ReadonlyArray<Quad> {
-    const result: Quad[] = [];
+function *filterByGraph(quads: Iterable<Quad>, graph: Term): Iterable<Quad> {
     for (const quad of quads) {
         if (equalTerms(quad.graph, graph)) {
-            result.push(quad);
+            yield quad;
         }
     }
-    return result;
 }

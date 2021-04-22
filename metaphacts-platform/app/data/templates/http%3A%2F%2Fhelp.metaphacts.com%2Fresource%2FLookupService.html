@@ -123,6 +123,7 @@
       lookup:remoteServiceUrl "https://wikidata.metaphacts.com/rest/reconciliation";
       # lookup:remoteServiceUser "user";
       # lookup:remoteServicePassword "password";
+      # lookup:remoteTimeout 10 ;
       lookup:cacheConfig "expireAfterWrite=10m,maximumSize=1000";
       lookup:type "metaphacts:remoteLookup"
     ];
@@ -369,10 +370,10 @@
 
     <p>
     The <code>RemoteLookupService</code> (type <code>metaphacts:remoteLookup</code>) connects to systems implementing the <a href="https://reconciliation-api.github.io/specs/latest/" target="_BLANK">W3C / OpenRefine Reconciliation API</a>.
-    A list of such systems is maintained e.g. in the <a href="https://reconciliation-api.github.io/testbench/" target="_BLANK">Reconciliation Service Test Bench</a>. The metaphacts platform also implements such an endpoint so this can be used to connect to upstream services and create a chain of delegated systems for reference data lookup.
+    A list of such systems is maintained e.g. in the <a href="https://reconciliation-api.github.io/testbench/" target="_BLANK">Reconciliation Service Test Bench</a>. The platform also implements such an endpoint so this can be used to connect to upstream services and create a chain of delegated systems for reference data lookup.
     </p>
 
-  <p>Note: using the <code>FederatedLookupService</code> (see below) it is possible to combine both local and remote services.</p>
+    <p>Note: using the <code>FederatedLookupService</code> (see below) it is possible to combine both local and remote services.</p>
 
     <p>Example configuration:</p>
 
@@ -390,6 +391,8 @@
       lookup:remoteServiceUrl "https://wikidata.metaphacts.com/rest/reconciliation";
       # lookup:remoteServiceUser "user";
       # lookup:remoteServicePassword "password";
+      # lookup:remoteTimeout 10 ;
+      # lookup:remoteInformationServiceEnabled true;
       lookup:type "metaphacts:remoteLookup"
     ];
   rep:repositoryID "remote-lookup";
@@ -401,6 +404,19 @@
     ];
   rdfs:label "Remote Lookup" .
     ]]></mp-code-block>
+    
+    <p>
+    The parameter <code>lookup:remoteTimout</code> can be optionally configured to a positive number for an explicit timeout of the remote lookup. 
+    The timeout is defined in seconds. If not specified, a default timeout of 30 seconds is applied.
+    </p>
+    
+    <p>
+    The parameter <code>lookup:remoteInformationServiceEnabled</code> can be used to enable fetching of labels and descriptions for resources which 
+    are not otherwise provided locally. This needs to be supported in the remote system's reconciliation manifest and works with other instances of
+    platform.<br>
+    Please note that this adds additional latency when resolving labels or descriptions for resources so this should only be enabled
+    when really required.
+    </p>
 
     <h4 id="FederatedLookupService">FederatedLookupService</h4>
 
@@ -530,7 +546,7 @@
     <mp-code-block mode='application/sparql-query'><![CDATA[
 SELECT
     ?candidate
-    (GROUP_CONCAT(DISTINCT ?type ; separator=",") as ?types)
+    (GROUP_CONCAT(DISTINCT STR(?type) ; separator=",") as ?types)
     (MAX(?score_private) as ?score)
 WHERE {
     {{type_block}}

@@ -39,14 +39,17 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface SetManagementEventData {
-  'Components.SetManagement.SetAdded': void;
-  'Components.SetManagement.SetRenamed': void;
-  'Components.SetManagement.SetRemoved': void;
-  'Components.SetManagement.ItemAdded': void;
-  'Components.SetManagement.ItemRemoved': void;
+  'Components.SetManagement.SetAdded': {};
+  'Components.SetManagement.SetRenamed': {};
+  'Components.SetManagement.SetRemoved': {};
+  'Components.SetManagement.ItemAdded': {};
+  'Components.SetManagement.ItemRemoved': {};
   'Components.SetManagement.ItemSelected': string;
-  'Components.SetManagement.ItemsReordered': void;
+  'Components.SetManagement.ItemsReordered': {};
   'Components.SetManagement.ItemsFiltered': ItemsFilteredData;
   'Components.SetManagement.ItemsFetched': { iris: Array<string> };
 }

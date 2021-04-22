@@ -39,6 +39,10 @@
  */
 package com.metaphacts.cache;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -593,6 +597,27 @@ public class DescriptionServiceTest extends AbstractRepositoryBackedIntegrationT
         Optional<Literal> description = descriptionCache.getDescription(asIRI(IRI1), repositoryRule.getRepository(), null);
         Assert.assertTrue(description.isPresent());
         Assert.assertEquals(IRI1_DESCRIPTION_NOLANG, description.get().stringValue());
+    }
+
+    @Test
+    public void testNonExistingMultiValueCall() throws Exception {
+        DescriptionService descriptionCache = new DelegatingDescriptionService(Collections.emptyList());
+        // we do not provide any descriptions for any of those resources
+        IRI iri1 = asIRI(IRI1);
+        IRI iri2 = asIRI(IRI2);
+        IRI iri3 = asIRI(IRI3);
+        List<IRI> iris = List.of(iri1, iri2, iri3);
+        // fetch all descriptions at once
+        Map<IRI, Optional<Literal>> descriptions = descriptionCache.getDescriptions(iris,
+                repositoryRule.getRepository(), null);
+        assertNotNull(descriptions);
+        assertEquals("we should get a result for each fetched resource", iris.size(), descriptions.size());
+        assertNotNull("there should be a result for iri1", descriptions.get(iri1));
+        assertFalse("there should be no actual value for iri1", descriptions.get(iri1).isPresent());
+        assertNotNull("there should be a result for iri1", descriptions.get(iri2));
+        assertFalse("there should be no actual value for iri2", descriptions.get(iri2).isPresent());
+        assertNotNull("there should be a result for iri1", descriptions.get(iri3));
+        assertFalse("there should be no actual value for iri3", descriptions.get(iri3).isPresent());
     }
 
     void setPreferredDescriptionRdfsComment() {

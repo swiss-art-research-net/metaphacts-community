@@ -48,7 +48,7 @@ import { BuiltInEvents, trigger } from 'platform/api/events';
 import { Rdf } from 'platform/api/rdf';
 import { SparqlClient } from 'platform/api/sparql';
 
-import { Ontodia, BaseOntodiaConfig } from 'platform/components/3-rd-party/ontodia/Ontodia';
+import { Ontodia, OntodiaConfig } from 'platform/components/3-rd-party/ontodia/Ontodia';
 import {
   SemanticSearchContext, ResultContext, GraphScopeContext
 } from 'platform/components/semantic/search';
@@ -148,7 +148,7 @@ class DiagramSearchResultInner extends React.Component<InnerProps, State> {
     } else if (errorMessage) {
       return <div><ErrorNotification errorMessage={errorMessage} /></div>;
     } else if (iris) {
-      const nodeStyles: BaseOntodiaConfig['nodeStyles'] = {};
+      const nodeStyles: OntodiaConfig['nodeStyles'] = {};
       this.props.context.searchProfileStore.map(profileStore =>
         profileStore.categories.forEach(category =>
           nodeStyles[category.iri.value] = {image: category.thumbnail, color: category.color}

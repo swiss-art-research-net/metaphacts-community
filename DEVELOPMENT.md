@@ -19,10 +19,6 @@ We use Gradle as a single entry point for compiling and bundling the sources, wh
 
   OSS dependencies are managed by Gradle and NPM and are retrieved from the public repositories.
 
-* `metaphacts-platform/client-api` - platform client
-
-  Initial Java 11 based client to (remotely) connect to the platform. Provides dedicated interfaces for accessing assets and services such as queries. Provides some further utils ontop of RDF4J.
-
 * `metaphacts-platform/web` - platform frontend
 
   Developed in Typescript and compiled to clean, simple JavaScript code which runs on any browser. Mainly using React for web-component development, SCSS for stylesheets.
@@ -33,7 +29,7 @@ We use Gradle as a single entry point for compiling and bundling the sources, wh
 It is possible to use an unix-based OS as well as Windows for development against the platform. As prerequisites you need to have installed on your machine:
 
 * OpenJDK 11
-* Node.js 8.x (or later)
+* Node.js 12.x (or later)
 * Gradle
 * Yarn
 * an RDF database or at least access to such (see section below)

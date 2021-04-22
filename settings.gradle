@@ -12,10 +12,6 @@ for (module in findModules()) {
 		include module.name + ':web'
 	}
 	
-	if (new File(module, 'client-api').isDirectory()) {
-		include module.name + ':client-api'
-	}
-	
 	if (new File(module, 'ontodia').isDirectory()) {
 		include module.name + ':ontodia'
 	}

@@ -56,14 +56,6 @@ const devServer = serve({
       chunkModules: false,
       // Displays log on module resolution errors
       errorDetails: true,
-      warningsFilter: warning => {
-        if (warning.indexOf('node_modules/ketcher/dist/ketcher.js') >= 0) {
-          // Filter out ketcher.js warning:
-          // "Critical dependency: the request of a dependency is an expression"
-          return true;
-        }
-        return false;
-      }
     }
   },
   add: (app, middleware) => {

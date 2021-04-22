@@ -39,6 +39,9 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface ChartEventData {
   /**
    * Event which should be triggered when a chart type is selected.

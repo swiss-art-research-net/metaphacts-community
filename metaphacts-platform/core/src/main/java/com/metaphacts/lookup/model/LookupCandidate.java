@@ -39,13 +39,14 @@
  */
 package com.metaphacts.lookup.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class LookupCandidate {
+public class LookupCandidate implements Cloneable {
     private String id;
     private String name;
     @JsonProperty("type")
@@ -54,6 +55,7 @@ public class LookupCandidate {
     private boolean match;
     private LookupDataset dataset;
     private String description;
+    private String reference;
 
     public LookupCandidate() {
     }
@@ -74,6 +76,22 @@ public class LookupCandidate {
         this.match = match;
         this.dataset = dataset;
         this.description = description;
+    }
+
+    @Override
+    public LookupCandidate clone() {
+        try {
+            // fields with primitive types are directly cloned, for complex objects use
+            // explicit clone
+            LookupCandidate clone = (LookupCandidate) super.clone();
+            // clone/copy list of types
+            if (types != null) {
+                clone.types = new ArrayList<>(this.types);
+            }
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public String getId() {
@@ -130,5 +148,13 @@ public class LookupCandidate {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getReference() {
+        return reference;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
     }
 }

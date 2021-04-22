@@ -55,11 +55,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
@@ -72,6 +74,7 @@ import com.metaphacts.junit.PlatformStorageRule;
 import com.metaphacts.junit.TestPlatformStorage;
 import com.metaphacts.services.storage.api.StoragePath;
 import com.metaphacts.templates.TemplateUtil;
+import com.metaphacts.vocabulary.DASH;
 
 public class HandlebarsDescriptionRendererTest extends AbstractIntegrationTest implements ResourcesTestData {
 
@@ -85,27 +88,31 @@ public class HandlebarsDescriptionRendererTest extends AbstractIntegrationTest i
     @Test
     public void testSimpleRender() throws Exception {
         // set up test template
-        String descriptionTemplate = "[[[label]]] ([[[type]]]): [[occupation.0.value]] ([[year dateOfBirth.0.value]])[[#if marriedTo]], married to [[marriedTo.0.value]][[/if]]";
+        String descriptionTemplate = "[[[label]]] ([[[type]]]): [[occupation.0.value]] ([[date-formatYear dateOfBirth.0.value]])[[#if marriedTo]], married to [[marriedTo.0.value]][[/if]]";
         StoragePath descriptionTemplatePath = DescriptionTemplateByIriLoader
                 .descriptionTemplatePathFromIri(iri(TemplateUtil.convertResourceToTemplateIdentifier(EXAMPLE_PERSON)));
         platformStorageRule.storeContent(descriptionTemplatePath, descriptionTemplate, TestPlatformStorage.STORAGE_ID);
 
         Repository repository = repositoryRule.getRepository();
         ResourceDescription instanceDescription = createInstanceDescription();
-        
+
         Optional<String> description = renderer.renderTemplate(instanceDescription, repository, LANG);
         assertTrue(description.isPresent());
         assertThat(description.get(), equalTo("Alice (Person): Researcher (1980), married to Charlie"));
     }
 
     protected DefaultResourceDescription createInstanceDescription() {
+        Set<IRI> propertyRoles = Set.of(DASH.DescriptionRole);
         // description properties
-        DefaultPropertyDescription occupation = new DefaultPropertyDescription(EXAMPLE_OCCUPATION, "occupation");
-        DefaultPropertyDescription birthdate = new DefaultPropertyDescription(EXAMPLE_BIRTHDATE, "dateOfBirth");
-        DefaultPropertyDescription marriedTo = new DefaultPropertyDescription(EXAMPLE_MARRIEDTO, "marriedTo");
+        DefaultPropertyDescription occupation = new DefaultPropertyDescription(EXAMPLE_OCCUPATION, "occupation",
+                propertyRoles);
+        DefaultPropertyDescription birthdate = new DefaultPropertyDescription(EXAMPLE_BIRTHDATE, "dateOfBirth",
+                propertyRoles);
+        DefaultPropertyDescription marriedTo = new DefaultPropertyDescription(EXAMPLE_MARRIEDTO, "marriedTo",
+                propertyRoles);
         List<PropertyDescription> properties = Arrays.asList(occupation, birthdate);
         TypeDescription typeDescription = new DefaultTypeDescription(EXAMPLE_PERSON)
-                .withDescriptionProperties(properties);
+                .withProperties(properties);
 
         // property values
         DefaultPropertyValue occupationValue = new DefaultPropertyValue(ALICE, occupation,

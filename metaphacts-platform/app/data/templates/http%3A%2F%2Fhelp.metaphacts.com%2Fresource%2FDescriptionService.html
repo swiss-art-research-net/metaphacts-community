@@ -4,25 +4,8 @@
   <div class='page__body'>
     <h1>Description Service</h1>
     <p>
-      The <i>Description Service</i> provides comprehensive information about resources and types.
+      The <i>Description Service</i> provides a brief description of a resource. This can be used to e.g. to disambiguate results when searching for entities or getting some additional contextual information for an entity when exploring data.
     </p>
-    <p>Specifically it supports</p>
-    <ul>
-      <li>getting the type(s) of a resource</li>
-      <li>getting a <i>type description</i> which contains the set of description (i.e. significant) properties</li>
-      <li>getting an <i>instance description</i> which contains the <i>type description</i> as well as the values for all description (i.e. significant) properties</li>
-      <li>getting a one-line summary description composed from a description template as well as the significant values for the instance obtained via the <i>instance description</i></li>
-    </ul>
-
-    <p>The <i>Description Service</i> covers multiple use cases:</p>
-    <ul>
-      <li>creating a summary of an entity as textual one-line description, e.g. for disambiguation of entities</li>
-      <li>finding the types of an entity and also the <i>primary</i> type</li>
-      <li>fetching additional descriptive (i.e. significant) properties for a resource</li>
-      </li>
-    </ul>
-
-    <h3>Entry Points</h3>
 
     <p>The <i>Description Service</i> is used whenever a description is shown for an entity:</p>
     <ul>
@@ -31,27 +14,76 @@
       <li>when using the component <code>mp-description</code> in a template</li>
     </ul>
 
-    <h3>Architecture</h3>
-
-    <p>The <i>Description Service</i> uses various sub systems to provide the described functionality. Each of these sub systems are pluggable and can be extended to cover specific use cases or custom scenarios.</p>
+    <p>There are multiple different ways to get a resource description:</p>
 
     <ul>
-      <li><code>TypeService</code> to determine the type(s) of an instance. The default implementation uses the predicates or property patterns configured using the config property <code>preferredTypes</code> to determine the type(s) of an instance.</li>
-      <li><code>DescriptionPropertiesProvider</code> to determine the (significant) description properties for a type. The default implementation retrieves this from SHACL annotations on the meta model as described below.</li>
-      <li><code>DescriptionRenderer</code> to create a textual summary of an instance based on the type and instance data obtained using the other services. The default implementation uses Handlebars syntax to render a description.</li>
+      <li>Specifying a set of predicates or graph patterns config property <code>preferredDescriptions</code>. This works for all resources and is the easiest way to get a description when the data already contains a ready-made literal description that can be used as-is.</li>
+      <li>Annotating the data model with <a title="DASH Property Roles and Resource Summaries" target="_blank" href="http://datashapes.org/propertyroles.html">DASH property roles</a>, specifically <a title="DASH DescriptionRole" target="_blank" href="http://datashapes.org/propertyroles.html#DescriptionRole">DASH <code>DescriptionRole</code></a> and providing a description template. This can be used to create descriptions composed of multiple literal values and hence allows fine-granular control over the resulting description and format. See below for details.</li>
     </ul>
 
     <p>
-      Note: when retrieving a description for an instance and when the <i>Description Service</i> is not configured sufficiently for that instance's primary type (i.e. either property descriptions and/or the description template are missing) the system will fall back to using a description provided by one of the predicates or property paths specified in config property <code>preferredDescriptions</code>. 
+      The system will try to fetch the description values in the user's preferred language if provided or otherwise fall back to the system default language.
     </p>
 
-    <h3>Configuration</h3>
+    <bs-alert variant="info"> 
+      <strong>Info!</strong><br/>
+      <p>
+        Please note that the configuration mechanism is currently only beta and is subject to change in one of the next versions of platform. This may involve non-backward compatible changes!
+      </p>
+    </bs-alert>
 
-    In order to get a composite description for entities the system needs to be configured to provide type and instance information as well as a description template.
+    <h4>Generic Description based on Existing Vocabulary</h4>
 
-    <h4>Type configuration</h4>
     <p>
-      The default implementation of the <code>TypeService</code> uses an ordered list of predicates, property paths and/or graph patterns, which are used to determine the type(s) for IRIs within the application. The predicates or property patterns can configured using the config property <code>preferredTypes</code> to determine the type(s) of an instance.
+      Some datasets already contain pre-composed descriptions which can be used as-is. Wikidata for example provides entity descriptions using the property <code>schema:description</code>.
+    </p>
+
+    <p>
+      A resource's description is determined using an ordered list of predicates, property paths and/or graph patterns. The predicates or property patterns can be configured using the config property <code>preferredDescriptions</code> to determine the description of an instance.
+    </p>
+    <p>
+      The value can consist of:
+    </p>
+    <ul>
+      <li>fully-qualified (surrounded by &lt;&gt;) or prefixed IRIs or/and </li>
+      <li>a SPARQL property path with full or prefixed IRIs or/and </li>
+      <li>a full SPARQL pattern, which must have a <code>?subject</code> (will be used to inject the entity for which a type should be generated) and a <code>?value</code> (denoting the type value) variable. The entire pattern must be enclosed by curly braces (<code>{ ?subject ?predicate ?value }</code>) and commas must be escaped with a backslash (<code>\</code>).</li>
+    </ul>      
+    <p>
+      <b>Example value</b>: <code>skos:definition, skos:note, rdfs:comment</code><br>
+      <b>Default value</b>: <code>&lt;http://www.w3.org/2000/01/rdf-schema#comment&gt;, &lt;http://schema.org/description&gt;</code>
+    </p>
+    <p>
+      Please note that the number and complexity of patterns may heavily influence the performance and load of the application or underlying database.
+    </p>
+
+    <p>
+      This property can be adjusted on the <semantic-link title="System Configuration" uri='[[resolvePrefix "Admin:Configuration"]]'>System Configuration</semantic-link> page in the <i>UI Configuration</i> section.
+    </p>
+
+    <p>When fetching the description for a resource the configured patterns will be considered in the specified order. </p>
+
+    <h4>Composite Description based on Model Annotations and Description Templates</h4>
+
+    <p>
+      If a pre-composed description for an entity is not available a description can be composed from multiple entity properties, e.g. for a person one could show the person's occupation, affiliation and lifespan:<br>
+      <code>Michelangelo Buonarroti, Italian Painter (1475-1564)</code>
+    </p>
+
+    <p>
+      In order to get a composite description for entities the system needs to be configured to provide type and instance information as well as a description template.
+    </p>
+
+    <p>
+      Note: when retrieving a description for an instance and when the <i>Description Service</i> is not configured sufficiently for that instance's primary type (i.e. either property descriptions and/or the description template are missing) the system will fall back to using a description provided by one of the predicates or property paths specified in config property <code>preferredDescriptions</code> as described in the previous section.
+    </p>
+
+    <h5>Type Configuration</h5>
+    <p>
+      A resource's type is determined using an ordered list of predicates, property paths and/or graph patterns. The predicates or property patterns can be configured using the config property <code>preferredTypes</code> to determine the type(s) of an instance.
+    </p>
+    <p>
+      The value can consist of:
     </p>
     <ul>
       <li>fully-qualified (surrounded by &lt;&gt;) or prefixed IRIs or/and </li>
@@ -70,14 +102,14 @@
       This property can be adjusted on the <semantic-link title="System Configuration" uri='[[resolvePrefix "Admin:Configuration"]]'>System Configuration</semantic-link> page in the <i>UI Configuration</i> section.
     </p>
 
-    <h4>Description Property Configuration</h4>
+    <h5>Description Property Configuration</h5>
     <p>
       The default implementation of the <code>DescriptionPropertiesProvider</code> retrieves the description properties to be used to generate an instance description from SHACL annotations on the semantic meta model (i.e. ontology) for the resource's primary type.
     </p>
 
     <p>
-      The property annotations are based on the <a title="Shapes Constraint Language (SHACL)" target="_blank" href="https://www.w3.org/TR/shacl/">SHACL</a> extension <a title="DataShapes (DASH)" target="_blank" href="http://datashapes.org/">DataShapes</a> (DASH). 
-      Specifically, they use the <a title="DASH Property Roles and Resource Summaries" target="_blank" href="http://datashapes.org/propertyroles.html#DescriptionRole">DASH <code>DescriptionRole</code></a> and <a target="_blank" href="https://www.w3.org/TR/shacl/#name">SHACL <code>sh:name</code></a> annotations on regular SHACL property shapes.
+      The property annotations are based on the <a title="Shapes Constraint Language (SHACL)" target="_blank" href="https://www.w3.org/TR/shacl/">SHACL</a> extension <a title="DataShapes (DASH)" target="_blank" href="http://datashapes.org/">DataShapes</a> (DASH).
+      Specifically, they use the <a title="DASH Property Roles and Resource Summaries" target="_blank" href="http://datashapes.org/propertyroles.html#DescriptionRole">DASH <code>DescriptionRole</code></a> and <code>Platform:projectionVariableName</code> annotations on regular SHACL property shapes.
     </p>
 
     <p>
@@ -85,17 +117,21 @@
     </p>
 
     <p>
-      A property to be used as input for a composite description is annotated using a <code>dash:propertyRole</code> of <code>dash:DescriptionRole</code>. Additionally, the name of the variable using which the value can be addressed in the template is defined using the <code>sh:name</code> attribute.
+      A property to be used as input for a composite description is annotated using a <code>dash:propertyRole</code> of <code>dash:DescriptionRole</code>.
+    </p>
+    
+    <p>
+      Additionally, the name of the variable using which the value can be addressed in the template is defined using the <code>Platform:projectionVariableName</code> attribute. If there is no projection variable defined, the local name of the predicate specified using <code>sh:path</code> is used as the name of the projection variable.
     </p>
 
     <h6>Fetching Data</h6>
 
     <p>
-      When rendering a description the <i>Description Service</i> uses the <code>sh:path</code> for fetching data for an instance. By default the value of the <code>sh:path</code> statement is interpreted as a predicate IRI. 
+      When rendering a description the <i>Description Service</i> uses the <code>sh:path</code> for fetching data for an instance. By default the value of the <code>sh:path</code> statement is interpreted as a predicate IRI.
     </p>
 
     <p>
-      SHACL property paths are not currently supported, only directly referenced predicate IRIs. 
+      SHACL property paths are not currently supported, only directly referenced predicate IRIs.
     </p>
 
     <p>
@@ -123,41 +159,42 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix schema: <http://schema.org/> .
 @prefix ex: <http://example.com/> .
+@prefix Platform: <http://www.metaphacts.com/ontologies/platform#> .
 
 ex:OntologyExtensions a owl:Ontology ;
     rdfs:label "FOAF and schema.org Ontology Extensions" .
 
 ex:FoafPersonShape a sh:NodeShape ;
   sh:targetClass foaf:Person ;
-  sh:property 
+  sh:property
   [
     sh:path schema:birthDate ;
-    sh:name "dateOfBirth" ;
+    Platform:projectionVariableName "dateOfBirth" ;
     dash:propertyRole dash:DescriptionRole ;
   ], [
     sh:path schema:deathDate ;
-    sh:name "dateOfDeath" ;
+    Platform:projectionVariableName "dateOfDeath" ;
     dash:propertyRole dash:DescriptionRole ;
-    #sh:datatype xsd:date ;
+    sh:datatype xsd:date ;
   ], [
     sh:path schema:hasOccupation ;
-    sh:name "occupation" ;
+    Platform:projectionVariableName "occupation" ;
     dash:propertyRole dash:DescriptionRole ;
   ], [
     sh:path schema:affiliation ;
-    sh:name "affiliation" ;
+    Platform:projectionVariableName "affiliation" ;
     dash:propertyRole dash:DescriptionRole ;
   ], [
     sh:path schema:homeLocation ;
-    sh:name "place" ;
+    Platform:projectionVariableName "place" ;
     dash:propertyRole dash:DescriptionRole ;
   ] .
     ]]></mp-code-block>
 
-  <h4>Description Templates</h4>
+  <h5>Description Templates</h5>
 
   <p>
-    The default implementation of the <code>DescriptionRenderer</code> uses <a title="Handlebars.java" target="_blank" href="http://jknack.github.io/handlebars.java/">Handlebars</a> templates combined with instance data fetched for the current resource to create a composite description.
+    The description is rendered using <a title="Handlebars.java" target="_blank" href="http://jknack.github.io/handlebars.java/">Handlebars</a> templates combined with instance data fetched for the current resource to create a composite description.
   </p>
 
   <p>
@@ -181,13 +218,16 @@ ex:FoafPersonShape a sh:NodeShape ;
     For multi-lingual literals only one value is picked based on the preferred language. IRI values are automatically resolved to their respective label (also in the preferred language).
   </p>
   <p>
-    Additionally, the variables <code>label</code> and <code>type</code> are available, they point to the 
+    Additionally, the variables <code>label</code> and <code>type</code> are available, they point to the
     label and type as defined in the respective instance description.
   </p>
 
-  <p>Example description template for type <code>foaf:Person</code>: (<code>data/templates/Template%3Ahttp%3A%2F%2Fxmlns.com%2Ffoaf%2F0.1%2FPerson.description.txt</code>)</p>
+  <p>Example description template for type <code>foaf:Person</code> (<code>data/templates/Template%3Ahttp%3A%2F%2Fxmlns.com%2Ffoaf%2F0.1%2FPerson.description.txt</code>):</p>
 
-  <mp-code-block mode='text/plain'><![CDATA[&lbrack;&lbrack;occupation.[0].value]] &lbrack;&lbrack;affiliation.[0].value]] &lbrack;&lbrack;place.[0].value]] &lbrack;&lbrack;#if dateOfBirth]](&lbrack;&lbrack;year dateOfBirth.[0].value "dd. MMMM yyyy"]]&lbrack;&lbrack;#if dateOfDeath]] - &lbrack;&lbrack;year dateOfDeath.[0].value "dd. MMMM yyyy"]]&lbrack;&lbrack;/if]])&lbrack;&lbrack;/if]]
+  <mp-code-block mode='text/plain'><![CDATA[&lbrack;&lbrack;occupation.[0].value]] &lbrack;&lbrack;affiliation.[0].value]] &lbrack;&lbrack;place.[0].value]] 
+&lbrack;&lbrack;#if dateOfBirth]](&lbrack;&lbrack;date-formatYear dateOfBirth.[0].value "dd. MMMM yyyy" fallback=dateOfBirth.[0].value]]
+  &lbrack;&lbrack;#if dateOfDeath]] - &lbrack;&lbrack;date-formatYear dateOfDeath.[0].value "dd. MMMM yyyy" fallback=dateOfDeath.[0].value]]&lbrack;&lbrack;/if]])
+&lbrack;&lbrack;/if]]
   ]]></mp-code-block>
 
   <h5>Available Helpers</h5>
@@ -195,12 +235,12 @@ ex:FoafPersonShape a sh:NodeShape ;
     The following helpers can be used for additional formatting needs, e.g. formatting (parts of) timestamps or dates.
   </p>
 
-  <h6>dateTimeFormat Helper</h6>
+  <h6>date-format Helper</h6>
   <p>
     Helper to render a timestamp using the provided format string. Default format is <code>dd.MM.yyyy HH:mm:ss.SSS</code>, see <a title="SimpleDateFormat (JavaDoc)" target="_blank" href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">here</a> for a description of the format.
   </p>
   <p>
-    General usage: <code>&lbrack;&lbrack;dateTimeFormat timestamp format sourceFormat]]</code>
+    General usage: <code>&lbrack;&lbrack;date-format timestamp format sourceFormat]]</code>
   </p>
   <ul>
     <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -214,8 +254,15 @@ ex:FoafPersonShape a sh:NodeShape ;
     (optional). If not provided a default value of <code>yyyy-MM-dd'T'HH:mm:ssX</code>
     or <code>yyyy-MM-dd</code> is used.</li>
   </ul>
+  <div>Named parameters (hash parameters):</div>
+  <ul>
+    <li>
+      <code>fallback</code>: this parameter defines a fallback value for the helper in case of parsing errors, e.g. because the provided timestamp value does not have the expected format.
+      
+    </li>
+  </ul>
 
-  <bs-panel header="Example: dateTimeFormat" collapsible=true default-expanded=true>
+  <bs-panel header="Example: date-format" collapsible=true default-expanded=true>
     <p>
     Render provided timestamp using German conventions:<br>
     <code>&lbrack;&lbrack;dateTimeFormat timestamp "dd.MM.yyyy HH:mm:ss"]]</code>
@@ -231,12 +278,12 @@ ex:FoafPersonShape a sh:NodeShape ;
     </p>
   </bs-panel>
 
-  <h6>year Helper</h6>
+  <h6>date-formatYear Helper</h6>
   <p>
     Helper to render the year of a timestamp.
   </p>
   <p>
-    General usage: <code>&lbrack;&lbrack;year timestamp sourceFormat]]</code>
+    General usage: <code>&lbrack;&lbrack;date-formatYear timestamp sourceFormat]]</code>
   </p>
   <ul>
     <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -247,25 +294,32 @@ ex:FoafPersonShape a sh:NodeShape ;
     (optional). If not provided a default value of <code>yyyy-MM-dd'T'HH:mm:ssX</code>
     or <code>yyyy-MM-dd</code> is used.</li>
   </ul>
+  <div>Named parameters (hash parameters):</div>
+  <ul>
+    <li>
+      <code>fallback</code>: this parameter defines a fallback value for the helper in case of parsing errors, e.g. because the provided timestamp value does not have the expected format.
+      
+    </li>
+  </ul>
 
-  <bs-panel header="Example: year" collapsible=true default-expanded=true>
+  <bs-panel header="Example: date-formatYear" collapsible=true default-expanded=true>
     <p>
     Render the year part of the provided timestamp:<br>
-    <code>&lbrack;&lbrack;year timestamp]]</code>
+    <code>&lbrack;&lbrack;date-formatYear timestamp]]</code>
     </p>
     <p>
     Render the year part of the provided timestamp, parse the timestamp using
     the provided format (last parameter):<br>
-    <code>&lbrack;&lbrack;year timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
+    <code>&lbrack;&lbrack;date-formatYear timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
     </p>
   </bs-panel>
 
-  <h6>month Helper</h6>
+  <h6>date-formatMonth Helper</h6>
   <p>
     Helper to render the month of a timestamp.
   </p>
   <p>
-    General usage: <code>&lbrack;&lbrack;month timestamp sourceFormat]]</code>
+    General usage: <code>&lbrack;&lbrack;date-formatMonth timestamp sourceFormat]]</code>
   </p>
   <ul>
     <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -276,25 +330,31 @@ ex:FoafPersonShape a sh:NodeShape ;
     (optional). If not provided a default value of <code>yyyy-MM-dd'T'HH:mm:ssX</code>
     or <code>yyyy-MM-dd</code> is used.</li>
   </ul>
+  <div>Named parameters (hash parameters):</div>
+  <ul>
+    <li>
+      <code>fallback</code>: this parameter defines a fallback value for the helper in case of parsing errors, e.g. because the provided timestamp value does not have the expected format.
+    </li>
+  </ul>
 
-  <bs-panel header="Example: month" collapsible=true default-expanded=true>
+  <bs-panel header="Example: date-formatMonth" collapsible=true default-expanded=true>
     <p>
     Render the month part of the provided timestamp:<br>
-    <code>&lbrack;&lbrack;month timestamp]]</code>
+    <code>&lbrack;&lbrack;date-formatMonth timestamp]]</code>
     </p>
     <p>
     Render the month part of the provided timestamp, parse the timestamp using
     the provided format (last parameter):<br>
-    <code>&lbrack;&lbrack;month timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
+    <code>&lbrack;&lbrack;date-formatMonth timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
     </p>
   </bs-panel>
 
-  <h6>day Helper</h6>
+  <h6>date-formatDay Helper</h6>
   <p>
     Helper to render the day of a timestamp.
   </p>
   <p>
-    General usage: <code>&lbrack;&lbrack;day timestamp sourceFormat]]</code>
+    General usage: <code>&lbrack;&lbrack;date-formatDay timestamp sourceFormat]]</code>
   </p>
   <ul>
     <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -305,25 +365,31 @@ ex:FoafPersonShape a sh:NodeShape ;
     (optional). If not provided a default value of <code>yyyy-MM-dd'T'HH:mm:ssX</code>
     or <code>yyyy-MM-dd</code> is used.</li>
   </ul>
+  <div>Named parameters (hash parameters):</div>
+  <ul>
+    <li>
+      <code>fallback</code>: this parameter defines a fallback value for the helper in case of parsing errors, e.g. because the provided timestamp value does not have the expected format.
+    </li>
+  </ul>
 
-  <bs-panel header="Example: day" collapsible=true default-expanded=true>
+  <bs-panel header="Example: date-formatDay" collapsible=true default-expanded=true>
     <p>
     Render the day part of the provided timestamp:<br>
-    <code>&lbrack;&lbrack;day timestamp]]</code>
+    <code>&lbrack;&lbrack;date-formatDay timestamp]]</code>
     </p>
     <p>
     Render the day part of the provided timestamp, parse the timestamp using
     the provided format (last parameter):<br>
-    <code>&lbrack;&lbrack;day timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
+    <code>&lbrack;&lbrack;date-formatDay timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
     </p>
   </bs-panel>
 
-  <h6>hours Helper</h6>
+  <h6>date-formatHour Helper</h6>
   <p>
     Helper to render the hours of a timestamp.
   </p>
   <p>
-    General usage: <code>&lbrack;&lbrack;hours timestamp sourceFormat]]</code>
+    General usage: <code>&lbrack;&lbrack;date-formatHour timestamp sourceFormat]]</code>
   </p>
   <ul>
     <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -334,25 +400,31 @@ ex:FoafPersonShape a sh:NodeShape ;
     (optional). If not provided a default value of <code>yyyy-MM-dd'T'HH:mm:ssX</code>
     or <code>yyyy-MM-dd</code> is used.</li>
   </ul>
+  <div>Named parameters (hash parameters):</div>
+  <ul>
+    <li>
+      <code>fallback</code>: this parameter defines a fallback value for the helper in case of parsing errors, e.g. because the provided timestamp value does not have the expected format.
+    </li>
+  </ul>
 
-  <bs-panel header="Example: hours" collapsible=true default-expanded=true>
+  <bs-panel header="Example: date-formatHour" collapsible=true default-expanded=true>
     <p>
     Render the hours part of the provided timestamp:<br>
-    <code>&lbrack;&lbrack;hours timestamp]]</code>
+    <code>&lbrack;&lbrack;date-formatHour timestamp]]</code>
     </p>
     <p>
     Render the hours part of the provided timestamp, parse the timestamp using
     the provided format (last parameter):<br>
-    <code>&lbrack;&lbrack;hours timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
+    <code>&lbrack;&lbrack;date-formatHour timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
     </p>
   </bs-panel>
 
-  <h6>minutes Helper</h6>
+  <h6>date-formatMinute Helper</h6>
   <p>
     Helper to render the minutes of a timestamp.
   </p>
   <p>
-    General usage: <code>&lbrack;&lbrack;minutes timestamp sourceFormat]]</code>
+    General usage: <code>&lbrack;&lbrack;date-formatMinute timestamp sourceFormat]]</code>
   </p>
   <ul>
     <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -363,8 +435,14 @@ ex:FoafPersonShape a sh:NodeShape ;
     (optional). If not provided a default value of <code>yyyy-MM-dd'T'HH:mm:ssX</code>
     or <code>yyyy-MM-dd</code> is used.</li>
   </ul>
+  <div>Named parameters (hash parameters):</div>
+  <ul>
+    <li>
+      <code>fallback</code>: this parameter defines a fallback value for the helper in case of parsing errors, e.g. because the provided timestamp value does not have the expected format.
+    </li>
+  </ul>
 
-  <bs-panel header="Example: minutes" collapsible=true default-expanded=true>
+  <bs-panel header="Example: date-formatMinute" collapsible=true default-expanded=true>
     <p>
     Render the minutes part of the provided timestamp:<br>
     <code>&lbrack;&lbrack;minute timestamp]]</code>
@@ -372,16 +450,16 @@ ex:FoafPersonShape a sh:NodeShape ;
     <p>
     Render the minutes part of the provided timestamp, parse the timestamp using
     the provided format (last parameter):<br>
-    <code>&lbrack;&lbrack;minutes timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
+    <code>&lbrack;&lbrack;date-formatMinute timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
     </p>
   </bs-panel>
 
-  <h6>seconds Helper</h6>
+  <h6>date-formatSecond Helper</h6>
   <p>
     Helper to render the seconds of a timestamp.
   </p>
   <p>
-    General usage: <code>&lbrack;&lbrack;seconds timestamp sourceFormat]]</code>
+    General usage: <code>&lbrack;&lbrack;date-formatSecond timestamp sourceFormat]]</code>
   </p>
   <ul>
     <li><code>timestamp</code>. variable (or value) containing a timestamp.
@@ -392,16 +470,22 @@ ex:FoafPersonShape a sh:NodeShape ;
     (optional). If not provided a default value of <code>yyyy-MM-dd'T'HH:mm:ssX</code>
     or <code>yyyy-MM-dd</code> is used.</li>
   </ul>
+  <div>Named parameters (hash parameters):</div>
+  <ul>
+    <li>
+      <code>fallback</code>: this parameter defines a fallback value for the helper in case of parsing errors, e.g. because the provided timestamp value does not have the expected format.
+    </li>
+  </ul>
 
-  <bs-panel header="Example: seconds" collapsible=true default-expanded=true>
+  <bs-panel header="Example: date-formatSecond" collapsible=true default-expanded=true>
     <p>
     Render the seconds part of the provided timestamp:<br>
-    <code>&lbrack;&lbrack;seconds timestamp]]</code>
+    <code>&lbrack;&lbrack;date-formatSecond timestamp]]</code>
     </p>
     <p>
     Render the seconds part of the provided timestamp, parse the timestamp using
     the provided format (last parameter):<br>
-    <code>&lbrack;&lbrack;seconds timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
+    <code>&lbrack;&lbrack;date-formatSecond timestamp "yyyy-MM-dd'T'HH:mm:ss"]]</code>
     </p>
   </bs-panel>
 

@@ -77,6 +77,7 @@ import {
   SortingRule,
   UseSortByState,
 } from 'react-table';
+import Select, { Option } from 'react-select';
 
 import { SparqlClient } from 'platform/api/sparql';
 import { ComponentContext } from 'platform/api/components';
@@ -91,12 +92,11 @@ import { TemplateItem } from 'platform/components/ui/template';
 import { Spinner } from 'platform/components/ui/spinner';
 import { ErrorNotification } from 'platform/components/ui/notification';
 
-import { Cancellation } from 'platform/api/async';
+import { Cancellation, KeyedBufferPool } from 'platform/api/async';
 import {
   makeUniqueColumnNameGenerator,
   isPrimitiveDatatype,
   makeCellComparator,
-  KeyedBufferPool,
 } from '../table/tableutils';
 import { Rdf } from 'platform/api/rdf';
 import { getLabels } from 'platform/api/services/resource-label';
@@ -112,7 +112,7 @@ import {
 } from './filters';
 import { applyColumnAggregateOptions, rdfUniqueCount } from './aggregates';
 
-import { OverlayTrigger, Button, Popover } from 'react-bootstrap';
+import { OverlayTrigger, Button, Popover, DropdownButton } from 'react-bootstrap';
 
 import * as styles from './DataTable.scss';
 import {
@@ -120,10 +120,12 @@ import {
   TableFilterExtension,
 } from './extensions';
 import { useExtensionPoint } from 'platform/components/utils';
+import DropdownItem from 'react-bootstrap/esm/DropdownItem';
 
 const GROUPING_ICON: string = require('./grouping-icon.svg');
 
 const DEFAULT_ROWS_PER_PAGE = 10;
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export interface DataTableProps extends PreviousTableConfig {
   options?: DataTableOptions;
@@ -156,6 +158,13 @@ export interface DataTableOptions extends PreviousOptions {
   sorting?: SortDefinition;
 
   /**
+   * Enable runtime selection of page size. Set to `true` for default sizes or an array
+   * of numbers for custom selection (e.g. [5, 10, 15, 20]). Adding a `-1` to the array,
+   * will add an option to show all rows.
+   */
+  pageSizeSelection?: boolean | number[];
+
+  /**
    * Whether or not to use a styled table header pre-defined color scheme (true | false).
    * Can also specify the color to be used for the header, e.g. `gray` or `#DDDDDD`.
    *
@@ -178,6 +187,14 @@ export interface DataTableOptions extends PreviousOptions {
    * @default false
    */
   showColumnFilters?: boolean
+
+  /**
+   * Whether or not to allow toggling column visiblity. Switching column visibility is a
+   * client side operation on the table view, i.e. it does not re-execute the SPARQL query.
+   *
+   * By default, it is shown if there are columns that are not initially visible.
+   */
+  showColumnToggle?: boolean;
 }
 
 export interface GroupingOptions {
@@ -256,6 +273,13 @@ export interface ColumnConfigurationExtensions {
   aggregation?: ColumnAggregateConfigurationType;
 
   /**
+   * Whether this column should be visible by default
+   *
+   * @default true
+   */
+  visible?: boolean;
+
+  /**
    * Template for aggregated values.
    *
    * The aggregated value is available with the `value` variable.
@@ -294,17 +318,23 @@ type ExtendedColumn = Column<object> & {
    * Index representing the original order of the columns
    */
   originalIndex: number;
+  /**
+   * Whether the column shoud be visible by default
+   */
+  visible: boolean;
 };
 
 interface ToolbarProps {
   enableColumnFilters: boolean;
   enableGlobalFilter: boolean;
   enableGrouping: boolean;
+  enableColumnToggle: boolean;
   styleHeader: boolean | string;
   globalFilterInstance: UseGlobalFiltersInstanceProps<object>;
   globalFilterState: UseGlobalFiltersState<object>;
   setSidebarShown: (sidebarShown: boolean) => void;
   headerGroups: HeaderGroup<object>[];
+  allColumns: ColumnInstance<object>[];
 }
 
 export function DataTable(props: DataTableProps) {
@@ -369,8 +399,9 @@ export function DataTable(props: DataTableProps) {
 
   const plugins: Array<(hooks: Hooks<object>) => void> = [];
   const options: Partial<TableOptions<object>> = {};
+  const initialPageSize = props.numberOfDisplayedRows ?? DEFAULT_ROWS_PER_PAGE;
   const initialState: TableState<object> & Partial<UsePaginationState<object>> = {
-    pageSize: props.numberOfDisplayedRows ?? DEFAULT_ROWS_PER_PAGE,
+    pageSize: initialPageSize,
     pageIndex: props.currentPage != null ? props.currentPage - 1 : 0,
   };
 
@@ -449,12 +480,40 @@ export function DataTable(props: DataTableProps) {
   const data = React.useMemo(() => (
     isArrayTableData(result) ? result : result.results.bindings
   ), [result]);
+  initialState.hiddenColumns = cols.filter(col => (col as ExtendedColumn).visible === false)
+    .map(col => col.id);
 
   const instance = useTable({ columns: cols, data: data as any[], initialState, ...options },
     ...plugins) as PagedTableInstance;
 
   const { state } = instance;
   const paginationState = state as UsePaginationState<object>;
+
+  const [changedPageSize, setChangedPageSize] = React.useState(false);
+  const setPageSize = React.useCallback((pageSize: number) => {
+    instance.setPageSize(pageSize);
+    setChangedPageSize(true);
+  }, [instance]);
+
+  const pageSizeSelection = propOpts?.pageSizeSelection;
+  const pageSizes = React.useMemo(() => {
+    if (!propOpts?.pageSizeSelection) {
+      return undefined;
+    }
+    let sizes = Array.isArray(pageSizeSelection) ? pageSizeSelection : DEFAULT_PAGE_SIZE_OPTIONS;
+    const infIndex = sizes.indexOf(-1);
+    if (infIndex >= 0 && sizes.indexOf(Number.MAX_VALUE) < 0) {
+      sizes.splice(infIndex, 1, Number.MAX_VALUE);
+    }
+    if (sizes.indexOf(initialPageSize) < 0) {
+      sizes = [...sizes, initialPageSize];
+    }
+    if (sizes.indexOf(paginationState.pageSize) < 0) {
+      sizes = [...sizes, paginationState.pageSize];
+    }
+    sizes = sizes.sort((a, b) => a - b);
+    return sizes;
+  }, [initialPageSize, paginationState.pageSize, pageSizeSelection]);
 
   handleOnPageChangeCallback(paginationState, props.onPageChange);
   React.useEffect(() => {
@@ -486,6 +545,8 @@ export function DataTable(props: DataTableProps) {
     }
   }, [buffer, cols, data]);
 
+  const enableColumnToggle = propOpts?.showColumnToggle != null ?
+    propOpts.showColumnToggle : initialState.hiddenColumns.length > 0;
 
   if (bufferLoading || !haveExtensionsLoaded) {
     return <Spinner></Spinner>;
@@ -502,6 +563,7 @@ export function DataTable(props: DataTableProps) {
       {showToolbar(enableGlobalFilter, enableColumnFilters, enableInteractiveGrouping) ? <Toolbar
         enableGlobalFilter={enableGlobalFilter}
         enableColumnFilters={enableColumnFilters}
+        enableColumnToggle={enableColumnToggle}
         enableGrouping={enableInteractiveGrouping}
         styleHeader={props.options?.styleHeader}
         globalFilterInstance={instance as
@@ -509,6 +571,7 @@ export function DataTable(props: DataTableProps) {
         globalFilterState={state as UseGlobalFiltersState<object>}
         setSidebarShown={setSidebarShown}
         headerGroups={instance.headerGroups}
+        allColumns={instance.allColumns}
       ></Toolbar> : null}
       {typeof layout?.tupleTemplate === 'string' ?
         renderTupleTemplate(instance, layout.tupleTemplate) :
@@ -520,7 +583,16 @@ export function DataTable(props: DataTableProps) {
           showTableHeading
         })
       }
-      {instance.pageCount > 1 ? pagination(instance, paginationState) : null}
+
+      {(instance.pageCount > 1 || changedPageSize) ? <div className={styles.footer}>
+        {pagination(instance, paginationState)}
+        {pageSizes ? <div className={styles.pageSizeSelectorContainer}>
+          <span className={styles.pageSizeSelectorLabelBefore}>Show</span>
+          {pageSizeSelector(setPageSize, paginationState.pageSize, pageSizes)}
+          <span className={styles.pageSizeSelectorLabelAfter}>rows</span>
+        </div> : null}
+      </div> : null}
+
       {enableColumnFilters && sidebarShown && renderFilterSidebar(instance, setSidebarShown)}
     </div>
   );
@@ -581,6 +653,7 @@ function Toolbar(props: ToolbarProps) {
       </Button> : null}
     {props.enableGrouping ?
       renderGroupColumnsPopover(props.headerGroups) : null}
+    {props.enableColumnToggle ? renderToggleColumnsPopover(props.allColumns) : null}
   </div>;
 }
 
@@ -616,8 +689,26 @@ function renderGroupColumnsPopover(headerGroups: HeaderGroup<object>[]) {
   </OverlayTrigger>;
 }
 
-function columnsInOriginalOrder(columns: Column[]): Column[] {
-  const sortedColumns = [...columns];
+function renderToggleColumnsPopover(columns: ColumnInstance<object>[]) {
+  return <OverlayTrigger
+    trigger='click' rootClose placement='bottom' containerPadding={0}
+    overlay={
+      <Popover className={styles.popover} id='tablegrouppopover'>
+        <div className={styles.popoverContent}>
+          {columnsInOriginalOrder(columns).map(column => {
+            return renderColumnToggleOption(column);
+          })}
+        </div>
+      </Popover>}>
+    <Button variant='secondary'>
+      Columns
+      <i className={'fa fa-caret-down ' + styles.buttonIconRight}></i>
+    </Button>
+  </OverlayTrigger>;
+}
+
+function columnsInOriginalOrder<T extends Column<object>[]>(columns: T): T {
+  const sortedColumns = [...columns] as T;
   sortedColumns.sort((c1, c2) =>
     (c1 as ExtendedColumn).originalIndex - (c2 as ExtendedColumn).originalIndex);
   return sortedColumns;
@@ -635,6 +726,20 @@ function renderColumnGroupingToggleOption(column: GroupedHeaderGroup) {
     {column.groupedIndex >= 0 ? <div className={styles.groupingOptionIndex}>
       {column.groupedIndex + 1}
     </div> : null}
+  </div>;
+}
+
+function renderColumnToggleOption(column: ColumnInstance<object>) {
+  const disabled = (column as GroupedHeaderGroup).isGrouped ?? false;
+  return <div key={column.id} className={styles.groupingOption}>
+    <label className={disabled ? 'text-muted' : ''}
+      title={disabled ? 'Table is grouped by this column' : null}>
+      <input type='checkbox'
+        checked={column.isVisible}
+        disabled={disabled}
+        onChange={() => column.toggleHidden()}></input>
+      {column.render('Header')}
+    </label>
   </div>;
 }
 
@@ -861,7 +966,7 @@ function handleOnPageChangeCallback(
 }
 
 function pagination({
-  pageCount, canPreviousPage, previousPage, canNextPage, nextPage, gotoPage
+  pageCount, canPreviousPage, previousPage, canNextPage, nextPage, gotoPage, setPageSize
 }: PagedTableInstance,
   { pageIndex }: UsePaginationState<object>
 ) {
@@ -874,7 +979,7 @@ function pagination({
     {Array.from({ length: Math.min(pageCount, 5) }, (obj, i) => {
       const dspIdx = Math.max(pageIndex - 2, 0) + i;
       return dspIdx < pageCount ?
-        <li key={dspIdx} className={'page-item ' +  (dspIdx === pageIndex ? 'active' : '')}>
+        <li key={dspIdx} className={'page-item ' + (dspIdx === pageIndex ? 'active' : '')}>
           <a className='page-link' onClick={() => gotoPage(dspIdx)}>{dspIdx + 1}</a>
         </li> : null;
     })}
@@ -883,6 +988,31 @@ function pagination({
       <a className='page-link' onClick={nextPage}>{'»'}</a>
     </li>
   </ul>;
+}
+
+function pageSizeSelector(
+  setPageSize: (pageSize: number) => void, currentPageSize: number, pageSizes: number[]
+) {
+  const pageOptions = pageSizes.map(size => ({
+    value: size,
+    label: size === Number.MAX_VALUE ? 'All' : String(size)
+  }));
+  const changeHandler = (option: Option<number>) => setPageSize(option.value);
+
+  const inputHandler = (input: string) => {
+    if (input) {
+      const pageInput = parseInt(input);
+      if (!Number.isNaN(pageInput) && pageInput > 0) {
+        setPageSize(pageInput);
+      }
+    }
+  };
+  return <Select options={pageOptions}
+    value={currentPageSize}
+    clearable={false}
+    onInputChange={inputHandler}
+    onChange={changeHandler}>
+  </Select>;
 }
 
 function cellContent(
@@ -962,13 +1092,14 @@ function customColumnsMetadata(
     const columnName = columnConfig.variableName === undefined
       ? 'mp-custom-column' : columnConfig.variableName;
 
-    const col = {
+    const col: ExtendedColumn = {
       // generate unique column name if a column with same name already exists,
       // otherwise Griddle won't render this column
       Header: columnConfig.displayName ?? columnConfig.variableName,
       id: columnConfig.id ?? ensureUniqueColumnName(columnName),
       accessor: columnConfig.variableName,
       originalIndex: i,
+      visible: columnConfig.visible ?? true,
       Cell: makeCellComponentClass(config, columnConfig, renderingState),
       ...commonColumnMetadata(renderingState, config.options?.groupingOptions, columnConfig),
     };

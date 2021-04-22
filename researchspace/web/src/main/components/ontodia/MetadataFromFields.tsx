@@ -161,6 +161,7 @@ export class MetadataFromFields extends React.Component<MetadataFromFieldsProps,
         newSubjectTemplate: context.defaultSubjectTemplate,
         labelField,
         imageField,
+        ownedFields: new Set(),
         datatypeFields: Immutable.Set(context.datatypeFields as string[]),
         formChildren: undefined,
       });

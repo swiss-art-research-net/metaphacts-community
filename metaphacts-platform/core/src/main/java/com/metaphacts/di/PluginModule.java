@@ -55,10 +55,12 @@ import com.metaphacts.cache.QueryTemplateCache;
 import com.metaphacts.cache.ResourceDescriptionCacheHolder;
 import com.metaphacts.config.Configuration;
 import com.metaphacts.config.NamespaceRegistry;
+import com.metaphacts.lookup.api.LookupServiceManager;
 import com.metaphacts.repository.RepositoryManagerInterface;
-import com.metaphacts.resource.DescriptionPropertiesProvider;
 import com.metaphacts.resource.DescriptionRenderer;
+import com.metaphacts.resource.ModelService;
 import com.metaphacts.resource.ResourceDescriptionService;
+import com.metaphacts.resource.TypePropertyProvider;
 import com.metaphacts.resource.TypeService;
 import com.metaphacts.rest.AbstractPlatformApplication;
 import com.metaphacts.rest.swagger.SwaggerRegistry;
@@ -92,6 +94,7 @@ public class PluginModule extends DelegateModule {
         bindDelegate(PlatformStorage.class);
         bindDelegate(RepositoryManagerInterface.class);
         bindDelegate(RepositoryResolver.class);
+        bindDelegate(LookupServiceManager.class);
         bindDelegate(CacheManager.class);
         
         // data services
@@ -100,9 +103,10 @@ public class PluginModule extends DelegateModule {
         bindDelegate(ExternalLabelDescriptionService.class);
         bindDelegate(TypeService.class);
         bindDelegate(DescriptionService.class);
+        bindDelegate(ModelService.class);
         bindDelegate(ResourceDescriptionCacheHolder.class);
         bindDelegate(ResourceDescriptionService.class);
-        bindDelegate(DescriptionPropertiesProvider.class);
+        bindDelegate(TypePropertyProvider.class);
         bindDelegate(DescriptionRenderer.class);
         bindDelegate(ThumbnailServiceRegistry.class);
         bindDelegate(ThumbnailService.class);

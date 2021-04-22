@@ -43,6 +43,7 @@ import * as request from 'platform/api/http';
 export { Cancellation, useCancellation } from './Cancellation';
 export { WrappingError } from './WrappingError';
 export { BatchedPool } from './BatchedPool';
+export { KeyedBufferPool } from './KeyedBufferPool';
 
 export function requestAsProperty(
   req: request.SuperAgentRequest

@@ -103,4 +103,8 @@ public interface LabelService {
                 labelIfDefined, iri
         ).stringValue();
     }
+
+    interface Provider {
+        Optional<LabelService> getLabelService();
+    }
 }

@@ -1,17 +1,30 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "description": "Displays child component if user has the required permission; otherwise displays nothing.\n\n**Example**:\n```\n<mp-has-permission permission='delete:all:data'></mp-has-permission>\n```",
+    "description": "Displays child component if user has the required permission; otherwise displays nothing.\n\nIf multiple options of `permission`, `any-of` and `all-of` are provided, they all need\nto be fulfilled.\n\n**Examples**:\n```\n<mp-has-permission permission='delete:all:data'></mp-has-permission>\n<mp-has-permission any-of='[\"data:create\", \"data:update\"]'></mp-has-permission>\n```",
     "properties": {
+        "allOf": {
+            "description": "All of these permissions need to be granted.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "anyOf": {
+            "description": "At least one of these permissions needs to be granted.",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "permission": {
             "description": "Required permission key to display a child component.",
             "type": "string"
         }
     },
     "propertyOrder": [
-        "permission"
-    ],
-    "required": [
-        "permission"
+        "permission",
+        "anyOf",
+        "allOf"
     ],
     "type": "object"
 }

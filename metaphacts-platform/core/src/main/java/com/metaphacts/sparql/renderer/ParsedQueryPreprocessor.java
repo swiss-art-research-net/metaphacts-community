@@ -198,6 +198,9 @@ public class ParsedQueryPreprocessor extends AbstractQueryModelVisitor<RuntimeEx
         if (queryProfile.whereClause instanceof Extension) {
             queryProfile.whereClause = ((Extension)queryProfile.whereClause).getArg();
         }
+        if (queryProfile.whereClause instanceof Slice) {
+            queryProfile.whereClause = ((Slice) queryProfile.whereClause).getArg();
+        }
         if (queryProfile.whereClause instanceof Order) {
             queryProfile.whereClause = ((Order)queryProfile.whereClause).getArg();
         } 
@@ -666,8 +669,6 @@ public class ParsedQueryPreprocessor extends AbstractQueryModelVisitor<RuntimeEx
     public void meet(Modify modify) throws RuntimeException {
         currentQueryProfile.modifier = currentModifier;
         currentModifier = null;
-        currentQueryProfile.limit = currentSlice;
-        currentSlice = null;
         super.meet(modify);
     }
 
@@ -682,8 +683,6 @@ public class ParsedQueryPreprocessor extends AbstractQueryModelVisitor<RuntimeEx
         this.graphQueryProjection = node;
         currentQueryProfile.modifier = currentModifier;
         currentModifier = null;
-        currentQueryProfile.limit = currentSlice;
-        currentSlice = null;
         Projection fakeProjection = new Projection();
         
         node.getProjections().stream().forEach(
@@ -745,8 +744,6 @@ public class ParsedQueryPreprocessor extends AbstractQueryModelVisitor<RuntimeEx
 
         currentQueryProfile.modifier = currentModifier;
         currentModifier = null;
-        currentQueryProfile.limit = currentSlice;
-        currentSlice = null;
 
         currentQueryProfile.projection = node;
         queriesByProjection.put(node, currentQueryProfile);
@@ -816,6 +813,8 @@ public class ParsedQueryPreprocessor extends AbstractQueryModelVisitor<RuntimeEx
     @Override
     public void meet(Slice node) throws RuntimeException {
         currentSlice = node;
+
+        currentQueryProfile.limit = node;
         super.meet(node);
     }
 

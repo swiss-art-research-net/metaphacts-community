@@ -16,8 +16,13 @@
       </div>
     </div>
     <div style="clear:both;"></div>
-    <h2>Configuration </h2>
+    <h2>Configuration</h2>
     <mp-documentation type="SemanticLazyTreeConfig"></mp-documentation>
+
+    <h2 id="events">Events</h2>
+    <p>This section describes available <semantic-link iri='[[resolvePrefix "Help:EventSystem"]]'>events</semantic-link> for interaction.</p>
+
+    <mp-documentation type='SemanticLazyTreeEventData' disable-transform-attributes=true hide-required-label=true></mp-documentation>
 
     <p><b>Note:</b> For the following examples to display actual results, it is required to have some ontology with <code>owl:Class</code> and <code>rdfs:subClassOf</code> relationships in the graph database. Consider loading the <a href="http://xmlns.com/foaf/spec/index.rdf" target="_BLANK">FOAF ontology</a> as an example dataset.</p>
 
@@ -28,8 +33,7 @@
         <p>Display values of the tree nodes are retrieved automatically by the platform's label service. Also note that the elements are ordered in alphabetical order using the display value.</p>
       </div>
       <div class="documentation__example__demo">
-        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
-          <![CDATA[
+<mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
 <div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
 
   <semantic-lazy-tree
@@ -47,8 +51,7 @@
   </semantic-lazy-tree>
 
 </div>
-          ]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
 
@@ -63,8 +66,7 @@
         <p>Please be aware that the nodes should be uniquely assigned one <code>rdfs:label</code> to avoid cross products. Also note that that nodes actually must have an explict <code>label</code> value for the query to return data.</p>
       </div>
       <div class="documentation__example__demo">
-        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
-          <![CDATA[
+<mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
 <div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
 
   <semantic-lazy-tree
@@ -84,8 +86,7 @@
   </semantic-lazy-tree>
 
 </div>
-          ]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
 
@@ -96,8 +97,7 @@
         <p>The <code>search-query</code> is used to compute the set of nodes matching the user's input, while the <code>parents-query</code> is used to recursively compute the parents of the result items to produce the tree hierarchy.</p>
       </div>
       <div class="documentation__example__demo">
-        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
-          <![CDATA[
+<mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
 <div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
 
   <semantic-lazy-tree
@@ -119,17 +119,18 @@
     '
     search-query='
       SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
-        ?item rdfs:label ?label .
-        BIND(false AS ?hasChildren)
-        FILTER REGEX(LCASE(?label), LCASE(?__token__), "i")
+        ?item a owl:Class ;
+          rdfs:label ?label .
+        FILTER REGEX (LCASE(?label),LCASE(?__token__), "i")
+        OPTIONAL { ?subClass a owl:Class; rdfs:subClassOf ?item } 
+        BIND (BOUND(?subClass) AS ?hasChildren )
       } ORDER BY DESC (?score) (?label) LIMIT 200
     '
     placeholder='Select or search for a class..'>
   </semantic-lazy-tree>
 
 </div>
-          ]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
 
@@ -141,8 +142,7 @@
         <p>Using an additional container with a specified <code>height</code> and/or <code>width</code> it is possible to influence the rendered result meaning that the component tries to fill all available space of the container.</p>
       </div>
       <div class="documentation__example__demo">
-        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
-          <![CDATA[
+<mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
 <div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
 
   <div style="height: 500px"><!-- Container with specified height-->
@@ -166,8 +166,7 @@
   </div>
 
 </div>
-          ]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
 
@@ -179,8 +178,7 @@
         <p>Optionally, the <code>?hasChildren</code> projection can be provided in the <code>roots-query</code> and <code>children-query</code> to provide the tree component with the additional information about whether the element in the tree has children or not.</p>
       </div>
       <div class="documentation__example__demo">
-        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
-          <![CDATA[
+<mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
 <div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
 
   <semantic-lazy-tree
@@ -202,8 +200,7 @@
   </semantic-lazy-tree>
 
 </div>
-          ]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
 
@@ -220,8 +217,7 @@
         </mp-documentation>
       </div>
       <div class="documentation__example__demo">
-        <mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
-          <![CDATA[
+<mp-code-example [[#if (ask "ASK { ?node a owl:Class}")]][[else]]show-code-by-default=true[[/if]]>
 <div style="padding: 20px; margin: 20px; background-color: #f7f7f7; border: 1px solid #e8e8e8;">
   <style>
     .exampleHighlight { color: green; }
@@ -251,11 +247,11 @@
     '
     search-query='
       SELECT DISTINCT ?item ?label ?score ?hasChildren WHERE {
-        ?item rdfs:label ?label .
-        BIND(false AS ?hasChildren)
-        FILTER REGEX(LCASE(?label), LCASE(?__token__), "i")
-        OPTIONAL { ?subClass rdfs:subClassOf ?item }
-        BIND(BOUND(?subClass) AS ?hasChildren)
+        ?item a owl:Class ;
+          rdfs:label ?label .
+        FILTER REGEX (LCASE(?label), LCASE(?__token__), "i")
+        OPTIONAL { ?subClass a owl:Class; rdfs:subClassOf ?item } 
+        BIND (BOUND(?subClass) AS ?hasChildren)
       } ORDER BY DESC (?score) (?label) LIMIT 200
     '
     node-data-query='
@@ -279,8 +275,7 @@
   </semantic-lazy-tree>
 
 </div>
-          ]]>
-        </mp-code-example>
+</mp-code-example>
       </div>
     </div>
 
@@ -290,6 +285,7 @@
 [[#*inline "lazy-tree-top-example"]]
 <semantic-lazy-tree
   placeholder='Select or search for an entity...'
+  focused-iri='http://example.com/ITDepartment'
   roots-query='
     SELECT DISTINCT ?item ?label ?hasChildren WHERE {
       VALUES(?item ?label ?hasChildren) {

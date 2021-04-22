@@ -39,7 +39,7 @@
  */
 package com.metaphacts.repository.http;
 
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
 import org.apache.http.HttpHost;
@@ -79,7 +79,7 @@ public class AuthenticatingRDF4JProtocolSession extends RDF4JProtocolSession {
      */
     protected Function<HttpUriRequest, HttpUriRequest> httpRequestModifyFunction = null;
 
-    public AuthenticatingRDF4JProtocolSession(HttpClient client, ScheduledExecutorService executor) {
+    public AuthenticatingRDF4JProtocolSession(HttpClient client, ExecutorService executor) {
         super(client, executor);
     }
 

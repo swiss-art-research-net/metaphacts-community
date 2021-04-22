@@ -125,7 +125,10 @@ export class FieldBasedMetadataApi implements MetadataApi {
         {...model, id: '' as ElementIri}, metadata
       );
       const generatedIri = Forms.generateSubjectByTemplate(
-        metadata.newSubjectTemplate, undefined, newComposite
+        metadata.newSubjectTemplate,
+        undefined,
+        newComposite,
+        metadata.newSubjectTemplateSettings
       );
       return generatedIri.value as ElementIri;
     } else {
@@ -326,6 +329,14 @@ export class FieldBasedMetadataApi implements MetadataApi {
 
   propertiesForType(type: ElementTypeIri, ct: CancellationToken): Promise<PropertyTypeIri[]> {
     return Promise.resolve([]);
+  }
+
+  getOwnedProperties(type: ElementTypeIri): PropertyTypeIri[] {
+    const metadata = this.entityMetadata.get(type);
+    if (!metadata) {
+      return [];
+    }
+    return Array.from(metadata.ownedFields) as PropertyTypeIri[];
   }
 
   canDeleteElement(element: ElementModel, ct: CancellationToken): Promise<boolean> {

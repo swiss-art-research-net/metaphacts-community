@@ -45,7 +45,7 @@ import { GriddleConfig, ColumnMetadata } from 'griddle-react';
 import * as _ from 'lodash';
 import * as Immutable from 'immutable';
 
-import { Cancellation } from 'platform/api/async';
+import { Cancellation, KeyedBufferPool } from 'platform/api/async';
 import { Component } from 'platform/api/components';
 import { SparqlClient } from 'platform/api/sparql';
 import { Rdf } from 'platform/api/rdf';
@@ -63,7 +63,6 @@ import {
   makeUniqueColumnNameGenerator,
   isPrimitiveDatatype,
   makeCellComparator,
-  KeyedBufferPool,
   prepareCellMatchQuery,
   doesCellMatchText,
 } from './tableutils';

@@ -58,13 +58,17 @@ export function generate128BitID() {
  */
 export function hashFnv32a(str: string, seed = 0x811c9dc5): number {
     /* tslint:disable:no-bitwise */
-    let i: number, l: number, hval = seed & 0x7fffffff;
-
-    for (i = 0, l = str.length; i < l; i++) {
-        hval ^= str.charCodeAt(i);
-        hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
+    let h = seed & 0x7fffffff;
+    const len = str.length;
+    for (let i = 0; i < len; i++) {
+        h ^= str.charCodeAt(i);
+        h = (h + (h << 1)) | 0;
+        h = (h + (h << 4)) | 0;
+        h = (h + (h << 7)) | 0;
+        h = (h + (h << 8)) | 0;
+        h = (h + (h << 24)) | 0;
     }
-    return hval >>> 0;
+    return h | 0;
     /* tslint:enable:no-bitwise */
 }
 

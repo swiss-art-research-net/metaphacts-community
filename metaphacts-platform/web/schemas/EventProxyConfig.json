@@ -5,6 +5,7 @@
         "data": {
             "additionalProperties": true,
             "description": "Data that will be sent to all targets instead of data from the original event.",
+            "mpHasEventType": "proxyEventType",
             "properties": {
             },
             "type": "object"
@@ -19,10 +20,12 @@
         },
         "onEventType": {
             "description": "Type of event to listen to.",
+            "format": "mp-event-type",
             "type": "string"
         },
         "proxyEventType": {
             "description": "Type of the event that this component triggers when\nreceives event.",
+            "format": "mp-event-type",
             "type": "string"
         },
         "proxyTargets": {

@@ -40,6 +40,8 @@
 package com.metaphacts.resource;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.eclipse.rdf4j.model.IRI;
 
@@ -49,8 +51,8 @@ import org.eclipse.rdf4j.model.IRI;
  * <p>
  * The description provides information for a type like:
  * <ul>
- * <li>set of description properties</li>
- * <li>template to create a one-line description of an entity of this type</li>
+ * <li>type IRI and label</li>
+ * <li>set of properties</li>
  * </ul>
  * </p>
  * 
@@ -77,5 +79,65 @@ public interface TypeDescription {
      * 
      * @return list of properties, may be empty but never <code>null</code>
      */
-    List<PropertyDescription> getDescriptionProperties();
+    List<PropertyDescription> getProperties();
+
+    /**
+     * Determine whether this type description has properties.
+     * 
+     * @return true when this type description has properties, <code>false</code>
+     *         otherwise
+     */
+    default boolean hasProperties() {
+        List<PropertyDescription> properties = getProperties();
+        return (properties != null) && !properties.isEmpty();
+    }
+
+    /**
+     * Determine whether this type description has properties annotated with the
+     * specified property role.
+     * 
+     * @return true when this type description has properties annotated with the
+     *         specified property role, <code>false</code> otherwise
+     */
+    default boolean hasPropertiesForRole(IRI propertyRole) {
+        Optional<List<PropertyDescription>> properties = getPropertiesForRole(propertyRole);
+        return properties.isPresent() && !properties.get().isEmpty();
+    }
+
+    /**
+     * Get property description for specified property IRI.
+     * 
+     * @param propertyIRI IRI of property for which to get the property description
+     * @return property description or empty if not available
+     */
+    default Optional<PropertyDescription> getProperty(IRI propertyIRI) {
+        if (propertyIRI == null) {
+            return Optional.empty();
+        }
+        List<PropertyDescription> properties = getProperties();
+        if (properties == null || properties.isEmpty()) {
+            return Optional.empty();
+        }
+        return properties.stream().filter(property -> propertyIRI.equals(property.getPropertyIRI())).findFirst();
+    }
+
+    /**
+     * Get properties annotated with the specified property role.
+     * 
+     * @param propertyRole IRI of property role to use for the lookup
+     * @return list of properties annotated with the specified property role or
+     *         empty when there are no matching properties
+     */
+    default Optional<List<PropertyDescription>> getPropertiesForRole(IRI propertyRole) {
+        List<PropertyDescription> properties = getProperties();
+        if (properties == null || properties.isEmpty()) {
+            return Optional.empty();
+        }
+        List<PropertyDescription> roleProperties = properties.stream()
+                .filter(property -> property.hasPropertyRole(propertyRole)).collect(Collectors.toList());
+        if (roleProperties.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(roleProperties);
+    }
 }

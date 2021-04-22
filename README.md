@@ -1,5 +1,5 @@
 > :warning: **Note**
-This is a fork of [[https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/]]. 
+This is a fork of [https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/](). 
 >
 > The ResearchSpace app (config and templates) have been removed in order to make it easier to develop new templates from scratch.
 >

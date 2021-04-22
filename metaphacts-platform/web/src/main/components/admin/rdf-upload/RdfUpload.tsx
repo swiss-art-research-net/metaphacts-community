@@ -136,7 +136,7 @@ interface RdfUploadConfig {
    *
    * @default "refresh"
    */
-  postAction: PostAction;
+  postAction?: PostAction;
   className?: string;
   style?: React.CSSProperties;
   contentType?: string;

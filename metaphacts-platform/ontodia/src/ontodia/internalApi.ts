@@ -42,22 +42,18 @@ export { LINK_SHOW_IRI } from './customization/defaultLinkStyles';
 export { TemplateProperties } from './data/schema';
 export { MemoryDataset, IndexQuadBy, makeIndexedDataset } from './data/rdf/memoryDataset';
 
+export { LinkExample, LinkExampleProps } from './diagram/linkLayer';
 export * from './diagram/paper';
 export * from './diagram/paperArea';
 
 export * from './viewUtils/async';
 export * from './viewUtils/collections';
-export * from './viewUtils/hashMap';
 export * from './viewUtils/keyedObserver';
 export * from './viewUtils/spinner';
 export * from './viewUtils/react';
 
 export * from './widgets/listElementView';
 export * from './widgets/searchResults';
-
-export {
-    groupForceLayout, groupRemoveOverlaps, padded, biasFreePadded, getContentFittingBoxForLayout,
-} from './viewUtils/layout';
 
 export { CanvasImplementation } from './workspace/canvas';
 

@@ -22,13 +22,20 @@ const os = require('os');
 const TJS = require('typescript-json-schema');
 const jsonStableStringify = require('json-stable-stringify');
 
+const ReturnErrorCode = {
+  InvalidArgumentCount: 1,
+  InvalidInput: 2,
+  CompileError: 3,
+  SchemaGenerationError: 4,
+};
+
 if (process.argv.length < 4) {
   const scriptName = path.basename(process.argv[1]);
   console.error(
     `Invalid arguments for ${scriptName}:\n` +
-    `$ ${scriptName} <project-name> [--all] (<interface-name>)*`
+    `$ ${scriptName} <project-name> [--all] (<schema-name>)*`
   );
-  process.exit(1);
+  process.exit(ReturnErrorCode.InvalidArgumentCount);
 }
 
 const [nodePath,, projectName, ...otherArgs] = process.argv;
@@ -38,7 +45,7 @@ const componentJsonPath = path.join(repositoryRoot, projectName, 'web/component.
 
 if (!fs.existsSync(buildJsonPath)) {
   console.error(`Project "${projectName}" does not exists.`);
-  process.exit(2);
+  process.exit(ReturnErrorCode.InvalidInput);
 }
 
 // --all
@@ -55,7 +62,7 @@ while (otherArgs.length > 0) {
         break;
       default:
         console.error(`Unknown flag "${flag}"`);
-        process.exit(2);
+        process.exit(ReturnErrorCode.InvalidInput);
         break;
     }
   } else {
@@ -67,7 +74,7 @@ console.log('Reading JSON schemas from platform-web-build.json...');
 /** @type {import('./defaults').WebProject} */
 const buildJson = JSON.parse(fs.readFileSync(buildJsonPath, {encoding: 'utf8'}));
 
-/** @type {{ [componentTag: string]: string | { propsSchema?: string } }} */
+/** @type {{ [componentTag: string]: string | import('./defaults').ComponentMetadata }} */
 let componentJson;
 if (fs.existsSync(componentJsonPath)) {
   console.log('Reading JSON schemas from component.json...');
@@ -79,34 +86,55 @@ if (fs.existsSync(componentJsonPath)) {
 const settings = {
   required: true,
   propOrder: true,
-  validationKeywords: ['patternProperties', 'mpSeeResource']
+  validationKeywords: [
+    'patternProperties',
+    'mpSchemaMetadata',
+    'mpSeeResource',
+    'mpHasEventType',
+  ]
 };
 
 console.log('Loading TypeScript codebase...');
 const program = TJS.programFromConfig(path.join(repositoryRoot, 'tsconfig.json'));
 const generator = TJS.buildGenerator(program, settings);
 
-/** @type {Set<string>} */
-const allInterfaces = new Set();
+if (!generator) {
+  console.log('❌ Failed to compile codebase with TypeScript.');
+  process.exit(ReturnErrorCode.CompileError);
+}
+
+/** @type {Map<string, string>} */
+const allSchemasToInterfaces = new Map();
 if (buildJson.generatedJsonSchemas) {
-  for (const schemaName of buildJson.generatedJsonSchemas) {
-    allInterfaces.add(schemaName);
+  for (const entry of buildJson.generatedJsonSchemas) {
+    if (typeof entry === 'object') {
+      allSchemasToInterfaces.set(entry.schemaName, entry.interfaceName);
+    } else {
+      allSchemasToInterfaces.set(entry, entry);
+    }
   }
 }
 if (componentJson) {
   for (const componentTag of Object.keys(componentJson)) {
     const metadata = componentJson[componentTag];
-    if (typeof metadata === 'object' && metadata.propsSchema) {
-      allInterfaces.add(metadata.propsSchema);
+    if (typeof metadata === 'object') {
+      if (metadata.propsSchema) {
+        allSchemasToInterfaces.set(metadata.propsSchema, metadata.propsSchema);
+      }
+      if (metadata.additionalSchemas) {
+        for (const schemaName of metadata.additionalSchemas) {
+          allSchemasToInterfaces.set(schemaName, schemaName);
+        }
+      }
     }
   }
 }
 
-const interfaces = Array.from(
-  flagAllInterfaces ? allInterfaces : new Set(otherArgs)
+const schemaNames = Array.from(
+  flagAllInterfaces ? allSchemasToInterfaces.keys() : new Set(otherArgs)
 ).sort();
 
-/** @type {Array<{ typeName: string; error: any }>} */
+/** @type {Array<{ schemaName: string; error: any }>} */
 const errors = [];
 let generatedSchemaCount = 0;
 
@@ -172,12 +200,13 @@ function postProcessSchema(schema) {
 
 console.log('Generating schemas for interfaces...');
 
-for (const typeName of interfaces) {
+for (const schemaName of schemaNames) {
   resetGenerator(generator);
   try {
-    if (!allInterfaces.has(typeName)) {
+    const typeName = allSchemasToInterfaces.get(schemaName);
+    if (!typeName) {
       throw new Error(
-        `Cannot find interface "${typeName}" in "platform-web-build.json" or "components.json"`
+        `Cannot find schema "${schemaName}" in "platform-web-build.json" or "components.json"`
       );
     }
     const schema = generator.getSchemaForSymbol(typeName, true);
@@ -185,15 +214,15 @@ for (const typeName of interfaces) {
     let schemaJson = jsonStableStringify(schema, {space: 4, replacer: lineEndingReplacer}) + '\n\n';
     schemaJson = schemaJson.replace(/\n/g, os.EOL);
     fs.writeFileSync(
-      path.join(repositoryRoot, projectName, `web/schemas/${typeName}.json`),
+      path.join(repositoryRoot, projectName, `web/schemas/${schemaName}.json`),
       schemaJson,
       {flag: 'w', encoding: 'utf8'}
     );
-    console.log('✅ ' + typeName);
+    console.log('✅ ' + schemaName);
     generatedSchemaCount++;
   } catch (err) {
-    console.log('❌' + typeName);
-    errors.push({typeName, error: err});
+    console.log('❌' + schemaName);
+    errors.push({schemaName, error: err});
   }
 }
 
@@ -201,9 +230,9 @@ console.log(`\nGenerated schemas for ${generatedSchemaCount} interfaces.`);
 
 if (errors.length > 0) {
   console.log('\nFailed to generate schemas for the following interfaces:');
-  for (const {typeName, error} of errors) {
-    console.log('\n❌' + typeName + ':');
+  for (const {schemaName, error} of errors) {
+    console.log('\n❌' + schemaName + ':');
     console.error(error);
   }
-  process.exit(3);
+  process.exit(ReturnErrorCode.SchemaGenerationError);
 }

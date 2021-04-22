@@ -42,7 +42,7 @@ import * as Immutable from 'immutable';
 import { LinkTypeIri, CancellationToken } from 'ontodia';
 
 import { Rdf } from 'platform/api/rdf';
-import { FieldDefinition } from 'platform/components/forms';
+import * as Forms from 'platform/components/forms';
 
 import {
   FieldConfigurationContext, LinkMetadata,
@@ -73,6 +73,11 @@ interface OntodiaLinkMetadataConfig {
    * Subject template override for generating IRIs for new links of this type.
    */
   newSubjectTemplate?: string;
+
+  /**
+   * Subject template settings override for generating IRIs for new links of this type.
+   */
+  newSubjectTemplateSettings?: Forms.SubjectTemplateSettings;
 
   /**
    * Link properties required for the link to be editable
@@ -119,12 +124,13 @@ function extractAuthoringMetadata(
   props: OntodiaLinkMetadataProps,
   context: FieldConfigurationContext
 ): void {
-  const {fieldByIri: allFieldByIri, typeIri, datatypeFields} = context;
+  const {fieldByIri: allFieldByIri, typeIri} = context;
   const {
     linkTypeIri,
     hasIdentity = false,
     fields,
     newSubjectTemplate = context.defaultSubjectTemplate,
+    newSubjectTemplateSettings = context.defaultSubjectTemplateSettings,
     editableWhen,
   } = props;
 
@@ -161,7 +167,7 @@ function extractAuthoringMetadata(
 
   const entityFields = [typeField, ...mappedFields];
   const fieldByIri = Immutable.Map(
-    entityFields.map(f => [f.iri, f] as [string, FieldDefinition])
+    entityFields.map(f => [f.iri, f] as [string, Forms.FieldDefinition])
   );
 
   const metadata: LinkMetadata = {
@@ -172,7 +178,9 @@ function extractAuthoringMetadata(
     fields: entityFields,
     fieldByIri,
     typeField,
+    ownedFields: new Set(),
     newSubjectTemplate,
+    newSubjectTemplateSettings,
     formChildren: props.children,
     editableWhen,
   };

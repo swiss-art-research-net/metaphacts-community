@@ -56,11 +56,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
-import org.apache.shiro.SecurityUtils;
 
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Singleton;
 import com.metaphacts.di.PlatformGuiceModule;
+import com.metaphacts.security.SecurityService;
 
 /**
  * Filter to enable injection of MDC (Mapped Diagnostic Context) variables on entire rest container
@@ -122,14 +122,16 @@ public class MDCFilter implements Filter, ContainerRequestFilter { //implements 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        setHttpMDC((HttpServletRequest)request);
-        chain.doFilter(request, response);
+        try {
+            setHttpMDC((HttpServletRequest) request);
+            chain.doFilter(request, response);
+        } finally {
+            destroyHttpMDC();
+        }
     }
 
     @Override
     public void destroy() {
-        destroyHttpMDC();
-        
     }
 
 
@@ -144,9 +146,7 @@ public class MDCFilter implements Filter, ContainerRequestFilter { //implements 
         ThreadContext.put(CLIENT_IP_ADDRESS, clientIpAddress);
         ThreadContext.put(REMOTE_OR_PROXY_IP_ADDRESS, remoteIpAddress);
 
-        String userPrincipal = (SecurityUtils.getSubject() != null && SecurityUtils.getSubject()
-                .getPrincipal() != null) ? SecurityUtils.getSubject().getPrincipal().toString()
-                : "n/a";
+        String userPrincipal = SecurityService.getUserName();
         ThreadContext.put(USER_PRINCIPAL, userPrincipal);
 
     }

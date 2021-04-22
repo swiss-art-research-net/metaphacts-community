@@ -37,6 +37,24 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+import * as React from 'react';
+
 export namespace PropTypes {
     export const anything: any = (): null => null;
+}
+
+export function isValidChild(child: React.ReactNode): child is React.ReactElement<any> {
+    return typeof child === 'object'
+        && child !== null
+        && !Array.isArray(child)
+        && Boolean((child as any).type);
+}
+
+export function componentHasType<P = any>(
+    child: React.ReactNode, type: React.ComponentClass<P, any>
+): child is React.ReactElement<P> {
+    return isValidChild(child) && type
+        && typeof child.type === 'function'
+        && typeof type === 'function'
+        && child.type === type
 }

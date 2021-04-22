@@ -39,13 +39,16 @@
  */
 import { EventMaker } from 'platform/api/events';
 
-export interface RedirectActionEventData {
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
+export interface EventTargetRedirectEventData {
   /**
-   * <mp-event-target-redirect/> listen to this event and
-   * perform redirect action in response to the event
+   * `<mp-event-target-redirect>` listens to this event and
+   * perform redirect action in response to the event.
    */
   'RedirectAction.perform': { iri?: string };
 }
-const event: EventMaker<RedirectActionEventData> = EventMaker;
+const event: EventMaker<EventTargetRedirectEventData> = EventMaker;
 
 export const RedirectActionPerform = event('RedirectAction.perform');

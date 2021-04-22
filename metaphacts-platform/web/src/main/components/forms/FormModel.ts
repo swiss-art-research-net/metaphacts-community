@@ -58,6 +58,63 @@ export interface CompositeChange {
 
 const DEFAULT_SUBJECT_TEMPLATE = '{{UUID}}';
 
+export interface SubjectTemplateSettings {
+  readonly placeholders?: {
+    readonly [name: string]: SubjectTemplateFieldSettings;
+  }
+}
+
+interface SubjectTemplateFieldSettings {
+  /**
+   * Default value to substitute if there is no such field or it is empty.
+   *
+   * @default ""
+   */
+  default?: string;
+  /**
+   * Defines how substituted values are transformed:
+   *   - `none`: no transformation;
+   *   - `sanitize`: replace IRI-unsafe characters as defined
+   *     by `disallowRegex` with `replaceCharacter`;
+   *
+   * @default "sanitize"
+   */
+  transform?: 'none' | 'sanitize';
+  /**
+   * Regex pattern to match character sets to replace with `replaceValue`
+   * when substituting the field value in the IRI.
+   *
+   * Default pattern matches:
+   *   - ASCII control characters and space: `0x00-0x20`
+   *   - common illegal path characters: `<` `>` `:` `?` `*` `"` `|`
+   *   - path separators: `/` `\`
+   *   - recommended to avoid by AWS S3: `&` `$` `@` `=` `;` `+` `,` `#` `0x7f-0xFF`
+   *   - escape character: `%`
+   *
+   * **Default**:
+   * ```
+   * {
+   *   "transform": "sanitize",
+   *   "disallowRegex": "[\\u0000-\\u0020<>:?*\"|/\\\\&$@=+,#\\u007f-\\u00ff%\\s]",
+   *   "replaceCharacter": "_"
+   * }
+   * ```
+   */
+  disallowRegex?: string;
+  /**
+   * Character to replace with when sanitizing value.
+   *
+   * Sequences of this string are collapsed into a single value.
+   *
+   * @default "_"
+   */
+  replaceCharacter?: string;
+}
+
+const DEFAULT_DISALLOW_REGEX = /[\u0000-\u0020<>:?*"|/\\&$@=+,#\u007f-\u00ff%\s]/ig;
+const DEFAULT_REPLACE_CHARACTER = '_';
+const DEFAULT_COLLAPSE_REGEX = /_+/ig;
+
 export type SubjectReplacer = (placeholder: Placeholder, composite?: CompositeValue) => string;
 
 export type Placeholder =
@@ -68,7 +125,8 @@ export function generateSubjectByTemplate(
   template: string | undefined,
   ownerSubject: Rdf.Iri | undefined,
   composite: CompositeValue | undefined,
-  replacer: SubjectReplacer = makeDefaultSubjectReplacer()
+  templateSettings?: SubjectTemplateSettings,
+  replacer = makeDefaultSubjectReplacer(templateSettings)
 ): Rdf.Iri {
   if (composite && !CompositeValue.isPlaceholder(composite.subject)) {
     return composite.subject;
@@ -89,11 +147,11 @@ export function generateSubjectByTemplate(
 }
 
 export function generatePathFromTemplate(
-  template: string | undefined,
+  template: string,
   composite: CompositeValue | undefined,
-  replacer: SubjectReplacer = makeDefaultSubjectReplacer()
+  replacer: SubjectReplacer
 ): string {
-  return template.replace(/{{([^{}]+)}}/g, (match, placeholder) => {
+  return template.replace(/{{([^{}]+)}}/g, (match, placeholder: string) => {
     const p: Placeholder = (
       placeholder === 'UUID' ? {type: 'UUID'} :
       {type: 'FieldValue', id: placeholder}
@@ -104,17 +162,21 @@ export function generatePathFromTemplate(
 
 export function wasSubjectGeneratedByTemplate(
   generatedSubject: string,
-  template: string,
+  template: string | undefined,
+  templateSettings: SubjectTemplateSettings | undefined,
   ownerSubject: Rdf.Iri | undefined,
   composite: CompositeValue | undefined
 ): boolean {
-  const replacer = makeDefaultSubjectReplacer();
+  const replacer = makeDefaultSubjectReplacer(templateSettings);
   const escapeTable: { [K in Placeholder['type']]: string | undefined } = {
     'UUID': uuid.v4(),
     'FieldValue': undefined,
   };
   const newGeneratedIri = generateSubjectByTemplate(
-    template, ownerSubject, composite,
+    template ?? DEFAULT_SUBJECT_TEMPLATE,
+    ownerSubject,
+    composite,
+    templateSettings,
     (p, comp) => {
       const escaped = escapeTable[p.type];
       return escaped ? escaped : replacer(p, comp);
@@ -129,13 +191,15 @@ export function wasSubjectGeneratedByTemplate(
 
 export function computeIfSubjectWasSuggested(
   composite: CompositeValue,
-  template: string
+  template: string | undefined,
+  templateSettings: SubjectTemplateSettings | undefined
 ): CompositeValue {
   return CompositeValue.set(composite, {
     editableSubject: true,
     suggestSubject: wasSubjectGeneratedByTemplate(
       composite.subject.value,
       template,
+      templateSettings,
       undefined,
       CompositeValue.set(composite, {
         subject: CompositeValue.empty.subject
@@ -144,22 +208,65 @@ export function computeIfSubjectWasSuggested(
   });
 }
 
-export function makeDefaultSubjectReplacer(): SubjectReplacer {
+export function makeDefaultSubjectReplacer(
+  templateSettings: SubjectTemplateSettings | undefined
+): SubjectReplacer {
+  const {placeholders: fields = {}} = templateSettings ?? {};
   return (placeholder, composite) => {
     if (placeholder.type === 'UUID') {
       return uuid.v4();
-    } else if (
-      composite && placeholder.type === 'FieldValue' &&
-      composite.definitions.has(placeholder.id)
-    ) {
-      const state = composite.fields.get(placeholder.id, FieldState.empty);
+    } else if (placeholder.type === 'FieldValue') {
+      const fieldSettings = Object.prototype.hasOwnProperty.call(fields, placeholder.id)
+        ? fields[placeholder.id] : {};
+
+      const state = composite
+        ? composite.fields.get(placeholder.id, FieldState.empty)
+        : FieldState.empty;
       const selected = FieldValue.getSingle(state.values);
-      const valueContent = FieldValue.isAtomic(selected) ? selected.value.value : '';
-      return encodeIri(valueContent);
+      const valueContent = FieldValue.isAtomic(selected)
+        ? selected.value.value : (fieldSettings.default ?? '');
+
+      switch (fieldSettings.transform) {
+        case undefined:
+        case 'sanitize':
+          return sanitizeIriPart(valueContent, fieldSettings);
+        case 'none':
+          return valueContent;
+      }
     } else {
       return '';
     }
   };
+}
+
+function sanitizeIriPart(value: string, settings: SubjectTemplateFieldSettings) {
+  let disallowRegex: RegExp;
+  if (settings.disallowRegex) {
+    disallowRegex = new RegExp(settings.disallowRegex, 'ig');
+  } else {
+    disallowRegex = DEFAULT_DISALLOW_REGEX;
+    disallowRegex.lastIndex = 0;
+  }
+
+  let replaceCharacter: string;
+  let collapseRegex: RegExp | undefined;
+  if (settings.replaceCharacter === '') {
+    replaceCharacter = settings.replaceCharacter;
+  } else if (settings.replaceCharacter) {
+    replaceCharacter = settings.replaceCharacter;
+    collapseRegex = new RegExp(`(?:${replaceCharacter})+`, 'ig');
+  } else {
+    replaceCharacter = DEFAULT_REPLACE_CHARACTER;
+    collapseRegex = DEFAULT_COLLAPSE_REGEX;
+    collapseRegex.lastIndex = 0;
+  }
+
+  let transformed = value;
+  transformed = transformed.replace(disallowRegex, replaceCharacter);
+  if (collapseRegex) {
+    transformed = transformed.replace(collapseRegex, replaceCharacter);
+  }
+  return transformed;
 }
 
 export function readyToSubmit(
@@ -251,7 +358,7 @@ function loadInitialOrDefaultValues(
 
   return loadingValues.map(values => {
     let requiredCount = Math.max(values.length, def.minOccurs);
-    if (!FieldMapping.isInputGroup(mapping, 'composite')) {
+    if (!FieldMapping.isInputGroup(mapping)) {
       // load at least one empty values for non-composites
       requiredCount = Math.max(requiredCount, 1);
     }
@@ -347,24 +454,4 @@ export function fieldInitialState(def: FieldDefinition): FieldState {
   const values = Array.from({length: valueCount})
     .map(() => FieldValue.empty);
   return FieldState.set(FieldState.empty, {values});
-}
-
-/**
- * Pattern to find code points to escape when encoding IRI as object ID; it matches:
- * <ul>
- *  <li> ASCII control characters and space {@code 0x00-0x20} </li>
- *  <li> common illegal path characters: &lt; &gt; : ? * " | </li>
- *  <li> path separators: / \ </li>
- *  <li> recommended to avoid by AWS S3: &amp; $ @ = ; + , # {@code 0x7f-0xFF}</li>
- *  <li> escape character: % </li>
- * </ul>
- */
-const DISALLOWED_CHARACTERS = /[\u0000-\u0020<>:?*"|/\\&$@=+,#\u007f-\u00ff%\s]/ig;
-const COLLAPSE_UNDERSCORES = /_+/ig;
-
-export function encodeIri(fileName: string) {
-  let transformed = fileName;
-  transformed = transformed.replace(DISALLOWED_CHARACTERS, '_');
-  transformed = transformed.replace(COLLAPSE_UNDERSCORES, '_');
-  return transformed;
 }

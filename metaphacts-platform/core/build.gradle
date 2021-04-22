@@ -14,9 +14,37 @@ configurations.all {
 
 dependencies {
 
-	api project(':metaphacts-platform:client-api')
-
 	// RDF4J related
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-api', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-binary', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-jsonld', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-n3', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-nquads', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-ntriples', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-rdfjson', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-rdfxml', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-trig', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-trix', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-turtle', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-languages', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-datatypes', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-model-api', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-model-vocabulary', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-model', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-repository-api', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-query', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryalgebra-model', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryparser-api', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryparser-sparql', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryresultio-api', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryresultio-sparqljson', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryresultio-text', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryresultio-binary', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryresultio-sparqlxml', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-util', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-http-client', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-http-protocol', version: RDF4J_VERSION, transitive: false
+	api group: 'org.eclipse.rdf4j', name: 'rdf4j-repository-sparql', version: RDF4J_VERSION, transitive: false
 	implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-repository-manager', version: RDF4J_VERSION, transitive: false
 	api group: 'org.eclipse.rdf4j', name: 'rdf4j-repository-sail', version: RDF4J_VERSION, transitive: false
 	implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-repository-event', version: RDF4J_VERSION, transitive: false
@@ -31,6 +59,7 @@ dependencies {
 	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryrender', version: RDF4J_VERSION, transitive: false
 	api group: 'org.eclipse.rdf4j', name: 'rdf4j-queryalgebra-evaluation', version: RDF4J_VERSION, transitive: false
 	runtimeOnly group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0'	// dependency of org.eclipse.rdf4j:rdf4j-http-protocol
+	api group: 'com.opencsv', name: 'opencsv', version: '4.3.2'
 
 	implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-sail-lucene', version: RDF4J_VERSION, transitive: false
 	implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-sail-lucene-api', version: RDF4J_VERSION, transitive: false
@@ -43,6 +72,16 @@ dependencies {
 	implementation group: 'org.apache.lucene', name: 'lucene-queryparser', version: LUCENE_VERSION
 	implementation group: 'org.apache.lucene', name: 'lucene-spatial', version: LUCENE_VERSION
 	implementation group: 'org.apache.lucene', name: 'lucene-spatial-extras', version: LUCENE_VERSION
+	
+	
+	// Apache Commons
+	api group: 'commons-io', name: 'commons-io', version: '2.6'
+	api group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'
+	api group: 'commons-codec', name: 'commons-codec', version: '1.11'
+	
+	// JAX-RS 
+	// TODO check if we require all here
+		
 	
 	// jsoup for stripping HTML
 	implementation group: 'org.jsoup', name: 'jsoup', version: '1.13.1'
@@ -57,10 +96,15 @@ dependencies {
 
 	// JAX-RS
 	api group: 'org.glassfish.jersey.core', name: 'jersey-server', version: JERSEY_VERSION
+	implementation group: 'org.glassfish.jersey.core', name: 'jersey-client', version: JERSEY_VERSION
+	implementation group: 'org.glassfish.jersey.core', name: 'jersey-common', version: JERSEY_VERSION
 	implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet', version: JERSEY_VERSION
 	implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: JERSEY_VERSION, transitive: false
 	implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version: JERSEY_VERSION
+	implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-jaxb', version: JERSEY_VERSION
 	runtimeOnly group: 'org.glassfish.jersey.ext',  name: 'jersey-entity-filtering', version: JERSEY_VERSION
+	api group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: JERSEY_VERSION
+
 
 	implementation group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
 

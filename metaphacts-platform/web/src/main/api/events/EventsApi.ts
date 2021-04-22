@@ -39,6 +39,10 @@
  */
 import * as Kefir from 'kefir';
 
+/**
+ * @TJS-type string
+ * @TJS-format mp-event-type
+ */
 export type EventType<Data> = string & { __dataType?: Data };
 
 export interface Event<Data> {

@@ -72,7 +72,6 @@
         "contentType"
     ],
     "required": [
-        "postAction",
         "showLoadByUrl"
     ],
     "type": "object"

@@ -101,7 +101,7 @@ public class FormPersistenceSparqlEndpoint {
                 .entity("Missing required parameter 'repository'")
                 .build();
         }
-        logger.debug("Received SPARQL insert and delete queries: {}", deleteAndInserts);
+        logger.trace("Received SPARQL insert and delete queries: {}", deleteAndInserts);
         try {
             try (RepositoryConnection con = repositoryManager.getRepository(repositoryID).getConnection()) {
                 // TODO currently we can't execute all update operations in one transaction, see https://github.com/eclipse/rdf4j/issues/972
@@ -126,11 +126,11 @@ public class FormPersistenceSparqlEndpoint {
                 cacheManager.invalidateAll();
             }catch(Exception e){
                 // we do not want the form transaction to fail only because for whatever reason the invalidation has failed
-                logger.error("Invalidation of caches failed: {}", e.getMessage());
+                logger.warn("Invalidation of caches failed: {}", e.getMessage());
             }
             return Response.ok().build();
         } catch (Exception e) {
-            logger.error("Error while executing SPARQL updates for forms: {} ", e.getMessage());
+            logger.warn("Error while executing SPARQL updates for forms: {} ", e.getMessage());
             logger.debug("Details: {} ", e);
             return Response.serverError().entity(e.getMessage()).build();
         }

@@ -72,10 +72,10 @@ public abstract class AbstractLookupServiceFactory<CFG extends CommonLookupConfi
     @Override
     public CFG getConfig() {
         try {
-            CFG config = configClass.newInstance();
+            CFG config = configClass.getDeclaredConstructor().newInstance();
             config.setType(lookupType);
             return config;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to create instance of LookupServiceConfig class", e);
         }
     }

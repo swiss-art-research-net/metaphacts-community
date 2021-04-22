@@ -17,15 +17,18 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface PremiseEventData {
   /**
    * Event which should be triggered to save arguments.
    */
-  'Premise.SaveArguments': void;
+  'Premise.SaveArguments': {};
   /**
    * Event which should be triggered when the component starts saving the arguments.
    */
-  'Premise.ArgumentsSaving': void;
+  'Premise.ArgumentsSaving': {};
   /**
    * Event which should be triggered when the arguments have been saved.
    */
@@ -33,7 +36,7 @@ export interface PremiseEventData {
   /**
    * Event which should be trigger to add an argument.
    */
-  'Premise.AddArgument': void;
+  'Premise.AddArgument': {};
 }
 const event: EventMaker<PremiseEventData> = EventMaker;
 

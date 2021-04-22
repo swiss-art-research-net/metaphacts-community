@@ -17,6 +17,9 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface AssertionEventData {
   /**
    * Event which should be triggered when an assertion has been saved

@@ -3,7 +3,6 @@ To use this set of presets copy following line to your file:
 [[> "http://www.metaphacts.com/resource/assets/OntodiaBasicViewPreset"]]
 --]]
 
-
 [[#*inline "BasicGraphBreadcrumbs"]]
 [[!-- Parameters: diagramIri --]]
   <semantic-context repository='default'>
@@ -40,8 +39,7 @@ To use this set of presets copy following line to your file:
 [[#*inline "BasicGraphBody"]]
   <ontodia
   id='[[#if id]][[id]][[/if]]'
-    hide-navigation-confirmation=false
-    use-knowledge-panel='true'
+    hide-navigation-confirmation=true
     [[#if diagramIri]]diagram="[[diagramIri]]"[[/if]]
     [[> "http://www.metaphacts.com/resource/assets/OntodiaGlobalSettings" ]]
     [[> OntodiaClassAndLinksCustomization ]]

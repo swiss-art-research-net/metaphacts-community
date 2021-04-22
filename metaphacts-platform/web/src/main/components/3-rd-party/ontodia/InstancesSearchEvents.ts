@@ -49,6 +49,9 @@ export interface SearchCriteria {
   readonly linkDirection?: 'in' | 'out';
 }
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface InstancesSearchEventData {
   /**
    * Instance search panel listens to this event and expects to have

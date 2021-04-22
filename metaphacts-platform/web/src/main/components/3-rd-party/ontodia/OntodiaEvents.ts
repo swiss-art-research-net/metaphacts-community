@@ -39,14 +39,10 @@
  */
 import { EventMaker } from 'platform/api/events';
 
-// Workaround: 'typescript-json-schema' doesn't support void type.
-export type OpaqueElementModel = {};
-export type OpaqueDiagramModel = {};
-export type OpaqueAuthoringState = {};
-export type OpaqueTemporaryState = {};
-
 /**
  * `ontodia` triggers events.
+ *
+ * @mpSchemaMetadata {"kind": "events"}
  */
 export interface OntodiaTriggerEventData {
   /**
@@ -95,8 +91,10 @@ export interface OntodiaTriggerEventData {
 
 /**
  * `ontodia` listens to events.
+ *
+ * @mpSchemaMetadata {"kind": "events"}
  */
-export interface BaseOntodiaListenEventData {
+export interface OntodiaListenEventData {
   /**
    * Event which should be triggered to focus on an element.
    */
@@ -200,12 +198,32 @@ export interface BaseOntodiaListenEventData {
    * Event which should be triggered to stop editing an entity or a link.
    */
   'Ontodia.StopEditing': {};
+  /**
+   * Event which should be triggered to delete an entity.
+   */
+  'Ontodia.DeleteElement': {
+    /**
+     * IRI of an entity to be deleted.
+     */
+    iri: string;
+  };
+  /**
+   * Event which should be triggered to discard authoring changes from an entity.
+   */
+  'Ontodia.ResetElement': {
+    /**
+     * IRI of an entity to discard authoring changes from.
+     */
+    iri: string;
+  };
 }
 
 /**
  * `ontodia` listens to events.
+ *
+ * @mpSchemaMetadata {"kind": "events"}
  */
-export interface OntodiaListenEventData extends BaseOntodiaListenEventData {
+export interface MetaphactoryOntodiaListenEventData extends OntodiaListenEventData {
   /**
    * Event which should be triggered to undo changes on the diagram.
    */
@@ -216,13 +234,19 @@ export interface OntodiaListenEventData extends BaseOntodiaListenEventData {
   'Ontodia.Redo': {};
 }
 
-export type OntodiaEventData = OntodiaTriggerEventData & OntodiaListenEventData;
+export type OntodiaEventData = OntodiaTriggerEventData & MetaphactoryOntodiaListenEventData;
+
+// Do not expose internal Ontodia models to the documentation
+export type OpaqueElementModel = {};
+export type OpaqueDiagramModel = {};
+export type OpaqueAuthoringState = {};
+export type OpaqueTemporaryState = {};
 
 export interface InternalOntodiaEventData {
   /**
    * Observable property which tracks changes on the diagram.
    */
-  'Ontodia.DiagramChanged': {
+  'OntodiaInternal.DiagramChanged': {
     model: OpaqueDiagramModel;
     authoringState: OpaqueAuthoringState;
     temporaryState: OpaqueTemporaryState;
@@ -230,7 +254,7 @@ export interface InternalOntodiaEventData {
   /**
    * Event which should be triggered to create a new entity and edges from it to target entities.
    */
-  'Ontodia.CreateElement': {
+  'OntodiaInternal.CreateElement': {
     /**
      * New entity data.
      */
@@ -252,7 +276,7 @@ export interface InternalOntodiaEventData {
   /**
    * Event which should be triggered to edit an entity.
    */
-  'Ontodia.EditElement': {
+  'OntodiaInternal.EditElement': {
     /**
      * IRI of an entity to be edited.
      */
@@ -262,21 +286,11 @@ export interface InternalOntodiaEventData {
      */
     elementData: OpaqueElementModel;
   };
-  /**
-   * Event which should be triggered to delete an entity.
-   */
-  'Ontodia.DeleteElement': {
-    /**
-     * IRI of an entity to be deleted.
-     */
-    iri: string;
-  };
 }
 
 const event: EventMaker<OntodiaEventData & InternalOntodiaEventData> = EventMaker;
 
 export const DiagramSaved = event('Ontodia.DiagramSaved');
-export const DiagramChanged = event('Ontodia.DiagramChanged');
 export const DiagramIsDirty = event('Ontodia.DiagramIsDirty');
 export const InAuthoringMode = event('Ontodia.InAuthoringMode');
 export const ChangesPersisted = event('Ontodia.ChangesPersisted');
@@ -292,10 +306,12 @@ export const ShowElementInfo = event('Ontodia.ShowElementInfo');
 export const StartEntityEditing = event('Ontodia.StartEntityEditing');
 export const StartLinkEditing = event('Ontodia.StartLinkEditing');
 export const StopEditing = event('Ontodia.StopEditing');
+export const DeleteElement = event('Ontodia.DeleteElement');
+export const ResetElement = event('Ontodia.ResetElement');
 
 export const Undo = event('Ontodia.Undo');
 export const Redo = event('Ontodia.Redo');
 
-export const CreateElement = event('Ontodia.CreateElement');
-export const EditElement = event('Ontodia.EditElement');
-export const DeleteElement = event('Ontodia.DeleteElement');
+export const DiagramChanged = event('OntodiaInternal.DiagramChanged');
+export const CreateElement = event('OntodiaInternal.CreateElement');
+export const EditElement = event('OntodiaInternal.EditElement');

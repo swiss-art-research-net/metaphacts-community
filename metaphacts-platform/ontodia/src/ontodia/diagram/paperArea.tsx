@@ -41,8 +41,7 @@ import * as React from 'react';
 
 import { Debouncer, Cancellation, animateInterval, delay, easeInOutBezier } from '../viewUtils/async';
 import { EventObserver, Events, EventSource, PropertyChange } from '../viewUtils/events';
-import { isIE11 } from '../viewUtils/polyfills';
-import { PropTypes } from '../viewUtils/react';
+import { PropTypes, isValidChild } from '../viewUtils/react';
 import { ToSVGOptions, ToDataURLOptions, toSVG, toDataURL, fitRectKeepingAspectRatio } from '../viewUtils/toSvg';
 
 import { RestoreGeometry } from './commands';
@@ -337,7 +336,7 @@ export class PaperArea extends React.Component<PaperAreaProps, State> {
         this.area.addEventListener('dragover', this.onDragOver);
         this.area.addEventListener('drop', this.onDragDrop);
         this.area.addEventListener('scroll', this.onScroll);
-        this.area.addEventListener('wheel', this.onWheel, isIE11() ? false : {passive: false});
+        this.area.addEventListener('wheel', this.onWheel, {passive: false});
 
         this.initWidgets(this.props);
     }
@@ -375,8 +374,8 @@ export class PaperArea extends React.Component<PaperAreaProps, State> {
 
     private initWidgets(props: PaperAreaProps) {
         const widgets: { [key: string]: WidgetDescription } = {};
-        React.Children.forEach(props.children, child => {
-            if (typeof child === 'object') {
+        React.Children.toArray(props.children).forEach(child => {
+            if (isValidChild(child)) {
                 const widgetType = child.type as unknown as WidgetStatic;
                 // ignore non-widget children
                 if (widgetType.attachment) {

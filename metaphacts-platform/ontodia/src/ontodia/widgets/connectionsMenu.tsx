@@ -1049,7 +1049,6 @@ function onAddElementsFromConnectionMenu(params: {
             linkType,
             visible: true,
             showLabel: true,
-            preventLoading: true,
         }));
     }
 

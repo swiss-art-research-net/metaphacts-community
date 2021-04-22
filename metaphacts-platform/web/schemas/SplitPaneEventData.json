@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "mpSchemaMetadata": {
+        "kind": "events"
+    },
+    "properties": {
+        "SplitPane.Close": {
+            "properties": {
+            },
+            "type": "object"
+        },
+        "SplitPane.Open": {
+            "properties": {
+            },
+            "type": "object"
+        }
+    },
+    "propertyOrder": [
+        "SplitPane.Open",
+        "SplitPane.Close"
+    ],
+    "required": [
+        "SplitPane.Close",
+        "SplitPane.Open"
+    ],
+    "type": "object"
+}
+

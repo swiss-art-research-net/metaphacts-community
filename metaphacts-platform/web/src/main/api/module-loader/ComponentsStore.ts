@@ -60,6 +60,7 @@ export interface ComponentMetadata {
   deferAttributes?: { [attrName: string]: boolean };
   deferJsonProperties?: { [attrName: string]: DeferredJsonProperties };
   propsSchema?: string;
+  additionalSchemas?: ReadonlyArray<string>;
   helpResource?: string;
 }
 
@@ -104,12 +105,24 @@ export function loadComponent(tagName: string): Promise<ReactComponentType | str
         cachedComponents.set(tagName, comp);
         loadingComponents.delete(tagName);
       }
+      if (process.env.NODE_ENV === 'production') {
+        setTagAsDisplayName(comp, tagName);
+      }
       return comp;
     });
     loadingComponents.set(tagName, task);
     return task;
   } else {
     return Promise.reject(`Cannot find component <${tagName}>`);
+  }
+}
+
+function setTagAsDisplayName(loadedBundle: unknown, tagName: string): void {
+  if (typeof loadedBundle === 'object' || typeof loadedBundle === 'function') {
+    const component = loadedBundle as ReactComponentType;
+    if (!component.displayName) {
+      component.displayName = tagName;
+    }
   }
 }
 

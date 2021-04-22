@@ -40,7 +40,7 @@
 import { Component, ReactNode } from 'react';
 
 import { Cancellation } from 'platform/api/async';
-import { Event, listen, trigger } from 'platform/api/events';
+import { Event, EventType, listen, trigger } from 'platform/api/events';
 
 /**
  * Components that listen to specified event, and when it happens triggers some other event.
@@ -64,7 +64,7 @@ interface EventProxyConfig {
   /**
    * Type of event to listen to.
    */
-  onEventType?: string;
+  onEventType?: EventType<any>;
 
   /**
    * Source component that we listen for events.
@@ -76,7 +76,7 @@ interface EventProxyConfig {
    * Type of the event that this component triggers when
    * receives event.
    */
-  proxyEventType: string;
+  proxyEventType: EventType<any>;
 
 
   /**
@@ -86,6 +86,8 @@ interface EventProxyConfig {
 
   /**
    * Data that will be sent to all targets instead of data from the original event.
+   *
+   * @mpHasEventType proxyEventType
    */
   data?: object;
 }

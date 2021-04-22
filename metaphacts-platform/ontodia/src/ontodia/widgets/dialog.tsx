@@ -189,6 +189,11 @@ export class Dialog extends React.Component<DialogProps, State> {
                 this.updateAll();
             }
         });
+        this.handler.listen(renderingState.events, 'updateRoutings', e => {
+            if (e.source.getRouting(link.id) !== e.previous.get(link.id)) {
+                this.updateAll();
+            }
+        });
     }
 
     private calculatePositionForElement(element: Element, effectiveSize: Size): Vector {

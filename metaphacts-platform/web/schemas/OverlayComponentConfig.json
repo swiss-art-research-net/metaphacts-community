@@ -16,15 +16,21 @@
             "description": "What dialog css class to use.\n\nDefaults to `overlay-modal` when `type='modal'` and\n`overlay-lightbox` when `type=lightbox`.",
             "type": "string"
         },
+        "enforceFocus": {
+            "default": true,
+            "description": "Whether to enforce focus to stay within the dialog.",
+            "type": "boolean"
+        },
         "title": {
             "description": "Title to render",
             "type": "string"
         },
         "type": {
-            "description": "Overlay type:\n   - `dialog` will be small;\n   - `lightbox` will span over all space;",
+            "default": "modal",
+            "description": "Overlay type:\n   - `lightbox` will span over all space;\n   - `modal` modal dialog with customizable size using `bs-size`;",
             "enum": [
-                "dialog",
-                "lightbox"
+                "lightbox",
+                "modal"
             ],
             "type": "string"
         }
@@ -33,7 +39,8 @@
         "title",
         "type",
         "className",
-        "bsSize"
+        "bsSize",
+        "enforceFocus"
     ],
     "required": [
         "title"

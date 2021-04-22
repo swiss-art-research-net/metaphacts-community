@@ -6,23 +6,23 @@
   [[/if]]
 [[/inline]]
 
-<semantic-table 
+<semantic-table
     query='
-      SELECT ?property ?[[projection]] ?graph WHERE { 
-        { 
+      SELECT ?property ?[[projection]] ?graph WHERE {
+        {
           GRAPH ?graph { [[> pattern]] }
         } UNION {
           [[> pattern]]
           OPTIONAL { GRAPH ?g { [[> pattern]] } }
           FILTER(!BOUND(?g))
-        } 
+        }
       } LIMIT 1000'
     column-configuration='[
       {"variableName":"property", "displayName":"Property"},
       {"variableName":"[[projection]]", "displayName":"[[label]]"},
-      {"variableName":"graph", "displayName":"Named Graph", "cellTemplate":"{{> template}}"}                                
+      {"variableName":"graph", "displayName":"Named Graph", "cellTemplate":"{{> template}}"}
     ]'
-    no-result-template='Resource [[this]] is not used in a subject in any RDF statement.'
+    no-result-template='Resource [[this]] is not used as [[#if po]] subject [[else]] object [[/if]] in any RDF statement.'
     show-literal-datatype=true
     link-params='[[#if (urlParam "showStatements")]]{"showStatements": [[urlParam "showStatements"]]}[[else]]{}[[/if]]'
 >

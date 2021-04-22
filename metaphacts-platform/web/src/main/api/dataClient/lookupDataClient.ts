@@ -117,6 +117,7 @@ export interface LookupDataQuery {
  *  datasetId: (optional) Rdf.iri,
  *  datasetLabel: (optional) Rdf.literal[string]
  *  description: (optional) Rdf.literal[string]
+ *  reference: (optional) Rdf.iri
  * }
  */
 export function fetchData(
@@ -233,6 +234,7 @@ function responseToSparqlBindings(
       datasetId: candidate.dataset ? Rdf.iri(candidate.dataset.id) : undefined,
       datasetLabel: candidate.dataset ? Rdf.literal(candidate.dataset.name) : undefined,
       description: candidate.description ? Rdf.literal(candidate.description) : undefined,
+      reference: candidate.reference ? Rdf.iri(candidate.reference) : undefined,
     };
     bindings.push(binding);
   }

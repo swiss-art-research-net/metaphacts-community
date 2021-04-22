@@ -39,6 +39,9 @@
  */
 import { EventMaker } from 'platform/api/events';
 
+/**
+ * @mpSchemaMetadata {"kind": "events"}
+ */
 export interface SemanticUpdateEventData {
   /**
    * If the post-action='event' for SemanticUpdate, Component fires this event after a

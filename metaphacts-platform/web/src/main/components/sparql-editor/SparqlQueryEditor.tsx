@@ -121,6 +121,7 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
   render() {
     const {tableResults, responseResults, queryExecutionTime} = this.state;
     const queryExecutionTimeSec = queryExecutionTime / 1000;
+    const {context} = this.getQueryContext();
     return (
       <Row className={styles.sparqlQueryEditor}>
         <Col as='div' md={12}>
@@ -177,12 +178,15 @@ export class SparqlQueryEditor extends Component<SparqlQueryEditorProps, State> 
               </div>
               : null}
           </div>
-          {tableResults
-            ? <SparqlEditorResultTable results={tableResults} />
-            : responseResults || responseResults === ''
+          {tableResults ? (
+            <SemanticContextProvider repository={context.repository}>
+              <SparqlEditorResultTable results={tableResults} />
+            </SemanticContextProvider>
+          ) : (
+            responseResults || responseResults === ''
               ? this.resultViewer()
               : undefined
-          }
+          )}
         </Col>
       </Row>
     );

@@ -45,6 +45,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -56,6 +58,9 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.metaphacts.lookup.api.EntityTypesFetchingException;
+import com.metaphacts.lookup.model.LookupEntityType;
+import com.metaphacts.lookup.model.LookupServiceManifest;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.permission.WildcardPermission;
@@ -112,10 +117,10 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
     static final String DESCRIPTION_ENDPOINT_URL = ENDPOINT_URL + "/description";
     static final String REMOTE_ENDPOINT_PATH = "remote/reconciliation";
     static final String REMOTE_BASE_URI = "http://localhost:10001/api/";
-    
+
     static final String LOOKUP_REPOSITORY_1 = "my-lookup-1";
     static final String LOOKUP_REPOSITORY_2 = "my-lookup-2";
-    
+
     static HttpServer server;
 
     private final static String LANGUAGE_TAG_EN = "en";
@@ -167,7 +172,7 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
         resourceConfig.register(MultiPartFeature.class);
         resourceConfig.register(ReconciliationEndpoint.class);
     }
-    
+
     @Inject
     protected Configuration config;
 
@@ -188,7 +193,7 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
         ).withCacheManager(() -> cacheManager
         ).withPlatformStorageRule(() -> platformStorageRule)
         .withPlatformRole("admin", Lists.newArrayList("reconciliation:manifest:read"));
-    
+
     @Before
     public void setUpTest() throws Exception {
         platformStorageRule.storeContentFromResource(
@@ -494,7 +499,7 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
         SecurityUtils.getSubject().login(new UsernamePasswordToken("legacy-admin", "password"));
         SecurityUtils.getSubject()
                 .isPermitted(new WildcardPermission(Permissions.RECONCILIATION_SERVICE.READ_MANIFEST));
-        
+
         RemoteLookupConfig config = new RemoteLookupConfig();
         config.setRemoteServiceUrl(REMOTE_BASE_URI + REMOTE_ENDPOINT_PATH);
         if (method != null) {
@@ -661,48 +666,70 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
     "}";
 
     private String getManifest() {
-        return "{" +
-            "\"name\":\"mp-reconciliation\"," +
-            "\"identifierSpace\":\"http://www.metaphacts.com/ontologies/platform/reconciliation#\"," +
-            "\"schemaSpace\":\"http://www.metaphacts.com/ontologies/platform/reconciliation-schema#\"," +
-            "\"defaultTypes\":[" +
-                "{" +
-                    "\"id\":\"http://xmlns.com/foaf/0.1/Agent\"," +
-                    "\"name\":\"Agent\"" +
-                "}" +
-            "]," +
-            "\"preview\":{" +
-                "\"url\":\"" + target().getUri().toString() + "reconciliation/description?uri={{id}}\"," +
-                "\"width\":300," +
-                "\"height\":200" +
-            "}," +
-            "\"view\":{" +
-                "\"url\":\"" + target().getUri().toString() + "resource?uri={{id}}\"" +
-            "}" +
-        "}";
+        var manifest = new LookupServiceManifest(
+            "mp-reconciliation",
+            "http://www.metaphacts.com/ontologies/platform/reconciliation#",
+            "http://www.metaphacts.com/ontologies/platform/reconciliation-schema#",
+            Arrays.asList(new LookupEntityType("http://xmlns.com/foaf/0.1/Agent", "Agent")),
+            new LookupServiceManifest.BasicService(
+                target().getUri().toString() + "resource" + "?uri={{id}}"
+            ),
+            new LookupServiceManifest.PreviewService(
+                target().getUri().toString() + "reconciliation/description?uri={{id}}",
+                300,
+                200
+            ),
+            new LookupServiceManifest.BasicService(
+                target().getUri().toString() + "data/rdf/utils/getLabelsForRdfValue"
+            ),
+            new LookupServiceManifest.BasicService(
+                target().getUri().toString() + "data/rdf/utils/getDescriptionForRdfValue"
+            ),
+            new LookupServiceManifest.BasicService(
+                target().getUri().toString() + "data/rdf/utils/getTypesForRdfValue"
+            )
+        );
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(manifest);
+        } catch (JsonProcessingException e) {
+            return "";
+        }
     }
 
     private  String getRemoteManifest() {
-        return "{" +
-            "\"name\":\"mp-reconciliation\"," +
-            "\"identifierSpace\":\"http://www.metaphacts.com/ontologies/platform/reconciliation#\"," +
-            "\"schemaSpace\":\"http://www.metaphacts.com/ontologies/platform/reconciliation-schema#\"," +
-            "\"defaultTypes\":[{" +
-                "\"id\":\"http://example.com/entity-type/car\"," +
-                "\"name\":\"car\"" +
-            "},{" +
-                "\"id\":\"http://example.com/entity-type/human\"," +
-                "\"name\":\"human\"" +
-            "}]," +
-            "\"preview\":{" +
-                "\"url\":\"" + target().getUri().toString() + "reconciliation/description?uri={{id}}\"," +
-                "\"width\":300," +
-                "\"height\":200" +
-            "}," +
-            "\"view\":{" +
-                "\"url\":\"" + target().getUri().toString() + "resource?uri={{id}}\"" +
-            "}" +
-        "}";
+        var manifest = new LookupServiceManifest(
+                "mp-reconciliation",
+                "http://www.metaphacts.com/ontologies/platform/reconciliation#",
+                "http://www.metaphacts.com/ontologies/platform/reconciliation-schema#",
+                Arrays.asList(
+                    new LookupEntityType("http://example.com/entity-type/car", "car"),
+                    new LookupEntityType("http://example.com/entity-type/human", "human")
+                ),
+                new LookupServiceManifest.BasicService(
+                    target().getUri().toString() + "resource" + "?uri={{id}}"
+                ),
+                new LookupServiceManifest.PreviewService(
+                    target().getUri().toString() + "reconciliation/description?uri={{id}}",
+                    300,
+                    200
+                ),
+                new LookupServiceManifest.BasicService(
+                    target().getUri().toString() + "data/rdf/utils/getLabelsForRdfValue"
+                ),
+                new LookupServiceManifest.BasicService(
+                    target().getUri().toString() + "data/rdf/utils/getDescriptionForRdfValue"
+                ),
+                new LookupServiceManifest.BasicService(
+                    target().getUri().toString() + "data/rdf/utils/getTypesForRdfValue"
+                )
+        );
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(manifest);
+        } catch (JsonProcessingException e) {
+            return "";
+        }
     }
 
     private static final String REMOTE_RESPONSE = "{" +
@@ -731,7 +758,7 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(stringResult, new TypeReference<Map<String, LookupResponse>>() {});
     }
-    
+
     protected void setupLookupService(String repositoryId, LookupServiceConfig lookupConfig) throws Exception {
         if (repositoryRule.getRepositoryManager().getInitializedRepositoryIds().contains(repositoryId)) {
             repositoryRule.getRepositoryManager().deleteRepositoryConfig(repositoryId);
@@ -743,7 +770,7 @@ public class ReconciliationEndpointTest extends MetaphactsJerseyTest {
             TestPlatformStorage.STORAGE_ID
         );
     }
-    
+
     protected void setupLookupService(String repositoryId, String lookupType) throws Exception {
         if (repositoryRule.getRepositoryManager().getInitializedRepositoryIds().contains(repositoryId)) {
             repositoryRule.getRepositoryManager().deleteRepositoryConfig(repositoryId);

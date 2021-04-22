@@ -45,8 +45,6 @@ import {
 import { objectValues } from '../../viewUtils/collections';
 import { HashSet } from '../../viewUtils/hashMap';
 
-const DATA_PROVIDER_PROPERTY = 'http://ontodia.org/property/DataProvider';
-
 export interface CompositeResponse<Type> {
     dataSourceName: string;
     useInStats?: boolean;
@@ -162,8 +160,7 @@ export function mergeLinkTypes(response: CompositeResponse<LinkTypeModel[]>[]): 
 }
 
 export function mergeElementInfo(
-    response: CompositeResponse<Dictionary<ElementModel>>[],
-    factory: Rdf.DataFactory
+    response: CompositeResponse<Dictionary<ElementModel>>[]
 ): Dictionary<ElementModel> {
     const dictionary: Dictionary<ElementModel> = {};
 
@@ -171,10 +168,9 @@ export function mergeElementInfo(
         const list = objectValues(resp.response);
 
         for (const em of list) {
-            em.sources = [resp.dataSourceName];
-            em.properties[DATA_PROVIDER_PROPERTY] = {
-                values: [factory.literal(resp.dataSourceName)],
-            };
+            if (!em.sources) {
+                em.sources = [resp.dataSourceName];
+            }
             if (!dictionary[em.id]) {
                 dictionary[em.id] = em;
             } else {
@@ -296,17 +292,15 @@ export function mergeLinkTypesOf(response: CompositeResponse<LinkCount[]>[]): Li
 }
 
 export function mergeFilter(
-    responses: CompositeResponse<LinkedElement[]>[],
-    factory: Rdf.DataFactory
+    responses: CompositeResponse<LinkedElement[]>[]
 ): LinkedElement[] {
     const elementIris: ElementIri[] = [];
     const index = new Map<ElementIri, LinkedElement>();
     for (const response of responses) {
         for (const item of response.response) {
-            item.element.sources = [response.dataSourceName];
-            item.element.properties[DATA_PROVIDER_PROPERTY] = {
-                values: [factory.literal(response.dataSourceName)],
-            };
+            if (!item.element.sources) {
+                item.element.sources = [response.dataSourceName];
+            }
             let indexedItem = index.get(item.element.id);
             if (indexedItem) {
                 const mergedItem = mergeLinkedElements(indexedItem, item);

@@ -82,7 +82,7 @@ import com.metaphacts.lookup.util.LookupSparqlQueryBuilder;
  * <code>
  * SELECT
  *     ?candidate
- *     (GROUP_CONCAT(DISTINCT ?type ; separator=",") as ?types)
+ *     (GROUP_CONCAT(DISTINCT STR(?type) ; separator=",") as ?types)
  *     (MAX(?score_private) as ?score)
  * WHERE {
  *     {{type_block}}
@@ -212,7 +212,10 @@ public class GenericSparqlLookupService extends AbstractSPARQLSearchLookupServic
         );
 
         String resolvedQuery = parsedQuery.getAsString();
-        logger.trace("Prepared lookup query:\n{}\nBindings: {}", resolvedQuery, parsedQuery.getBindings());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Creating the following generic SPARQL lookup query: \n{}\nBindings: {}", resolvedQuery,
+                    parsedQuery.getBindings());
+        }
 
         SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder.create(resolvedQuery, TupleQuery.class);
 

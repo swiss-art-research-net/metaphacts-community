@@ -105,6 +105,8 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
     public static final String DATASET_BINDING_NAME = "dataset";
     public static final String DATASET_LABEL_BINDING_NAME = "datasetLabel";
 
+    public static final String REFERENCE_BINDING_NAME = "reference";
+
     public static final String TYPE_BINDING_NAME = "type";
     protected static final String DEFAULT_ENTITY_TYPES_QUERY = "SELECT ?" + TYPE_BINDING_NAME + " WHERE {\n" +
         "{SELECT DISTINCT ?" + TYPE_BINDING_NAME + " WHERE {\n" +
@@ -148,6 +150,7 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
                 }
             }
         }
+
         Map<IRI, Optional<Literal>> labels = this.labelCache.getLabels(
             entityTypes, targetRepository, globalConfig.getUiConfig().resolvePreferredLanguage(null)
         );
@@ -284,6 +287,8 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
         Binding typeBinding = binding.getBinding(TYPES_BINDING_NAME);
         Binding labelBinding = binding.getBinding(LABEL_BINDING_NAME);
 
+        Binding referenceBinding = binding.getBinding(REFERENCE_BINDING_NAME);
+
         if (subjectBinding == null || scoreBinding == null) {
             throw new IllegalArgumentException("Query result doesn't contain all necessary fields: candidate, score.");
         }
@@ -301,7 +306,7 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
         double score = Double.parseDouble(
             scoreBinding.getValue().stringValue()
         );
-        return new LookupCandidate(
+        LookupCandidate candidate = new LookupCandidate(
             subjectBinding.getValue().stringValue(),
             (labelBinding != null ? labelBinding.getValue().stringValue() : null),
             types,
@@ -310,6 +315,10 @@ public abstract class AbstractSPARQLSearchLookupService extends AbstractLookupSe
             null,
             null
         );
+        if (referenceBinding != null) {
+            candidate.setReference(referenceBinding.getValue().stringValue());
+        }
+        return candidate;
     }
 
     protected Map<String, LookupDataset> findAndSetDatasets(List<LookupCandidate> candidates) {

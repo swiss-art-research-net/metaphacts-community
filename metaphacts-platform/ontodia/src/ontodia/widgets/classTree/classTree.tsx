@@ -282,9 +282,10 @@ export class ClassTree extends React.Component<ClassTreeProps, State> {
         this.refreshOperation.abort();
         this.refreshOperation = cancellation;
 
-        this.setState((state): State | Pick<State, 'refreshingState'> => {
+        this.setState((state) => {
             if (!this.classTree) {
-                return {refreshingState: ProgressState.none};
+                const update: Pick<State, 'refreshingState'> = {refreshingState: ProgressState.none};
+                return update;
             }
 
             let refreshingState = ProgressState.none;

@@ -32,6 +32,7 @@
               <div class='ontologyKnowledgePanel__contentLabel'>Domain</div>
               <semantic-query query='SELECT DISTINCT ?domain WHERE {
                 <[[this]]> rdfs:domain ?domain .
+                FILTER (ISIRI(?domain))
               }' template='{{> template}}' no-result-template='-'>
                 <template id='template'>
                   <div>{{#each bindings~}}<mp-label iri='{{domain.value}}'></mp-label>{{#unless @last}}, {{/unless}}{{/each}}</div>
@@ -43,6 +44,7 @@
               <semantic-query query='SELECT DISTINCT ?range ?isDatatype WHERE {
                 OPTIONAL { <[[this]]> a owl:DatatypeProperty . BIND(true as ?isDatatype) }
                 <[[this]]> rdfs:range ?range .
+                FILTER (ISIRI(?domain))
               }' template='{{> template}}' no-result-template='-'>
                 <template id='template'>
                   <div>{{#each bindings~}}

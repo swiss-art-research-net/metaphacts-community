@@ -44,6 +44,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
+import org.eclipse.rdf4j.common.iteration.Iterations;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -73,6 +77,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.metaphacts.config.groups.UIConfiguration;
 import com.metaphacts.junit.MetaphactsGuiceTestModule;
 import com.metaphacts.junit.MetaphactsJukitoRunner;
 import com.metaphacts.junit.MpAssert;
@@ -212,6 +217,64 @@ public class SparqlOperationBuilderTest {
         }
     }
     
+    @Test
+    public void testResolveUserPreferredLanguage()
+            throws RepositoryException, MalformedQueryException, QueryEvaluationException {
+        SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder
+                .<TupleQuery>create("SELECT ?v WHERE { BIND(?__userPreferredLanguage__ AS ?v) }", TupleQuery.class);
+        try (RepositoryConnection con = repositoryRule.getRepository().getConnection()) {
+            TupleQuery tq = builder.build(con);
+
+            // fallback language
+            Assert.assertEquals(UIConfiguration.DEFAULT_LANGUAGE,
+                    Iterations.asList(tq.evaluate()).get(0).getValue("v").stringValue());
+
+            // specified language in builder
+            builder.resolveUserPreferredLanguage("de");
+            tq = builder.build(con);
+            Assert.assertEquals("de", Iterations.asList(tq.evaluate()).get(0).getValue("v").stringValue());
+        }
+    }
+
+    @Test
+    public void testResolveUserPreferredLanguage_LazyEvaluation()
+            throws RepositoryException, MalformedQueryException, QueryEvaluationException {
+
+        final AtomicInteger nEvaluation = new AtomicInteger(0);
+        Supplier<String> userPreferredLanguage = () -> {
+            nEvaluation.incrementAndGet();
+            return "de";
+        };
+
+        // 1. query not using the token => should not evaluate supplier
+        SparqlOperationBuilder<TupleQuery> builder = SparqlOperationBuilder
+                .<TupleQuery>create("SELECT ?v WHERE { BIND('something' AS ?v) }", TupleQuery.class)
+                .resolveUserPreferredLanguage(userPreferredLanguage);
+        try (RepositoryConnection con = repositoryRule.getRepository().getConnection()) {
+            TupleQuery tq = builder.build(con);
+
+            // fallback language
+            Assert.assertEquals("something",
+                    Iterations.asList(tq.evaluate()).get(0).getValue("v").stringValue());
+
+            Assert.assertEquals(0, nEvaluation.get());
+        }
+
+        // 2. query which has token => should evaluate supplier
+        builder = SparqlOperationBuilder
+                .<TupleQuery>create("SELECT ?v WHERE { BIND(?__userPreferredLanguage__ AS ?v) }", TupleQuery.class)
+                .resolveUserPreferredLanguage(userPreferredLanguage);
+        try (RepositoryConnection con = repositoryRule.getRepository().getConnection()) {
+            TupleQuery tq = builder.build(con);
+
+            // fallback language
+            Assert.assertEquals("de",
+                    Iterations.asList(tq.evaluate()).get(0).getValue("v").stringValue());
+
+            Assert.assertEquals(1, nEvaluation.get());
+        }
+    }
+
     @Test
     public void testValidate() throws Exception {
         

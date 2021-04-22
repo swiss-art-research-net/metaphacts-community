@@ -146,6 +146,7 @@ public class PluginZipUtils {
             throw e;
         } finally {
             // make sure that the temp directory is deleted in any case
+            logger.debug("Cleaning up zip files and temporary folder at {} and {}", zipFile, tempPluginDirectory);
             FileUtils.deleteQuietly(tempPluginDirectory.toFile());
             deleteZip(zipFile);
         }

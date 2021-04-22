@@ -75,7 +75,10 @@ export class ListElementView extends React.Component<ListElementViewProps, {}> {
             title={`${localizedText} ${view.formatIri(model.id)}${classesString}`}
             onClick={this.onClick}
             onDragStart={onDragStart}
-            style={{backgroundColor, color: hcl(h, c, l)}}>
+            style={{
+                backgroundColor: backgroundColor.toString(),
+                color: hcl(h, c, l).toString(),
+            }}>
             <div className={`${CLASS_NAME}__label`}>
                 {highlightSubstring(localizedText, highlightText)}
             </div>

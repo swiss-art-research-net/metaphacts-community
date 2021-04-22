@@ -174,8 +174,9 @@ const hexBinaryRegExp = new RegExp('^' + '[0-9a-fA-F]*' + '$');
 const fractionDigits = '\\.[0-9]';
 
 
-// URI regex — reference: http://ftp.davidashen.net/PreTI/RNV/rnv-1.7.8.zip/xsd.c:298
-const URI_PATTERN = "^(([a-zA-Z][0-9a-zA-Z+\\-.]*:)?/{0,2}[0-9a-zA-Z;/?:@&=+$.\\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$.\\-_!~*'()%]+)?$";
+// URI regex with extended character classes to match unicode characters
+// see definition of 'ucschar' on https://www.ietf.org/rfc/rfc3987.txt (simplified / lax range)
+const IRI_PATTERN = /^(([a-z][0-9a-z+\-.]*)?:\/{0,2}[0-9a-z;/?:@&=+$.\-_!~*'()%\u{A0}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFEF}\u{10000}-\u{EFFFD}]+)(#[0-9a-z;/?:@&=+$.\-_!~*'()%\u{A0}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFEF}\u{10000}-\u{EFFFD}]+)?$/iu;
 
 enum Whitespace { PRESERVE, REPLACE, COLLAPSE }
 
@@ -348,7 +349,7 @@ function datatypeAllows(
     return checkRegExpAndParams(doubleRegExp, value, datatype, params);
   } else if (datatype.localName === 'anyURI') {
     const value = whitespace(data, Whitespace.COLLAPSE, params);
-    return checkRegExpAndParams(new RegExp(URI_PATTERN), value, datatype, params);
+    return checkRegExpAndParams(IRI_PATTERN, value, datatype, params);
   /*
    * Types derived from string
    */

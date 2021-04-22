@@ -47,8 +47,9 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
 
 import { FieldDefinitionProp, FieldDependency, MultipleFieldConstraint } from './FieldDefinition';
+import { SubjectTemplateSettings } from './FormModel';
 import {
-  FieldValue, EmptyValue, AtomicValue, CompositeValue, ErrorKind, DataState,
+  FieldValue, EmptyValue, AtomicValue, CompositeValue, ErrorKind, DataState, InspectedInputTree,
 } from './FieldValues';
 
 import { CompositeInput, CompositeInputProps } from './inputs/CompositeInput';
@@ -66,6 +67,7 @@ export interface SemanticFormProps {
   onUpdateState?: (dataState: DataState, loadedModel: CompositeValue | undefined) => void;
   onValidateSubject?: CompositeInputProps['onValidateSubject'];
   newSubjectTemplate?: string;
+  newSubjectTemplateSettings?: SubjectTemplateSettings;
   children?: ReactNode;
   debug?: boolean;
 }
@@ -116,6 +118,7 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
         fieldConstraints: this.props.fieldConstraints,
         fieldDependencies: this.props.fieldDependencies,
         newSubjectTemplate: this.props.newSubjectTemplate,
+        newSubjectTemplateSettings: this.props.newSubjectTemplateSettings,
         children: this.props.children,
       },
     });
@@ -196,6 +199,10 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
     this.input = input;
   }
 
+  inspect(): InspectedInputTree {
+    return this.input.inspect();
+  }
+
   /**
    * Performs validation of model with form inputs.
    * This is useful when model is only partially validated or not validated at all,
@@ -239,6 +246,7 @@ export class SemanticForm extends Component<SemanticFormProps, {}> {
           handler: this.handler,
           fields: this.props.fields || [],
           newSubjectTemplate: this.props.newSubjectTemplate,
+          newSubjectTemplateSettings: this.props.newSubjectTemplateSettings,
           dataState: DataState.Ready,
           updateValue: this.updateModel,
           onValidateSubject: this.props.onValidateSubject,
