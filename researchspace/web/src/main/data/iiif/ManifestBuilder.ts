@@ -115,7 +115,7 @@ PREFIX rso: <http://www.researchspace.org/ontology/>
 CONSTRUCT {
 ?manifestURI a sc:Manifest ;
 rdfs:label ?displayLabel;
-sc:attributionLabel "Provided by the The British Museum" ;
+sc:attributionLabel "" ;
 sc:hasSequences ?sequenceURI;
 dc:description ?displayLabel;
 dcterms:within ?object.
