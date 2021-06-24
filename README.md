@@ -1,10 +1,13 @@
 > :warning: **Note**
 This is a fork of [https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/](). 
 >
-> The ResearchSpace app (config and templates) have been removed in order to make it easier to develop new templates from scratch.
 >
-> The Docker image is published as **swissartresearx/metaphacts-community:4.0.0**
+> The Docker image is published as **swissartresearx/metaphacts-community:4.1.0**
 >
+> Build:
+> `./build.sh  -DbuildEnv=prod -Dbuildjson=./metaphacts-platform/platform-only-root-build.json   -DplatformVersion=4.1.0 platformWar`
+
+
 
 # metaphacts Semantic Platform for Cultural Heritage and Digital Humanities
 
