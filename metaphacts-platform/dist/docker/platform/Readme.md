@@ -24,17 +24,17 @@ Follow the links in the readme to get to the desired version corresponding to th
 
 ```
 export DOCKER_FOLDER="$(pwd)/metaphacts-platform/dist/docker"
-cp target/platform-*.war $DOCKER_FOLDER/platform/ROOT.war
+cp target/platform-4.1.0.war $DOCKER_FOLDER/platform/ROOT.war
 mkdir $DOCKER_FOLDER/platform/etc
 cp metaphacts-platform/webapp/etc/* $DOCKER_FOLDER/platform/etc
 mkdir $DOCKER_FOLDER/platform/config
-cp -r path/to/app/config/* $DOCKER_FOLDER/platform/config
+cp -r metaphacts-platform/app/config/* $DOCKER_FOLDER/platform/config
 ```
 
 ### Build the image
 
 ```
 cd $DOCKER_FOLDER/platform
-docker build -t platform:snapshot .
+docker build -t swissartresearx/metaphacts-community:snapshot .
 ```
 
