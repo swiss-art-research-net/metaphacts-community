@@ -29972,34 +29972,47 @@ this._cbs.ontext(data)}};Tokenizer.prototype.reset=function(){Tokenizer.call(thi
 
       jQuery(selector + ' a.delete').on("click", function(event) {
         event.preventDefault();
-        var elem = this;
-        new $.DialogBuilder(viewerParams.container).dialog({
-          message: i18n.t('deleteAnnotation'),
-          closeButton: false,
-          buttons: {
-            'no': {
-              label: i18n.t('no'),
-              className: 'btn-default',
-              callback: function() {
-                return;
-              }
-            },
-            'yes': {
-              label: i18n.t('yes'),
-              className: 'btn-primary',
-              callback: function() {
-                var display = jQuery(elem).parents('.annotation-display');
-                var id = display.attr('data-anno-id');
-                var callback = function(){
-                  api.hide();
-                  display.remove();
-                };
+        
+        // Use native confirmation dialog in order to prevent
+        // collisions if Viewer is displayed in a Bootstrap window
+        if (confirm(i18n.t('deleteAnnotation'))) {
+          var elem = this;
+          var display = jQuery(elem).parents('.annotation-display');
+          var id = display.attr('data-anno-id');
+          var callback = function(){
+            api.hide();
+            display.remove();
+          };
+          _this.eventEmitter.publish('onAnnotationDeleted.' + _this.windowId, [id,callback]);
+        }
+        
+        // new $.DialogBuilder(viewerParams.container).dialog({
+        //   message: i18n.t('deleteAnnotation'),
+        //   closeButton: false,
+        //   buttons: {
+        //     'no': {
+        //       label: i18n.t('no'),
+        //       className: 'btn-default',
+        //       callback: function() {
+        //         return;
+        //       }
+        //     },
+        //     'yes': {
+        //       label: i18n.t('yes'),
+        //       className: 'btn-primary',
+        //       callback: function() {
+        //         var display = jQuery(elem).parents('.annotation-display');
+        //         var id = display.attr('data-anno-id');
+        //         var callback = function(){
+        //           api.hide();
+        //           display.remove();
+        //         };
 
-                _this.eventEmitter.publish('onAnnotationDeleted.' + _this.windowId, [id,callback]);
-              }
-            }
-          }
-        });
+        //         _this.eventEmitter.publish('onAnnotationDeleted.' + _this.windowId, [id,callback]);
+        //       }
+        //     }
+        //   }
+        // });
       });
 
       jQuery(selector + ' a.edit').on("click", function(event) {
