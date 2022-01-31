@@ -6,6 +6,8 @@ This is a fork of [https://bitbucket.org/metaphacts/metaphacts-community/src/mas
 >
 > Build:
 > `./build.sh  -DbuildEnv=prod -Dbuildjson=./metaphacts-platform/platform-only-root-build.json   -DplatformVersion=x.x.x platformWar`
+>
+> Follow instructions in [metaphacts-platform/dist/docker/platform]() for building Docker image.
 
 
 
