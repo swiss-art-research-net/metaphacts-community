@@ -169,5 +169,16 @@ function cloneAnnotation(annotation: OARegionAnnotation) {
   delete annotation['endpoint'];
   const clone = _.cloneDeep(annotation);
   annotation['endpoint'] = endpoint;
+  // If label has not changed, Mirador returns an object missing the label.
+  // To mitigate this, we retrieve the label from the previous version of the annotation.
+  if( ! clone['resource']['chars']) {
+    console.log("No value");
+    const annotationsOnObject = endpoint['annotationsList'];
+    const previousAnnotation = annotationsOnObject.find((i: { [x: string]: string; }) => i['@id'] === annotation['@id']);
+    if (previousAnnotation) {
+      clone['resource'] = previousAnnotation['resource'];
+      clone['http://www.w3.org/2000/01/rdf-schema#label'] = previousAnnotation['resource']['chars']
+    }
+  } 
   return clone;
 }
