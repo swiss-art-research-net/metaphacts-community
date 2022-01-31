@@ -2,10 +2,10 @@
 This is a fork of [https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/](). 
 >
 >
-> The Docker image is published as **swissartresearx/metaphacts-community:4.1.0**
+> The Docker image is published as **swissartresearx/metaphacts-community:x.x.x**
 >
 > Build:
-> `./build.sh  -DbuildEnv=prod -Dbuildjson=./metaphacts-platform/platform-only-root-build.json   -DplatformVersion=4.1.0 platformWar`
+> `./build.sh  -DbuildEnv=prod -Dbuildjson=./metaphacts-platform/platform-only-root-build.json   -DplatformVersion=x.x.x platformWar`
 
 
 
