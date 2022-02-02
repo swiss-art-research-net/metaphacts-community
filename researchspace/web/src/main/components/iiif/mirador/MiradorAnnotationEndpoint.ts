@@ -142,6 +142,13 @@ export class AdapterAnnotationEndpoint implements MiradorAnnotationEndpoint {
     onError: () => void
   ) {
     const clone = cloneAnnotation(oaAnnotation);
+    // If label has not changed, Mirador returns an object missing the label.
+    // To mitigate this, we retrieve the label from the input field
+    if( ! clone['resource']['chars']) {
+      clone['resource']['chars'] = jQuery(".annotation-body-editor__title-field").val()
+      clone['http://www.w3.org/2000/01/rdf-schema#label'] = clone['resource']['chars']
+    } 
+
     const textResource = getAnnotationTextResource(clone);
     clone['http://www.w3.org/2000/01/rdf-schema#label'] =
       textResource.chars.replace(/<(?:.|\n)*?>/gm, '');
@@ -169,16 +176,5 @@ function cloneAnnotation(annotation: OARegionAnnotation) {
   delete annotation['endpoint'];
   const clone = _.cloneDeep(annotation);
   annotation['endpoint'] = endpoint;
-  // If label has not changed, Mirador returns an object missing the label.
-  // To mitigate this, we retrieve the label from the previous version of the annotation.
-  if( ! clone['resource']['chars']) {
-    console.log("No value");
-    const annotationsOnObject = endpoint['annotationsList'];
-    const previousAnnotation = annotationsOnObject.find((i: { [x: string]: string; }) => i['@id'] === annotation['@id']);
-    if (previousAnnotation) {
-      clone['resource'] = previousAnnotation['resource'];
-      clone['http://www.w3.org/2000/01/rdf-schema#label'] = previousAnnotation['resource']['chars']
-    }
-  } 
   return clone;
 }
