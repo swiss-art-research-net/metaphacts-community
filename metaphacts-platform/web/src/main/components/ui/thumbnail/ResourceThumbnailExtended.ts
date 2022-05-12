@@ -40,7 +40,6 @@
 import {
   createElement, CSSProperties, ReactElement, ReactNode, ComponentClass, Children,
 } from 'react';
-import * as D from 'react-dom-factories';
 import * as Kefir from 'kefir';
 import * as _ from 'lodash';
 
