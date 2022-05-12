@@ -62,6 +62,3 @@ workbench.xmi
 metaphacts-platform/dist/docker/platform/config
 metaphacts-platform/dist/docker/platform/etc
 metaphacts-platform/dist/docker/platform/ROOT.war
-
-# Custom
-buildDockerImage.sh
