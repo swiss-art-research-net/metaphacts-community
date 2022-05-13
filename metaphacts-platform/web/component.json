@@ -336,7 +336,7 @@
       "template": true,
       "no-result-template": true
     },
-    "propsSchema": "ResourceThumbnailConfig",
+    "propsSchema": "ResourceThumbnailConfig"
   },
   "semantic-form-switch": {
     "path": "platform/components/forms/inputs/FormSwitch.tsx",
