@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CSSProperties": {
+            "type": "string"
+        }
+    },
+    "description": "Queries for and displays thumbnail image for specified resource IRI\nwith fallback image when no thumbnail for a resource found.\n\n**Example**:\n```\n<mp-resource-thumbnail iri='http://example.com'\n   no-image-uri='//no-image/available.png'\n   style='max-width: 400px; max-height: 100px;'>\n</mp-resource-thumbnail>\n```\n\n**Example**:\n```\n<mp-resource-thumbnail iri='http://example.com'\n   style='max-width: 400px; max-height: 100px;'>\n   <mp-resource-thumbnail-fallback>\n     <span>Image not found!</span>\n   </mp-resource-thumbnail-fallback>\n</mp-resource-thumbnail>\n```",
+    "properties": {
+        "className": {
+            "description": "Additional class names for component root element.",
+            "type": "string"
+        },
+        "iri": {
+            "description": "IRI of resource to fetch thumbnail for.",
+            "type": "string"
+        },
+        "noImageUri": {
+            "description": "URI of image to display when resource has no thumbnail.",
+            "type": "string"
+        },
+        "style": {
+            "$ref": "#/definitions/CSSProperties",
+            "description": "Additional styles for thumbnail element."
+        },
+        "title": {
+            "description": "Optional text to append to URI title value",
+            "type": "string"
+        }
+    },
+    "propertyOrder": [
+        "iri",
+        "noImageUri",
+        "className",
+        "style",
+        "title"
+    ],
+    "required": [
+        "iri"
+    ],
+    "type": "object"
+}
+

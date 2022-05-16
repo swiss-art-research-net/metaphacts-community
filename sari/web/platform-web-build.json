@@ -1,0 +1,6 @@
+{
+  "$schema": "../../project/jsonSchemas/PlatformWebBuild.schema.json",
+  "aliases": {
+    "platform/components": "./src/main/components"
+  }
+}
