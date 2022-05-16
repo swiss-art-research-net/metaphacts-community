@@ -330,14 +330,6 @@
     "additionalSchemas": ["SemanticFormEventData"],
     "helpResource": "http://help.metaphacts.com/resource/SemanticForm"
   },
-  "sari-resource-thumbnail": {
-    "path": "platform/components/ui/thumbnail/ResourceThumbnailExtended.ts",
-    "deferAttributes": {
-      "template": true,
-      "no-result-template": true
-    },
-    "propsSchema": "ResourceThumbnailConfig"
-  },
   "semantic-form-switch": {
     "path": "platform/components/forms/inputs/FormSwitch.tsx",
     "propsSchema": "SemanticFormSwitchConfig",
