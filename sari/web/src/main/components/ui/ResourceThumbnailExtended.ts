@@ -28,7 +28,7 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
 import { getThumbnail } from 'platform/api/services/resource-thumbnail';
 
-import { NoResourceThumbnail } from './NoResourceThumbnail';
+import { NoResourceThumbnail } from 'platform/components/ui/thumbnail/NoResourceThumbnail';
 
 /**
  * Queries for and displays thumbnail image for specified resource IRI
