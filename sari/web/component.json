@@ -1,12 +1,9 @@
 {
-  "$schema": "../../project/jsonSchemas/ComponentJson.schema.json",
-
   "sari-resource-thumbnail": {
-    "path": "sari/components/ui/thumbnail/ResourceThumbnailExtended.ts",
+    "path": "sari/components/ui/ResourceThumbnailExtended.ts",
     "deferAttributes": {
       "template": true,
       "no-result-template": true
-    },
-    "propsSchema": "ResourceThumbnailConfig"
+    }
   }
 }
