@@ -1,0 +1,9 @@
+{
+  "sari-resource-thumbnail": {
+    "path": "sari/components/ui/ResourceThumbnailExtended.ts",
+    "deferAttributes": {
+      "template": true,
+      "no-result-template": true
+    }
+  }
+}

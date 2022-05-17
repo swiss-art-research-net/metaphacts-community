@@ -1,0 +1,13 @@
+project.ext {
+	externalName = 'sari'
+}
+
+eclipse.project.name = project.externalName
+jar.archiveFileName = project.externalName + '.jar'
+
+
+dependencies {
+
+	implementation project(':metaphacts-platform:core')	
+	testImplementation project(':metaphacts-platform:core').sourceSets.test.output
+}
