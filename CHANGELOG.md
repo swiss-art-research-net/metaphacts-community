@@ -1,5 +1,8 @@
 # Changelog
 
+## [4.2.1]
+
+- Adjustments to Semantic Search Facet visualisation
 ## [4.2.0]
 
 - Moved custom components to separate `sari` project
