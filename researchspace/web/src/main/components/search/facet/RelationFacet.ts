@@ -163,7 +163,8 @@ export class RelationFacetComponent extends PureComponent<RelationFacetProps, Re
         Infinite(
           {
             elementHeight: 20,
-            containerHeight: 250,
+            containerHeight: 260,
+            preloadBatchSize: 1300
           },
           facetValues.filter(facetValue => {
             const text = kind === 'resource' ? (facetValue as Resource).label : (facetValue as Literal).literal.value;
