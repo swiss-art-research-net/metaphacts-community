@@ -204,8 +204,8 @@ export namespace DefaultFacetValuesQueries {
 }
 
 export const DefaultFacetValueTemplate = {
-  'resource': '<span><mp-highlight highlight="{{highlight}}">{{label.value}}</mp-highlight> ({{count.value}})</span>',
-  'literal': '<span><mp-highlight highlight="{{highlight}}">{{literal.value}}</mp-highlight> ({{count.value}})</span>',
+  'resource': '&nbsp;<span><mp-highlight highlight="{{highlight}}">{{label.value}}</mp-highlight> ({{count.value}})</span>',
+  'literal': '&nbsp;<span><mp-highlight highlight="{{highlight}}">{{literal.value}}</mp-highlight> ({{count.value}})</span>',
 }
 
 
