@@ -165,13 +165,13 @@ export class FacetStore {
     this.toggleCategoryAction = Action(selectedCategory);
     this.toggleRelationAction = Action<Data.Maybe<Relation>>(maybe.Nothing<Relation>());
 
-    // debounce(200) to not update facetData too frequently to prevent UI flickering
+    // debounce(1000) to not update facetData too frequently to prevent UI flickering
     Kefir.combine({
       relations: this.relations.$property,
       viewState: this.facetView.$property,
       ast: this.ast.$property,
       categories: Kefir.constant(categories),
-    }).debounce(200).onValue(
+    }).debounce(1000).onValue(
       this.facetData
     );
 
