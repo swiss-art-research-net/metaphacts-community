@@ -169,7 +169,8 @@ module.exports = function (defaults, platformOptions) {
             path: DIST,
             filename: '[name]-bundle.js',
             chunkFilename: '[name]-bundle.js',
-            publicPath: '/assets/'
+            publicPath: '/assets/',
+            crossOriginLoading: 'anonymous'
         },
         module: {
             /** @type {any[]} */
