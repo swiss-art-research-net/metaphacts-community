@@ -61,7 +61,6 @@ interface FileUploadConfig {
 }
 
 interface State {
-    base64URL?: any;
     file?: string;
     error?: any;
 }
