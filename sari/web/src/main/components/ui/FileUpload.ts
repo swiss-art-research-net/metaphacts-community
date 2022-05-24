@@ -15,6 +15,12 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+
+/*
+    This component uses code based on an example by Prashant Chaudhari:
+    https://codesandbox.io/s/convert-file-to-base64-in-react-lqi1e?file=/src/App.js:118-641
+*/
+
 import { CSSProperties, ReactElement, createElement } from 'react';
 import * as D from 'react-dom-factories';
 import { Component } from 'platform/api/components';
@@ -24,6 +30,22 @@ import { ErrorNotification } from 'platform/components/ui/notification';
 interface FileUploadConfig {
     className?: string;
     style?: CSSProperties;
+    /**
+     * Template that gets the file object
+     * 
+     */
+    template?: string;
+    /**
+     * Template which is applied when there is no file uploaded. Receives an object 'file' with the following properties:
+     *  - base64: base64 encoded file
+     *  - lastModified: last modified date as UNIX timestamp
+     *  - lastModifiedDate: last modified date as Date object
+     *  - name: file name
+     *  - size: file size in bytes
+     *  - type: file type
+     * 
+     */
+    noResultTemplate?: string;
 }
 
 interface State {
@@ -51,23 +73,19 @@ export class FileUpload extends Component<FileUploadConfig, State> {
             // on reader load something...
             reader.onload = () => {
                 // Make a fileInfo Object
-                console.log("Called", reader);
                 let baseURL = reader.result;
-                console.log(baseURL);
                 resolve(baseURL);
             };
-            console.log(fileInfo);
         });
     };
 
     handleChange = (e: any) => {
-        console.log(e.target.files[0]);
         let file = e.target.files[0];
 
         this.getBase64(file)
             .then(result => {
                 file["base64"] = result;
-                console.log("File Is", file);
+                console.log("Changed")
                 this.setState({
                     base64URL: result,
                     file
@@ -76,22 +94,36 @@ export class FileUpload extends Component<FileUploadConfig, State> {
             .catch(err => {
                 console.log(err);
             });
-
-        this.setState({
-            file: e.target.files[0]
-        });
     }
 
     render(): ReactElement<any> {
+        const {className, style, template, noResultTemplate} = this.props;
         const {file, error} = this.state;
         if (error) {
             return createElement(ErrorNotification, {errorMessage: error});
         }
-        return D.input({
+        const templateString = this.getTemplateString(template);
+        const inputField = D.input({
             type: 'file',
             onChange: this.handleChange
         });
+        let renderedTemplate
+        if (file) {
+            renderedTemplate = createElement(TemplateItem, {template: {source: templateString, options: {file: file}}, componentProps: {style, className}});
+        } else {
+            renderedTemplate = createElement(TemplateItem, {template: {source: noResultTemplate}})
+        }
+
+        return D.div({className, style}, inputField, renderedTemplate)
     }
+
+    private getTemplateString = (template: string): string => {
+        if (template) {
+          return template;
+        }
+      
+        return `<div><p>File uploaded</p><dl><dt>Name</dt><dd>{{file.name}}</dd><dt>Type</dt><dd>{{file.type}}</dd><dt>Size</dt>{{file.size}}</dl></div>`;
+      }
 }
 
 export default FileUpload;

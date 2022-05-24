@@ -2,7 +2,8 @@
   "sari-file-upload": {
     "path": "sari/components/ui/FileUpload.ts",
     "deferAttributes": {
-      "template": true
+      "template": true,
+      "no-result-template": true
     }
   },
   "sari-resource-thumbnail": {
