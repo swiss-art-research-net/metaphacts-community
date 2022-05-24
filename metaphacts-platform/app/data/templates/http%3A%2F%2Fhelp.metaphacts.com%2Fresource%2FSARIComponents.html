@@ -1,0 +1,98 @@
+[[> http://www.metaphacts.com/resource/breadcrumbs/HelpPage]]
+
+<div class="page">
+  <div class='page__body'>
+    <h1>SARI Components</h1>
+
+    The platform provides a set of components developed by <a href="https://www.swissartresearch.net">SARI</a>, the Swiss Art Research Infrastructure at the University of Zurich, Switzerland.
+    All components developed by SARI are prefixed with <code>sari-*</code>.
+
+    <h2>File Upload</h2>
+    <p>The <code>&lt;sari-file-upload&gt;</code> implements a file input field alongside a template that receives the uploaded file object. The content of the file is available in base64 encoding. The component works on client-side without a backend.</p>
+    <p>The component implements the `template` and `no-result-template` attributes. The latter is displayed before a file has been selected, the former can be used to work further with the uploaded file.</p>
+    <p>The default attributes of the file input field (accept, capture) are supported.</p>
+
+    <h3>Example: Default</h3>
+    <p>
+      <mp-code-example>
+        <sari-file-upload></sari-file-upload>
+      </mp-code-example>
+    </p>
+
+    <h3>Example: Upload file and display specifications</h3>
+    Upload and display an image.
+
+    <p>
+      <mp-code-example>
+        <sari-file-upload 
+          template="{{>template}}" 
+          no-result-template="No file selected"
+        >
+        <template id="template">
+          <div>
+            <dl>
+              <dt>Name</dt>
+              <dd>{{file.name}}</dd>
+              <dt>Size</dt>
+              <dd>{{file.size}}</dd>
+              <dt>Type</dt>
+              <dd>{{file.type}}</dd>
+              <dt>Content (base64)</dt>
+              <dd>
+                <mp-text-truncate truncate="...">
+                  {{file.base64}}
+                </mp-text-truncate>
+              </dd>
+            </dl>
+          </div>
+        </template>
+      </mp-code-example>
+    </p>
+
+    <h3>Example: Image upload and display</h3>
+    Upload and display an image.
+    
+    <p>
+      <mp-code-example>
+        <sari-file-upload 
+          template="{{>template}}" 
+          no-result-template="No file selected"
+          accept="image/jpeg,image/png,image/gif"
+        >
+        <template id="template">
+          <div>
+            <img src="{{{file.base64}}}">
+          </div>
+        </template>
+      </mp-code-example>
+    </p>
+
+    <h2>Resource Thumbnail</h2>
+    <p><code>&lt;sari-resource-thumbnail&gt;</code> is an alternative to the <code>&lt;mp-resource-thumbnail&gt;</code> component. In addition to the default behaviour of displaying a thumbnail for a resource, it also provides the possibility to use the thumbnail IRI in a template. The latter lends itself to displaying additional information about a thumbnail, such as license information.</p>
+
+    <h3>Example: Default</h3>
+    <p>
+      <mp-code-example>
+        <sari-resource-thumbnail iri="http://example.com/person/alice"></sari-resource-thumbnail>
+      </mp-code-example>
+    </p>
+
+    <h3>Example: Templating</h3>
+    <p>
+    If a template is used, the thumbnail IRI can be used there to customise the display or fetch additional information.
+    </p>
+    <p>
+    <mp-code-example>
+      <sari-resource-thumbnail iri="http://example.com/person/alice" template="{{> thumbnail-template}}">
+        <template id="thumbnail-template">
+          <div>
+            <img src="{{thumbnail}}">
+            <mp-description iri="{{thumbnail}}"></mp-description>
+          </div>
+        </template>
+      </sari-resource-thumbnail>
+    </mp-code-example>
+    </p>
+
+  </div>
+</div>

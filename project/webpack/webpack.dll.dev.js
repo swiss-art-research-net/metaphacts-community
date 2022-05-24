@@ -28,7 +28,7 @@ module.exports = function (env) {
   config.output.publicPath = 'http://localhost:3000/assets/no_auth/';
   config.resolve.modules.push(path.resolve(__dirname, 'node_modules'));
 
-  config.devtool = 'cheap-module-eval-source-map';
+  config.devtool = 'cheap-module-source-map';
 
   return config;
 };
