@@ -87,8 +87,7 @@ export class FileUpload extends Component<FileUploadConfig, State> {
                 file["base64"] = result;
                 console.log("Changed")
                 this.setState({
-                    base64URL: result,
-                    file
+                    file: file
                 });
             })
             .catch(err => {
