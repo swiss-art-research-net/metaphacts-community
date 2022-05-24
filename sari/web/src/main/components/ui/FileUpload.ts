@@ -28,6 +28,18 @@ import { TemplateItem } from 'platform/components/ui/template';
 import { ErrorNotification } from 'platform/components/ui/notification';
 
 interface FileUploadConfig {
+    /**
+     * List of accepted file types.
+     * If not specified, all files are accepted.
+     * Comma separated list of file extensions (e.g. 'jpg,png,gif') or mime types (e.g. 'image/jpeg,image/png,image/gif')
+     */
+    accept?: string;
+    /**
+     * If an image should be captured via the camera, specify the preferred camera.
+     * "user" - the user's camera
+     * "environment" - the environment's camera
+     */
+    capture?: string;
     className?: string;
     style?: CSSProperties;
     /**
@@ -95,7 +107,7 @@ export class FileUpload extends Component<FileUploadConfig, State> {
     }
 
     render(): ReactElement<any> {
-        const {className, style, template, noResultTemplate} = this.props;
+        const {accept, capture, className, style, template, noResultTemplate} = this.props;
         const {file, error} = this.state;
         if (error) {
             return createElement(ErrorNotification, {errorMessage: error});
@@ -103,6 +115,8 @@ export class FileUpload extends Component<FileUploadConfig, State> {
         const templateString = this.getTemplateString(template);
         const inputField = D.input({
             type: 'file',
+            accept: accept,
+            capture: capture,
             onChange: this.handleChange
         });
         let renderedTemplate
