@@ -78,7 +78,6 @@ export class ImageUpload extends Component<ImageUploadConfig, State> {
                     file: file,
                     maxSize: this.props.maxSize
                 }).then(function (resizedImage) {
-                    console.log(resizedImage)
                     resolve(resizedImage)
                 }).catch(function (err) {
                     console.log(err);
