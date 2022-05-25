@@ -20,7 +20,7 @@
     </p>
 
     <h3>Example: Upload file and display specifications</h3>
-    Upload and display an image.
+    Upload a file and display the available data.
 
     <p>
       <mp-code-example>
@@ -58,6 +58,25 @@
           template="{{>template}}" 
           no-result-template="No file selected"
           accept="image/jpeg,image/png,image/gif"
+        >
+        <template id="template">
+          <div>
+            <img src="{{{file.base64}}}">
+          </div>
+        </template>
+      </mp-code-example>
+    </p>
+
+    <h2>Image Upload</h2>
+    The <code>&lt;sari-image-upload&gt;</code> component is an extension of the <code>&lt;sari-file-upload&gt;</code> component. Its `accept` attribute is pre-set to images, but can be overwritten. In addition to the features provided by the <code>&lt;sari-file-upload&gt;</code> component, the <code>&lt;sari-image-upload&gt;</code> accepts a `max-size` attribute that accepts a number. If present, the uploaded image will be scaled down to the given size. The scaling happens on the client side.
+    
+    
+    <p>
+      <mp-code-example>
+        <sari-file-upload 
+          template="{{>template}}" 
+          no-result-template="No file selected"
+          max-size="400"
         >
         <template id="template">
           <div>
