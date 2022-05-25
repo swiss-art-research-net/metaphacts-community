@@ -6,6 +6,13 @@
       "no-result-template": true
     }
   },
+  "sari-image-upload": {
+    "path": "sari/components/ui/ImageUpload.ts",
+    "deferAttributes": {
+      "template": true,
+      "no-result-template": true
+    }
+  },
   "sari-resource-thumbnail": {
     "path": "sari/components/ui/ResourceThumbnailExtended.ts",
     "deferAttributes": {
