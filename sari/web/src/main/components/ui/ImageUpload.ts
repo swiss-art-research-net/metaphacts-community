@@ -21,7 +21,8 @@ import * as D from 'react-dom-factories';
 import { Component } from 'platform/api/components';
 import { TemplateItem } from 'platform/components/ui/template';
 import { ErrorNotification } from 'platform/components/ui/notification';
-import { responsePanel } from 'platform/components/sparql-editor/SparqlQueryEditor.scss';
+import { trigger } from 'platform/api/events';
+import * as UploadEvents from './UploadEvents'
 
 interface ImageUploadConfig {
     /**
@@ -31,6 +32,7 @@ interface ImageUploadConfig {
      */
     capture?: string;
     className?: string;
+    id?: string;
     /**
      * Define the maximum allowed size of the file in MegaBytes (MB).
      */
@@ -77,7 +79,11 @@ export class ImageUpload extends Component<ImageUploadConfig, State> {
 
     componentDidUpdate(prevProps: ImageUploadConfig, prevState: State) {
         if (this.state.file !== prevState.file) {
-          console.log('file changed');
+            trigger({
+                eventType: UploadEvents.UploadFileUploaded,
+                source: this.props.id,
+                data: {file: this.state.file}
+              });
         }
       }
 

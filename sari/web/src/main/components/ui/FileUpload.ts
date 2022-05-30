@@ -26,6 +26,8 @@ import * as D from 'react-dom-factories';
 import { Component } from 'platform/api/components';
 import { TemplateItem } from 'platform/components/ui/template';
 import { ErrorNotification } from 'platform/components/ui/notification';
+import { trigger } from 'platform/api/events';
+import * as UploadEvents from './UploadEvents'
 
 interface FileUploadConfig {
     /**
@@ -41,6 +43,7 @@ interface FileUploadConfig {
      */
     capture?: string;
     className?: string;
+    id?: string;
     /**
      * Define the maximum allowed size of the file in MegaBytes (MB).
      */
@@ -75,6 +78,16 @@ export class FileUpload extends Component<FileUploadConfig, State> {
         super(props, context);
         this.state = {};
     }
+
+    componentDidUpdate(prevProps: ImageUploadConfig, prevState: State) {
+        if (this.state.file !== prevState.file) {
+            trigger({
+                eventType: UploadEvents.UploadFileUploaded,
+                source: this.props.id,
+                data: {file: this.state.file}
+              });
+        }
+      }
 
     getBase64 = (file: any) => {
         return new Promise(resolve => {
