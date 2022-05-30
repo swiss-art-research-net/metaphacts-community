@@ -79,7 +79,7 @@ export class FileUpload extends Component<FileUploadConfig, State> {
         this.state = {};
     }
 
-    componentDidUpdate(prevProps: ImageUploadConfig, prevState: State) {
+    componentDidUpdate(prevProps: FileUploadConfig, prevState: State) {
         if (this.state.file !== prevState.file) {
             trigger({
                 eventType: UploadEvents.UploadFileUploaded,
