@@ -32,9 +32,13 @@ interface ImageUploadConfig {
     capture?: string;
     className?: string;
     /**
+     * Define the maximum allowed size of the file in MegaBytes (MB).
+     */
+    maxFileSize?: number;
+    /**
      * Define the maximum size of the image in pixels (width or height). The uploaded image will be resized to this dimension
      */
-    maxSize?: number;
+    maxPixels?: number;
     style?: CSSProperties;
     /**
      * Template that gets the file object
@@ -55,12 +59,12 @@ interface ImageUploadConfig {
 }
 
 interface State {
-    file?: string;
+    file?: any;
     error?: any;
 }
 
 interface IResizeImageOptions {
-    maxSize: number;
+    maxPixels: number;
     file: File;
 }
 
@@ -71,12 +75,18 @@ export class ImageUpload extends Component<ImageUploadConfig, State> {
         this.state = {};
     }
 
+    componentDidUpdate(prevProps: ImageUploadConfig, prevState: State) {
+        if (this.state.file !== prevState.file) {
+          console.log('file changed');
+        }
+      }
+
     getBase64 = (file: any) => {
         return new Promise(resolve => {
-            if (this.props.maxSize) {
+            if (this.props.maxPixels) {
                 resizeImage({
                     file: file,
-                    maxSize: this.props.maxSize
+                    maxPixels: this.props.maxPixels
                 }).then(function (resizedImage) {
                     resolve(resizedImage)
                 }).catch(function (err) {
@@ -101,6 +111,11 @@ export class ImageUpload extends Component<ImageUploadConfig, State> {
         this.getBase64(file)
             .then(result => {
                 file["base64"] = result;
+                if (this.props.maxFileSize && file.size > this.props.maxFileSize * 1024 * 1024) {
+                    file.tooBig = true;
+                } else {
+                    file.tooBig = false;
+                }
                 this.setState({
                     file: file
                 });
@@ -125,7 +140,11 @@ export class ImageUpload extends Component<ImageUploadConfig, State> {
         });
         let renderedTemplate
         if (file) {
-            renderedTemplate = createElement(TemplateItem, {template: {source: templateString, options: {file: file}}, componentProps: {style, className}});
+            if (!file.tooBig) {
+                renderedTemplate = createElement(TemplateItem, {template: {source: templateString, options: {file: file}}, componentProps: {style, className}});
+            } else {
+                renderedTemplate = createElement(TemplateItem, {template: {source: `<div><p>File is too big. The maximum file size is ${this.props.maxFileSize} MB.</p></div>`}, componentProps: {style, className}});
+            }
         } else {
             renderedTemplate = createElement(TemplateItem, {template: {source: noResultTemplate}})
         }
@@ -145,7 +164,7 @@ export class ImageUpload extends Component<ImageUploadConfig, State> {
 const resizeImage = (settings: IResizeImageOptions) => {
     // Code from https://stackoverflow.com/questions/23945494/use-html5-to-resize-an-image-before-upload
     const file = settings.file;
-    const maxSize = settings.maxSize;
+    const maxPixels = settings.maxPixels;
     const reader = new FileReader();
     const image = new Image();
     const canvas = document.createElement('canvas');
@@ -154,14 +173,14 @@ const resizeImage = (settings: IResizeImageOptions) => {
         let height = image.height;
 
         if (width > height) {
-            if (width > maxSize) {
-                height *= maxSize / width;
-                width = maxSize;
+            if (width > maxPixels) {
+                height *= maxPixels / width;
+                width = maxPixels;
             }
         } else {
-            if (height > maxSize) {
-                width *= maxSize / height;
-                height = maxSize;
+            if (height > maxPixels) {
+                width *= maxPixels / height;
+                height = maxPixels;
             }
         }
 

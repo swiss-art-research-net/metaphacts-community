@@ -41,6 +41,10 @@ interface FileUploadConfig {
      */
     capture?: string;
     className?: string;
+    /**
+     * Define the maximum allowed size of the file in MegaBytes (MB).
+     */
+    maxFileSize?: number;
     style?: CSSProperties;
     /**
      * Template that gets the file object
@@ -61,7 +65,7 @@ interface FileUploadConfig {
 }
 
 interface State {
-    file?: string;
+    file?: any;
     error?: any;
 }
 
@@ -96,6 +100,11 @@ export class FileUpload extends Component<FileUploadConfig, State> {
         this.getBase64(file)
             .then(result => {
                 file["base64"] = result;
+                if (this.props.maxFileSize && file.size > this.props.maxFileSize * 1024 * 1024) {
+                    file.tooBig = true;
+                } else {
+                    file.tooBig = false;
+                }
                 this.setState({
                     file: file
                 });
@@ -120,7 +129,11 @@ export class FileUpload extends Component<FileUploadConfig, State> {
         });
         let renderedTemplate
         if (file) {
-            renderedTemplate = createElement(TemplateItem, {template: {source: templateString, options: {file: file}}, componentProps: {style, className}});
+            if (!file.tooBig) {
+                renderedTemplate = createElement(TemplateItem, {template: {source: templateString, options: {file: file}}, componentProps: {style, className}});
+            } else {
+                renderedTemplate = createElement(TemplateItem, {template: {source: `<div><p>File is too big. The maximum file size is ${this.props.maxFileSize} MB.</p></div>`}, componentProps: {style, className}});
+            }
         } else {
             renderedTemplate = createElement(TemplateItem, {template: {source: noResultTemplate}})
         }
