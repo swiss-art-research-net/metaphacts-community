@@ -75,7 +75,7 @@ export class RemoveFromContainer extends Component<RemoveFromContainerProps, {}>
       () => {
         if (this.props.postAction === 'reload') {
           refresh();
-        } else {
+        } else if (this.props.postAction != 'stay') {
           navigateToResource(Rdf.iri(this.props.postAction)).onValue(v => v);
         }
       }
