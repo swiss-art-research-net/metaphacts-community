@@ -4,6 +4,7 @@
 
 - Adjustments to Semantic Search Facet visualisation
 - Add `sari-file-upload` component for uploading files on client side
+- Add `stay` option to `mp-ldp-remove-from-container-action` component
 ## [4.2.0]
 
 - Moved custom components to separate `sari` project
