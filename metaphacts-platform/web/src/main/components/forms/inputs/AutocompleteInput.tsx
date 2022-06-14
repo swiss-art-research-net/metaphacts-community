@@ -54,6 +54,7 @@ import {
 import { ValidationMessages } from './Decorations';
 
 interface SemanticFormAutocompleteInputConfig extends SingleValueInputConfig {
+  droppable: any;
   template?: string;
   placeholder?: string;
   lookupQuery?: DataQuery;
