@@ -244,7 +244,7 @@ export class AbstractAutoCompletionInput extends Component<AbstractAutoCompletio
     LabelsService.getLabel(iri).onValue(label => {
       const newValue: SparqlClient.Binding = {
         [this.state.labelBindingName]: Rdf.literal(label),
-        [this.state.valueBindingName]: iri,
+        [this.state.valueBindingName || DEFAULT_VALUE_BINDING_NAME]: iri,
       };
       this.onChange(newValue);
     });

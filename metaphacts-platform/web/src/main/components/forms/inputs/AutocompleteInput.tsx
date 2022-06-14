@@ -123,6 +123,7 @@ export class AutocompleteInput extends AtomicValueInput<AutocompleteInputProps, 
         <AutoCompletionInput
           key={definition.id}
           className={`${CLASS_NAME}__select`}
+          droppable={this.props.droppable}
           autofocus={false}
           query={this.getAutosuggestionQuery()}
           defaultQuery={this.getValueSetQuery()}
