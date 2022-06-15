@@ -6,6 +6,8 @@
 - Add `sari-file-upload` component for uploading files on client side
 - Add `stay` option to `mp-ldp-remove-from-container-action` component
 - Enable `droppable` on `semantic-form-autocomplete-input`
+- Add option `event` to `post-action` in `mp-ldp-remove-from-container-action`
+    - When set emits a `Component.Refresh` event
 ## [4.2.0]
 
 - Moved custom components to separate `sari` project
