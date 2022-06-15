@@ -43,14 +43,15 @@ import { Component } from 'platform/api/components';
 import { Rdf } from 'platform/api/rdf';
 import { LdpService } from 'platform/api/services/ldp';
 import { refresh, navigateToResource } from 'platform/api/navigation';
-
+import { BuiltInEvents, trigger } from 'platform/api/events';
 interface LdpRemoveFromContainerActionConfig {
   container: string;
+  id?: string;
   iri: string;
   /**
    * @default "reload"
    */
-  postAction?: 'reload' | string;
+  postAction?: 'reload' | 'event' | string;
 }
 
 export interface RemoveFromContainerProps extends LdpRemoveFromContainerActionConfig {}
@@ -75,6 +76,11 @@ export class RemoveFromContainer extends Component<RemoveFromContainerProps, {}>
       () => {
         if (this.props.postAction === 'reload') {
           refresh();
+        } else if (this.props.postAction === 'event') {
+          trigger({
+            eventType: BuiltInEvents.ComponentRefresh,
+            source: this.props.id
+          });
         } else if (this.props.postAction != 'stay') {
           navigateToResource(Rdf.iri(this.props.postAction)).onValue(v => v);
         }
