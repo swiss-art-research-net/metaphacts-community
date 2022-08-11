@@ -202,6 +202,30 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
       return validated;
     });
   }
+  private clearList = () => {
+    // Clear the current selection.
+    const {updateValues, handler} = this.props;
+    const {valueSet} = this.state;
+    updateValues(({errors}) => {
+      let newValues: ReadonlyArray<SparqlBindingValue> = [];
+      if (this.checkType() === 'checkbox') {
+        // Look for previous values if they are existing.
+        newValues = valueSet.filter(() => {
+          return false
+        });
+      }
+      if (this.checkType() === 'radio') {
+        newValues = valueSet.filter(() => {
+          return false
+        });
+      }
+      const validated = handler.validate({
+        values: newValues.map(value => FieldValue.fromLabeled(value)),
+        errors: errors,
+      });
+      return validated;
+    });
+  }
 
   private checkType() {
     const {type} = this.props;
@@ -252,6 +276,7 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     return (
       <div className={classnames(className, {[`${CHECKLIST_CLASS}_row`]: row})}>
         {this.renderChecklist(options)}
+        <button onClick={this.clearList}>x</button>
       </div>
     );
   }
