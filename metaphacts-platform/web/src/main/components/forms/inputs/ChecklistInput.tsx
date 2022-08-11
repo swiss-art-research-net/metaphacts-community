@@ -87,6 +87,14 @@ interface SemanticFormChecklistInputConfig extends MultipleValuesConfig {
   classItemName?: string;
 
   /**
+   * Adds a button to clear all selected items.
+   * 
+   * @default false
+   * 
+   */
+  clearable?: boolean;
+
+  /**
    * Allow to transform items (checkboxes or radio-buttons) in a row.
    *
    * @default false
@@ -236,6 +244,14 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     );
   }
 
+  private clearable() {
+    const {clearable, values} = this.props;
+    if (clearable !== true) {
+      return false;
+    }
+    return values.length > 0 && values[0].type != 'empty'
+  }
+
   private renderCheckItem(value: SparqlBindingValue, checked: boolean, key: string) {
     const {classItemName} = this.props;
     const type = this.checkType();
@@ -272,11 +288,12 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     const options = this.state.valueSet
       ? this.state.valueSet
       : [];
-
     return (
       <div className={classnames(className, {[`${CHECKLIST_CLASS}_row`]: row})}>
         {this.renderChecklist(options)}
-        <button onClick={this.clearList}>x</button>
+        {this.clearable() &&
+          <button onClick={this.clearList}>x</button>
+        }
       </div>
     );
   }
