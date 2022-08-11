@@ -40,6 +40,8 @@
 import * as React from 'react';
 import * as classnames from 'classnames';
 
+import { Button } from 'react-bootstrap';
+
 import { Cancellation } from 'platform/api/async';
 
 import { FieldValue, SparqlBindingValue, ErrorKind, DataState } from '../FieldValues';
@@ -292,7 +294,10 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
       <div className={classnames(className, {[`${CHECKLIST_CLASS}_row`]: row})}>
         {this.renderChecklist(options)}
         {this.clearable() &&
-          <button onClick={this.clearList}>x</button>
+          <Button size='sm' variant='secondary'
+            onClick={this.clearList}>
+            <span className='fa fa-trash' />
+          </Button>
         }
       </div>
     );
