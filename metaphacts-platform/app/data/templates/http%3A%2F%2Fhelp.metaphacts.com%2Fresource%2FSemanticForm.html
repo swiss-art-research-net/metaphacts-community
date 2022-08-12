@@ -228,12 +228,17 @@
 <semantic-form-checklist-input for='name' row=true>
 </semantic-form-checklist-input>
             ]]></mp-code-block>
+            <mp-code-block mode='text/html'><![CDATA[
+<!-- add a button that clears the selection. -->
+<semantic-form-checklist-input for='name' clearable=true>
+</semantic-form-checklist-input>
+            ]]></mp-code-block>
           </td>
           <td>
             <p>The component allows end user to select one or more values from a list.
               The list can be rendered either as checkboxes or radio buttons and as such can also be used as binary (boolean) input.
             </p>
-            <p>The component has special attributes: <strong>type</strong>, <strong>row</strong>, <strong>class</strong>, <strong>class-item-name</strong>. </p>
+            <p>The component has special attributes: <strong>type</strong>, <strong>row</strong>, <strong>class</strong>, <strong>class-item-name</strong> and <strong>clearable</strong></strong>. </p>
             <p><strong>type:</strong> allows users to select the type of the component: radio-button list or checkbox list.
               By default using 'checkbox'. <code>type='radio'</code> for radio-button.
             </p>
@@ -242,8 +247,9 @@
             </p>
             <p><strong>class:</strong> allows users to assign custom css classes to the checklist.
             </p>
-            <p><strong>class-item-name:</strong>allows users to assign custom css classes to any items of the checklist.
+            <p><strong>class-item-name:</strong> allows users to assign custom css classes to any items of the checklist.
             </p>
+            <p><strong>clearable:</strong> adds a button that clears the current selection of items</p>
           </td>
         </tr>
         <tr>

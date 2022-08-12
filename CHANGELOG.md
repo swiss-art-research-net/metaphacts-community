@@ -1,5 +1,8 @@
 # Changelog
 
+## [4.2.2]
+
+- Add `clearable` option to the `semantic-form-checklist-input` component, which adds a button to clear the current selection.
 ## [4.2.1]
 
 - Adjustments to Semantic Search Facet visualisation

@@ -40,6 +40,8 @@
 import * as React from 'react';
 import * as classnames from 'classnames';
 
+import { Button } from 'react-bootstrap';
+
 import { Cancellation } from 'platform/api/async';
 
 import { FieldValue, SparqlBindingValue, ErrorKind, DataState } from '../FieldValues';
@@ -85,6 +87,14 @@ interface SemanticFormChecklistInputConfig extends MultipleValuesConfig {
    * Adds custom CSS class to checklist item.
    */
   classItemName?: string;
+
+  /**
+   * Adds a button to clear all selected items.
+   * 
+   * @default false
+   * 
+   */
+  clearable?: boolean;
 
   /**
    * Allow to transform items (checkboxes or radio-buttons) in a row.
@@ -202,6 +212,30 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
       return validated;
     });
   }
+  private clearList = () => {
+    // Clear the current selection.
+    const {updateValues, handler} = this.props;
+    const {valueSet} = this.state;
+    updateValues(({errors}) => {
+      let newValues: ReadonlyArray<SparqlBindingValue> = [];
+      if (this.checkType() === 'checkbox') {
+        // Look for previous values if they are existing.
+        newValues = valueSet.filter(() => {
+          return false
+        });
+      }
+      if (this.checkType() === 'radio') {
+        newValues = valueSet.filter(() => {
+          return false
+        });
+      }
+      const validated = handler.validate({
+        values: newValues.map(value => FieldValue.fromLabeled(value)),
+        errors: errors,
+      });
+      return validated;
+    });
+  }
 
   private checkType() {
     const {type} = this.props;
@@ -210,6 +244,14 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
       type === 'radio' ? 'radio' :
       'checkbox'
     );
+  }
+
+  private clearable() {
+    const {clearable, values} = this.props;
+    if (clearable !== true) {
+      return false;
+    }
+    return values.length > 0 && values[0].type != 'empty'
   }
 
   private renderCheckItem(value: SparqlBindingValue, checked: boolean, key: string) {
@@ -248,10 +290,15 @@ export class ChecklistInput extends MultipleValuesInput<ChecklistInputProps, Sta
     const options = this.state.valueSet
       ? this.state.valueSet
       : [];
-
     return (
       <div className={classnames(className, {[`${CHECKLIST_CLASS}_row`]: row})}>
         {this.renderChecklist(options)}
+        {this.clearable() &&
+          <Button size='sm' variant='secondary'
+            onClick={this.clearList}>
+            <span className='fa fa-trash' />
+          </Button>
+        }
       </div>
     );
   }
