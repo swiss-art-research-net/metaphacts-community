@@ -19,5 +19,9 @@
       "template": true,
       "no-result-template": true
     }
+  },
+  "sari-sparql-query": {
+    "path": "sari/components/semantic/results/SparqlQueryComponent.ts",
+    "propsSchema": "SparqlQueryConfig"
   }
 }
