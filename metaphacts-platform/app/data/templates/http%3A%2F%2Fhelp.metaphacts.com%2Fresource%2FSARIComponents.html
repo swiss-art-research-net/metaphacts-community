@@ -6,7 +6,29 @@
 
     The platform provides a set of components developed by <a href="https://www.swissartresearch.net">SARI</a>, the Swiss Art Research Infrastructure at the University of Zurich, Switzerland.
     All components developed by SARI are prefixed with <code>sari-*</code>.
-
+    
+    <h2>Copy query to clipboard</h2>
+    <p>The <code>&lt;sari-copy-query-to-clipboard&gt;</code> components can be used to copy the query provided in the `query` attribute to the clipboard. If used within a `semantic-search-result` component, it can be used to allow users to copy the generated query to the clipboard.</p>
+    <h3>Example: Default</h3>
+    <p>
+      <mp-code-example>
+        <sari-copy-query-to-clipboard id='query-copy' query="SELECT * WHERE { }">            
+          <button class='btn btn-secondary'>
+            <i class='fa fa-copy'></i> Copy Query
+          </button>
+        </sari-copy-query-to-clipboard>
+      </mp-code-example>
+    </p>
+    <h3>Example: Custom notification</h3>
+    <p>
+      <mp-code-example>
+        <sari-copy-query-to-clipboard id='query-copy' query="SELECT * WHERE { } message='The generated SPARQL query has been copied to the clipboard">            
+          <button class='btn btn-secondary'>
+            <i class='fa fa-copy'></i> Copy Query
+          </button>
+        </sari-copy-query-to-clipboard>
+      </mp-code-example>
+    </p>
     <h2>File Upload</h2>
     <p>The <code>&lt;sari-file-upload&gt;</code> implements a file input field alongside a template that receives the uploaded file object. The content of the file is available in base64 encoding. The component works on client-side without a backend.</p>
     <p>The component implements the `template` and `no-result-template` attributes. The latter is displayed before a file has been selected, the former can be used to work further with the uploaded file.</p>
