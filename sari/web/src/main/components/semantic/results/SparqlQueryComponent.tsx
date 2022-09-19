@@ -19,8 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import * as D from 'react-dom-factories';
-import { Children, ReactElement, cloneElement, createFactory } from 'react';
+import * as React from 'react';
+import * as CopyToClipboard from 'react-copy-to-clipboard';
+import { addNotification } from 'platform/components/ui/notification';
+import { createFactory } from 'react';
 import { Component } from 'platform/api/components';
 
 interface SparqlQueryConfig {
@@ -28,19 +30,35 @@ interface SparqlQueryConfig {
    * SPARQL SELECT or CONSTRUCT query
    */
   query: string;
+  /**
+   * The message that will be displayed in the notification when the query has been copied.
+   *
+   * @default "The query has been copied!"
+   */
+  message?: string;
 }
 
 export type SparqlQueryProps = SparqlQueryConfig;
 
 class SparqlQueryComponent extends Component<SparqlQueryProps, {}> {
+  
+  static defaultProps = {
+    message: 'The query has been copied!',
+  };
+
+  private onCopy = () => {
+    addNotification({
+      level: 'success',
+      message: this.props.message,
+    });
+  }
 
   public render() {
-    const textarea = D.textarea({
-      "value": this.props.query,
-      "rows": 10,
-      "cols": 80
-    })
-    return textarea
+    return (
+      <CopyToClipboard text={this.props.query} onCopy={this.onCopy}>
+        {this.props.children}
+      </CopyToClipboard>
+    );
   }
 }
 

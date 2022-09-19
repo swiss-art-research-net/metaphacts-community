@@ -21,7 +21,7 @@
     }
   },
   "sari-sparql-query": {
-    "path": "sari/components/semantic/results/SparqlQueryComponent.ts",
+    "path": "sari/components/semantic/results/SparqlQueryComponent.tsx",
     "propsSchema": "SparqlQueryConfig"
   }
 }
