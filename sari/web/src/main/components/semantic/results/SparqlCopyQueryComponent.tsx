@@ -25,6 +25,22 @@ import { addNotification } from 'platform/components/ui/notification';
 import { createFactory } from 'react';
 import { Component } from 'platform/api/components';
 
+/**
+ * 
+ * Component to copy the a SPARQL query to the clipboard.
+ * Can be used within a semantic-search-result component to copy the query created
+ * through a semantic search to the clipboard
+ * 
+ * **Example**:
+ * ```
+ * <sari-copy-query-to-clipboard id='query-copy' query="SELECT * WHERE { }">            
+ *   <button class='btn btn-secondary'>
+ *        <i class='fa fa-copy'></i> Copy Query
+ *    </button>
+ *  </sari-copy-query-to-clipboard>
+ * ```
+ */
+
 interface SparqlQueryConfig {
   /**
    * SPARQL SELECT or CONSTRUCT query
