@@ -10,4 +10,4 @@ mkdir $DOCKER_FOLDER/platform/config
 cp -r metaphacts-platform/app/config/* $DOCKER_FOLDER/platform/config
 
 cd $DOCKER_FOLDER/platform
-docker build -t swissartresearx/metaphacts-community:$1 .
+docker buildx build --platform linux/amd64,linux/arm64 -t swissartresearx/metaphacts-community:$1 --push .
