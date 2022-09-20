@@ -1,7 +1,6 @@
 {
   "sari-copy-query-to-clipboard": {
     "path": "sari/components/semantic/results/SparqlCopyQueryComponent.tsx",
-    "propsSchema": "SparqlQueryConfig"
   },
   "sari-file-upload": {
     "path": "sari/components/ui/FileUpload.ts",
