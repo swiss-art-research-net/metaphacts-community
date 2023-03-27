@@ -14,6 +14,25 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.5.tgz#db5a11bf66bdab39569719555b0f76e138d7bd64"
   integrity sha512-9X2obfABZuDVLCgPK9aX0a/x4jaOEweTTWE2+9sr0Qqqevj2Uv5XorvusThmc9XGYpS9yI+fhh8RTafBtGposw==
 
+"@react-sigma/core@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@react-sigma/core/-/core-3.4.0.tgz#6da4b09d823b3520feb5948d6ca195843b770b8b"
+  integrity sha512-IfP3tMqYHgdrTG4Pc3xqAb8xqwScMjQfhAfLt1yGNiBPaFuunxGOmDEZ8Q6/DQMqkkTksxq4C30W3C7aRC42Tg==
+
+"@react-sigma/layout-core@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@react-sigma/layout-core/-/layout-core-3.4.0.tgz#1cef774dcedd469def4673111d1e76a7e4e5ad11"
+  integrity sha512-SgBHf3ftCZ38bmXXitnOXu5nazSX+4XiZbcFs9XUH+G0xwQYlIO4NZI2YFjkMav2dPOcU/sVghdnMpBn+jorwQ==
+  dependencies:
+    "@react-sigma/core" "^3.4.0"
+
+"@react-sigma/layout-forceatlas2@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@react-sigma/layout-forceatlas2/-/layout-forceatlas2-3.4.0.tgz#97a764799c20259248db3b5e28306e7d7c1e4d1c"
+  integrity sha512-Dgq9WLN6fXsIwMAfCYQZ2daF8x9ovqLHJq80SS9eq7oYBfmEqbeYnG6EOIpAEcVQmj8FGcbfWy8/1crUsn79ZQ==
+  dependencies:
+    "@react-sigma/layout-core" "^3.4.0"
+
 "@restart/context@^2.1.4":
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/@restart/context/-/context-2.1.4.tgz#a99d87c299a34c28bd85bb489cb07bfd23149c02"
@@ -107,6 +126,11 @@
   resolved "https://registry.yarnpkg.com/@webcomponents/webcomponentsjs/-/webcomponentsjs-2.2.7.tgz#1f1a7a7aa083db5ae6aadaeda68caa8fd8657462"
   integrity sha512-kPPjzV+5kpoWpTniyvBSPcXS33f3j/C6HvNOJ3YecF3pvz3XwVeU4ammbxtVy/osF3z7hr1DYNptIf4oPEvXZA==
 
+"@yomguithereal/helpers@^1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@yomguithereal/helpers/-/helpers-1.1.1.tgz#185dfb0f88ca2beec53d0adf6eed15c33b1c549d"
+  integrity sha512-UYvAq/XCA7xoh1juWDYsq3W0WywOB+pz8cgVnE1b45ZfdMhBvHDrgmSFG3jXeZSr2tMTYLGHFHON+ekG05Jebg==
+
 bootstrap@4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.5.0.tgz#97d9dbcb5a8972f8722c9962483543b907d9b9ec"
@@ -139,6 +163,24 @@ dom-helpers@^5.0.1, dom-helpers@^5.1.2, dom-helpers@^5.2.0:
   dependencies:
     "@babel/runtime" "^7.8.7"
     csstype "^3.0.2"
+
+events@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/events/-/events-3.3.0.tgz#31a95ad0a924e2d2c419a813aeb2c4e878ea7400"
+  integrity sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==
+
+graphology-utils@^2.5.0:
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/graphology-utils/-/graphology-utils-2.5.2.tgz#4d30d6e567d27c01f105e1494af816742e8d2440"
+  integrity sha512-ckHg8MXrXJkOARk56ZaSCM1g1Wihe2d6iTmz1enGOz4W/l831MBCKSayeFQfowgF8wd+PQ4rlch/56Vs/VZLDQ==
+
+graphology@^0.25.1:
+  version "0.25.1"
+  resolved "https://registry.yarnpkg.com/graphology/-/graphology-0.25.1.tgz#f92b86294782522d3898ce4480e4a577c0c2568a"
+  integrity sha512-yYA7BJCcXN2DrKNQQ9Qf22zBHm/yTbyBR71T1MYBbGtywNHsv0QZtk8zaR6zxNcp2hCCZayUkHp9DyMSZCpoxQ==
+  dependencies:
+    events "^3.3.0"
+    obliterator "^2.0.2"
 
 invariant@^2.2.4:
   version "2.2.4"
@@ -175,6 +217,11 @@ object-assign@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
   integrity sha1-IQmtx5ZYh8/AXLvUQsrIv7s2CGM=
+
+obliterator@^2.0.2:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/obliterator/-/obliterator-2.0.4.tgz#fa650e019b2d075d745e44f1effeb13a2adbe816"
+  integrity sha512-lgHwxlxV1qIg1Eap7LgIeoBWIMFibOjbrYPIPJZcI1mmGAI2m3lNYpK12Y+GBdPQ0U1hRwSord7GIaawz962qQ==
 
 prop-types-extra@^1.1.0:
   version "1.1.1"
@@ -273,6 +320,15 @@ scheduler@^0.13.6:
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
+
+sigma@^3.0.0-alpha3:
+  version "3.0.0-alpha3"
+  resolved "https://registry.yarnpkg.com/sigma/-/sigma-3.0.0-alpha3.tgz#2c14598b4a0ddf145ee4f3ede80fe17ee2fc0713"
+  integrity sha512-WpUqM7cleO67/n/kaDL3ZP9yC2+6CgxL3J3GkQNqdt50PwFD30DVmLNldxhv+fFiXo8AX0Er4qVflL8ll/fCcg==
+  dependencies:
+    "@yomguithereal/helpers" "^1.1.1"
+    events "^3.3.0"
+    graphology-utils "^2.5.0"
 
 symbol-observable@^1.0.1:
   version "1.2.0"
