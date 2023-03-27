@@ -22,5 +22,6 @@
       "template": true,
       "no-result-template": true
     }
-  }
+  },
+  "semantic-sigma-graph": "sari/components/semantic/sigma-graph/SigmaGraph.tsx"
 }
