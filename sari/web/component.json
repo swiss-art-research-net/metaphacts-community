@@ -24,8 +24,6 @@
     }
   },
   "semantic-sigma-graph": {
-    "path": "sari/components/semantic/sigma-graph/SigmaGraph.tsx",
-    "propsSchema": "SigmaGraphConfig",
-    "helpResource": "http://help.metaphacts.com/resource/SigmaGraph"
+    "path": "sari/components/semantic/sigma-graph/SigmaGraph.tsx"
   }
 }
