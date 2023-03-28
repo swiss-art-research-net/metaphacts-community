@@ -4,6 +4,7 @@
 
 - Add `clearable` option to the `semantic-form-checklist-input` component, which adds a button to clear the current selection.
 - Add `sari-copy-query-to-clipboard` component to copy (generated) SPARQL queries to the clipboard.
+- Add `semantic-sigma-graph` component
 
 ## [4.2.1]
 
