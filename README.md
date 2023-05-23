@@ -1,6 +1,6 @@
-> :warning: **Note**
+> **Note**
 >
-> This is a fork of the[https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/](). 
+> This is a fork of [https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/](). 
 >
 >
 > The Docker image is published as **swissartresearx/metaphacts-community:x.x.x**
