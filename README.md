@@ -1,13 +1,17 @@
 > :warning: **Note**
-This is a fork of [https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/](). 
+>
+> This is a fork of the[https://bitbucket.org/metaphacts/metaphacts-community/src/master/metaphacts-platform/](). 
 >
 >
 > The Docker image is published as **swissartresearx/metaphacts-community:x.x.x**
 >
 > Build:
-> `./build.sh  -DbuildEnv=prod -Dbuildjson=./metaphacts-platform/platform-only-root-build.json   -DplatformVersion=x.x.x platformWar`
+> ```
+> ./build.sh  -DbuildEnv=prod -Dbuildjson=./metaphacts-platform/platform-only-root-build.json   -DplatformVersion=x.x.x platformWar`
+>```
 >
 > Follow instructions in [metaphacts-platform/dist/docker/platform]() for building Docker image.
+>
 
 
 
@@ -55,16 +59,16 @@ For examples see the list of demos and public projects at the bottom of this pag
 
 ## Partners and Users of the Platform
 
-[![Consortium for Open Research Data in the Humanities](https://metaphacts.com/images/bitbucket/CORDH.png)](https://www.cordh.net)
-[![Bibliotheca Hertziana – Max Planck Institute for Art History (BHMPI)](https://metaphacts.com/images/bitbucket/BHMPI.png)](https://www.biblhertz.it/)
-[![Villa I Tatti, The Harvard University Center for Italian Renaissance Studies](https://metaphacts.com/images/bitbucket/ITATTI.png)](http://itatti.harvard.edu/)
-[![Max Planck Institute for the History of Science (MPIWG)](https://metaphacts.com/images/bitbucket/MPIWG.png)](https://www.mpiwg-berlin.mpg.de/)
-[![The International Consortium of Photo Archives](https://metaphacts.com/images/bitbucket/Pharos.png)](http://pharosartresearch.org/)
-[![Swiss Archive of Performing Arts (SAPA)](https://metaphacts.com/images/bitbucket/SAPA.png)](https://sapa.swiss/)
-[![SARI - The Swiss Art Research Infrastructure](https://metaphacts.com/images/bitbucket/SARI.png)](https://swissartresearch.net/)
-[![ETH Zürich](https://metaphacts.com/images/bitbucket/ETH.png)](https://ethz.ch/)
-[![Universität Zürich](https://metaphacts.com/images/bitbucket/UZH.png)](https://www.uzh.ch/)
-[![The Parthenos Project](https://metaphacts.com/images/bitbucket/PARTHENOS.png)](http://www.parthenos-project.eu/)
+- [Consortium for Open Research Data in the Humanities](https://www.cordh.net)
+- [Bibliotheca Hertziana – Max Planck Institute for Art History (BHMPI)](https://www.biblhertz.it/)
+- [Villa I Tatti, The Harvard University Center for Italian Renaissance Studies](http://itatti.harvard.edu/)
+- [Max Planck Institute for the History of Science (MPIWG)](https://www.mpiwg-berlin.mpg.de/)
+- [The International Consortium of Photo Archives](http://pharosartresearch.org/)
+- [Swiss Archive of Performing Arts (SAPA)](https://sapa.swiss/)
+- [SARI - The Swiss Art Research Infrastructure](https://www.sari.uzh.ch/)
+- [ETH Zürich](https://ethz.ch/)
+- [Universität Zürich](https://www.uzh.ch/)
+- [The Parthenos Project](http://www.parthenos-project.eu/)
 
 ## Technology
 
@@ -100,7 +104,7 @@ Many thanks to the following organizations for contributions and funding:
 
 * [MPIWG - Max Planck Institute for History of Science](https://www.mpiwg-berlin.mpg.de/)
 
-* [SARI - The Swiss Art Research Infrastructure](https://swissartresearch.net/)
+* [SARI - The Swiss Art Research Infrastructure](https://www.sari.uzh.ch/)
 
 * [ETH Zürich](https://ethz.ch/)
 
@@ -141,8 +145,6 @@ The [Sphaera CorpusTracer](https://sphaera.mpiwg-berlin.mpg.de/) ([demo system](
 
 * Identifying the roles, relationships and social context of different actors
 
-[![Sphaera CorpusTracer](https://metaphacts.com/images/bitbucket/corpustracer_small.png)](https://metaphacts.com/images/bitbucket/corpustracer.png)
-[![Semantic Web Database](https://metaphacts.com/images/bitbucket/semantic-web-database_small.png)](https://metaphacts.com/images/bitbucket/semantic-web-database.png)
 
 
 ### Digital Research Infrastructure (MPIWG)
@@ -160,19 +162,16 @@ This is achieved by:
 
 * Building a cross-institutional research environment which links actors with diverse scholarly and institutional orientations
 
-[![Art & Architecture Thesaurus Translation Service (AAT)](https://metaphacts.com/images/bitbucket/aat-gastronomy_small.png)](https://metaphacts.com/images/bitbucket/aat-gastronomy.png)
 
 ### Reference Data Service (RDS) (Swiss Art Research Infrastructure)
 
 The [Reference Data Service](https://rds-dev.swissartresearch.net/) aims to provide a unified and fast access to reference data and, thus to enhance the user's look-up process for commonly used terms and vocabularies.
 
-[![Reference Data Service (RDS)](https://metaphacts.com/images/bitbucket/SARI-Reference-Data-Service_small.png)](https://metaphacts.com/images/bitbucket/SARI-Reference-Data-Service.png).
 
 ### Photographic Knowledge of History of Arts (University of Zürich)
 
 The project [Photographic Knowledge of History of Arts](https://fw.swissartresearch.net/) (_Rechercheportal Fotografisches Wissen der Kunstgeschichte_)  provides research data regarding the collection of historic slides of the History of Arts Institute of the University of Zürich.
 
-[![Fotografisches Wissen der Kunstgeschichte](https://metaphacts.com/images/bitbucket/Fotografisches-Wissen-der-Kunstgeschichte_small.png)](https://metaphacts.com/images/bitbucket/Fotografisches-Wissen-der-Kunstgeschichte.png)
 
 ### gta Research Portal (ETH Zürich)
 
@@ -180,13 +179,11 @@ The [gta Archive](https://archiv.gta.arch.ethz.ch/about/about-us) at ETH Zurich 
 
 The [gta Research Portal](https://grp.swissartresearch.net/) allows not only for unified access to the gta Archives’ collections data and digitised visual research resources but also to research data from related research projects, such as [Experimental Design in the Post-War Period](https://stalder.arch.ethz.ch/researchprojects/experimental-design-in-the-postwar-period-heinz-islers-19262009-contribution-in-the-perspective-of-the-history-of-engineering-and-culture). By allowing both human-interpretable and machine-processable access by way of the semantic web (based on Linked Open Data) and by consistently implementing scholarly acknowledged, yet open standards for data modelling and data exchange, the gta Research Portal provides unique and unprecedented access to these most valuable research resources to the international academic community for further research and re-use. By integrating the data into established research portals (such as the ETH Library Search Portal), the gta Archives’ holdings will also be made visible to a broader public outside the ETH Zurich.
 
-[![gta Research Portal](https://metaphacts.com/images/bitbucket/gta-Research-Portal_small.png)](https://metaphacts.com/images/bitbucket/gta-Research-Portal.png)
 
 ### PARTHENOS Entities Dataspace
 
 The [PARTHENOS](https://www.oeaw.ac.at/acdh/projects/completed-projects/parthenos/) [Entities Dataspace](https://parthenos.acdh.oeaw.ac.at/) contains metadata from all partner Research Infrastructures which is aggregated here under a common semantic model, allowing for unprecedented interdisciplinary view on these hetereogeneous datasets.
 
-[![Parthenos Discovery](https://metaphacts.com/images/bitbucket/PARTHENOS-Discovery_small.png)](https://metaphacts.com/images/bitbucket/PARTHENOS-Discovery.png)
 
 ### Mingei (FORTH)
 
@@ -194,8 +191,6 @@ The [PARTHENOS](https://www.oeaw.ac.at/acdh/projects/completed-projects/partheno
 
 Despite their cultural significance, efforts for HC representation and preservation are scattered geographically and thematically. Mingei will provide means to establish HC representations based on digital assets, semantics, existing literature and repositories, as well as mature digitisation and representation technologies. These representations will capture and preserve tangible and intangible dimensions of HCs.
 
-[![Mingei Home](https://metaphacts.com/images/bitbucket/FORTH-Mingei-home_small.png)](https://metaphacts.com/images/bitbucket/FORTH-Mingei-home.png)
-[![Mingei narrative](https://metaphacts.com/images/bitbucket/FORTH-Mingei-narrative_small.png)](https://metaphacts.com/images/bitbucket/FORTH-Mingei-narrative.png)
 
 ## Get in contact
 
