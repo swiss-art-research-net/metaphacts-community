@@ -2,6 +2,7 @@ version: "3"
 services:
   mp-dev:
     container_name: "mp-dev"
+    #platform: linux/amd64
     build: .
     ports:
       - "3000:3000"
