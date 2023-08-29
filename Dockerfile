@@ -15,7 +15,7 @@ RUN chmod +x /etc/profile.d/gradle.sh
 
 # Install Node.js v14x
 RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
-RUN apt-get install -y nodejs
+RUN apt-get install -y nodejs libsass-dev
 
 # Install Yarn
 RUN npm install --global yarn
