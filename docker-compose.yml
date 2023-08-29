@@ -1,0 +1,20 @@
+version: "3"
+services:
+  mp-dev:
+    container_name: "mp-dev"
+    #platform: linux/amd64
+    build: .
+    ports:
+      - "3000:3000"
+      - "10214:10214"
+    volumes:
+      - .:/workdir
+    networks:
+      - default
+  
+# Define network default as external docker network.
+# Specify the network name in the .env file as follows:
+# DOCKER_NETWORK=my-network
+networks:
+  default:
+    name: ${DOCKER_NETWORK}
