@@ -35,12 +35,21 @@ const SAVED_STATE_LOCAL_STORAGE_GRAPH = 'sigmaGraph-graph';
 const DEFAULT_COLOUR_NODE = "#000";
 const DEFAULT_COLOUR_EDGE = "#aaa";
 
+export interface NodeGroup {
+    nodes: string[];
+    predicate: string;
+    labels: string[];
+    source: string;
+    types: string[];
+    typeLabels: string[];
+}
+
 export function applyGroupingToGraph(graph: MultiDirectedGraph, props: SigmaGraphConfig) {
     // Retrieve all predicate attributes that appear in the edges of the graph
     const predicates = graph.edges().map((edge) => graph.getEdgeAttribute(edge, 'predicate')).filter((value, index, self) => self.indexOf(value) === index);
 
     // Store nodes by shared type and predicate in a map
-    const nodesBySourceTypeAndPredicate = {};
+    const nodesBySourceTypeAndPredicate: {[key: string]: NodeGroup } = {};
 
     // Iterate through nodes of the graph and group nodes that share a source node, type and predicate
     for (const node of graph.nodes()) {
@@ -266,7 +275,7 @@ export function getStateFromLocalStorage(key: string) {
     return null;
 }
 
-export function mergeGraphs(graph, newGraph) {
+export function mergeGraphs(graph: MultiDirectedGraph, newGraph: MultiDirectedGraph) {
      // Merge new graph with sigma graph
      newGraph.forEachNode((node, attributes) => {
         if (!graph.hasNode(node)) {
