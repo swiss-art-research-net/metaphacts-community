@@ -31,6 +31,7 @@ const config = devConfig(defaults());
 
 const devServer = serve({
   config: config,
+  host: '0.0.0.0',
   hot: false,
   port: 3000,
   content: [__dirname, path.join(__dirname, "assets", "no_auth"), path.join(__dirname, "assets")],
