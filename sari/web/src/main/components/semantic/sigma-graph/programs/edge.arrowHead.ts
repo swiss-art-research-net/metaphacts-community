@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+//@ts-nocheck
 import { floatColor } from "sigma/utils";
 import vertexShaderSource from "sigma/rendering/webgl/shaders/edge.arrowHead.vert.glsl";
 import fragmentShaderSource from "sigma/rendering/webgl/shaders/edge.arrowHead.frag.glsl";

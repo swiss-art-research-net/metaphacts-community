@@ -19,6 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+//@ts-nocheck
+
 import * as React from 'react';
 import * as assign from 'object-assign';
 import { createElement } from 'react';

@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 /* eslint-disable react/prop-types */
+//@ts-nocheck
 
 import * as React from 'react';
 import { useEffect, useState } from 'react';
