@@ -19,7 +19,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 import * as React from 'react';
 import * as assign from 'object-assign';
 import { createElement } from 'react';
@@ -28,6 +27,7 @@ import { Component } from 'platform/api/components';
 import { BuiltInEvents, trigger } from 'platform/api/events';
 import { ErrorNotification } from 'platform/components/ui/notification';
 import { Spinner } from 'platform/components/ui/spinner';
+import { addNotification } from 'platform/components/ui/notification';
 
 import { MultiDirectedGraph } from "graphology";
 import { SigmaContainer, ControlsContainer, SearchControl } from "@react-sigma/core";
@@ -35,9 +35,12 @@ import getNodeProgramImage from "sigma/rendering/webgl/programs/node.image";
 
 import { SigmaGraphConfig } from './Config'
 import { GraphEvents } from './GraphEvents'
-import { createGraphFromElements, getStateFromLocalStorage, loadGraphDataFromQuery, saveStateIntoLocalStorage } from './Common'
+import { GraphControls } from './GraphControls'
+import { clearStateFromLocalStorage, createGraphFromElements, getStateFromLocalStorage, loadGraphDataFromQuery, saveStateIntoLocalStorage } from './Common'
+import ArrowEdgeProgram from './programs/edge.arrow'
 
 import "@react-sigma/core/lib/react-sigma.min.css";
+import "./styles.css"
 export interface State {
     elements: Cy.ElementDefinition[];
     graph: MultiDirectedGraph;
@@ -83,6 +86,18 @@ export class SigmaGraph extends Component<SigmaGraphConfig, State> {
                 graph: graphFromLocalStorage,
                 isLoading: false
             })
+            addNotification({
+                level: 'success',
+                position: this.props.persistGraphMessagePosition ? this.props.persistGraphMessagePosition : 'tr',
+                message: this.props.persistGraphMessage ? this.props.persistGraphMessage : "The graph has been restored from the browser's local storage.",
+                action: {
+                    label: 'Reset',
+                    callback: () => {
+                        clearStateFromLocalStorage()
+                        this.loadInitialGraphData(this.props); 
+                    }
+                }
+            });
         } else {
             loadGraphDataFromQuery(props.query, this.context.semanticContext).onValue((elements) => {
                     this.setState({
@@ -114,11 +129,14 @@ export class SigmaGraph extends Component<SigmaGraphConfig, State> {
         const width = this.props.width || "800px";
         const height = this.props.height || "600px";
         const searchBox = this.props.searchBox || false;
+        const controls = this.props.controls || false;
+        const edgeFilter = this.props.edgeFilter || false;
         
         const sigmaSettings = { 
             defaultEdgeType: "arrow",
             defaultNodeType: "image",
             nodeProgramClasses: { image: getNodeProgramImage() },
+            edgeProgramClasses: { arrow: ArrowEdgeProgram },
             renderEdgeLabels: true,
             maxEdgeSize: 2,
         };
@@ -143,12 +161,14 @@ export class SigmaGraph extends Component<SigmaGraphConfig, State> {
                     <GraphEvents 
                         context={ this.context.semanticContext} 
                         colours={ colours }
+                        edgeFilter={ edgeFilter }
                         grouping={ grouping } 
                         nodeQuery={ nodeQuery }
                         persistGraph={ persistGraph }
                         sizes={ sizes } 
                     />
-                    {searchBox && <ControlsContainer><SearchControl /></ControlsContainer>}
+                    {searchBox &&  <ControlsContainer position="bottom-left"><SearchControl /> </ControlsContainer>}
+                    {controls && <GraphControls position="top-left" />}
                 </SigmaContainer>
 
             )

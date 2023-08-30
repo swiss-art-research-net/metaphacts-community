@@ -77,8 +77,21 @@ export interface SigmaGraphConfig {
      *  "http://www.w3.org/2002/07/owl#ObjectProperty": "#00ff00"
      * }
      */
-    colours?: { [key: string]: string }; /** 
+    colours?: { [key: string]: string }; 
 
+    /**
+     * Display a control panel with buttons to control the graph.
+     * @default false
+     */
+    controls?: boolean;
+
+    /**
+     * Display a filter box for the edges
+     * @default false
+     */
+    edgeFilter?: boolean;
+
+    /**
     * Grouping configuration
     * @default {
     *  enabled: false
@@ -101,6 +114,22 @@ export interface SigmaGraphConfig {
      * @default false
      */
     persistGraph?: boolean;
+
+    /**
+     * 
+     * Message to display when the graph has been restored from the browser's local storage.
+     * 
+     * @default "The graph has been restored from the browser's local storage."
+     */
+    persistGraphMessage?: string;
+
+    /**
+     * Position of the message to display when the graph has been restored from the browser's local storage.
+     * Options:
+     * tr (top right), tl (top left), tc (top center), br (bottom right), bl (bottom left), bc (bottom center)
+     * @default "tr"
+     */
+    persistGraphMessagePosition?: string;
 
     /**
      * Display a search field.
