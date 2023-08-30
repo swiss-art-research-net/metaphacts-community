@@ -47,7 +47,7 @@
     "chai-string": "1.2.0",
     "cheerio": "0.20.0",
     "circular-dependency-plugin": "^5.2.0",
-    "css-loader": "webpack-contrib/css-loader",
+    "css-loader": "1.0.0",
     "enzyme": "3.10.0",
     "enzyme-adapter-react-16": "^1.14.0",
     "expose-loader": "0.7.5",
