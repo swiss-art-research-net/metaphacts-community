@@ -13,12 +13,12 @@ RUN echo "export GRADLE_HOME=/opt/gradle/latest" >> /etc/profile.d/gradle.sh
 RUN echo "export PATH=${GRADLE_HOME}/bin:${PATH}" >> /etc/profile.d/gradle.sh
 RUN chmod +x /etc/profile.d/gradle.sh
 
-# Install Node.js v12x
-RUN curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg
-RUN curl -fsSL https://deb.nodesource.com/setup_12.x | bash -
-RUN apt-get install -y nodejs
+# Install Node.js v14x
+RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+RUN apt-get install -y nodejs libsass-dev
+
+# Install Yarn
 RUN npm install --global yarn
-RUN apt install -y libsass-dev
 
 # Copy package.json and run npm install
 #COPY package.json /workdir
