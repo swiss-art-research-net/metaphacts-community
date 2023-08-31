@@ -6,3 +6,4 @@ com.metaphacts.lookup.impl.BlazegraphFtsLookupServiceFactory
 com.metaphacts.lookup.impl.FederatedLookupServiceFactory
 com.metaphacts.lookup.impl.TemplateLookupServiceFactory
 com.metaphacts.lookup.impl.WikidataLookupServiceFactory
+com.metaphacts.lookup.impl.AggregationLookupServiceFactory
