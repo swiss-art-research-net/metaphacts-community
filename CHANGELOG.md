@@ -1,5 +1,8 @@
 # Changelog
 
+## [4.3.0]
+
+- Add aggregate lookup service
 ## [4.2.2]
 
 - Add `clearable` option to the `semantic-form-checklist-input` component, which adds a button to clear the current selection.
