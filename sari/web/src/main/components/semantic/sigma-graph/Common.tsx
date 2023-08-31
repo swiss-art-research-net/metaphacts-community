@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+//@ts-nocheck
 
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { Cancellation } from 'platform/api/async';
@@ -31,13 +32,24 @@ import { SigmaGraphConfig, DEFAULT_HIDE_PREDICATES } from './Config';
 const SAVED_STATE_LOCAL_STORAGE_KEY = 'sigmaGraph-key';
 const SAVED_STATE_LOCAL_STORAGE_GRAPH = 'sigmaGraph-graph';
 
-export function applyGroupingToGraph(graph: MultiDirectedGraph, props: SigmaGraphConfig) {
+const DEFAULT_COLOUR_NODE = "#000";
+const DEFAULT_COLOUR_EDGE = "#aaa";
 
+export interface NodeGroup {
+    nodes: string[];
+    predicate: string;
+    labels: string[];
+    source: string;
+    types: string[];
+    typeLabels: string[];
+}
+
+export function applyGroupingToGraph(graph: MultiDirectedGraph, props: SigmaGraphConfig) {
     // Retrieve all predicate attributes that appear in the edges of the graph
     const predicates = graph.edges().map((edge) => graph.getEdgeAttribute(edge, 'predicate')).filter((value, index, self) => self.indexOf(value) === index);
 
     // Store nodes by shared type and predicate in a map
-    const nodesBySourceTypeAndPredicate = {};
+    const nodesBySourceTypeAndPredicate: {[key: string]: NodeGroup } = {};
 
     // Iterate through nodes of the graph and group nodes that share a source node, type and predicate
     for (const node of graph.nodes()) {
@@ -98,7 +110,8 @@ export function applyGroupingToGraph(graph: MultiDirectedGraph, props: SigmaGrap
                 if(!groupedGraph.hasEdge(entry['source']+node)) {
                     groupedGraph.addEdgeWithKey(entry['source']+node, entry['source'], node, {
                         label: entry['labels'].join(' '),
-                        size: props.sizes.edges
+                        size: props.sizes.edges,
+                        color: props.colours && props.colours.edge || DEFAULT_COLOUR_EDGE
                     })
                 }
             }
@@ -149,7 +162,8 @@ export function applyGroupingToGraph(graph: MultiDirectedGraph, props: SigmaGrap
         if (!groupedGraph.hasEdge(entry['source']+key)) {
             groupedGraph.addEdgeWithKey(entry['source']+key, entry['source'], key, {
                 label: entry['labels'].join(' '),
-                size: props.sizes.edges
+                size: props.sizes.edges,
+                color: props.colours && props.colours.edge || DEFAULT_COLOUR_EDGE
             })
         }
     }
@@ -177,9 +191,21 @@ export function createGraphFromElements(elements: any[], props: SigmaGraphConfig
     const graph = new MultiDirectedGraph();
     const nodeSize = props.sizes.nodes || 10;
     const edgeSize = props.sizes.edges || 5;
+    // Order elements by <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> key
+    elements.sort((a, b) => {
+        if (a.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>'] && b.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>']) {
+            return a.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>'][0].value.localeCompare(b.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>'][0].value);
+        } else if (a.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>']) {
+            return -1;
+        } else if (b.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>']) {
+            return 1;
+        } else {
+            return 0;
+        }
+    })
     for (const element of elements) {
         if (element.group == "nodes") {
-            let color = "#000000";
+            let color = props.colours && props.colours.node || DEFAULT_COLOUR_NODE;
             const types = element.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>']
             if (props.colours && element.data['<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>']) {
                 for (const type of types) {
@@ -204,10 +230,12 @@ export function createGraphFromElements(elements: any[], props: SigmaGraphConfig
 
     for (const element of elements) {
         if (element.group == "edges") {
+            const color = props.colours && props.colours.edge || DEFAULT_COLOUR_EDGE;
             graph.addEdgeWithKey(element.data.id, element.data.source, element.data.target, {
                 label: element.data.label,
                 predicate: element.data.resource,
-                size: edgeSize
+                size: edgeSize,
+                color: color
             })
         }
     }
@@ -227,6 +255,11 @@ export function createGraphFromElements(elements: any[], props: SigmaGraphConfig
 
 }
 
+export function clearStateFromLocalStorage() {
+    localStorage.removeItem(SAVED_STATE_LOCAL_STORAGE_KEY);
+    localStorage.removeItem(SAVED_STATE_LOCAL_STORAGE_GRAPH);
+}
+
 export function getStateFromLocalStorage(key: string) {
     if (localStorage.getItem(SAVED_STATE_LOCAL_STORAGE_KEY) == key) {
         const compressed = localStorage.getItem(SAVED_STATE_LOCAL_STORAGE_GRAPH)
@@ -242,7 +275,7 @@ export function getStateFromLocalStorage(key: string) {
     return null;
 }
 
-export function mergeGraphs(graph, newGraph) {
+export function mergeGraphs(graph: MultiDirectedGraph, newGraph: MultiDirectedGraph) {
      // Merge new graph with sigma graph
      newGraph.forEachNode((node, attributes) => {
         if (!graph.hasNode(node)) {

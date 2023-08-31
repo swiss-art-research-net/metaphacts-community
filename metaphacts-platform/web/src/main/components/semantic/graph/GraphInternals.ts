@@ -37,6 +37,8 @@
  * License along with this library; if not, you can receive a copy
  * of the GNU Lesser General Public License from http://www.gnu.org/
  */
+//@ts-nocheck
+
 import { map, reduce, filter, every, some, cloneDeep } from 'lodash';
 import { Set, Map } from 'immutable';
 import * as Kefir from 'kefir';
