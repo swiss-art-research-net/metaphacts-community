@@ -287,6 +287,11 @@
               entity search API
             </a> to provide best experience and performance.</td>
         </tr>
+        <tr>
+          <td><a href="#FederatedLookupService">FederatedLookupService</a></td>
+          <td><code>metaphacts:federatedLookup</code></td>
+          <td>Delegates the lookup to one or more other lookup services, combining their results.</td>
+        </tr>
         [[> lookupServiceExtensionsTable]]
       </tbody>
     </table>
@@ -468,6 +473,84 @@
     ]]></mp-code-block>
 
 
+    <h4 id="AggregatedLookupService">AggregatedLookupService</h4>
+
+    <p>
+      The <code>AggregatedLookupService</code> (type <code>rds:aggregationLookup</code>) orders the results of a delegated
+      lookup service by a given predicate. This can be used to group results by a given predicate, e.g. a <em>sameAs</em> relationship.
+    </p>
+      
+    <p>
+      Results from the delegated service are reordered so that results that point to the same resource appear after each other. 
+      In addition the lookup returns a <code>?reference</code> variable that contains the URI to the first resource in the group.
+    </p>
+
+    <p>Configuration example:</p>
+
+    <mp-code-block mode='text/turtle'><![CDATA[
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ms: <http://www.openrdf.org/config/sail/memory#> .
+@prefix lookup: <http://www.metaphacts.com/ontologies/platform/repository/lookup#> .
+@prefix rep: <http://www.openrdf.org/config/repository#> .
+@prefix sail: <http://www.openrdf.org/config/sail#> .
+@prefix sr: <http://www.openrdf.org/config/repository/sail#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mph: <http://www.metaphacts.com/ontologies/platform/repository#> .
+@prefix ephedra: <http://www.metaphacts.com/ontologies/platform/ephedra#> .
+@prefix fedsail: <http://www.openrdf.org/config/sail/federation#> .
+@prefix sparqlr: <http://www.openrdf.org/config/repository/sparql#> .
+
+[] a rep:Repository;
+  rep:repositoryID "aggregated-lookup";
+  rdfs:label "Aggregation Lookup";
+  rep:repositoryImpl [
+      rep:repositoryType "openrdf:SailRepository";
+      sr:sailImpl [
+          sail:sailType "openrdf:MemoryStore"
+        ]
+    ];
+  lookup:configuration [
+      lookup:type "rds:aggregationLookup";
+      lookup:targetRepository "default";
+      lookup:delegateService "default-federated-lookup";
+      lookup:sameAsPattern "<http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as>"
+    ] .
+    ]]></mp-code-block>
+
+    <p>
+      The <code>?reference</code> variable can also be used to group the results in a <code>semantic-table</code>. e.g.
+    </p>
+
+    <mp-code-block>
+
+<semantic-search limit=1000>
+  <semantic-search-keyword-prefetch
+    query='{
+      "type": "lookup",
+      "limit": 20,
+      "lookupServiceName": "aggregated-lookup"
+    }'>
+  </semantic-search-keyword-prefetch>
+
+  <semantic-search-result-holder>
+    <semantic-search-result>
+      <semantic-table
+        id='table'
+        options='{
+          "showFilter": false,
+          "groupingOptions": {"groupedBy": ["groupIri"]}
+        }' 
+        query='SELECT * WHERE {
+          BIND(IF(BOUND(?reference), ?reference, ?subject) as ?groupIri)
+        } ORDER BY DESC(?score)'
+      >
+      </semantic-table>
+    </semantic-search-result>
+  </semantic-search-result-holder>
+</semantic-search>
+
+
+    </mp-code-block>
     <h4 id="GenericSparqlLookupService">Generic SPARQL</h4>
 
     <p>
