@@ -3,10 +3,7 @@
     <mp-link title="Home" url="/">Home</mp-link>
   </li>
   <li>
-    <semantic-link title="Documentation" iri='[[resolvePrefix "rsp:Documentation"]]'>Documentation</semantic-link>
-  </li>
-  <li>
-    <semantic-link title="Developer Documentation" iri="http://help.researchspace.org/resource/Start">Developer Documentation</semantic-link>
+    <semantic-link title="Documentation" iri='[[resolvePrefix "Help:Start"]]'>Documentation</semantic-link>
   </li>
   <li class="active">Sigma Graph Component</li>
 </ol>
@@ -61,6 +58,9 @@
     </div>
     <div style="clear:both;"></div>
 
+    <h2>Configuration</h2>
+
+    <mp-documentation type="SigmaGraphConfig"></mp-documentation>
 
     <h2>Examples </h2>
 
@@ -158,4 +158,5 @@ query='
 
     <h3>Events</h3>
     The components implements a number of events that can be used to interact with the graph. The events are documented below.
+    <mp-documentation type="SigmaGraphEventData" disable-transform-attributes=true hide-required-label=true></mp-documentation>
 </div>

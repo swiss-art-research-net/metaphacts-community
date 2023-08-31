@@ -30,20 +30,49 @@
                     "type": "boolean",
                     "default": false
                 },
+                "persistGraphMessage": {
+                    "description": "Message to display when the graph is restored from the browser's local storage.",
+                    "type": "string",
+                    "default": "The graph has been restored from the browser's local storage."
+                },
+                "persistGraphMessagePosition": {
+                    "description": "Position of the message to display when the graph is restored from the browser's local storage.",
+                    "type": "string",
+                    "enum": [
+                        "tl",
+                        "tr",
+                        "tc",
+                        "bl",
+                        "br",
+                        "bc"
+                    ],
+                    "default": "tr"
+                },
                 "searchBox": {
                     "description": "If set to true, a search box will be displayed. The user can search for nodes by label.",
                     "type": "boolean",
                     "default": false
-                },"sizes": {
+                },
+                "controls": {
+                    "description": "If set to true, controls will be displayed to allow the user to zoom and reset the graph.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "edgesFilter": {
+                    "description": "If set to true, a panel will be displayed to allow the user to filter the edges by type.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "sizes": {
                     "description": "Sizes of the nodes and edges in pixels",
                     "type": "object",
                     "properties": {
-                        "node": {
+                        "nodes": {
                             "description": "Size of the node in pixels",
                             "type": "number",
                             "default": 10
                         },
-                        "edge": {
+                        "edges": {
                             "description": "Size of the edge in pixels",
                             "type": "number",
                             "default": 5
@@ -81,7 +110,10 @@
                 "sizes",
                 "colours",
                 "searchBox",
+                "controls",
                 "persistGraph",
+                "persistGraphMessage",
+                "persistGraphMessagePosition",
                 "width",
                 "height"
             ],
@@ -91,8 +123,10 @@
             "type": "object"
         },
         "Colours": {
-            "description": "Optional colour palette for nodes.",
+            "description": "Optional colour palette for nodes and edges. Nodes are assigned a colour based on their type IRI. To set a default colour for nodes use the 'node' attribute. Edges are assigned a colour via the 'edge' attribute.",
             "example": {
+                "node": "#000000",
+                "edge": "#cccccc",
                 "http://xmlns.com/foaf/0.1/Person": "#2980b9",
                 "http://xmlns.com/foaf/0.1/Organization": "#27ae60"
               },
