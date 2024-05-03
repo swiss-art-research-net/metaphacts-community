@@ -24,7 +24,7 @@ project.ext {
 	buildConfig = parseBuildConfig(project.file(buildJsonPath))
 }
 
-version = '4.2.2'
+version = '4.3.1'
 group = 'com.metaphacts'
 project.ext.vendor = 'metaphacts GmbH'
 project.ext.buildDate = new Date()
