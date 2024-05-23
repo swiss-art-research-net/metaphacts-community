@@ -47,6 +47,7 @@ import org.apache.logging.log4j.Logger;
 import com.github.jknack.handlebars.EscapingStrategy;
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.Helper;
+import com.github.jknack.handlebars.helper.ConditionalHelpers;
 import com.github.jknack.handlebars.Options;
 import com.github.jknack.handlebars.cache.ConcurrentMapTemplateCache;
 import com.github.jknack.handlebars.io.TemplateLoader;
@@ -106,6 +107,7 @@ public class MetaphactsHandlebars extends Handlebars{
 
     private void registerMetaphactsHelper(HandlebarsHelperRegistry helperRegistry) {
         helperRegistry.getHelpers().forEach(this::registerHelpers);
+        this.registerHelpers(ConditionalHelpers.class);
         helperRegistry.getNamedHelpers().entrySet().forEach(entry ->
             registerHelper(entry.getKey(), entry.getValue()));
 
