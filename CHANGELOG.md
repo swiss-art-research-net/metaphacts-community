@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.3.2]
+
+- Align versioning with Docker images
+- Activated handlebars conditionals for backend templates
+
 ## [4.2.2]
 
 - Add `clearable` option to the `semantic-form-checklist-input` component, which adds a button to clear the current selection.
