@@ -1,6 +1,6 @@
 #!\bin\bash
 
-./build.sh -DbuildEnv=prod -Dbuildjson=./sari/sari-root-build.json -DplatformVersion=$1 platformWar
+docker exec mp-dev bash -c "./build.sh -DbuildEnv=prod -Dbuildjson=./sari/sari-root-build.json -DplatformVersion=$1 platformWar"
 
 export DOCKER_FOLDER="$(pwd)/metaphacts-platform/dist/docker"
 cp target/platform-$1.war $DOCKER_FOLDER/platform/ROOT.war

@@ -91,6 +91,14 @@ export interface LookupDataQuery {
    * (if provided more then one preferred language, otherwise the switch is hidden).
    */
   preferredLanguage?: string;
+
+  /**
+   * If true, the query term will be tokenized using Lucene query syntax.
+   * This means that the query term will be split into tokens at whitespace characters
+   * and an asterisk (*) will be appended to each token.
+   * The default value is false.
+   */
+  tokenizeLuceneQuery?: boolean; 
 }
 
 /**
@@ -184,8 +192,13 @@ function makeReconciliationRequest(
   lookupDataQuery: LookupDataQuery,
   args: { [arg: string]: Rdf.Node }
 ): ReconciliationRequest {
-  const query = args && args[TOKEN_VARIABLE_NAME] ?
+  let query = args && args[TOKEN_VARIABLE_NAME] ?
     args[TOKEN_VARIABLE_NAME].value : lookupDataQuery.defaultTerm;
+
+  if (lookupDataQuery.tokenizeLuceneQuery) {
+    // Tokenize query using Lucene query syntax
+    query = query.split(' ').map(token => `${token}*`).join(' ');
+  }
 
   if (args && !args[TOKEN_VARIABLE_NAME]) {
     console.warn(`Arguments list doesn't contain ${

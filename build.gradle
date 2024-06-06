@@ -24,7 +24,7 @@ project.ext {
 	buildConfig = parseBuildConfig(project.file(buildJsonPath))
 }
 
-version = '4.3.1'
+version = '4.3.2'
 group = 'com.metaphacts'
 project.ext.vendor = 'metaphacts GmbH'
 project.ext.buildDate = new Date()
@@ -363,7 +363,7 @@ configure(appProjects) {
 		compileOnly project(":metaphacts-platform:core")
 		compileOnly group: 'org.pf4j', name: 'pf4j', version: '3.2.0', transitive: false
 		compileOnly group: 'org.apache.logging.log4j', name: 'log4j-api', version: LOG4J_VERSION, transitive: false
-		compileOnly group: 'com.github.jknack', name: 'handlebars', version: '4.0.5'
+		compileOnly group: 'com.github.jknack', name: 'handlebars', version: '4.0.7'
 		testImplementation project(":metaphacts-platform:core").sourceSets.test.output
 		testImplementation project(path: ":metaphacts-platform:core", configuration: 'testRuntime')
 	}
