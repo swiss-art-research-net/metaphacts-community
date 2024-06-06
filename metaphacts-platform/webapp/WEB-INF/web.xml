@@ -48,4 +48,9 @@
         <exception-type>java.lang.Throwable</exception-type>
         <location>/error-pages/general.html</location>
     </error-page>
+
+     <mime-mapping>
+        <extension>mjs</extension>
+        <mime-type>application/javascript</mime-type>
+    </mime-mapping>
 </web-app>
