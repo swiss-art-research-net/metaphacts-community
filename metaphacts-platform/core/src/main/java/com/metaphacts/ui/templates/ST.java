@@ -110,6 +110,7 @@ public class ST {
     public Map<String, Object> getDefaultPageLayoutTemplateParams() {
     	Map<String,Object> params = Maps.newHashMap();
     	params.put("deploymentTitle", config.getUiConfig().getDeploymentTitle());
+        params.put("platformBaseIri", config.getEnvironmentConfig().getPlatformBaseIri());
     	return params;
     }
 
