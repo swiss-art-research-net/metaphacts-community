@@ -42,6 +42,7 @@ export * from './ComponentUtils';
 export * from './Action';
 export * from './HideableLink';
 export * from './ControlledProps';
+export * from './OpenStreetMap';
 
 // temporary re-export to minimize merge conflicts
 export { BrowserPersistence } from 'platform/api/persistence/BrowserPersistence';
