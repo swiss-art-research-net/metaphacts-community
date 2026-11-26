@@ -10,9 +10,13 @@ USER root
 # Alpine installation:
 #RUN apk --update add vim && rm -rf /var/cache/apk/*
 # Debian installation:
-RUN apt-get update && apt-get install -y --no-install-recommends vim \
-      && rm -rf /var/lib/apt/lists/* \
-      && rm -rf /var/cache/apt/archives/*
+RUN printf '%s\n' \
+      'deb http://archive.debian.org/debian buster main' \
+      'deb http://archive.debian.org/debian-security buster/updates main' \
+      > /etc/apt/sources.list \
+    && apt-get -o Acquire::Check-Valid-Until=false update \
+    && apt-get install -y --no-install-recommends vim \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # when on Debian, change uid of user jetty to 100 and gid of group jetty to 101
 # note that we delete temporary user _apt which has uid 100 to avoid conflicts

@@ -49,7 +49,6 @@ import TileLayer from 'ol/layer/tile';
 import VectorLayer from 'ol/layer/vector';
 import Vector from 'ol/source/vector';
 import Cluster from 'ol/source/cluster';
-import OSM from 'ol/source/osm';
 import Style from 'ol/style/style';
 import Text from 'ol/style/text';
 import Fill from 'ol/style/fill';
@@ -67,6 +66,8 @@ import proj from 'ol/proj';
 import control from 'ol/control';
 import interaction from 'ol/interaction';
 import extent from 'ol/extent';
+
+import { createOpenStreetMapSource } from 'platform/components/utils';
 
 import { BuiltInEvents, trigger } from 'platform/api/events';
 import { SparqlClient, SparqlUtil } from 'platform/api/sparql';
@@ -354,7 +355,7 @@ export class SemanticMap extends Component<SemanticMapProps, MapState> {
         interactions: interaction.defaults({ mouseWheelZoom: false }),
         layers: [
           new TileLayer({
-            source: new OSM(),
+            source: createOpenStreetMapSource(),
           }),
           ..._.values(layers),
         ],
